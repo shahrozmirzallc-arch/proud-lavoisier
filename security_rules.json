@@ -1,0 +1,8 @@
+{
+  "blocked_ips": [],
+  "blocked_processes": [],
+  "allowed_ips": [
+    "216.239.36.223"
+  ],
+  "allowed_processes": []
+}

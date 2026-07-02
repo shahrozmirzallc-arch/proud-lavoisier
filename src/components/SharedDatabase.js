@@ -8,16 +8,25 @@ const SEED_DATA = {
     { id: '1', name: 'Clarence Kuiken', email: 'clarence.k@integritydriven.com', role: 'rep', phone: '+1 905-914-2788', avatar: 'CK' },
     { id: '2', name: 'Donna Cabral', email: 'donna.c@integritydriven.com', role: 'lead', phone: '+1 905-555-0199', avatar: 'DC' },
     { id: '3', name: 'Greg Phillippe', email: 'greg.p@integritydriven.com', role: 'owner', phone: '+1 905-555-0100', avatar: 'GP' },
-    { id: '4', name: 'Colleen Boyd', email: 'colleen.b@integritydriven.com', role: 'accountant', phone: '+1 905-555-0122', avatar: 'CB' }
+    { id: '4', name: 'Colleen Boyd', email: 'colleen.b@integritydriven.com', role: 'accountant', phone: '+1 905-555-0122', avatar: 'CB' },
+    { id: 'rep_hugo', name: 'Hugo Picon', email: 'hugo.p@integritydriven.com', role: 'rep', phone: '+1 555-123-4567', avatar: 'HP' },
+    { id: 'rep_nabil', name: 'Nabil Obad', email: 'nabil.o@integritydriven.com', role: 'rep', phone: '+1 555-987-6543', avatar: 'NO' },
+    { id: 'rep_rogelio', name: 'Rogelio Velasco', email: 'rogelio.v@integritydriven.com', role: 'rep', phone: '+1 555-555-0987', avatar: 'RV' }
   ],
   rates: [
     { id: 'rate_1', rep_id: '1', supplier_id: 'magna', billing_rate: 28.00, pay_rate: 20.00 },
-    { id: 'rate_2', rep_id: '1', supplier_id: 'hutchinson', billing_rate: 30.00, pay_rate: 22.00 }
+    { id: 'rate_2', rep_id: '1', supplier_id: 'hutchinson', billing_rate: 30.00, pay_rate: 22.00 },
+    { id: 'rate_hugo', rep_id: 'rep_hugo', supplier_id: 'autokabel', plant_id: 'mercedes_tuscaloosa', billing_rate: 35.00, pay_rate: 25.00 },
+    { id: 'rate_nabil', rep_id: 'rep_nabil', supplier_id: 'autokabel', plant_id: 'ford_dearborn', billing_rate: 35.00, pay_rate: 26.00 },
+    { id: 'rate_rogelio', rep_id: 'rep_rogelio', supplier_id: 'autokabel', plant_id: 'gm_slp', billing_rate: 28.00, pay_rate: 18.56 }
   ],
   plants: [
     { id: 'gm_oshawa', name: 'GM Oshawa Plant', address: '900 Park Rd S, Oshawa, ON', oem_brand: 'GM' },
     { id: 'magna_autosystems', name: 'Magna AutoSystems', address: 'Belleville, ON', oem_brand: 'Magna' },
-    { id: 'hutchinson', name: 'Hutchinson Plant', address: 'Mississauga, ON', oem_brand: 'Hutchinson' }
+    { id: 'hutchinson', name: 'Hutchinson Plant', address: 'Mississauga, ON', oem_brand: 'Hutchinson' },
+    { id: 'mercedes_tuscaloosa', name: 'Mercedes Tuscaloosa Plant', address: 'Tuscaloosa, AL', oem_brand: 'Mercedes' },
+    { id: 'ford_dearborn', name: 'Ford Dearborn Plant', address: 'Dearborn, MI', oem_brand: 'Ford' },
+    { id: 'gm_slp', name: 'GM SLP Plant', address: 'San Luis Potosi, MX', oem_brand: 'GM' }
   ],
   suppliers: [
     { 
@@ -38,6 +47,33 @@ const SEED_DATA = {
         { name: 'Sarah Jenkins', email: 'sjenkins@hutchinson.ca', role: 'Supplier Quality Engineer' }
       ],
       plants_served: ['gm_oshawa'] 
+    },
+    {
+      id: 'autokabel',
+      name: 'Auto Kabel de Mexico S.A. de C.V',
+      invoice_schedule: 'weekly',
+      contacts: [
+        { name: 'Juan Carlos', email: 'jc@autokabel.mx', role: 'Plant Quality Manager' }
+      ],
+      plants_served: ['mercedes_tuscaloosa', 'ford_dearborn', 'gm_slp']
+    },
+    {
+      id: 'brose',
+      name: 'Brose México S.A. de C.V.',
+      invoice_schedule: 'weekly',
+      contacts: [
+        { name: 'Maria Gomez', email: 'mg@brose.mx', role: 'Supplier Quality Manager' }
+      ],
+      plants_served: ['gm_slp']
+    },
+    {
+      id: 'borgwarner',
+      name: 'BorgWarner PDS Irapuato',
+      invoice_schedule: 'monthly',
+      contacts: [
+        { name: 'Alejandro', email: 'al@borgwarner.com', role: 'Supplier Quality Engineer' }
+      ],
+      plants_served: ['gm_slp']
     }
   ],
   parts: [
@@ -339,7 +375,43 @@ const SEED_DATA = {
       amount: 45.50,
       receipt_photo: 'https://images.unsplash.com/photo-1554415707-6e8cfc93fe23?auto=format&fit=crop&w=800&q=80',
       notes: 'Fuel fill-up for GM Oshawa site travel.',
-      invoiced: false
+      invoiced: false,
+      status: 'approved'
+    }
+  ],
+  extraHoursRequests: [
+    {
+      id: 'ehr_1',
+      rep_id: 'rep_hugo',
+      supplier_id: 'autokabel',
+      plant_id: 'mercedes_tuscaloosa',
+      date: '2026-07-01',
+      hours: 4.0,
+      reason: 'Urgent sorting of tail light assemblies due to supplier defect leak',
+      status: 'pending_customer',
+      customer_comment: '',
+      admin_comment: '',
+      created_at: '2026-07-01T10:00:00Z',
+      history: [
+        { status: 'pending_customer', user: 'Hugo Picon', timestamp: '2026-07-01T10:00:00Z', comment: 'Initiated extra hours request.' }
+      ]
+    },
+    {
+      id: 'ehr_2',
+      rep_id: 'rep_rogelio',
+      supplier_id: 'autokabel',
+      plant_id: 'gm_slp',
+      date: '2026-06-30',
+      hours: 2.5,
+      reason: 'Line stoppage support at engine assembly area',
+      status: 'pending_admin',
+      customer_comment: 'Approved for production continuity.',
+      admin_comment: '',
+      created_at: '2026-06-30T14:30:00Z',
+      history: [
+        { status: 'pending_customer', user: 'Rogelio Velasco', timestamp: '2026-06-30T14:30:00Z', comment: 'Line stop support requested.' },
+        { status: 'pending_admin', user: 'Juan Carlos (Auto Kabel)', timestamp: '2026-06-30T16:00:00Z', comment: 'Approved for production continuity.' }
+      ]
     }
   ]
 };
@@ -351,7 +423,47 @@ export function initializeDB() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(SEED_DATA));
     return SEED_DATA;
   }
-  return JSON.parse(existing);
+  const data = JSON.parse(existing);
+  let updated = false;
+
+  if (!data.extraHoursRequests) {
+    data.extraHoursRequests = SEED_DATA.extraHoursRequests;
+    updated = true;
+  }
+
+  SEED_DATA.users.forEach(seedUser => {
+    if (!data.users.find(u => u.id === seedUser.id)) {
+      data.users.push(seedUser);
+      updated = true;
+    }
+  });
+
+  SEED_DATA.plants.forEach(seedPlant => {
+    if (!data.plants.find(p => p.id === seedPlant.id)) {
+      data.plants.push(seedPlant);
+      updated = true;
+    }
+  });
+
+  SEED_DATA.suppliers.forEach(seedSup => {
+    if (!data.suppliers.find(s => s.id === seedSup.id)) {
+      data.suppliers.push(seedSup);
+      updated = true;
+    }
+  });
+
+  SEED_DATA.rates.forEach(seedRate => {
+    if (!data.rates.find(r => r.id === seedRate.id)) {
+      data.rates.push(seedRate);
+      updated = true;
+    }
+  });
+
+  if (updated) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    window.dispatchEvent(new Event('ids_pulse_db_update'));
+  }
+  return data;
 }
 
 // Get the entire database
@@ -507,3 +619,23 @@ export function deleteRate(rateId) {
   saveDB(db);
 }
 
+
+// Helper functions for extra hours requests
+export function getExtraHoursRequests() {
+  return getEntities('extraHoursRequests');
+}
+
+export function saveExtraHoursRequest(req) {
+  return saveEntity('extraHoursRequests', req);
+}
+
+export function addExtraHoursRequest(req) {
+  const newReq = {
+    id: `ehr_${Date.now()}`,
+    status: 'pending_customer',
+    created_at: new Date().toISOString(),
+    history: [{ status: 'pending_customer', user: req.userName || 'Rep', timestamp: new Date().toISOString(), comment: 'Request submitted' }],
+    ...req
+  };
+  return saveEntity('extraHoursRequests', newReq);
+}

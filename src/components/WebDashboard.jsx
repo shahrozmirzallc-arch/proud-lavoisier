@@ -9,7 +9,7 @@ import { getEntities, saveEntity, resetDB } from './SharedDatabase';
 import { jsPDF } from 'jspdf';
 import { LOGO_BASE64 } from './LogoBase64';
 
-export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false, userRole = 'admin' }) {
+export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false, userRole = 'admin', currentUserRepId = '', currentUserCustomerId = '' }) {
   const [incidents, setIncidents] = useState([]);
   const [emailLogs, setEmailLogs] = useState([]);
   const [reworkLogs, setReworkLogs] = useState([]);
@@ -32,6 +32,482 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   const [selectedDate, setSelectedDate] = useState('2026-06-01');
   const [showAllDates, setShowAllDates] = useState(false);
   
+  // Accounting Sub-tab Navigation
+  const [accountingSubTab, setAccountingSubTab] = useState('log-hours');
+  
+  // Log Hours Form Inputs
+  const [logHoursRepId, setLogHoursRepId] = useState('rep_hugo');
+  const [logHoursSupplierId, setLogHoursSupplierId] = useState('autokabel');
+  const [logHoursDate, setLogHoursDate] = useState(new Date().toISOString().substring(0, 10));
+  const [logHoursQty, setLogHoursQty] = useState('');
+  const [logHoursMileage, setLogHoursMileage] = useState('');
+  const [logHoursNotes, setLogHoursNotes] = useState('');
+
+  // Log Expense Form Inputs
+  const [logExpRepId, setLogExpRepId] = useState('rep_hugo');
+  const [logExpSupplierId, setLogExpSupplierId] = useState('autokabel');
+  const [logExpDate, setLogExpDate] = useState(new Date().toISOString().substring(0, 10));
+  const [logExpCategory, setLogExpCategory] = useState('Fuel');
+  const [logExpAmount, setLogExpAmount] = useState('');
+  const [logExpNotes, setLogExpNotes] = useState('');
+
+  // Rates Overrides State
+  const [configRepId, setConfigRepId] = useState('rep_hugo');
+  const [configSupplierId, setConfigSupplierId] = useState('autokabel');
+  const [configPayRate, setConfigPayRate] = useState('25');
+  const [configBillingRate, setConfigBillingRate] = useState('35');
+  const [rates, setRates] = useState([]);
+
+  // Invoicing States
+  const [selectedInvoiceSupplier, setSelectedInvoiceSupplier] = useState('autokabel');
+
+  // Extra Hours Requests State
+  const [extraHoursRequests, setExtraHoursRequests] = useState([]);
+  const [extraHoursQty, setExtraHoursQty] = useState('8.0');
+  const [extraHoursDate, setExtraHoursDate] = useState(new Date().toISOString().substring(0, 10));
+  const [extraHoursReason, setExtraHoursReason] = useState('');
+  const [extraHoursSupplierId, setExtraHoursSupplierId] = useState('autokabel');
+  const [extraHoursPlantId, setExtraHoursPlantId] = useState('mercedes_tuscaloosa');
+  
+  // Comments for Approval workflows
+  const [customerApprovalComment, setCustomerApprovalComment] = useState('');
+  const [adminApprovalComment, setAdminApprovalComment] = useState('');
+
+  // Admin CRUD tabs
+  const [adminCrudTab, setAdminCrudTab] = useState('customers');
+  // CRUD states
+  const [newCustomerName, setNewCustomerName] = useState('');
+  const [newCustomerAddress, setNewCustomerAddress] = useState('');
+  const [newCustomerContactName, setNewCustomerContactName] = useState('');
+  const [newCustomerContactEmail, setNewCustomerContactEmail] = useState('');
+  const [newCustomerContactRole, setNewCustomerContactRole] = useState('Quality Manager');
+
+  const [newLocationName, setNewLocationName] = useState('');
+  const [newLocationAddress, setNewLocationAddress] = useState('');
+  const [newLocationHours, setNewLocationHours] = useState('10');
+  const [newLocationRepId, setNewLocationRepId] = useState('rep_hugo');
+  const [newLocationBillRate, setNewLocationBillRate] = useState('35');
+  const [newLocationSupplierId, setNewLocationSupplierId] = useState('autokabel');
+
+  const [newRepName, setNewRepName] = useState('');
+  const [newRepEmail, setNewRepEmail] = useState('');
+  const [newRepPhone, setNewRepPhone] = useState('');
+
+  // Load rates and extra hours requests from database on mount and update
+  useEffect(() => {
+    setRates(getEntities('rates') || []);
+    setExtraHoursRequests(getEntities('extraHoursRequests') || []);
+  }, [dbUpdateTrigger]);
+
+  // Dynamic Rate Override Resolver with Plant/Location scoping
+  const getRepSupplierRates = (rep_id, supplier_id, plant_id = '') => {
+    const dbRates = getEntities('rates') || [];
+    // Match by rep_id + supplier_id + optionally plant_id
+    const match = dbRates.find(r => r.rep_id === rep_id && r.supplier_id === supplier_id && (!plant_id || r.plant_id === plant_id));
+    if (match) {
+      return {
+        billing_rate: parseFloat(match.billing_rate),
+        pay_rate: parseFloat(match.pay_rate)
+      };
+    }
+    // Default fallback
+    return { billing_rate: 28.00, pay_rate: 20.00 };
+  };
+
+  // Submit handers
+  const handleLogHoursSubmit = (e) => {
+    e.preventDefault();
+    if (!logHoursQty || parseFloat(logHoursQty) <= 0) {
+      alert("Please enter a valid amount of hours.");
+      return;
+    }
+    const newEntry = {
+      id: `te_${Date.now()}`,
+      rep_id: logHoursRepId,
+      supplier_id: logHoursSupplierId,
+      plant_id: suppliers.find(s => s.id === logHoursSupplierId)?.plants_served?.[0] || 'gm_oshawa',
+      date: logHoursDate,
+      hours: parseFloat(logHoursQty),
+      mileage_km: parseFloat(logHoursMileage || 0),
+      notes: logHoursNotes,
+      invoiced: false,
+      created_at: new Date().toISOString()
+    };
+    saveEntity('timeEntries', newEntry);
+    setTimeEntries(getEntities('timeEntries'));
+    setLogHoursQty('');
+    setLogHoursMileage('');
+    setLogHoursNotes('');
+    alert("Hours logged successfully!");
+  };
+
+  const handleLogExpenseSubmit = (e) => {
+    e.preventDefault();
+    if (!logExpAmount || parseFloat(logExpAmount) <= 0) {
+      alert("Please enter a valid expense amount.");
+      return;
+    }
+    const newEntry = {
+      id: `exp_${Date.now()}`,
+      rep_id: logExpRepId,
+      supplier_id: logExpSupplierId,
+      date: logExpDate,
+      category: logExpCategory,
+      amount: parseFloat(logExpAmount),
+      notes: logExpNotes,
+      invoiced: false,
+      status: 'submitted',
+      created_at: new Date().toISOString()
+    };
+    saveEntity('expenseEntries', newEntry);
+    setExpenseEntries(getEntities('expenseEntries'));
+    setLogExpAmount('');
+    setLogExpNotes('');
+    alert("Expense claim submitted successfully!");
+  };
+
+  const handleSaveRateConfig = (e) => {
+    e.preventDefault();
+    const newRate = {
+      id: `rate_${Date.now()}`,
+      rep_id: configRepId,
+      supplier_id: configSupplierId,
+      billing_rate: parseFloat(configBillingRate),
+      pay_rate: parseFloat(configPayRate)
+    };
+    saveEntity('rates', newRate);
+    setRates(getEntities('rates'));
+    alert("Custom rate override saved successfully!");
+  };
+
+  const handleDeleteRate = (rateId) => {
+    const db = getDB();
+    if (db.rates) {
+      db.rates = db.rates.filter(r => r.id !== rateId);
+      saveDB(db);
+      setRates(db.rates);
+    }
+  };
+
+  const handleMarkAsInvoiced = (clientEntries, clientExpenses) => {
+    clientEntries.forEach(entry => {
+      entry.invoiced = true;
+      saveEntity('timeEntries', entry);
+    });
+    clientExpenses.forEach(exp => {
+      exp.invoiced = true;
+      saveEntity('expenseEntries', exp);
+    });
+    setTimeEntries(getEntities('timeEntries'));
+    setExpenseEntries(getEntities('expenseEntries'));
+    alert("Marked as invoiced!");
+  };
+
+  const handleExportClientQuickBooks = (clientEntries) => {
+    let csv = "Date,Name,Customer:Job,Service Item,Duration,Notes,Billing Status\n";
+    clientEntries.forEach(entry => {
+      const repName = users.find(u => u.id === entry.rep_id)?.name || 'Rep';
+      const clientName = suppliers.find(s => s.id === entry.supplier_id)?.name || 'Client';
+      const date = entry.date;
+      const duration = entry.hours;
+      const notes = entry.notes || 'Shift sorting log';
+      csv += `"${date}","${repName}","${clientName}","Standard Sorting Support","${duration}","${notes}","Billable"\n`;
+    });
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute("download", `QuickBooks_Export_${selectedInvoiceSupplier}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleGenerateClientInvoicePDF = (client, dateRangeStr, clientEntries, clientExpenses) => {
+    try {
+      const doc = new jsPDF();
+      doc.setFont("Helvetica", "bold");
+      doc.setFontSize(22);
+      doc.text("INVOICE", 14, 20);
+
+      doc.setFontSize(10);
+      doc.setFont("Helvetica", "normal");
+      doc.text("Integrity Driven Solutions Inc. (IDS)", 14, 28);
+      doc.text("Email: billing@integritydriven.com | Web: www.integritydriven.com", 14, 33);
+
+      doc.setFont("Helvetica", "bold");
+      doc.text("BILL TO:", 14, 45);
+      doc.setFont("Helvetica", "normal");
+      doc.text(client.name, 14, 50);
+      doc.text("Billing Schedule: " + client.invoice_schedule.toUpperCase(), 14, 55);
+
+      doc.setFont("Helvetica", "bold");
+      doc.text("INVOICE DETAILS:", 120, 45);
+      doc.setFont("Helvetica", "normal");
+      doc.text("Invoice Period: " + dateRangeStr, 120, 50);
+      doc.text("Date Generated: " + new Date().toLocaleDateString(), 120, 55);
+
+      let y = 70;
+      doc.setFillColor(30, 41, 59);
+      doc.rect(14, y, 182, 8, "F");
+      doc.setFont("Helvetica", "bold");
+      doc.setTextColor(255, 255, 255);
+      doc.text("Item Description", 16, y + 5);
+      doc.text("Hours / Qty", 100, y + 5);
+      doc.text("Rate", 130, y + 5);
+      doc.text("Subtotal", 160, y + 5);
+
+      y += 12;
+      doc.setTextColor(0, 0, 0);
+      doc.setFont("Helvetica", "normal");
+
+      let totalBill = 0;
+
+      clientEntries.forEach(entry => {
+        const repName = users.find(u => u.id === entry.rep_id)?.name || 'Rep';
+        const { billing_rate } = getRepSupplierRates(entry.rep_id, entry.supplier_id);
+        const sub = entry.hours * billing_rate;
+        totalBill += sub;
+        doc.text(`${repName} - Hours worked (${entry.date})`, 16, y);
+        doc.text(`${entry.hours} hrs`, 100, y);
+        doc.text(`$${billing_rate.toFixed(2)}/hr`, 130, y);
+        doc.text(`$${sub.toFixed(2)}`, 160, y);
+        y += 8;
+      });
+
+      clientEntries.forEach(entry => {
+        if (entry.mileage_km > 0) {
+          const repName = users.find(u => u.id === entry.rep_id)?.name || 'Rep';
+          const sub = entry.mileage_km * 0.73;
+          totalBill += sub;
+          doc.text(`${repName} - Travel Mileage (${entry.date})`, 16, y);
+          doc.text(`${entry.mileage_km} km`, 100, y);
+          doc.text(`$0.73/km`, 130, y);
+          doc.text(`$${sub.toFixed(2)}`, 160, y);
+          y += 8;
+        }
+      });
+
+      clientExpenses.forEach(exp => {
+        const repName = users.find(u => u.id === exp.rep_id)?.name || 'Rep';
+        const sub = parseFloat(exp.amount || 0);
+        totalBill += sub;
+        doc.text(`${repName} - Reimbursement (${exp.category}: ${exp.notes})`, 16, y);
+        doc.text(`1 qty`, 100, y);
+        doc.text(`$${sub.toFixed(2)}`, 130, y);
+        doc.text(`$${sub.toFixed(2)}`, 160, y);
+        y += 8;
+      });
+
+      y += 5;
+      doc.line(14, y, 196, y);
+      y += 8;
+      doc.setFont("Helvetica", "bold");
+      doc.text("TOTAL DUE:", 120, y);
+      doc.text(`$${totalBill.toFixed(2)}`, 160, y);
+
+      doc.save(`Invoice_${client.name.replace(/\s+/g, '_')}_${Date.now()}.pdf`);
+    } catch (err) {
+      console.error(err);
+      alert("Error generating PDF: " + err.message);
+    }
+  };
+
+  const handleCreateCustomer = (e) => {
+    e.preventDefault();
+    if (!newCustomerName) {
+      alert("Customer name is required.");
+      return;
+    }
+    const newId = newCustomerName.toLowerCase().replace(/[^a-z0-9]/g, '_');
+    const newCust = {
+      id: newId,
+      name: newCustomerName,
+      invoice_schedule: 'weekly',
+      contacts: [
+        { name: newCustomerContactName, email: newCustomerContactEmail, role: newCustomerContactRole }
+      ],
+      plants_served: []
+    };
+    saveEntity('suppliers', newCust);
+    setSuppliers(getEntities('suppliers'));
+    setNewCustomerName('');
+    setNewCustomerAddress('');
+    setNewCustomerContactName('');
+    setNewCustomerContactEmail('');
+    alert("Customer created successfully!");
+  };
+
+  const handleCreateLocation = (e) => {
+    e.preventDefault();
+    if (!newLocationName) {
+      alert("Location name is required.");
+      return;
+    }
+    const newId = newLocationName.toLowerCase().replace(/[^a-z0-9]/g, '_');
+    const newPlant = {
+      id: newId,
+      name: newLocationName,
+      address: newLocationAddress,
+      oem_brand: newLocationName.split(' ')[0] || 'OEM'
+    };
+    saveEntity('plants', newPlant);
+    
+    const sup = suppliers.find(s => s.id === newLocationSupplierId);
+    if (sup) {
+      if (!sup.plants_served.includes(newId)) {
+        sup.plants_served.push(newId);
+        saveEntity('suppliers', sup);
+        setSuppliers(getEntities('suppliers'));
+      }
+    }
+
+    const newRate = {
+      id: `rate_${Date.now()}`,
+      rep_id: newLocationRepId,
+      supplier_id: newLocationSupplierId,
+      plant_id: newId,
+      billing_rate: parseFloat(newLocationBillRate),
+      pay_rate: 20.00
+    };
+    saveEntity('rates', newRate);
+    setRates(getEntities('rates'));
+
+    setNewLocationName('');
+    setNewLocationAddress('');
+    alert("Location created and mapped successfully!");
+  };
+
+  const handleCreateRep = (e) => {
+    e.preventDefault();
+    if (!newRepName) {
+      alert("Representative name is required.");
+      return;
+    }
+    const newId = `rep_${newRepName.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
+    const newRep = {
+      id: newId,
+      name: newRepName,
+      email: newRepEmail,
+      role: 'rep',
+      phone: newRepPhone,
+      avatar: newRepName.split(' ').map(n => n[0]).join('').toUpperCase()
+    };
+    saveEntity('users', newRep);
+    setUsers(getEntities('users'));
+    setNewRepName('');
+    setNewRepEmail('');
+    setNewRepPhone('');
+    alert("Representative onboarding successful!");
+  };
+
+  const handleExtraHoursSubmit = (e) => {
+    e.preventDefault();
+    if (!extraHoursQty || parseFloat(extraHoursQty) <= 0) {
+      alert("Enter a valid number of extra hours.");
+      return;
+    }
+    const newReq = {
+      rep_id: currentUserRepId,
+      supplier_id: extraHoursSupplierId,
+      plant_id: extraHoursPlantId,
+      date: extraHoursDate,
+      hours: parseFloat(extraHoursQty),
+      reason: extraHoursReason,
+      userName: users.find(u => u.id === currentUserRepId)?.name || 'Rep'
+    };
+    const dbReqs = getEntities('extraHoursRequests') || [];
+    const newReqItem = {
+      id: `ehr_${Date.now()}`,
+      status: 'pending_customer',
+      created_at: new Date().toISOString(),
+      history: [{ status: 'pending_customer', user: users.find(u => u.id === currentUserRepId)?.name || 'Rep', timestamp: new Date().toISOString(), comment: 'Request submitted' }],
+      ...newReq
+    };
+    saveEntity('extraHoursRequests', newReqItem);
+    setExtraHoursRequests(getEntities('extraHoursRequests'));
+    setExtraHoursReason('');
+    alert("Extra hours request filed successfully! Pending Customer approval.");
+  };
+
+  const handleCustomerApproval = (reqId, statusAction) => {
+    const dbReqs = getEntities('extraHoursRequests');
+    const match = dbReqs.find(r => r.id === reqId);
+    if (match) {
+      match.status = statusAction === 'approve' ? 'pending_admin' : 'rejected_by_customer';
+      match.customer_comment = customerApprovalComment;
+      if (!match.history) match.history = [];
+      match.history.push({
+        status: match.status,
+        user: suppliers.find(s => s.id === currentUserCustomerId)?.name || 'Customer Manager',
+        timestamp: new Date().toISOString(),
+        comment: customerApprovalComment || (statusAction === 'approve' ? 'Customer approved.' : 'Customer rejected.')
+      });
+      saveEntity('extraHoursRequests', match);
+      setExtraHoursRequests(getEntities('extraHoursRequests'));
+      setCustomerApprovalComment('');
+      alert(`Request ${statusAction === 'approve' ? 'Approved' : 'Rejected'}!`);
+    }
+  };
+
+  const handleAdminApproval = (reqId, statusAction) => {
+    const dbReqs = getEntities('extraHoursRequests');
+    const match = dbReqs.find(r => r.id === reqId);
+    if (match) {
+      match.status = statusAction === 'approve' ? 'approved' : 'rejected_by_admin';
+      match.admin_comment = adminApprovalComment;
+      if (!match.history) match.history = [];
+      match.history.push({
+        status: match.status,
+        user: 'Admin Manager',
+        timestamp: new Date().toISOString(),
+        comment: adminApprovalComment || (statusAction === 'approve' ? 'Admin approved.' : 'Admin rejected.')
+      });
+      
+      if (statusAction === 'approve') {
+        const newTime = {
+          id: `te_${Date.now()}`,
+          rep_id: match.rep_id,
+          supplier_id: match.supplier_id,
+          plant_id: match.plant_id,
+          date: match.date,
+          hours: match.hours,
+          notes: `[APPROVED EXTRA HOURS]: ${match.reason}`,
+          invoiced: false,
+          created_at: new Date().toISOString()
+        };
+        saveEntity('timeEntries', newTime);
+        setTimeEntries(getEntities('timeEntries'));
+      }
+
+      saveEntity('extraHoursRequests', match);
+      setExtraHoursRequests(getEntities('extraHoursRequests'));
+      setAdminApprovalComment('');
+      alert(`Request ${statusAction === 'approve' ? 'Approved & Added to Timesheets' : 'Rejected'}!`);
+    }
+  };
+
+  const handleAdminExpenseApproval = (expId, statusAction) => {
+    const dbExps = getEntities('expenseEntries');
+    const match = dbExps.find(e => e.id === expId);
+    if (match) {
+      match.status = statusAction === 'approve' ? 'approved' : 'rejected';
+      saveEntity('expenseEntries', match);
+      setExpenseEntries(getEntities('expenseEntries'));
+      alert(`Expense claim ${statusAction === 'approve' ? 'Approved' : 'Rejected'}!`);
+    }
+  };
+
+  const handlePublishReport = (reportId) => {
+    const dbReports = getEntities('shiftReports');
+    const match = dbReports.find(r => r.id === reportId);
+    if (match) {
+      match.status = 'published';
+      saveEntity('shiftReports', match);
+      setShiftReports(getEntities('shiftReports'));
+      alert("Report published successfully to Customer!");
+    }
+  };
+
   // Heat Map States
   const [selectedHeatmapPart, setSelectedHeatmapPart] = useState('86286761');
   const [scrubIndex, setScrubIndex] = useState(0);
@@ -63,6 +539,10 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       return "Welcome back, Colleen Boyd! I am Pulse AI. As Accountant, I can verify timesheets for numerical errors, flag missing receipts, and calculate grand billing totals.";
     } else if (role === 'lead') {
       return "Welcome back, Donna Cabral! I am Pulse AI. As Quality Lead, I can audit defect logs for duplicates, verify supplier contact compliance, and analyze defect narratives.";
+    } else if (role === 'qre') {
+      return "Welcome, QRE Field Representative! You can log your daily hours, submit expense claims, or request approval for extra hours worked.";
+    } else if (role === 'customer') {
+      return "Welcome back! As a Customer partner, you can audit the weekly hours sorted at your plants, see active QRE assignments, and approve pending extra-hours requests.";
     }
     return "Welcome back! I am Pulse AI, your virtual assistant. Let me know how I can help you today.";
   };
@@ -87,6 +567,10 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     } else {
       if (userRole === 'accountant') {
         setActiveTab('time-tracking');
+      } else if (userRole === 'qre') {
+        setActiveTab('time-tracking');
+      } else if (userRole === 'customer') {
+        setActiveTab('customer-portal');
       } else {
         setActiveTab('incidents');
       }
@@ -314,6 +798,14 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
   // Filtered lists
   const filteredIncidents = incidents.filter(inc => {
+    // 1. Role-based scoping
+    if (userRole === 'qre' && inc.rep_id !== currentUserRepId) {
+      return false;
+    }
+    if (userRole === 'customer' && inc.supplier_id !== currentUserCustomerId) {
+      return false;
+    }
+
     const matchesSearch = 
       inc.part_id.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (inc.parts_list && inc.parts_list.some(p => p.part_number.toLowerCase().includes(searchQuery.toLowerCase()))) ||
@@ -2795,195 +3287,267 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
         {/* Navigation Sidebar */}
         {!forceRoadmapOnly && (
           <div className="w-56 flex flex-col gap-2 flex-shrink-0">
-          
-            <button 
-              onClick={() => setActiveTab('pulse-ai')}
-              className={`w-full h-10 px-3.5 rounded-xl font-bold text-xs transition-all cursor-pointer flex items-center justify-between border relative overflow-hidden group ${
-                activeTab === 'pulse-ai' 
-                  ? 'bg-[#1E3A5F] text-white border-[#22D3EE]/50 shadow-md shadow-[#22D3EE]/10' 
-                  : 'bg-slate-900/60 text-slate-400 hover:bg-slate-900/90 hover:text-slate-200 border-slate-850 hover:border-slate-800'
-              }`}
-            >
-              <div className="absolute inset-y-0 left-0 w-[3px] bg-[#22D3EE] shadow-[0_0_8px_#22D3EE]"></div>
-              <div className="flex items-center gap-2.5">
-                <Sparkles className="w-4 h-4 text-[#22D3EE] animate-pulse" />
-                <span className="text-[#22D3EE] font-extrabold tracking-wide">Pulse AI</span>
-              </div>
-              <span className="text-[7.5px] bg-[#22D3EE]/10 border border-[#22D3EE]/30 text-[#22D3EE] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider scale-90">Beta</span>
-            </button>
+            {/* QRE SIDEBAR BUTTONS */}
+            {userRole === 'qre' && (
+              <>
+                <button 
+                  onClick={() => setActiveTab('pulse-ai')}
+                  className={`w-full h-10 px-3.5 rounded-xl font-bold text-xs transition-all cursor-pointer flex items-center justify-between border relative overflow-hidden group ${
+                    activeTab === 'pulse-ai' 
+                      ? 'bg-[#1E3A5F] text-white border-[#22D3EE]/50 shadow-md shadow-[#22D3EE]/10' 
+                      : 'bg-slate-900/60 text-slate-400 hover:bg-slate-900/90 hover:text-slate-200 border-slate-850 hover:border-slate-800'
+                  }`}
+                >
+                  <div className="absolute inset-y-0 left-0 w-[3px] bg-[#22D3EE] shadow-[0_0_8px_#22D3EE]"></div>
+                  <div className="flex items-center gap-2.5">
+                    <Sparkles className="w-4 h-4 text-[#22D3EE]" />
+                    <span>Pulse AI Help</span>
+                  </div>
+                </button>
 
+                <button 
+                  onClick={() => setActiveTab('time-tracking')}
+                  className={`w-full h-10 px-3.5 rounded-xl font-bold text-xs transition-all cursor-pointer flex items-center justify-between border ${
+                    activeTab === 'time-tracking' 
+                      ? 'bg-[#1E3A5F] text-white border-[#22D3EE]/30 shadow-md shadow-[#22D3EE]/5' 
+                      : 'bg-slate-900/40 text-slate-400 hover:bg-slate-900/90 hover:text-slate-200 border-slate-850 hover:border-slate-800'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Clock className="w-4 h-4 text-emerald-400" />
+                    <span>My Hours & Expenses</span>
+                  </div>
+                  {activeTab === 'time-tracking' && <div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>}
+                </button>
+              </>
+            )}
 
+            {/* CUSTOMER SIDEBAR BUTTONS */}
+            {userRole === 'customer' && (
+              <>
+                <button 
+                  onClick={() => setActiveTab('customer-portal')}
+                  className={`w-full h-10 px-3.5 rounded-xl font-bold text-xs transition-all cursor-pointer flex items-center justify-between border ${
+                    activeTab === 'customer-portal' 
+                      ? 'bg-[#1E3A5F] text-white border-[#22D3EE]/30 shadow-md shadow-[#22D3EE]/5' 
+                      : 'bg-slate-900/40 text-slate-400 hover:bg-slate-900/90 hover:text-slate-200 border-slate-850 hover:border-slate-800'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Shield className="w-4 h-4 text-[#22D3EE]" />
+                    <span>Customer Dashboard</span>
+                  </div>
+                  {activeTab === 'customer-portal' && <div className="w-1.5 h-1.5 rounded-full bg-[#22D3EE]"></div>}
+                </button>
 
-          {userRole !== 'accountant' && (
-            <button
-              onClick={() => setActiveTab('incidents')}
-              className={`w-full h-10 px-3.5 rounded-xl font-bold text-xs transition-all cursor-pointer flex items-center justify-between border ${
-                activeTab === 'incidents' 
-                  ? 'bg-[#1E3A5F] text-white border-[#22D3EE]/30 shadow-md shadow-[#22D3EE]/5' 
-                  : 'bg-slate-900/40 text-slate-400 hover:bg-slate-900/90 hover:text-slate-200 border-slate-850 hover:border-slate-800'
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <FileText className="w-4 h-4 text-[#22D3EE]" />
-                <span>Incident Defects Feed</span>
-              </div>
-              {activeTab === 'incidents' && <div className="w-1.5 h-1.5 rounded-full bg-[#22D3EE]"></div>}
-            </button>
-          )}
+                <button 
+                  onClick={() => setActiveTab('shift-logs')}
+                  className={`w-full h-10 px-3.5 rounded-xl font-bold text-xs transition-all cursor-pointer flex items-center justify-between border ${
+                    activeTab === 'shift-logs' 
+                      ? 'bg-[#1E3A5F] text-white border-[#22D3EE]/30 shadow-md shadow-[#22D3EE]/5' 
+                      : 'bg-slate-900/40 text-slate-400 hover:bg-slate-900/90 hover:text-slate-200 border-slate-850 hover:border-slate-800'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Calendar className="w-4 h-4 text-[#0EA5E9]" />
+                    <span>Published Reports</span>
+                  </div>
+                  {activeTab === 'shift-logs' && <div className="w-1.5 h-1.5 rounded-full bg-[#0EA5E9]"></div>}
+                </button>
+              </>
+            )}
 
-          {userRole !== 'accountant' && (
-            <button 
-              onClick={() => setActiveTab('heatmap')}
-              className={`w-full h-10 px-3.5 rounded-xl font-bold text-xs transition-all cursor-pointer flex items-center justify-between border ${
-                activeTab === 'heatmap' 
-                  ? 'bg-[#1E3A5F] text-white border-[#22D3EE]/30 shadow-md shadow-[#22D3EE]/5' 
-                  : 'bg-slate-900/40 text-slate-400 hover:bg-slate-900/90 hover:text-slate-200 border-slate-850 hover:border-slate-800'
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <MapPin className="w-4 h-4 text-[#22D3EE]" />
-                <span>Visual Defect Matrix</span>
-              </div>
-              {activeTab === 'heatmap' && <div className="w-1.5 h-1.5 rounded-full bg-[#22D3EE]"></div>}
-            </button>
-          )}
+            {/* ADMIN SIDEBAR BUTTONS */}
+            {['admin', 'accountant', 'lead', 'shahroz'].includes(userRole) && (
+              <>
+                <button 
+                  onClick={() => setActiveTab('pulse-ai')}
+                  className={`w-full h-10 px-3.5 rounded-xl font-bold text-xs transition-all cursor-pointer flex items-center justify-between border relative overflow-hidden group ${
+                    activeTab === 'pulse-ai' 
+                      ? 'bg-[#1E3A5F] text-white border-[#22D3EE]/50 shadow-md shadow-[#22D3EE]/10' 
+                      : 'bg-slate-900/60 text-slate-400 hover:bg-slate-900/90 hover:text-slate-200 border-slate-850 hover:border-slate-800'
+                  }`}
+                >
+                  <div className="absolute inset-y-0 left-0 w-[3px] bg-[#22D3EE] shadow-[0_0_8px_#22D3EE]"></div>
+                  <div className="flex items-center gap-2.5">
+                    <Sparkles className="w-4 h-4 text-[#22D3EE] animate-pulse" />
+                    <span className="text-[#22D3EE] font-extrabold tracking-wide">Pulse AI</span>
+                  </div>
+                  <span className="text-[7.5px] bg-[#22D3EE]/10 border border-[#22D3EE]/30 text-[#22D3EE] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider scale-90">Beta</span>
+                </button>
 
-          {userRole !== 'accountant' && (
-            <button 
-              onClick={() => setActiveTab('daily-planner')}
-              className={`w-full h-10 px-3.5 rounded-xl font-bold text-xs transition-all cursor-pointer flex items-center justify-between border ${
-                activeTab === 'daily-planner' 
-                  ? 'bg-[#1E3A5F] text-white border-[#22D3EE]/30 shadow-md shadow-[#22D3EE]/5' 
-                  : 'bg-slate-900/40 text-slate-400 hover:bg-slate-900/90 hover:text-slate-200 border-slate-850 hover:border-slate-800'
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <CheckCircle2 className="w-4 h-4 text-[#22D3EE]" />
-                <span>Daily Tasks Planner</span>
-              </div>
-              {activeTab === 'daily-planner' && <div className="w-1.5 h-1.5 rounded-full bg-[#22D3EE]"></div>}
-            </button>
-          )}
+                {userRole !== 'accountant' && (
+                  <button
+                    onClick={() => setActiveTab('incidents')}
+                    className={`w-full h-10 px-3.5 rounded-xl font-bold text-xs transition-all cursor-pointer flex items-center justify-between border ${
+                      activeTab === 'incidents' 
+                        ? 'bg-[#1E3A5F] text-white border-[#22D3EE]/30 shadow-md shadow-[#22D3EE]/5' 
+                        : 'bg-slate-900/40 text-slate-400 hover:bg-slate-900/90 hover:text-slate-200 border-slate-850 hover:border-slate-800'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <FileText className="w-4 h-4 text-[#22D3EE]" />
+                      <span>Incident Defects Feed</span>
+                    </div>
+                    {activeTab === 'incidents' && <div className="w-1.5 h-1.5 rounded-full bg-[#22D3EE]"></div>}
+                  </button>
+                )}
 
-          {userRole !== 'accountant' && (
-            <button 
-              onClick={() => setActiveTab('shift-logs')}
-              className={`w-full h-10 px-3.5 rounded-xl font-bold text-xs transition-all cursor-pointer flex items-center justify-between border ${
-                activeTab === 'shift-logs' 
-                  ? 'bg-[#1E3A5F] text-white border-[#22D3EE]/30 shadow-md shadow-[#22D3EE]/5' 
-                  : 'bg-slate-900/40 text-slate-400 hover:bg-slate-900/90 hover:text-slate-200 border-slate-850 hover:border-slate-800'
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <Calendar className="w-4 h-4 text-[#0EA5E9]" />
-                <span>Shift Summaries Log</span>
-              </div>
-              {activeTab === 'shift-logs' && <div className="w-1.5 h-1.5 rounded-full bg-[#0EA5E9]"></div>}
-            </button>
-          )}
+                {userRole !== 'accountant' && (
+                  <button 
+                    onClick={() => setActiveTab('heatmap')}
+                    className={`w-full h-10 px-3.5 rounded-xl font-bold text-xs transition-all cursor-pointer flex items-center justify-between border ${
+                      activeTab === 'heatmap' 
+                        ? 'bg-[#1E3A5F] text-white border-[#22D3EE]/30 shadow-md shadow-[#22D3EE]/5' 
+                        : 'bg-slate-900/40 text-slate-400 hover:bg-slate-900/90 hover:text-slate-200 border-slate-850 hover:border-slate-800'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <MapPin className="w-4 h-4 text-[#22D3EE]" />
+                      <span>Visual Defect Matrix</span>
+                    </div>
+                    {activeTab === 'heatmap' && <div className="w-1.5 h-1.5 rounded-full bg-[#22D3EE]"></div>}
+                  </button>
+                )}
 
-          {userRole !== 'accountant' && (
-            <button 
-              onClick={() => setActiveTab('suppliers')}
-              className={`w-full h-10 px-3.5 rounded-xl font-bold text-xs transition-all cursor-pointer flex items-center justify-between border ${
-                activeTab === 'suppliers' 
-                  ? 'bg-[#1E3A5F] text-white border-[#22D3EE]/30 shadow-md shadow-[#22D3EE]/5' 
-                  : 'bg-slate-900/40 text-slate-400 hover:bg-slate-900/90 hover:text-slate-200 border-slate-850 hover:border-slate-800'
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <Server className="w-4 h-4 text-[#0EA5E9]" />
-                <span>Suppliers Directory</span>
-              </div>
-              {activeTab === 'suppliers' && <div className="w-1.5 h-1.5 rounded-full bg-[#0EA5E9]"></div>}
-            </button>
-          )}
+                {userRole !== 'accountant' && (
+                  <button 
+                    onClick={() => setActiveTab('daily-planner')}
+                    className={`w-full h-10 px-3.5 rounded-xl font-bold text-xs transition-all cursor-pointer flex items-center justify-between border ${
+                      activeTab === 'daily-planner' 
+                        ? 'bg-[#1E3A5F] text-white border-[#22D3EE]/30 shadow-md shadow-[#22D3EE]/5' 
+                        : 'bg-slate-900/40 text-slate-400 hover:bg-slate-900/90 hover:text-slate-200 border-slate-850 hover:border-slate-800'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <CheckCircle2 className="w-4 h-4 text-[#22D3EE]" />
+                      <span>Daily Tasks Planner</span>
+                    </div>
+                    {activeTab === 'daily-planner' && <div className="w-1.5 h-1.5 rounded-full bg-[#22D3EE]"></div>}
+                  </button>
+                )}
 
-          {userRole !== 'lead' && (
-            <button 
-              onClick={() => setActiveTab('time-tracking')}
-              className={`w-full h-10 px-3.5 rounded-xl font-bold text-xs transition-all cursor-pointer flex items-center justify-between border ${
-                activeTab === 'time-tracking' 
-                  ? 'bg-[#1E3A5F] text-white border-[#22D3EE]/30 shadow-md shadow-[#22D3EE]/5' 
-                  : 'bg-slate-900/40 text-slate-400 hover:bg-slate-900/90 hover:text-slate-200 border-slate-850 hover:border-slate-800'
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <DollarSign className="w-4 h-4 text-emerald-400" />
-                <span>Timesheets & Mileage</span>
-              </div>
-              {activeTab === 'time-tracking' && <div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>}
-            </button>
-          )}
+                {userRole !== 'accountant' && (
+                  <button 
+                    onClick={() => setActiveTab('shift-logs')}
+                    className={`w-full h-10 px-3.5 rounded-xl font-bold text-xs transition-all cursor-pointer flex items-center justify-between border ${
+                      activeTab === 'shift-logs' 
+                        ? 'bg-[#1E3A5F] text-white border-[#22D3EE]/30 shadow-md shadow-[#22D3EE]/5' 
+                        : 'bg-slate-900/40 text-slate-400 hover:bg-slate-900/90 hover:text-slate-200 border-slate-850 hover:border-slate-800'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <Calendar className="w-4 h-4 text-[#0EA5E9]" />
+                      <span>Shift Summaries Log</span>
+                    </div>
+                    {activeTab === 'shift-logs' && <div className="w-1.5 h-1.5 rounded-full bg-[#0EA5E9]"></div>}
+                  </button>
+                )}
 
-          {userRole !== 'accountant' && (
-            <button 
-              onClick={() => setActiveTab('rework-logs')}
-              className={`w-full h-10 px-3.5 rounded-xl font-bold text-xs transition-all cursor-pointer flex items-center justify-between border ${
-                activeTab === 'rework-logs' 
-                  ? 'bg-[#1E3A5F] text-white border-[#22D3EE]/30 shadow-md shadow-[#22D3EE]/5' 
-                  : 'bg-slate-900/40 text-slate-400 hover:bg-slate-900/90 hover:text-slate-200 border-slate-850 hover:border-slate-800'
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <Activity className="w-4 h-4 text-[#22D3EE]" />
-                <span>Rework Logs Feed</span>
-              </div>
-              {activeTab === 'rework-logs' && <div className="w-1.5 h-1.5 rounded-full bg-[#22D3EE]"></div>}
-            </button>
-          )}
+                {userRole !== 'accountant' && (
+                  <button 
+                    onClick={() => setActiveTab('suppliers')}
+                    className={`w-full h-10 px-3.5 rounded-xl font-bold text-xs transition-all cursor-pointer flex items-center justify-between border ${
+                      activeTab === 'suppliers' 
+                        ? 'bg-[#1E3A5F] text-white border-[#22D3EE]/30 shadow-md shadow-[#22D3EE]/5' 
+                        : 'bg-slate-900/40 text-slate-400 hover:bg-slate-900/90 hover:text-slate-200 border-slate-850 hover:border-slate-800'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <Server className="w-4 h-4 text-[#0EA5E9]" />
+                      <span>Suppliers Directory</span>
+                    </div>
+                    {activeTab === 'suppliers' && <div className="w-1.5 h-1.5 rounded-full bg-[#0EA5E9]"></div>}
+                  </button>
+                )}
 
-          {userRole !== 'accountant' && (
-            <button 
-              onClick={() => setActiveTab('emails')}
-              className={`w-full h-10 px-3.5 rounded-xl font-bold text-xs transition-all cursor-pointer flex items-center justify-between border ${
-                activeTab === 'emails' 
-                  ? 'bg-[#1E3A5F] text-white border-[#22D3EE]/30 shadow-md shadow-[#22D3EE]/5' 
-                  : 'bg-slate-900/40 text-slate-400 hover:bg-slate-900/90 hover:text-slate-200 border-slate-850 hover:border-slate-800'
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <Mail className="w-4 h-4 text-purple-400" />
-                <span>Email Logs</span>
-              </div>
-              {activeTab === 'emails' && <div className="w-1.5 h-1.5 rounded-full bg-purple-400"></div>}
-            </button>
-          )}
+                {userRole !== 'lead' && (
+                  <button 
+                    onClick={() => setActiveTab('time-tracking')}
+                    className={`w-full h-10 px-3.5 rounded-xl font-bold text-xs transition-all cursor-pointer flex items-center justify-between border ${
+                      activeTab === 'time-tracking' 
+                        ? 'bg-[#1E3A5F] text-white border-[#22D3EE]/30 shadow-md shadow-[#22D3EE]/5' 
+                        : 'bg-slate-900/40 text-slate-400 hover:bg-slate-900/90 hover:text-slate-200 border-slate-850 hover:border-slate-800'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <DollarSign className="w-4 h-4 text-emerald-400" />
+                      <span>Timesheets & Mileage</span>
+                    </div>
+                    {activeTab === 'time-tracking' && <div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>}
+                  </button>
+                )}
 
-          {userRole !== 'accountant' && (
-            <button 
-              onClick={() => setActiveTab('users')}
-              className={`w-full h-10 px-3.5 rounded-xl font-bold text-xs transition-all cursor-pointer flex items-center justify-between border ${
-                activeTab === 'users' 
-                  ? 'bg-[#1E3A5F] text-white border-[#22D3EE]/30 shadow-md shadow-[#22D3EE]/5' 
-                  : 'bg-slate-900/40 text-slate-400 hover:bg-slate-900/90 hover:text-slate-200 border-slate-850 hover:border-slate-800'
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <Users className="w-4 h-4 text-indigo-400" />
-                <span>User Directory</span>
-              </div>
-              {activeTab === 'users' && <div className="w-1.5 h-1.5 rounded-full bg-indigo-400"></div>}
-            </button>
-          )}
+                {userRole !== 'accountant' && (
+                  <button 
+                    onClick={() => setActiveTab('rework-logs')}
+                    className={`w-full h-10 px-3.5 rounded-xl font-bold text-xs transition-all cursor-pointer flex items-center justify-between border ${
+                      activeTab === 'rework-logs' 
+                        ? 'bg-[#1E3A5F] text-white border-[#22D3EE]/30 shadow-md shadow-[#22D3EE]/5' 
+                        : 'bg-slate-900/40 text-slate-400 hover:bg-slate-900/90 hover:text-slate-200 border-slate-850 hover:border-slate-800'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <Activity className="w-4 h-4 text-[#22D3EE]" />
+                      <span>Rework Logs Feed</span>
+                    </div>
+                    {activeTab === 'rework-logs' && <div className="w-1.5 h-1.5 rounded-full bg-[#22D3EE]"></div>}
+                  </button>
+                )}
 
-          {userRole === 'shahroz' && (
-            <button 
-              onClick={() => setActiveTab('roadmap')}
-              className={`w-full h-10 px-3.5 rounded-xl font-bold text-xs transition-all cursor-pointer flex items-center justify-between border ${
-                activeTab === 'roadmap' 
-                  ? 'bg-[#1E3A5F] text-white border-[#22D3EE]/30 shadow-md shadow-[#22D3EE]/5' 
-                  : 'bg-slate-900/40 text-slate-400 hover:bg-slate-900/90 hover:text-slate-200 border-slate-850 hover:border-slate-800'
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <Milestone className="w-4 h-4 text-amber-400" />
-                <span>Launch Roadmap</span>
-              </div>
-              {activeTab === 'roadmap' && <div className="w-1.5 h-1.5 rounded-full bg-amber-400"></div>}
-            </button>
-          )}
-        </div>
+                {userRole !== 'accountant' && (
+                  <button 
+                    onClick={() => setActiveTab('emails')}
+                    className={`w-full h-10 px-3.5 rounded-xl font-bold text-xs transition-all cursor-pointer flex items-center justify-between border ${
+                      activeTab === 'emails' 
+                        ? 'bg-[#1E3A5F] text-white border-[#22D3EE]/30 shadow-md shadow-[#22D3EE]/5' 
+                        : 'bg-slate-900/40 text-slate-400 hover:bg-slate-900/90 hover:text-slate-200 border-slate-850 hover:border-slate-800'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <Mail className="w-4 h-4 text-purple-400" />
+                      <span>Email Logs</span>
+                    </div>
+                    {activeTab === 'emails' && <div className="w-1.5 h-1.5 rounded-full bg-purple-400"></div>}
+                  </button>
+                )}
+
+                {userRole !== 'accountant' && (
+                  <button 
+                    onClick={() => setActiveTab('users')}
+                    className={`w-full h-10 px-3.5 rounded-xl font-bold text-xs transition-all cursor-pointer flex items-center justify-between border ${
+                      activeTab === 'users' 
+                        ? 'bg-[#1E3A5F] text-white border-[#22D3EE]/30 shadow-md shadow-[#22D3EE]/5' 
+                        : 'bg-slate-900/40 text-slate-400 hover:bg-slate-900/90 hover:text-slate-200 border-slate-850 hover:border-slate-800'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <Users className="w-4 h-4 text-indigo-400" />
+                      <span>User Directory</span>
+                    </div>
+                    {activeTab === 'users' && <div className="w-1.5 h-1.5 rounded-full bg-indigo-400"></div>}
+                  </button>
+                )}
+
+                {userRole === 'shahroz' && (
+                  <button 
+                    onClick={() => setActiveTab('roadmap')}
+                    className={`w-full h-10 px-3.5 rounded-xl font-bold text-xs transition-all cursor-pointer flex items-center justify-between border ${
+                      activeTab === 'roadmap' 
+                        ? 'bg-[#1E3A5F] text-white border-[#22D3EE]/30 shadow-md shadow-[#22D3EE]/5' 
+                        : 'bg-slate-900/40 text-slate-400 hover:bg-slate-900/90 hover:text-slate-200 border-slate-850 hover:border-slate-800'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <Milestone className="w-4 h-4 text-amber-400" />
+                      <span>Launch Roadmap</span>
+                    </div>
+                    {activeTab === 'roadmap' && <div className="w-1.5 h-1.5 rounded-full bg-amber-400"></div>}
+                  </button>
+                )}
+              </>
+            )}
+          </div>
         )}
 
         <div className="flex-1 bg-slate-900/40 border border-slate-850 rounded-2xl p-5 flex flex-col min-h-0">
@@ -3812,6 +4376,173 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
             </div>
           )}
 
+          {/* TAB 1.25: CUSTOMER QUALITY PARTNER PORTAL */}
+          {activeTab === 'customer-portal' && (
+            <div className="flex-1 flex flex-col gap-5 min-h-0 text-left">
+              {/* Header */}
+              <div className="flex justify-between items-center pb-2 border-b border-slate-800 flex-shrink-0">
+                <div>
+                  <h3 className="text-sm font-bold text-white uppercase tracking-wider">Customer Portal Dashboard</h3>
+                  <span className="text-[10px] text-slate-500">Quality, audit hours tracking, and representative assignments for {(suppliers.find(s => s.id === currentUserCustomerId)?.name || currentUserCustomerId.toUpperCase())}</span>
+                </div>
+              </div>
+
+              {/* Scrollable Contents */}
+              <div className="flex-1 overflow-y-auto scrollbar-thin pr-1 flex flex-col gap-6">
+                
+                {/* 1. Location & Rep Assignments Grid */}
+                <div>
+                  <h4 className="text-xs font-bold text-white uppercase tracking-wider mb-3 flex items-center gap-2">
+                    <MapPin className="w-4 h-4 text-[#22D3EE]" /> My Locations & Active QRE Assignments
+                  </h4>
+                  <div className="grid grid-cols-3 gap-4">
+                    {(suppliers.find(s => s.id === currentUserCustomerId)?.plants_served || []).map(pId => {
+                      const plant = plants.find(pl => pl.id === pId);
+                      if (!plant) return null;
+                      
+                      // Find assigned rep from rates matrix
+                      const plantRate = rates.find(r => r.plant_id === pId && r.supplier_id === currentUserCustomerId);
+                      const rep = users.find(u => u.id === (plantRate?.rep_id || '1'));
+                      
+                      // Calculate unbilled hours logged in cycle
+                      const unbilledHours = timeEntries
+                        .filter(t => t.plant_id === pId && t.supplier_id === currentUserCustomerId && !t.invoiced)
+                        .reduce((acc, curr) => acc + curr.hours, 0);
+
+                      return (
+                        <div key={pId} className="bg-slate-900 border border-slate-800 p-4 rounded-2xl flex flex-col gap-3">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <h5 className="text-xs font-bold text-white leading-tight">{plant.name}</h5>
+                              <span className="text-[9px] text-slate-500 font-medium">{plant.address}</span>
+                            </div>
+                            <span className="px-2 py-0.5 rounded bg-sky-400/10 text-sky-400 text-[8px] font-extrabold uppercase">{plant.oem_brand}</span>
+                          </div>
+                          
+                          {/* Rep Assignment Details */}
+                          <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-850 flex items-center gap-2.5">
+                            <span className="w-8 h-8 rounded-full bg-[#1E3A5F] flex items-center justify-center text-xs text-[#22D3EE] font-bold">{rep?.avatar || 'QRE'}</span>
+                            <div className="flex flex-col">
+                              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Assigned QRE</span>
+                              <span className="text-xs text-white font-bold">{rep?.name || 'Assigned Rep'}</span>
+                            </div>
+                          </div>
+
+                          {/* Hours Progress bar */}
+                          <div className="flex flex-col gap-1.5 mt-2">
+                            <div className="flex justify-between text-[10px] font-semibold text-slate-400">
+                              <span>Hours Tracked (Current Cycle):</span>
+                              <span className="text-white font-bold">{unbilledHours} hrs</span>
+                            </div>
+                            <div className="w-full bg-slate-950 h-2 rounded-full overflow-hidden border border-slate-850">
+                              <div 
+                                className="bg-[#0EA5E9] h-full rounded-full transition-all duration-500" 
+                                style={{ width: `${Math.min(100, (unbilledHours / 40) * 100)}%` }}
+                              />
+                            </div>
+                            <span className="text-[8px] text-slate-500 font-semibold uppercase">Standard allocation: 40 hrs/wk max</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* 2. Extra Hours Approvals Workflow Queue */}
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex flex-col gap-3">
+                    <h4 className="text-xs font-bold text-white uppercase tracking-wider border-b border-slate-850 pb-2 flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 text-sky-400" /> Overtime & Extra Hours Approvals Queue
+                    </h4>
+                    <div className="flex flex-col gap-3 max-h-[350px] overflow-y-auto pr-1">
+                      {extraHoursRequests.filter(r => r.supplier_id === currentUserCustomerId && r.status === 'pending_customer').length === 0 ? (
+                        <div className="text-center py-8 text-slate-550 italic">No pending extra hours requests.</div>
+                      ) : (
+                        extraHoursRequests.filter(r => r.supplier_id === currentUserCustomerId && r.status === 'pending_customer').map(req => (
+                          <div key={req.id} className="p-3.5 bg-slate-950 rounded-xl border border-slate-850 flex flex-col gap-2">
+                            <div className="flex justify-between items-center text-[10px]">
+                              <span className="font-extrabold text-white uppercase">{req.userName}</span>
+                              <span className="text-sky-400 font-extrabold">{req.hours} hrs requested</span>
+                            </div>
+                            <div className="text-[10px] text-slate-400"><strong className="text-slate-500 uppercase tracking-wider">Location:</strong> {plants.find(p => p.id === req.plant_id)?.name || req.plant_id}</div>
+                            <div className="text-[10px] text-slate-400"><strong className="text-slate-500 uppercase tracking-wider">Reason:</strong> "{req.reason}"</div>
+                            
+                            <div className="flex flex-col gap-2 mt-2 pt-2 border-t border-slate-850">
+                              <input 
+                                type="text" 
+                                placeholder="Add optional approval/rejection comment..." 
+                                value={customerApprovalComment}
+                                onChange={(e) => setCustomerApprovalComment(e.target.value)}
+                                className="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-[10px] text-white focus:outline-none"
+                              />
+                              <div className="flex gap-2 justify-end">
+                                <button 
+                                  onClick={() => handleCustomerApproval(req.id, 'approve')}
+                                  className="px-3 py-1 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-[9px] uppercase rounded"
+                                >
+                                  Approve Request
+                                </button>
+                                <button 
+                                  onClick={() => handleCustomerApproval(req.id, 'reject')}
+                                  className="px-3 py-1 bg-rose-500 hover:bg-rose-600 text-white font-bold text-[9px] uppercase rounded"
+                                >
+                                  Reject
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+
+                  {/* 3. Published Shift Summaries Log */}
+                  <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex flex-col gap-3">
+                    <h4 className="text-xs font-bold text-white uppercase tracking-wider border-b border-slate-850 pb-2 flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-[#0EA5E9]" /> Published Quality Shift Reports
+                    </h4>
+                    <div className="flex flex-col gap-3 max-h-[350px] overflow-y-auto pr-1">
+                      {(() => {
+                        const customerPlants = suppliers.find(s => s.id === currentUserCustomerId)?.plants_served || [];
+                        const customerReports = shiftReports.filter(r => r.status === 'published' && customerPlants.includes(r.plant_id));
+                        
+                        if (customerReports.length === 0) {
+                          return <div className="text-center py-8 text-slate-550 italic">No published shift logs available.</div>;
+                        }
+                        
+                        return customerReports.map(report => {
+                          const rep = users.find(u => u.id === report.rep_id);
+                          const plant = plants.find(p => p.id === report.plant_id);
+                          return (
+                            <div key={report.id} className="p-3.5 bg-slate-950 rounded-xl border border-slate-850 flex flex-col gap-2">
+                              <div className="flex justify-between items-center text-[10px]">
+                                <span className="font-bold text-white">{plant?.name || 'Oshawa'}</span>
+                                <span className="text-slate-400 font-mono">{report.date}</span>
+                              </div>
+                              <div className="text-[10px] text-slate-400">
+                                <span className="text-slate-500 font-bold uppercase mr-1">Rep:</span> {rep?.name || 'Resident Engineer'}
+                              </div>
+                              <div className="text-[10px] text-slate-400">
+                                <span className="text-slate-500 font-bold uppercase mr-1">Walkthrough:</span> {report.areas_walked.length} areas checked, {report.incidents_count} concerns logged.
+                              </div>
+                              <button 
+                                onClick={() => setSelectedShiftReport(report)}
+                                className="mt-1 w-max text-[#22D3EE] hover:text-[#0EA5E9] text-[9px] font-bold uppercase tracking-wider transition-colors"
+                              >
+                                View Report Details →
+                              </button>
+                            </div>
+                          );
+                        });
+                      })()}
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          )}
+
           {/* TAB 1.5: DAILY SHIFT SUMMARIES LOG (Donna requested to view rep reports) */}
           {activeTab === 'shift-logs' && (
             <div className="flex-1 flex flex-col gap-4 min-h-0">
@@ -3821,7 +4552,13 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
               </div>
 
               <div className="flex-1 overflow-y-auto scrollbar-thin pr-1 flex flex-col gap-3">
-                {shiftReports.map(sr => (
+                {shiftReports.filter(sr => {
+                  if (userRole === 'customer') {
+                    const customerPlants = suppliers.find(s => s.id === currentUserCustomerId)?.plants_served || [];
+                    return sr.status === 'published' && customerPlants.includes(sr.plant_id);
+                  }
+                  return true;
+                }).map(sr => (
                   <div key={sr.id} className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex justify-between items-center hover:border-slate-700 transition-colors">
                     <div className="flex items-center gap-4">
                       <div className="w-10 h-10 rounded-full bg-[#1E3A5F]/60 flex items-center justify-center text-white border border-[#22D3EE]/20 flex-shrink-0">
@@ -3833,21 +4570,38 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                           <span className="text-[9px] bg-slate-800 border border-slate-700 text-slate-400 px-2 py-0.5 rounded-full font-bold">
                             {sr.date}
                           </span>
+                          {sr.status === 'published' && (
+                            <span className="text-[8px] bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 px-2 py-0.5 rounded font-bold uppercase tracking-wider">
+                              Published
+                            </span>
+                          )}
                         </div>
                         <p className="text-xs text-slate-400 mt-1.5">
                           Rep: <span className="text-white font-semibold">{users.find(u => u.id === sr.rep_id)?.name}</span> | 
-                          Plant: <span className="text-white font-semibold">GM Oshawa Plant</span>
+                          Plant: <span className="text-white font-semibold">{plants.find(p => p.id === sr.plant_id)?.name || sr.plant_id}</span>
                         </p>
                       </div>
                     </div>
                     
-                    <button 
-                      onClick={() => setSelectedShiftReport(sr)}
-                      className="bg-[#1E3A5F] hover:bg-[#1E3A5F]/85 text-[#22D3EE] border border-[#22D3EE]/30 py-2 px-4 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1 flex-shrink-0"
-                    >
-                      <Eye className="w-3.5 h-3.5" />
-                      <span>Review Walkthrough details</span>
-                    </button>
+                    <div className="flex items-center gap-2">
+                      {['admin', 'accountant', 'lead', 'shahroz'].includes(userRole) && sr.status !== 'published' && (
+                        <button 
+                          onClick={() => handlePublishReport(sr.id)}
+                          className="bg-emerald-500 hover:bg-emerald-600 text-slate-950 py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1 flex-shrink-0"
+                        >
+                          <CheckCircle2 className="w-3.5 h-3.5 text-slate-950" />
+                          <span>Publish to Customer</span>
+                        </button>
+                      )}
+                      
+                      <button 
+                        onClick={() => setSelectedShiftReport(sr)}
+                        className="bg-[#1E3A5F] hover:bg-[#1E3A5F]/85 text-[#22D3EE] border border-[#22D3EE]/30 py-2 px-4 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1 flex-shrink-0"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                        <span>Review details</span>
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -3910,323 +4664,768 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
           {/* TAB 3: TIME & MILEAGE TRACKING (COLLEEN'S VIEW) */}
           {activeTab === 'time-tracking' && (
-            <div className="flex-1 flex flex-col gap-4 min-h-0 text-left">
-              {/* Portal Header */}
-              <div className="flex justify-between items-center pb-2 border-b border-slate-800 flex-shrink-0">
-                <div>
-                  <h3 className="text-sm font-bold text-white uppercase tracking-wider">Invoicing, Rates & Payroll Portal</h3>
-                  <span className="text-[10px] text-slate-500">Colleen's accountant workspace</span>
+            userRole === 'qre' ? (
+              <div className="flex-1 flex flex-col gap-4 min-h-0 text-left">
+                {/* Header */}
+                <div className="flex justify-between items-center pb-2 border-b border-slate-800 flex-shrink-0">
+                  <div>
+                    <h3 className="text-sm font-bold text-white uppercase tracking-wider">Representative Portal</h3>
+                    <span className="text-[10px] text-slate-500">Log hours, expenses, and request overtime approvals</span>
+                  </div>
+                  
+                  {/* Sub-tabs */}
+                  <div className="flex gap-2 bg-slate-950 p-1 rounded-xl border border-slate-850">
+                    <button
+                      onClick={() => setAccountingSubTab('log-hours')}
+                      className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+                        accountingSubTab === 'log-hours' ? 'bg-[#0EA5E9] text-white' : 'text-slate-400 hover:text-slate-200'
+                      }`}
+                    >
+                      Log Hours & Expenses
+                    </button>
+                    <button
+                      onClick={() => setAccountingSubTab('extra-hours')}
+                      className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+                        accountingSubTab === 'extra-hours' ? 'bg-[#0EA5E9] text-white' : 'text-slate-400 hover:text-slate-200'
+                      }`}
+                    >
+                      Request Overtime / Extra Hours
+                    </button>
+                    <button
+                      onClick={() => setAccountingSubTab('my-logs')}
+                      className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+                        accountingSubTab === 'my-logs' ? 'bg-[#0EA5E9] text-white' : 'text-slate-400 hover:text-slate-200'
+                      }`}
+                    >
+                      My Submissions History
+                    </button>
+                  </div>
                 </div>
-                
-                {/* Sub-tab navigation */}
-                <div className="flex gap-2 bg-slate-950 p-1 rounded-xl border border-slate-850">
-                  <button
-                    onClick={() => setAccountingSubTab('log-hours')}
-                    className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
-                      accountingSubTab === 'log-hours' ? 'bg-[#0EA5E9] text-white' : 'text-slate-400 hover:text-slate-200'
-                    }`}
-                  >
-                    Log Hours & Expenses
-                  </button>
-                  <button
-                    onClick={() => setAccountingSubTab('invoice-gen')}
-                    className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
-                      accountingSubTab === 'invoice-gen' ? 'bg-[#0EA5E9] text-white' : 'text-slate-400 hover:text-slate-200'
-                    }`}
-                  >
-                    Invoicing Control
-                  </button>
-                  <button
-                    onClick={() => setAccountingSubTab('payroll')}
-                    className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
-                      accountingSubTab === 'payroll' ? 'bg-[#0EA5E9] text-white' : 'text-slate-400 hover:text-slate-200'
-                    }`}
-                  >
-                    Rep Payroll
-                  </button>
-                  <button
-                    onClick={() => setAccountingSubTab('rates-config')}
-                    className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
-                      accountingSubTab === 'rates-config' ? 'bg-[#0EA5E9] text-white' : 'text-slate-400 hover:text-slate-200'
-                    }`}
-                  >
-                    Clients & Rates
-                  </button>
+
+                {/* Scrollable area */}
+                <div className="flex-1 overflow-y-auto scrollbar-thin pr-1 flex flex-col gap-4">
+                  {accountingSubTab === 'log-hours' && (
+                    <div className="grid grid-cols-2 gap-6">
+                      {/* QRE log hours form */}
+                      <form onSubmit={(e) => {
+                        handleLogHoursSubmit(e);
+                      }} className="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex flex-col gap-4 text-left">
+                        <h4 className="text-xs font-bold text-white uppercase tracking-wider border-b border-slate-850 pb-2 flex items-center gap-2">
+                          <Clock className="w-4 h-4 text-[#22D3EE]" /> Log My Hours & Mileage
+                        </h4>
+                        <div className="flex flex-col gap-1">
+                          <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Representative</span>
+                          <span className="text-xs text-white bg-slate-950 px-3 py-2 rounded-xl border border-slate-800 font-semibold">
+                            {users.find(u => u.id === currentUserRepId)?.name || 'Me'}
+                          </span>
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Client (Supplier)</label>
+                          <select value={logHoursSupplierId} onChange={(e) => {
+                            setLogHoursSupplierId(e.target.value);
+                            setLogHoursRepId(currentUserRepId);
+                          }} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#0EA5E9]">
+                            {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                          </select>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="flex flex-col gap-1">
+                            <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Date</label>
+                            <input type="date" value={logHoursDate} onChange={(e) => setLogHoursDate(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" />
+                          </div>
+                          <div className="flex flex-col gap-1">
+                            <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Hours Worked</label>
+                            <input type="number" step="0.5" placeholder="8.0" value={logHoursQty} onChange={(e) => setLogHoursQty(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" />
+                          </div>
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Mileage (KM)</label>
+                          <input type="number" placeholder="KM travelled" value={logHoursMileage} onChange={(e) => setLogHoursMileage(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" />
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Notes / Activity summary</label>
+                          <input type="text" placeholder="Detail the sort activity" value={logHoursNotes} onChange={(e) => setLogHoursNotes(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" />
+                        </div>
+                        <button type="submit" className="bg-[#0EA5E9] hover:bg-[#0EA5E9]/90 text-white font-bold py-2 rounded-xl text-xs cursor-pointer transition-colors mt-2">Log Hours</button>
+                      </form>
+
+                      {/* QRE log expense form */}
+                      <form onSubmit={(e) => {
+                        handleLogExpenseSubmit(e);
+                      }} className="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex flex-col gap-4 text-left h-fit">
+                        <h4 className="text-xs font-bold text-white uppercase tracking-wider border-b border-slate-850 pb-2 flex items-center gap-2">
+                          <DollarSign className="w-4 h-4 text-emerald-400" /> Log My Expense Claim
+                        </h4>
+                        <div className="flex flex-col gap-1">
+                          <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Representative</span>
+                          <span className="text-xs text-white bg-slate-950 px-3 py-2 rounded-xl border border-slate-800 font-semibold">
+                            {users.find(u => u.id === currentUserRepId)?.name || 'Me'}
+                          </span>
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Client (Supplier)</label>
+                          <select value={logExpSupplierId} onChange={(e) => {
+                            setLogExpSupplierId(e.target.value);
+                            setLogExpRepId(currentUserRepId);
+                          }} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                            {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                          </select>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="flex flex-col gap-1">
+                            <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Date</label>
+                            <input type="date" value={logExpDate} onChange={(e) => setLogExpDate(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" />
+                          </div>
+                          <div className="flex flex-col gap-1">
+                            <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Category</label>
+                            <select value={logExpCategory} onChange={(e) => setLogExpCategory(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white">
+                              <option value="Fuel">Fuel</option>
+                              <option value="Meals">Meals</option>
+                              <option value="Parking">Parking</option>
+                              <option value="Tolls">Tolls</option>
+                              <option value="Supplies">Supplies</option>
+                            </select>
+                          </div>
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Amount ($)</label>
+                          <input type="number" step="0.01" placeholder="0.00" value={logExpAmount} onChange={(e) => setLogExpAmount(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" />
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Claim Notes</label>
+                          <input type="text" placeholder="Purpose of travel or purchase" value={logExpNotes} onChange={(e) => setLogExpNotes(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" />
+                        </div>
+                        <button type="submit" className="bg-[#10B981] hover:bg-[#10B981]/90 text-white font-bold py-2 rounded-xl text-xs cursor-pointer transition-colors mt-2">Log Expense</button>
+                      </form>
+                    </div>
+                  )}
+
+                  {accountingSubTab === 'extra-hours' && (
+                    <div className="grid grid-cols-2 gap-6">
+                      <form onSubmit={handleExtraHoursSubmit} className="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex flex-col gap-4 text-left">
+                        <h4 className="text-xs font-bold text-white uppercase tracking-wider border-b border-slate-850 pb-2 flex items-center gap-2">
+                          <AlertCircle className="w-4 h-4 text-sky-400" /> File Request for Overtime / Extra Hours
+                        </h4>
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Client (Supplier)</label>
+                          <select value={extraHoursSupplierId} onChange={(e) => setExtraHoursSupplierId(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                            {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                          </select>
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Location (Plant)</label>
+                          <select value={extraHoursPlantId} onChange={(e) => setExtraHoursPlantId(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                            {(suppliers.find(s => s.id === extraHoursSupplierId)?.plants_served || []).map(pId => (
+                              <option key={pId} value={pId}>{plants.find(pl => pl.id === pId)?.name || pId}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="flex flex-col gap-1">
+                            <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Date Range / Shift Date</label>
+                            <input type="date" value={extraHoursDate} onChange={(e) => setExtraHoursDate(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" />
+                          </div>
+                          <div className="flex flex-col gap-1">
+                            <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Requested Hours</label>
+                            <input type="number" step="0.5" value={extraHoursQty} onChange={(e) => setExtraHoursQty(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" />
+                          </div>
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Justification Reason</label>
+                          <textarea placeholder="Please detail the reason for extra hours sorting request..." value={extraHoursReason} onChange={(e) => setExtraHoursReason(e.target.value)} required rows="3" className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none" />
+                        </div>
+                        <button type="submit" className="bg-[#0EA5E9] hover:bg-[#0EA5E9]/90 text-white font-bold py-2 rounded-xl text-xs cursor-pointer transition-colors mt-2">File Overtime Request</button>
+                      </form>
+
+                      <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex flex-col gap-3">
+                        <h4 className="text-xs font-bold text-white uppercase tracking-wider border-b border-slate-850 pb-2">My Overtime Requests Status</h4>
+                        <div className="flex flex-col gap-3 overflow-y-auto max-h-[400px]">
+                          {extraHoursRequests.filter(r => r.rep_id === currentUserRepId).length === 0 ? (
+                            <div className="text-center py-6 text-slate-550 italic">No extra hours requests filed.</div>
+                          ) : (
+                            extraHoursRequests.filter(r => r.rep_id === currentUserRepId).map(req => (
+                              <div key={req.id} className="p-3 bg-slate-950 rounded-xl border border-slate-850 flex flex-col gap-2 text-left">
+                                <div className="flex justify-between items-center">
+                                  <span className="text-[10px] text-slate-400 font-bold uppercase">{suppliers.find(s => s.id === req.supplier_id)?.name || 'Client'}</span>
+                                  <span className={`px-2 py-0.5 rounded text-[8px] font-bold uppercase ${
+                                    req.status === 'approved' ? 'bg-emerald-500/10 text-emerald-400' :
+                                    req.status.startsWith('rejected') ? 'bg-rose-500/10 text-rose-400' :
+                                    'bg-sky-500/10 text-sky-400'
+                                  }`}>{req.status.replace(/_/g, ' ')}</span>
+                                </div>
+                                <div className="text-xs font-semibold text-white">{req.hours} hours on {req.date}</div>
+                                <div className="text-[10px] text-slate-400 italic">" {req.reason} "</div>
+                                {req.customer_comment && <div className="text-[9px] text-slate-500"><strong className="text-slate-400">Customer Note:</strong> {req.customer_comment}</div>}
+                                {req.admin_comment && <div className="text-[9px] text-slate-500"><strong className="text-slate-400">Admin Note:</strong> {req.admin_comment}</div>}
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {accountingSubTab === 'my-logs' && (
+                    <div className="grid grid-cols-2 gap-6">
+                      <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex flex-col gap-3">
+                        <h4 className="text-xs font-bold text-white uppercase tracking-wider border-b border-slate-850 pb-2">Logged Hours Summary (No Rates)</h4>
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-xs text-left">
+                            <thead>
+                              <tr className="border-b border-slate-800 text-slate-500 font-bold uppercase text-[9px]"><th className="py-2">Date</th><th className="py-2">Client</th><th className="py-2 text-right">Hours</th><th className="py-2 text-right">Mileage</th></tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-850 text-slate-300">
+                              {timeEntries.filter(t => t.rep_id === currentUserRepId).length === 0 ? (
+                                <tr><td colSpan="4" className="text-center py-6 text-slate-550 italic">No hours logged.</td></tr>
+                              ) : (
+                                timeEntries.filter(t => t.rep_id === currentUserRepId).map(entry => (
+                                  <tr key={entry.id} className="hover:bg-slate-950/40">
+                                    <td className="py-2 font-mono">{entry.date}</td>
+                                    <td className="py-2 text-slate-400">{suppliers.find(s => s.id === entry.supplier_id)?.name || 'Client'}</td>
+                                    <td className="py-2 text-right text-white font-bold">{entry.hours} hrs</td>
+                                    <td className="py-2 text-right text-sky-400">{entry.mileage_km || 0} km</td>
+                                  </tr>
+                                ))
+                              )}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+
+                      <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex flex-col gap-3">
+                        <h4 className="text-xs font-bold text-white uppercase tracking-wider border-b border-slate-850 pb-2">Logged Expenses (Reimbursable Claims)</h4>
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-xs text-left">
+                            <thead>
+                              <tr className="border-b border-slate-800 text-slate-500 font-bold uppercase text-[9px]"><th className="py-2">Date</th><th className="py-2">Category</th><th className="py-2">Amount</th><th className="py-2 text-right">Status</th></tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-850 text-slate-300">
+                              {expenseEntries.filter(e => e.rep_id === currentUserRepId).length === 0 ? (
+                                <tr><td colSpan="4" className="text-center py-6 text-slate-550 italic">No expense claims.</td></tr>
+                              ) : (
+                                expenseEntries.filter(e => e.rep_id === currentUserRepId).map(exp => (
+                                  <tr key={exp.id} className="hover:bg-slate-950/40">
+                                    <td className="py-2 font-mono">{exp.date}</td>
+                                    <td className="py-2 text-slate-400">{exp.category}</td>
+                                    <td className="py-2 text-white font-bold">${parseFloat(exp.amount).toFixed(2)}</td>
+                                    <td className="py-2 text-right">
+                                      <span className={`px-2 py-0.5 rounded text-[8px] font-bold uppercase ${
+                                        exp.status === 'approved' ? 'bg-emerald-500/10 text-emerald-400' :
+                                        exp.status === 'rejected' ? 'bg-rose-500/10 text-rose-400' :
+                                        'bg-sky-500/10 text-sky-400'
+                                      }`}>{exp.status || 'submitted'}</span>
+                                    </td>
+                                  </tr>
+                                ))
+                              )}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
-
-              {/* Scrollable Sub-tab Contents */}
-              <div className="flex-1 overflow-y-auto scrollbar-thin pr-1 flex flex-col gap-4">
-                
-                {/* SUB-TAB 1: LOG HOURS & EXPENSES */}
-                {accountingSubTab === 'log-hours' && (
-                  <div className="grid grid-cols-2 gap-6">
-                    <form onSubmit={handleLogHoursSubmit} className="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex flex-col gap-4 text-left">
-                      <h4 className="text-xs font-bold text-white uppercase tracking-wider border-b border-slate-850 pb-2 flex items-center gap-2">
-                        <Clock className="w-4 h-4 text-[#22D3EE]" /> Log Representative Hours & Mileage
-                      </h4>
-                      <div className="flex flex-col gap-1">
-                        <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Representative</label>
-                        <select value={logHoursRepId} onChange={(e) => setLogHoursRepId(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#0EA5E9]">
-                          {users.filter(u => u.role === 'rep').map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
-                        </select>
-                      </div>
-                      <div className="flex flex-col gap-1">
-                        <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Client (Supplier)</label>
-                        <select value={logHoursSupplierId} onChange={(e) => setLogHoursSupplierId(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#0EA5E9]">
-                          {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                        </select>
-                      </div>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="flex flex-col gap-1">
-                          <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Date</label>
-                          <input type="date" value={logHoursDate} onChange={(e) => setLogHoursDate(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" />
-                        </div>
-                        <div className="flex flex-col gap-1">
-                          <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Hours</label>
-                          <input type="number" step="0.5" placeholder="e.g. 8.0" value={logHoursQty} onChange={(e) => setLogHoursQty(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" />
-                        </div>
-                      </div>
-                      <div className="flex flex-col gap-1">
-                        <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Mileage (KM)</label>
-                        <input type="number" placeholder="KM travelled" value={logHoursMileage} onChange={(e) => setLogHoursMileage(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" />
-                      </div>
-                      <div className="flex flex-col gap-1">
-                        <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Notes</label>
-                        <input type="text" placeholder="Shift sorting notes" value={logHoursNotes} onChange={(e) => setLogHoursNotes(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" />
-                      </div>
-                      <button type="submit" className="bg-[#0EA5E9] hover:bg-[#0EA5E9]/90 text-white font-bold py-2 rounded-xl text-xs cursor-pointer transition-colors mt-2">Log Hours</button>
-                    </form>
-
-                    <form onSubmit={handleLogExpenseSubmit} className="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex flex-col gap-4 text-left h-fit">
-                      <h4 className="text-xs font-bold text-white uppercase tracking-wider border-b border-slate-850 pb-2 flex items-center gap-2">
-                        <DollarSign className="w-4 h-4 text-emerald-400" /> Log Rep Expense Claim
-                      </h4>
-                      <div className="flex flex-col gap-1">
-                        <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Representative</label>
-                        <select value={logExpRepId} onChange={(e) => setLogExpRepId(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
-                          {users.filter(u => u.role === 'rep').map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
-                        </select>
-                      </div>
-                      <div className="flex flex-col gap-1">
-                        <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Client (Supplier)</label>
-                        <select value={logExpSupplierId} onChange={(e) => setLogExpSupplierId(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
-                          {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                        </select>
-                      </div>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="flex flex-col gap-1">
-                          <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Date</label>
-                          <input type="date" value={logExpDate} onChange={(e) => setLogExpDate(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" />
-                        </div>
-                        <div className="flex flex-col gap-1">
-                          <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Category</label>
-                          <select value={logExpCategory} onChange={(e) => setLogExpCategory(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white">
-                            <option value="Fuel">Fuel</option>
-                            <option value="Meals">Meals</option>
-                            <option value="Parking">Parking</option>
-                            <option value="Tolls">Tolls</option>
-                            <option value="Supplies">Supplies</option>
-                          </select>
-                        </div>
-                      </div>
-                      <div className="flex flex-col gap-1">
-                        <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Amount ($)</label>
-                        <input type="number" step="0.01" placeholder="0.00" value={logExpAmount} onChange={(e) => setLogExpAmount(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" />
-                      </div>
-                      <div className="flex flex-col gap-1">
-                        <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Notes</label>
-                        <input type="text" placeholder="Purpose of expense" value={logExpNotes} onChange={(e) => setLogExpNotes(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" />
-                      </div>
-                      <button type="submit" className="bg-[#10B981] hover:bg-[#10B981]/90 text-white font-bold py-2 rounded-xl text-xs cursor-pointer transition-colors mt-2">Log Expense</button>
-                    </form>
+            ) : (
+              <div className="flex-1 flex flex-col gap-4 min-h-0 text-left">
+                {/* Portal Header */}
+                <div className="flex justify-between items-center pb-2 border-b border-slate-800 flex-shrink-0">
+                  <div>
+                    <h3 className="text-sm font-bold text-white uppercase tracking-wider">Invoicing, Rates & Payroll Portal</h3>
+                    <span className="text-[10px] text-slate-500">Colleen's accountant workspace</span>
                   </div>
-                )}
-
-                {/* SUB-TAB 2: INVOICING CONTROL CENTER */}
-                {accountingSubTab === 'invoice-gen' && (() => {
-                  const client = suppliers.find(s => s.id === selectedInvoiceSupplier) || suppliers[0];
-                  const clientEntries = timeEntries.filter(t => t.supplier_id === selectedInvoiceSupplier && !t.invoiced);
-                  const clientExpenses = expenseEntries.filter(e => e.supplier_id === selectedInvoiceSupplier && !e.invoiced);
-                  const clientHourlySub = clientEntries.reduce((acc, curr) => acc + (curr.hours * getRepSupplierRates(curr.rep_id, curr.supplier_id).billing_rate), 0);
-                  const clientMileageSub = clientEntries.reduce((acc, curr) => acc + (curr.mileage_km * 0.73), 0);
-                  const clientExpenseSub = clientExpenses.reduce((acc, curr) => acc + parseFloat(curr.amount || 0), 0);
-                  const clientGrandTotal = clientHourlySub + clientMileageSub + clientExpenseSub;
                   
-                  // Safe min/max dates lookup
-                  const dates = clientEntries.map(e => e.date).sort();
-                  const dateRangeStr = dates.length > 0 ? `From ${dates[0]} to ${dates[dates.length - 1]}` : 'No pending periods';
+                  {/* Sub-tab navigation */}
+                  <div className="flex gap-2 bg-slate-950 p-1 rounded-xl border border-slate-850">
+                    <button
+                      onClick={() => setAccountingSubTab('log-hours')}
+                      className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+                        accountingSubTab === 'log-hours' ? 'bg-[#0EA5E9] text-white' : 'text-slate-400 hover:text-slate-200'
+                      }`}
+                    >
+                      Log Hours & Expenses
+                    </button>
+                    <button
+                      onClick={() => setAccountingSubTab('invoice-gen')}
+                      className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+                        accountingSubTab === 'invoice-gen' ? 'bg-[#0EA5E9] text-white' : 'text-slate-400 hover:text-slate-200'
+                      }`}
+                    >
+                      Invoicing Control
+                    </button>
+                    <button
+                      onClick={() => setAccountingSubTab('payroll')}
+                      className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+                        accountingSubTab === 'payroll' ? 'bg-[#0EA5E9] text-white' : 'text-slate-400 hover:text-slate-200'
+                      }`}
+                    >
+                      Rep Payroll
+                    </button>
+                    <button
+                      onClick={() => setAccountingSubTab('rates-config')}
+                      className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+                        accountingSubTab === 'rates-config' ? 'bg-[#0EA5E9] text-white' : 'text-slate-400 hover:text-slate-200'
+                      }`}
+                    >
+                      Clients & Rates
+                    </button>
+                  </div>
+                </div>
 
-                  return (
-                    <div className="flex flex-col gap-4 text-left">
-                      <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl flex items-center justify-between">
-                        <div className="flex flex-col">
-                          <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Select Client</label>
-                          <select value={selectedInvoiceSupplier} onChange={(e) => setSelectedInvoiceSupplier(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-white">
-                            {suppliers.map(s => <option key={s.id} value={s.id}>{s.name} ({s.invoice_schedule.toUpperCase()})</option>)}
+                {/* Scrollable Sub-tab Contents */}
+                <div className="flex-1 overflow-y-auto scrollbar-thin pr-1 flex flex-col gap-4">
+                  
+                  {/* SUB-TAB 1: LOG HOURS & EXPENSES */}
+                  {accountingSubTab === 'log-hours' && (
+                    <div className="grid grid-cols-2 gap-6">
+                      <form onSubmit={handleLogHoursSubmit} className="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex flex-col gap-4 text-left">
+                        <h4 className="text-xs font-bold text-white uppercase tracking-wider border-b border-slate-850 pb-2 flex items-center gap-2">
+                          <Clock className="w-4 h-4 text-[#22D3EE]" /> Log Representative Hours & Mileage
+                        </h4>
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Representative</label>
+                          <select value={logHoursRepId} onChange={(e) => setLogHoursRepId(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#0EA5E9]">
+                            {users.filter(u => u.role === 'rep').map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
                           </select>
                         </div>
-                        <div className="flex gap-2">
-                          <button onClick={() => handleGenerateClientInvoicePDF(client, dateRangeStr, clientEntries, clientExpenses)} disabled={clientEntries.length === 0 && clientExpenses.length === 0} className="flex items-center gap-1.5 bg-[#0EA5E9] disabled:opacity-40 hover:bg-[#0EA5E9]/90 text-white font-bold py-2 px-4 rounded-xl text-xs transition-colors cursor-pointer"><Printer className="w-4 h-4" /> PDF Invoice</button>
-                          <button onClick={() => handleExportQuickBooks(clientEntries)} disabled={clientEntries.length === 0} className="flex items-center gap-1.5 bg-[#10B981] disabled:opacity-40 hover:bg-[#10B981]/90 text-white font-bold py-2 px-4 rounded-xl text-xs transition-colors cursor-pointer"><FileSpreadsheet className="w-4 h-4" /> QuickBooks CSV</button>
-                          <button onClick={() => handleMarkAsInvoiced(clientEntries, clientExpenses)} disabled={clientEntries.length === 0 && clientExpenses.length === 0} className="flex items-center gap-1.5 bg-slate-950 border border-slate-850 disabled:opacity-40 text-slate-300 font-bold py-2 px-4 rounded-xl text-xs cursor-pointer"><CheckCircle2 className="w-4 h-4" /> Mark Invoiced</button>
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Client (Supplier)</label>
+                          <select value={logHoursSupplierId} onChange={(e) => setLogHoursSupplierId(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#0EA5E9]">
+                            {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                          </select>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="flex flex-col gap-1">
+                            <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Date</label>
+                            <input type="date" value={logHoursDate} onChange={(e) => setLogHoursDate(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" />
+                          </div>
+                          <div className="flex flex-col gap-1">
+                            <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Hours</label>
+                            <input type="number" step="0.5" placeholder="e.g. 8.0" value={logHoursQty} onChange={(e) => setLogHoursQty(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" />
+                          </div>
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Mileage (KM)</label>
+                          <input type="number" placeholder="KM travelled" value={logHoursMileage} onChange={(e) => setLogHoursMileage(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" />
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Notes</label>
+                          <input type="text" placeholder="Shift sorting notes" value={logHoursNotes} onChange={(e) => setLogHoursNotes(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" />
+                        </div>
+                        <button type="submit" className="bg-[#0EA5E9] hover:bg-[#0EA5E9]/90 text-white font-bold py-2 rounded-xl text-xs cursor-pointer transition-colors mt-2">Log Hours</button>
+                      </form>
+
+                      <form onSubmit={handleLogExpenseSubmit} className="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex flex-col gap-4 text-left h-fit">
+                        <h4 className="text-xs font-bold text-white uppercase tracking-wider border-b border-slate-850 pb-2 flex items-center gap-2">
+                          <DollarSign className="w-4 h-4 text-emerald-400" /> Log Rep Expense Claim
+                        </h4>
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Representative</label>
+                          <select value={logExpRepId} onChange={(e) => setLogExpRepId(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                            {users.filter(u => u.role === 'rep').map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                          </select>
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Client (Supplier)</label>
+                          <select value={logExpSupplierId} onChange={(e) => setLogExpSupplierId(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                            {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                          </select>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="flex flex-col gap-1">
+                            <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Date</label>
+                            <input type="date" value={logExpDate} onChange={(e) => setLogExpDate(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" />
+                          </div>
+                          <div className="flex flex-col gap-1">
+                            <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Category</label>
+                            <select value={logExpCategory} onChange={(e) => setLogExpCategory(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white">
+                              <option value="Fuel">Fuel</option>
+                              <option value="Meals">Meals</option>
+                              <option value="Parking">Parking</option>
+                              <option value="Tolls">Tolls</option>
+                              <option value="Supplies">Supplies</option>
+                            </select>
+                          </div>
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Amount ($)</label>
+                          <input type="number" step="0.01" placeholder="0.00" value={logExpAmount} onChange={(e) => setLogExpAmount(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" />
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Notes</label>
+                          <input type="text" placeholder="Purpose of expense" value={logExpNotes} onChange={(e) => setLogExpNotes(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" />
+                        </div>
+                        <button type="submit" className="bg-[#10B981] hover:bg-[#10B981]/90 text-white font-bold py-2 rounded-xl text-xs cursor-pointer transition-colors mt-2">Log Expense</button>
+                      </form>
+                    </div>
+                  )}
+
+                  {/* SUB-TAB 2: INVOICING CONTROL CENTER */}
+                  {accountingSubTab === 'invoice-gen' && (() => {
+                    const client = suppliers.find(s => s.id === selectedInvoiceSupplier) || suppliers[0];
+                    const clientEntries = timeEntries.filter(t => t.supplier_id === selectedInvoiceSupplier && !t.invoiced);
+                    const clientExpenses = expenseEntries.filter(e => e.supplier_id === selectedInvoiceSupplier && !e.invoiced);
+                    const clientHourlySub = clientEntries.reduce((acc, curr) => acc + (curr.hours * getRepSupplierRates(curr.rep_id, curr.supplier_id, curr.plant_id).billing_rate), 0);
+                    const clientMileageSub = clientEntries.reduce((acc, curr) => acc + (curr.mileage_km * 0.73), 0);
+                    const clientExpenseSub = clientExpenses.reduce((acc, curr) => acc + parseFloat(curr.amount || 0), 0);
+                    const clientGrandTotal = clientHourlySub + clientMileageSub + clientExpenseSub;
+                    
+                    const dates = clientEntries.map(e => e.date).sort();
+                    const dateRangeStr = dates.length > 0 ? `From ${dates[0]} to ${dates[dates.length - 1]}` : 'No pending periods';
+
+                    return (
+                      <div className="flex flex-col gap-4 text-left">
+                        {/* Approval Workflows alerts for Admin */}
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl">
+                            <h5 className="text-xs font-bold text-white uppercase tracking-wider mb-2 flex items-center gap-1.5"><AlertCircle className="w-4 h-4 text-sky-400" /> Overtime Approvals Queue</h5>
+                            <div className="flex flex-col gap-2 max-h-[220px] overflow-y-auto">
+                              {extraHoursRequests.filter(r => r.status === 'pending_admin').length === 0 ? (
+                                <div className="text-[10px] text-slate-500 italic py-2">No pending overtime final approvals.</div>
+                              ) : (
+                                extraHoursRequests.filter(r => r.status === 'pending_admin').map(req => (
+                                  <div key={req.id} className="p-2.5 bg-slate-950 rounded-xl border border-slate-850 flex flex-col gap-1.5">
+                                    <div className="flex justify-between items-center text-[10px]">
+                                      <span className="font-bold text-white">{req.userName} @ {plants.find(p => p.id === req.plant_id)?.name || req.plant_id}</span>
+                                      <span className="text-sky-400 font-bold">{req.hours} hrs</span>
+                                    </div>
+                                    <p className="text-[10px] text-slate-400">"{req.reason}"</p>
+                                    <div className="flex gap-2 mt-1">
+                                      <input type="text" placeholder="Admin note..." value={adminApprovalComment} onChange={(e) => setAdminApprovalComment(e.target.value)} className="bg-slate-900 border border-slate-800 text-[10px] px-2 py-1 rounded flex-1 text-white" />
+                                      <button onClick={() => handleAdminApproval(req.id, 'approve')} className="px-2 py-1 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-[9px] uppercase rounded">Approve</button>
+                                      <button onClick={() => handleAdminApproval(req.id, 'reject')} className="px-2 py-1 bg-rose-500 hover:bg-rose-600 text-white font-bold text-[9px] uppercase rounded">Reject</button>
+                                    </div>
+                                  </div>
+                                ))
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl">
+                            <h5 className="text-xs font-bold text-white uppercase tracking-wider mb-2 flex items-center gap-1.5"><DollarSign className="w-4 h-4 text-emerald-400" /> Expense Claims Queue</h5>
+                            <div className="flex flex-col gap-2 max-h-[220px] overflow-y-auto">
+                              {expenseEntries.filter(e => e.status === 'submitted').length === 0 ? (
+                                <div className="text-[10px] text-slate-500 italic py-2">No pending expense claims.</div>
+                              ) : (
+                                expenseEntries.filter(e => e.status === 'submitted').map(exp => {
+                                  const repName = users.find(u => u.id === exp.rep_id)?.name || 'Rep';
+                                  return (
+                                    <div key={exp.id} className="p-2.5 bg-slate-950 rounded-xl border border-slate-850 flex flex-col gap-1.5">
+                                      <div className="flex justify-between items-center text-[10px]">
+                                        <span className="font-bold text-white">{repName} ({exp.category})</span>
+                                        <span className="text-emerald-400 font-bold">${parseFloat(exp.amount).toFixed(2)}</span>
+                                      </div>
+                                      <p className="text-[10px] text-slate-400">"{exp.notes}"</p>
+                                      <div className="flex gap-2 mt-1">
+                                        <button onClick={() => handleAdminExpenseApproval(exp.id, 'approve')} className="px-3 py-1 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-[9px] uppercase rounded">Approve</button>
+                                        <button onClick={() => handleAdminExpenseApproval(exp.id, 'reject')} className="px-3 py-1 bg-rose-500 hover:bg-rose-600 text-white font-bold text-[9px] uppercase rounded">Reject</button>
+                                      </div>
+                                    </div>
+                                  );
+                                })
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Invoicing Controls */}
+                        <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl flex items-center justify-between">
+                          <div className="flex flex-col">
+                            <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Select Client</label>
+                            <select value={selectedInvoiceSupplier} onChange={(e) => setSelectedInvoiceSupplier(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-white">
+                              {suppliers.map(s => <option key={s.id} value={s.id}>{s.name} ({s.invoice_schedule.toUpperCase()})</option>)}
+                            </select>
+                          </div>
+                          <div className="flex gap-2">
+                            <button onClick={() => handleGenerateClientInvoicePDF(client, dateRangeStr, clientEntries, clientExpenses)} disabled={clientEntries.length === 0 && clientExpenses.length === 0} className="flex items-center gap-1.5 bg-[#0EA5E9] disabled:opacity-40 hover:bg-[#0EA5E9]/90 text-white font-bold py-2 px-4 rounded-xl text-xs transition-colors cursor-pointer"><Printer className="w-4 h-4" /> PDF Invoice</button>
+                            <button onClick={() => handleExportClientQuickBooks(clientEntries)} disabled={clientEntries.length === 0} className="flex items-center gap-1.5 bg-[#10B981] disabled:opacity-40 hover:bg-[#10B981]/90 text-white font-bold py-2 px-4 rounded-xl text-xs transition-colors cursor-pointer"><FileSpreadsheet className="w-4 h-4" /> QuickBooks CSV</button>
+                            <button onClick={() => handleMarkAsInvoiced(clientEntries, clientExpenses)} disabled={clientEntries.length === 0 && clientExpenses.length === 0} className="flex items-center gap-1.5 bg-slate-950 border border-slate-850 disabled:opacity-40 text-slate-300 font-bold py-2 px-4 rounded-xl text-xs cursor-pointer"><CheckCircle2 className="w-4 h-4" /> Mark Invoiced</button>
+                          </div>
+                        </div>
+
+                        {/* Consolidated Totals */}
+                        <div className="grid grid-cols-4 gap-3 bg-slate-900 border border-slate-800 p-4 rounded-2xl">
+                          <div className="flex flex-col"><span className="text-[9px] text-slate-500 font-bold uppercase">Hours Billing</span><span className="text-lg font-bold text-white mt-0.5">{clientEntries.reduce((acc, curr) => acc + curr.hours, 0)} hrs</span><span className="text-[10px] text-slate-400 mt-1">Sub: ${clientHourlySub.toFixed(2)}</span></div>
+                          <div className="flex flex-col"><span className="text-[9px] text-slate-500 font-bold uppercase">Mileage</span><span className="text-lg font-bold text-white mt-0.5">{clientEntries.reduce((acc, curr) => acc + curr.mileage_km, 0)} km</span><span className="text-[10px] text-slate-400 mt-1">Sub: ${clientMileageSub.toFixed(2)}</span></div>
+                          <div className="flex flex-col"><span className="text-[9px] text-slate-500 font-bold uppercase">Expenses</span><span className="text-lg font-bold text-emerald-450 mt-0.5">${clientExpenseSub.toFixed(2)}</span><span className="text-[10px] text-slate-400 mt-1">Reimbursable claims</span></div>
+                          <div className="flex flex-col"><span className="text-[9px] text-slate-500 font-bold uppercase">Invoice Total</span><span className="text-lg font-bold text-[#22D3EE] mt-0.5">${clientGrandTotal.toFixed(2)}</span><span className="text-[9px] text-slate-400 mt-1">{dateRangeStr}</span></div>
+                        </div>
+
+                        {/* Items Table list */}
+                        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4">
+                          <h4 className="text-xs font-bold text-white uppercase tracking-wider mb-3 flex items-center gap-2"><FileText className="w-4 h-4 text-[#22D3EE]" /> Consolidated Items List</h4>
+                          {clientEntries.length === 0 && clientExpenses.length === 0 ? <div className="text-center py-6 text-slate-550">All hours and expenses are invoiced for this client.</div> : (
+                            <div className="flex flex-col gap-4">
+                              {clientEntries.length > 0 && (
+                                <table className="w-full text-xs text-left">
+                                  <thead>
+                                    <tr className="border-b border-slate-800 text-slate-500 font-bold uppercase text-[9px]"><th className="py-2">Rep</th><th className="py-2">Date</th><th className="py-2 text-right">Hours</th><th className="py-2 text-right">Rate</th><th className="py-2 text-right">Hours Billing</th><th className="py-2 text-right">Mileage</th><th className="py-2 text-right">Mileage Billing</th></tr>
+                                  </thead>
+                                  <tbody className="divide-y divide-slate-850 text-slate-300">
+                                    {clientEntries.map(entry => {
+                                      const { billing_rate } = getRepSupplierRates(entry.rep_id, entry.supplier_id, entry.plant_id);
+                                      return (
+                                        <tr key={entry.id} className="hover:bg-slate-950/40">
+                                          <td className="py-2 text-white font-semibold">{users.find(u => u.id === entry.rep_id)?.name || 'Rep'}</td>
+                                          <td className="py-2 font-mono">{entry.date}</td>
+                                          <td className="py-2 text-right">{entry.hours} hrs</td>
+                                          <td className="py-2 text-right text-slate-400">${billing_rate.toFixed(2)}/hr</td>
+                                          <td className="py-2 text-right text-white font-bold">${(entry.hours * billing_rate).toFixed(2)}</td>
+                                          <td className="py-2 text-right text-sky-400">{entry.mileage_km} km</td>
+                                          <td className="py-2 text-right text-emerald-450">${(entry.mileage_km * 0.73).toFixed(2)}</td>
+                                        </tr>
+                                      );
+                                    })}
+                                  </tbody>
+                                </table>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </div>
-                      <div className="grid grid-cols-4 gap-3 bg-slate-900 border border-slate-800 p-4 rounded-2xl">
-                        <div className="flex flex-col"><span className="text-[9px] text-slate-500 font-bold uppercase">Hours Billing</span><span className="text-lg font-bold text-white mt-0.5">{clientEntries.reduce((acc, curr) => acc + curr.hours, 0)} hrs</span><span className="text-[10px] text-slate-400 mt-1">Sub: ${clientHourlySub.toFixed(2)}</span></div>
-                        <div className="flex flex-col"><span className="text-[9px] text-slate-500 font-bold uppercase">Mileage</span><span className="text-lg font-bold text-white mt-0.5">{clientEntries.reduce((acc, curr) => acc + curr.mileage_km, 0)} km</span><span className="text-[10px] text-slate-400 mt-1">Sub: ${clientMileageSub.toFixed(2)}</span></div>
-                        <div className="flex flex-col"><span className="text-[9px] text-slate-500 font-bold uppercase">Expenses</span><span className="text-lg font-bold text-emerald-450 mt-0.5">${clientExpenseSub.toFixed(2)}</span><span className="text-[10px] text-slate-400 mt-1">Reimbursable claims</span></div>
-                        <div className="flex flex-col"><span className="text-[9px] text-slate-500 font-bold uppercase">Invoice Total</span><span className="text-lg font-bold text-[#22D3EE] mt-0.5">${clientGrandTotal.toFixed(2)}</span><span className="text-[9px] text-slate-400 mt-1">{dateRangeStr}</span></div>
+                    );
+                  })()}
+
+                  {/* SUB-TAB 3: PAYROLL */}
+                  {accountingSubTab === 'payroll' && (
+                    <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex flex-col gap-4 text-left">
+                      <h4 className="text-xs font-bold text-white uppercase tracking-wider pb-2 border-b border-slate-850">Rep Bi-Weekly Payroll Preview</h4>
+                      <table className="w-full text-xs text-left">
+                        <thead>
+                          <tr className="border-b border-slate-800 text-slate-500 font-bold uppercase text-[9px]"><th className="py-2">Rep</th><th className="py-2">Client</th><th className="py-2 text-right">Hours</th><th className="py-2 text-right">Rate</th><th className="py-2 text-right">Hours Pay</th><th className="py-2 text-right">Mileage</th><th className="py-2 text-right">Mileage Pay</th><th className="py-2 text-right">Expenses</th><th className="py-2 text-right">Net Payout</th></tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-850 text-slate-300">
+                          {users.filter(u => u.role === 'rep').map(rep => {
+                            const repTime = timeEntries.filter(t => t.rep_id === rep.id);
+                            const repExpenses = expenseEntries.filter(e => e.rep_id === rep.id && e.status === 'approved');
+                            const clients = [...new Set(repTime.map(e => e.supplier_id))];
+                            if (clients.length === 0 && repExpenses.length === 0) return <tr key={rep.id}><td className="py-2 text-slate-500 font-semibold">{rep.name}</td><td colSpan="8" className="py-2 text-center text-slate-600 italic">No logs in cycle</td></tr>;
+                            return clients.map((clientId, idx) => {
+                              const clientHours = repTime.filter(t => t.supplier_id === clientId).reduce((acc, curr) => acc + curr.hours, 0);
+                              const clientMileage = repTime.filter(t => t.supplier_id === clientId).reduce((acc, curr) => acc + curr.mileage_km, 0);
+                              const expAmt = idx === 0 ? repExpenses.reduce((acc, curr) => acc + parseFloat(curr.amount || 0), 0) : 0;
+                              const { pay_rate } = getRepSupplierRates(rep.id, clientId);
+                              const hoursPay = clientHours * pay_rate;
+                              const mileagePay = clientMileage * 0.73;
+                              return (
+                                <tr key={`${rep.id}_${clientId}`} className="hover:bg-slate-950/40">
+                                  {idx === 0 ? <td className="py-2 text-white font-extrabold" rowSpan={clients.length}>{rep.name}</td> : null}
+                                  <td className="py-2 text-slate-400">{suppliers.find(s => s.id === clientId)?.name || 'Client'}</td>
+                                  <td className="py-2 text-right">{clientHours} hrs</td>
+                                  <td className="py-2 text-right font-mono text-slate-500">${pay_rate.toFixed(2)}</td>
+                                  <td className="py-2 text-right text-white font-semibold">${hoursPay.toFixed(2)}</td>
+                                  <td className="py-2 text-right text-sky-400">{clientMileage} km</td>
+                                  <td className="py-2 text-right text-emerald-450">${mileagePay.toFixed(2)}</td>
+                                  <td className="py-2 text-right text-emerald-400">${expAmt > 0 ? `$${expAmt.toFixed(2)}` : '—'}</td>
+                                  <td className="py-2 text-right text-[#22D3EE] font-black">${(hoursPay + mileagePay + expAmt).toFixed(2)}</td>
+                                </tr>
+                              );
+                            });
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+
+                  {/* SUB-TAB 4: CLIENTS & RATES */}
+                  {accountingSubTab === 'rates-config' && (
+                    <div className="flex flex-col gap-6 text-left">
+                      {/* Sub-navigation for CRUD setups */}
+                      <div className="flex gap-2 bg-slate-950 p-1 rounded-xl border border-slate-850 w-max">
+                        <button onClick={() => setAdminCrudTab('customers')} className={`px-3 py-1.5 rounded-lg text-[9px] font-extrabold uppercase transition-all cursor-pointer ${adminCrudTab === 'customers' ? 'bg-[#0EA5E9] text-white' : 'text-slate-400 hover:text-slate-200'}`}>Manage Customers</button>
+                        <button onClick={() => setAdminCrudTab('locations')} className={`px-3 py-1.5 rounded-lg text-[9px] font-extrabold uppercase transition-all cursor-pointer ${adminCrudTab === 'locations' ? 'bg-[#0EA5E9] text-white' : 'text-slate-400 hover:text-slate-200'}`}>Manage Locations</button>
+                        <button onClick={() => setAdminCrudTab('reps')} className={`px-3 py-1.5 rounded-lg text-[9px] font-extrabold uppercase transition-all cursor-pointer ${adminCrudTab === 'reps' ? 'bg-[#0EA5E9] text-white' : 'text-slate-400 hover:text-slate-200'}`}>Onboard Reps</button>
                       </div>
-                      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4">
-                        <h4 className="text-xs font-bold text-white uppercase tracking-wider mb-3 flex items-center gap-2"><FileText className="w-4 h-4 text-[#22D3EE]" /> Consolidated Items List</h4>
-                        {clientEntries.length === 0 && clientExpenses.length === 0 ? <div className="text-center py-6 text-slate-550">All hours and expenses are invoiced for this client.</div> : (
-                          <div className="flex flex-col gap-4">
-                            {clientEntries.length > 0 && (
+
+                      {/* CRUD TAB 1: CUSTOMERS */}
+                      {adminCrudTab === 'customers' && (
+                        <div className="grid grid-cols-3 gap-6">
+                          <form onSubmit={handleCreateCustomer} className="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex flex-col gap-4">
+                            <h4 className="text-xs font-bold text-white uppercase tracking-wider border-b border-slate-850 pb-2 flex items-center gap-1.5"><UserPlus className="w-4 h-4 text-[#0EA5E9]" /> Add New Customer</h4>
+                            <div className="flex flex-col gap-1"><label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Company Name</label>
+                              <input type="text" value={newCustomerName} onChange={(e) => setNewCustomerName(e.target.value)} placeholder="Auto Kabel" className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" />
+                            </div>
+                            <div className="flex flex-col gap-1"><label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Primary Contact Name</label>
+                              <input type="text" value={newCustomerContactName} onChange={(e) => setNewCustomerContactName(e.target.value)} placeholder="Juan Carlos" className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" />
+                            </div>
+                            <div className="flex flex-col gap-1"><label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Contact Email</label>
+                              <input type="email" value={newCustomerContactEmail} onChange={(e) => setNewCustomerContactEmail(e.target.value)} placeholder="jc@autokabel.mx" className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" />
+                            </div>
+                            <button type="submit" className="bg-[#0EA5E9] text-white font-bold py-2 rounded-xl text-xs mt-2">Onboard Customer</button>
+                          </form>
+
+                          <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl col-span-2 flex flex-col gap-3">
+                            <h4 className="text-xs font-bold text-white uppercase tracking-wider border-b border-slate-850 pb-2">Active Customers List</h4>
+                            <table className="w-full text-xs text-left">
+                              <thead>
+                                <tr className="border-b border-slate-800 text-slate-500 font-bold uppercase text-[9px]"><th>Client Name</th><th>Invoicing</th><th>Contacts</th><th>Schedule</th></tr>
+                              </thead>
+                              <tbody className="divide-y divide-slate-850 text-slate-300">
+                                {suppliers.map(s => (
+                                  <tr key={s.id}>
+                                    <td className="py-2 text-white font-bold">{s.name}</td>
+                                    <td className="py-2 font-mono text-slate-450">{s.id.toUpperCase()}</td>
+                                    <td className="py-2">{s.contacts.map(c => c.name).join(", ")}</td>
+                                    <td className="py-2"><span className="px-2 py-0.5 rounded bg-sky-400/10 text-sky-400 text-[9px] font-bold uppercase">{s.invoice_schedule}</span></td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* CRUD TAB 2: LOCATIONS */}
+                      {adminCrudTab === 'locations' && (
+                        <div className="grid grid-cols-3 gap-6">
+                          <form onSubmit={handleCreateLocation} className="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex flex-col gap-4">
+                            <h4 className="text-xs font-bold text-white uppercase tracking-wider border-b border-slate-850 pb-2 flex items-center gap-1.5"><MapPin className="w-4 h-4 text-emerald-400" /> Map New Location</h4>
+                            <div className="flex flex-col gap-1"><label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Parent Customer</label>
+                              <select value={newLocationSupplierId} onChange={(e) => setNewLocationSupplierId(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white">
+                                {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                              </select>
+                            </div>
+                            <div className="flex flex-col gap-1"><label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Location / Plant Name</label>
+                              <input type="text" value={newLocationName} onChange={(e) => setNewLocationName(e.target.value)} placeholder="Mercedes Tuscaloosa" className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" />
+                            </div>
+                            <div className="flex flex-col gap-1"><label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Physical Address</label>
+                              <input type="text" value={newLocationAddress} onChange={(e) => setNewLocationAddress(e.target.value)} placeholder="Tuscaloosa, AL" className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" />
+                            </div>
+                            <div className="flex flex-col gap-1"><label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Default QRE Assignment</label>
+                              <select value={newLocationRepId} onChange={(e) => setNewLocationRepId(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white">
+                                {users.filter(u => u.role === 'rep').map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                              </select>
+                            </div>
+                            <div className="grid grid-cols-2 gap-3">
+                              <div className="flex flex-col gap-1"><label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Std Hrs/Wk</label>
+                                <input type="number" value={newLocationHours} onChange={(e) => setNewLocationHours(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" />
+                              </div>
+                              <div className="flex flex-col gap-1"><label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Bill Rate ($/hr)</label>
+                                <input type="number" value={newLocationBillRate} onChange={(e) => setNewLocationBillRate(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" />
+                              </div>
+                            </div>
+                            <button type="submit" className="bg-[#0EA5E9] text-white font-bold py-2 rounded-xl text-xs mt-2">Map Location & Rates</button>
+                          </form>
+
+                          <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl col-span-2 flex flex-col gap-3">
+                            <h4 className="text-xs font-bold text-white uppercase tracking-wider border-b border-slate-850 pb-2">Active Locations Mapping</h4>
+                            <table className="w-full text-xs text-left">
+                              <thead>
+                                <tr className="border-b border-slate-800 text-slate-500 font-bold uppercase text-[9px]"><th>Location</th><th>OEM</th><th>Parent Customer</th><th>Address</th></tr>
+                              </thead>
+                              <tbody className="divide-y divide-slate-850 text-slate-300">
+                                {plants.map(p => {
+                                  const parent = suppliers.find(s => s.plants_served.includes(p.id));
+                                  return (
+                                    <tr key={p.id}>
+                                      <td className="py-2 text-white font-bold">{p.name}</td>
+                                      <td className="py-2"><span className="px-1.5 py-0.5 rounded bg-sky-400/10 text-sky-400 text-[8px] font-extrabold uppercase">{p.oem_brand}</span></td>
+                                      <td className="py-2 text-slate-400">{parent?.name || 'IDS Global'}</td>
+                                      <td className="py-2 text-slate-400">{p.address}</td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* CRUD TAB 3: REPS */}
+                      {adminCrudTab === 'reps' && (
+                        <div className="grid grid-cols-3 gap-6">
+                          <form onSubmit={handleCreateRep} className="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex flex-col gap-4">
+                            <h4 className="text-xs font-bold text-white uppercase tracking-wider border-b border-slate-850 pb-2 flex items-center gap-1.5"><UserPlus className="w-4 h-4 text-purple-400" /> Onboard QRE Representative</h4>
+                            <div className="flex flex-col gap-1"><label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Full Name</label>
+                              <input type="text" value={newRepName} onChange={(e) => setNewRepName(e.target.value)} placeholder="Hugo Picon" className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" />
+                            </div>
+                            <div className="flex flex-col gap-1"><label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Email Address</label>
+                              <input type="email" value={newRepEmail} onChange={(e) => setNewRepEmail(e.target.value)} placeholder="hugo.p@integritydriven.com" className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" />
+                            </div>
+                            <div className="flex flex-col gap-1"><label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Phone Contact</label>
+                              <input type="text" value={newRepPhone} onChange={(e) => setNewRepPhone(e.target.value)} placeholder="+1 555-123-4567" className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" />
+                            </div>
+                            <button type="submit" className="bg-[#0EA5E9] text-white font-bold py-2 rounded-xl text-xs mt-2">Onboard QRE</button>
+                          </form>
+
+                          <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl col-span-2 flex flex-col gap-3">
+                            <h4 className="text-xs font-bold text-white uppercase tracking-wider border-b border-slate-850 pb-2">Active Field Representatives</h4>
+                            <table className="w-full text-xs text-left">
+                              <thead>
+                                <tr className="border-b border-slate-800 text-slate-500 font-bold uppercase text-[9px]"><th>Rep Name</th><th>Email</th><th>Phone</th><th>Role</th></tr>
+                              </thead>
+                              <tbody className="divide-y divide-slate-850 text-slate-300">
+                                {users.filter(u => u.role === 'rep').map(r => (
+                                  <tr key={r.id}>
+                                    <td className="py-2 text-white font-bold flex items-center gap-2">
+                                      <span className="w-6 h-6 rounded-full bg-[#1E3A5F] flex items-center justify-center text-[10px] text-[#22D3EE] font-bold">{r.avatar}</span>
+                                      {r.name}
+                                    </td>
+                                    <td className="py-2 font-mono text-slate-450">{r.email}</td>
+                                    <td className="py-2 text-slate-400">{r.phone}</td>
+                                    <td className="py-2"><span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 text-[8px] font-bold uppercase">Field QRE</span></td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* RATES OVERRIDES SECTION */}
+                      {adminCrudTab === 'customers' && (
+                        <div className="grid grid-cols-3 gap-6 pt-6 border-t border-slate-800">
+                          <form onSubmit={handleSaveRateConfig} className="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex flex-col gap-4">
+                            <h4 className="text-xs font-bold text-white uppercase tracking-wider border-b border-slate-850 pb-2">Set Custom Rate Override</h4>
+                            <div className="flex flex-col gap-1"><label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Representative</label>
+                              <select value={configRepId} onChange={(e) => setConfigRepId(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white">
+                                {users.filter(u => u.role === 'rep').map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                              </select>
+                            </div>
+                            <div className="flex flex-col gap-1"><label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Client</label>
+                              <select value={configSupplierId} onChange={(e) => setConfigSupplierId(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white">
+                                {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                              </select>
+                            </div>
+                            <div className="flex flex-col gap-1"><label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Pay Rate ($/hr)</label>
+                              <input type="number" step="0.5" value={configPayRate} onChange={(e) => setConfigPayRate(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" />
+                            </div>
+                            <div className="flex flex-col gap-1"><label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Bill Rate ($/hr)</label>
+                              <input type="number" step="0.5" value={configBillingRate} onChange={(e) => setConfigBillingRate(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" />
+                            </div>
+                            <button type="submit" className="bg-[#0EA5E9] text-white font-bold py-2 rounded-xl text-xs mt-2">Save Rate Override</button>
+                          </form>
+                          
+                          <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl col-span-2 flex flex-col gap-3">
+                            <h4 className="text-xs font-bold text-white uppercase tracking-wider border-b border-slate-850 pb-2">Custom Rates Overrides Matrix</h4>
+                            {rates.length === 0 ? <div className="text-center py-6 text-slate-550 italic">No custom rates configured. System defaults applied ($28/hr billing, $20/hr pay).</div> : (
                               <table className="w-full text-xs text-left">
                                 <thead>
-                                  <tr className="border-b border-slate-800 text-slate-500 font-bold uppercase text-[9px]"><th className="py-2">Rep</th><th className="py-2">Date</th><th className="py-2 text-right">Hours</th><th className="py-2 text-right">Rate</th><th className="py-2 text-right">Hours Billing</th><th className="py-2 text-right">Mileage</th><th className="py-2 text-right">Mileage Billing</th></tr>
+                                  <tr className="border-b border-slate-800 text-slate-500 font-bold uppercase text-[9px]"><th>Rep</th><th>Client</th><th className="text-right">Bill Rate</th><th className="text-right">Pay Rate</th><th className="text-right">Action</th></tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-850 text-slate-300">
-                                  {clientEntries.map(entry => {
-                                    const { billing_rate } = getRepSupplierRates(entry.rep_id, entry.supplier_id);
-                                    return (
-                                      <tr key={entry.id} className="hover:bg-slate-950/40">
-                                        <td className="py-2 text-white font-semibold">{users.find(u => u.id === entry.rep_id)?.name || 'Rep'}</td>
-                                        <td className="py-2 font-mono">{entry.date}</td>
-                                        <td className="py-2 text-right">{entry.hours} hrs</td>
-                                        <td className="py-2 text-right text-slate-400">${billing_rate.toFixed(2)}/hr</td>
-                                        <td className="py-2 text-right text-white font-bold">${(entry.hours * billing_rate).toFixed(2)}</td>
-                                        <td className="py-2 text-right text-sky-400">{entry.mileage_km} km</td>
-                                        <td className="py-2 text-right text-emerald-450">${(entry.mileage_km * 0.73).toFixed(2)}</td>
-                                      </tr>
-                                    );
-                                  })}
+                                  {rates.map(r => (
+                                    <tr key={r.id}>
+                                      <td className="py-2 text-white font-semibold">{users.find(u => u.id === r.rep_id)?.name || 'Rep'}</td>
+                                      <td className="py-2 text-slate-400">{suppliers.find(s => s.id === r.supplier_id)?.name || 'Client'}</td>
+                                      <td className="py-2 text-right font-bold text-[#22D3EE]">${parseFloat(r.billing_rate).toFixed(2)}/hr</td>
+                                      <td className="py-2 text-right font-bold text-emerald-450">${parseFloat(r.pay_rate).toFixed(2)}/hr</td>
+                                      <td className="py-2 text-right"><button onClick={() => handleDeleteRate(r.id)} className="px-2 py-0.5 bg-slate-800 text-rose-400 text-[9px] uppercase rounded">Delete</button></td>
+                                    </tr>
+                                  ))}
                                 </tbody>
                               </table>
                             )}
                           </div>
-                        )}
-                      </div>
+                        </div>
+                      )}
                     </div>
-                  );
-                })()}
+                  )}
 
-                {/* SUB-TAB 3: PAYROLL */}
-                {accountingSubTab === 'payroll' && (
-                  <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex flex-col gap-4 text-left">
-                    <h4 className="text-xs font-bold text-white uppercase tracking-wider pb-2 border-b border-slate-850">Rep Bi-Weekly Payroll Preview</h4>
-                    <table className="w-full text-xs text-left">
-                      <thead>
-                        <tr className="border-b border-slate-800 text-slate-500 font-bold uppercase text-[9px]"><th className="py-2">Rep</th><th className="py-2">Client</th><th className="py-2 text-right">Hours</th><th className="py-2 text-right">Rate</th><th className="py-2 text-right">Hours Pay</th><th className="py-2 text-right">Mileage</th><th className="py-2 text-right">Mileage Pay</th><th className="py-2 text-right">Expenses</th><th className="py-2 text-right">Net Payout</th></tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-850 text-slate-300">
-                        {users.filter(u => u.role === 'rep').map(rep => {
-                          const repTime = timeEntries.filter(t => t.rep_id === rep.id);
-                          const repExpenses = expenseEntries.filter(e => e.rep_id === rep.id);
-                          const clients = [...new Set(repTime.map(e => e.supplier_id))];
-                          if (clients.length === 0 && repExpenses.length === 0) return <tr key={rep.id}><td className="py-2 text-slate-500 font-semibold">{rep.name}</td><td colSpan="8" className="py-2 text-center text-slate-600 italic">No logs in cycle</td></tr>;
-                          return clients.map((clientId, idx) => {
-                            const clientHours = repTime.filter(t => t.supplier_id === clientId).reduce((acc, curr) => acc + curr.hours, 0);
-                            const clientMileage = repTime.filter(t => t.supplier_id === clientId).reduce((acc, curr) => acc + curr.mileage_km, 0);
-                            const expAmt = idx === 0 ? repExpenses.reduce((acc, curr) => acc + parseFloat(curr.amount || 0), 0) : 0;
-                            const { pay_rate } = getRepSupplierRates(rep.id, clientId);
-                            const hoursPay = clientHours * pay_rate;
-                            const mileagePay = clientMileage * 0.73;
-                            return (
-                              <tr key={`${rep.id}_${clientId}`} className="hover:bg-slate-950/40">
-                                {idx === 0 ? <td className="py-2 text-white font-extrabold" rowSpan={clients.length}>{rep.name}</td> : null}
-                                <td className="py-2 text-slate-400">{suppliers.find(s => s.id === clientId)?.name || 'Client'}</td>
-                                <td className="py-2 text-right">{clientHours} hrs</td>
-                                <td className="py-2 text-right font-mono text-slate-500">${pay_rate.toFixed(2)}</td>
-                                <td className="py-2 text-right text-white font-semibold">${hoursPay.toFixed(2)}</td>
-                                <td className="py-2 text-right text-sky-400">{clientMileage} km</td>
-                                <td className="py-2 text-right text-emerald-450">${mileagePay.toFixed(2)}</td>
-                                <td className="py-2 text-right text-emerald-400">${expAmt > 0 ? `$${expAmt.toFixed(2)}` : '—'}</td>
-                                <td className="py-2 text-right text-[#22D3EE] font-black">${(hoursPay + mileagePay + expAmt).toFixed(2)}</td>
-                              </tr>
-                            );
-                          });
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-
-                {/* SUB-TAB 4: CLIENTS & RATES */}
-                {accountingSubTab === 'rates-config' && (
-                  <div className="flex flex-col gap-6 text-left">
-                    <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex flex-col gap-3">
-                      <h4 className="text-xs font-bold text-white uppercase tracking-wider border-b border-slate-850 pb-2">Manage Clients & Schedules</h4>
-                      <table className="w-full text-xs text-left">
-                        <thead>
-                          <tr className="border-b border-slate-800 text-slate-500 font-bold uppercase text-[9px]"><th>Client</th><th>Brand</th><th>Schedule</th><th className="text-right">Actions</th></tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-850 text-slate-300">
-                          {suppliers.map(sup => (
-                            <tr key={sup.id} className="hover:bg-slate-950/40">
-                              <td className="py-2 text-white font-bold">{sup.name}</td>
-                              <td className="py-2 font-mono text-slate-450">{sup.plants_served.join(", ").toUpperCase()}</td>
-                              <td className="py-2"><span className="px-2 py-0.5 rounded bg-sky-400/10 text-sky-400 text-[9px] font-bold uppercase">{sup.invoice_schedule}</span></td>
-                              <td className="py-2 text-right">
-                                <button onClick={() => { sup.invoice_schedule = sup.invoice_schedule === 'weekly' ? 'monthly' : 'weekly'; saveEntity('suppliers', sup); setSuppliers(getEntities('suppliers')); }} className="px-2 py-0.5 bg-slate-800 text-sky-405 rounded font-bold text-[9px] uppercase cursor-pointer">Toggle Schedule</button>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-
-                    <div className="grid grid-cols-3 gap-6">
-                      <form onSubmit={handleSaveRateConfig} className="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex flex-col gap-4">
-                        <h4 className="text-xs font-bold text-white uppercase tracking-wider border-b border-slate-850 pb-2">Set Custom Rate</h4>
-                        <div className="flex flex-col gap-1"><label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Representative</label>
-                          <select value={configRepId} onChange={(e) => setConfigRepId(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white">
-                            {users.filter(u => u.role === 'rep').map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
-                          </select>
-                        </div>
-                        <div className="flex flex-col gap-1"><label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Client</label>
-                          <select value={configSupplierId} onChange={(e) => setConfigSupplierId(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white">
-                            {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                          </select>
-                        </div>
-                        <div className="flex flex-col gap-1"><label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Pay Rate ($/hr)</label>
-                          <input type="number" step="0.5" value={configPayRate} onChange={(e) => setConfigPayRate(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" />
-                        </div>
-                        <div className="flex flex-col gap-1"><label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Bill Rate ($/hr)</label>
-                          <input type="number" step="0.5" value={configBillingRate} onChange={(e) => setConfigBillingRate(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" />
-                        </div>
-                        <button type="submit" className="bg-[#0EA5E9] text-white font-bold py-2 rounded-xl text-xs mt-2">Save Rate</button>
-                      </form>
-                      
-                      <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl col-span-2 flex flex-col gap-3">
-                        <h4 className="text-xs font-bold text-white uppercase tracking-wider border-b border-slate-850 pb-2">Custom Rates Matrix</h4>
-                        {rates.length === 0 ? <div className="text-center py-6 text-slate-550 italic">No custom rates configured. System defaults applied ($28/hr billing, $20/hr pay).</div> : (
-                          <table className="w-full text-xs text-left">
-                            <thead>
-                              <tr className="border-b border-slate-800 text-slate-500 font-bold uppercase text-[9px]"><th>Rep</th><th>Client</th><th className="text-right">Bill Rate</th><th className="text-right">Pay Rate</th><th className="text-right">Action</th></tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-850 text-slate-300">
-                              {rates.map(r => (
-                                <tr key={r.id}>
-                                  <td className="py-2 text-white font-semibold">{users.find(u => u.id === r.rep_id)?.name || 'Rep'}</td>
-                                  <td className="py-2 text-slate-400">{suppliers.find(s => s.id === r.supplier_id)?.name || 'Client'}</td>
-                                  <td className="py-2 text-right font-bold text-[#22D3EE]">${parseFloat(r.billing_rate).toFixed(2)}/hr</td>
-                                  <td className="py-2 text-right font-bold text-emerald-450">${parseFloat(r.pay_rate).toFixed(2)}/hr</td>
-                                  <td className="py-2 text-right"><button onClick={() => handleDeleteRate(r.id)} className="px-2 py-0.5 bg-slate-800 text-rose-400 text-[9px] uppercase rounded">Delete</button></td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
+                </div>
               </div>
-            </div>
-          )}{/* TAB 4: EMAIL LOGS (INSPECTABLE EMAILS VIEWER) */}
+            )
+          )}
           {activeTab === 'emails' && (
             <div className="flex-1 flex flex-col min-h-0">
               <h3 className="text-sm font-bold text-white uppercase tracking-wider pb-2 border-b border-slate-800 mb-3">Outgoing Transaction Mail Audit</h3>

@@ -28,6 +28,8 @@ function App() {
   // Password Lock State
   const [isUnlocked, setIsUnlocked] = useState(() => sessionStorage.getItem('ids_pulse_unlocked') === 'true');
   const [userRole, setUserRole] = useState(() => sessionStorage.getItem('ids_pulse_role') || 'admin');
+  const [currentUserRepId, setCurrentUserRepId] = useState(() => sessionStorage.getItem('ids_pulse_rep_id') || '');
+  const [currentUserCustomerId, setCurrentUserCustomerId] = useState(() => sessionStorage.getItem('ids_pulse_customer_id') || '');
   const [systemPassword, setSystemPassword] = useState('');
   const [authError, setAuthError] = useState(false);
 
@@ -148,6 +150,23 @@ function App() {
                 sessionStorage.setItem('ids_pulse_unlocked', 'true');
                 sessionStorage.setItem('ids_pulse_role', 'lead');
                 setAuthError(false);
+              } else if (['hugo', 'nabil', 'rogelio'].includes(pw)) {
+                const repId = pw === 'hugo' ? 'rep_hugo' : pw === 'nabil' ? 'rep_nabil' : 'rep_rogelio';
+                setIsUnlocked(true);
+                setUserRole('qre');
+                setCurrentUserRepId(repId);
+                sessionStorage.setItem('ids_pulse_unlocked', 'true');
+                sessionStorage.setItem('ids_pulse_role', 'qre');
+                sessionStorage.setItem('ids_pulse_rep_id', repId);
+                setAuthError(false);
+              } else if (['autokabel', 'magna', 'hutchinson', 'brose'].includes(pw)) {
+                setIsUnlocked(true);
+                setUserRole('customer');
+                setCurrentUserCustomerId(pw);
+                sessionStorage.setItem('ids_pulse_unlocked', 'true');
+                sessionStorage.setItem('ids_pulse_role', 'customer');
+                sessionStorage.setItem('ids_pulse_customer_id', pw);
+                setAuthError(false);
               } else {
                 setAuthError(true);
                 setSystemPassword('');
@@ -163,7 +182,7 @@ function App() {
                   type="password"
                   value={systemPassword}
                   onChange={(e) => setSystemPassword(e.target.value)}
-                  placeholder="Enter password (e.g. idspulse)"
+                  placeholder="Enter password (e.g. hugo, autokabel, idspulse)"
                   className={`w-full bg-slate-950/80 border text-sm px-10 py-2.5 rounded-xl text-white placeholder-slate-650 focus:outline-none focus:border-[#22D3EE]/50 transition-all ${
                     authError ? 'border-red-500/80 shadow-lg shadow-red-500/5 ring-1 ring-red-500/20' : 'border-slate-800'
                   }`}
@@ -333,6 +352,8 @@ function App() {
               onClick={() => {
                 sessionStorage.removeItem('ids_pulse_unlocked');
                 sessionStorage.removeItem('ids_pulse_role');
+                sessionStorage.removeItem('ids_pulse_rep_id');
+                sessionStorage.removeItem('ids_pulse_customer_id');
                 window.location.reload();
               }}
               className="flex items-center gap-1.5 text-slate-400 hover:text-red-400 bg-slate-900 border border-slate-850 py-1.5 px-2.5 rounded-lg text-xs cursor-pointer transition-colors"
@@ -370,9 +391,11 @@ function App() {
                 {userRole === 'accountant' ? "Colleen's Dashboard (Web CRM Portal)" :
                  userRole === 'lead' ? "Donna's Dashboard (Web CRM Portal)" :
                  userRole === 'shahroz' ? "Shahroz's Admin Dashboard (Web CRM Portal)" :
+                 userRole === 'qre' ? "QRE Representative Portal" :
+                 userRole === 'customer' ? "Customer Quality Portal" :
                  "Greg's Admin Dashboard (Web CRM Portal)"}
               </span>
-              <WebDashboard dbUpdateTrigger={dbUpdateTrigger} userRole={userRole} />
+              <WebDashboard dbUpdateTrigger={dbUpdateTrigger} userRole={userRole} currentUserRepId={currentUserRepId} currentUserCustomerId={currentUserCustomerId} />
             </div>
           )}
 

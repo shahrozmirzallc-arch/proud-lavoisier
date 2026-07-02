@@ -3910,186 +3910,323 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
           {/* TAB 3: TIME & MILEAGE TRACKING (COLLEEN'S VIEW) */}
           {activeTab === 'time-tracking' && (
-            <div className="flex-1 flex flex-col gap-4 min-h-0">
+            <div className="flex-1 flex flex-col gap-4 min-h-0 text-left">
+              {/* Portal Header */}
               <div className="flex justify-between items-center pb-2 border-b border-slate-800 flex-shrink-0">
-                <h3 className="text-sm font-bold text-white uppercase tracking-wider">Accountant Timesheets & Reimbursement</h3>
+                <div>
+                  <h3 className="text-sm font-bold text-white uppercase tracking-wider">Invoicing, Rates & Payroll Portal</h3>
+                  <span className="text-[10px] text-slate-500">Colleen's accountant workspace</span>
+                </div>
                 
-                <div className="flex items-center gap-2">
-                  <button 
-                    onClick={handlePrintTimesheetReport}
-                    className="flex items-center gap-1.5 bg-slate-950 border border-slate-800 hover:bg-slate-900 text-slate-300 font-bold py-1.5 px-3 rounded-lg text-xs transition-colors cursor-pointer"
+                {/* Sub-tab navigation */}
+                <div className="flex gap-2 bg-slate-950 p-1 rounded-xl border border-slate-850">
+                  <button
+                    onClick={() => setAccountingSubTab('log-hours')}
+                    className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+                      accountingSubTab === 'log-hours' ? 'bg-[#0EA5E9] text-white' : 'text-slate-400 hover:text-slate-200'
+                    }`}
                   >
-                    <Printer className="w-3.5 h-3.5" />
-                    <span>Print Report</span>
+                    Log Hours & Expenses
                   </button>
-                  <button 
-                    onClick={handleExportExcel}
-                    className="flex items-center gap-1.5 bg-[#10B981] hover:bg-[#10B981]/90 text-white font-bold py-1.5 px-3 rounded-lg text-xs transition-colors cursor-pointer"
+                  <button
+                    onClick={() => setAccountingSubTab('invoice-gen')}
+                    className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+                      accountingSubTab === 'invoice-gen' ? 'bg-[#0EA5E9] text-white' : 'text-slate-400 hover:text-slate-200'
+                    }`}
                   >
-                    <FileSpreadsheet className="w-3.5 h-3.5" />
-                    <span>Export Excel (Styled)</span>
+                    Invoicing Control
                   </button>
-                  <button 
-                    onClick={handleExportQuickBooks}
-                    className="flex items-center gap-1.5 bg-[#0EA5E9] hover:bg-[#0EA5E9]/90 text-white font-bold py-1.5 px-3 rounded-lg text-xs transition-colors cursor-pointer"
+                  <button
+                    onClick={() => setAccountingSubTab('payroll')}
+                    className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+                      accountingSubTab === 'payroll' ? 'bg-[#0EA5E9] text-white' : 'text-slate-400 hover:text-slate-200'
+                    }`}
                   >
-                    <FileSpreadsheet className="w-3.5 h-3.5" />
-                    <span>Export QuickBooks CSV</span>
+                    Rep Payroll
+                  </button>
+                  <button
+                    onClick={() => setAccountingSubTab('rates-config')}
+                    className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+                      accountingSubTab === 'rates-config' ? 'bg-[#0EA5E9] text-white' : 'text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    Clients & Rates
                   </button>
                 </div>
               </div>
 
+              {/* Scrollable Sub-tab Contents */}
               <div className="flex-1 overflow-y-auto scrollbar-thin pr-1 flex flex-col gap-4">
-                {/* Cost Summary Info Box */}
-                <div className="grid grid-cols-4 gap-3 bg-slate-900 border border-slate-800 p-3.5 rounded-2xl flex-shrink-0">
-                  <div className="flex flex-col text-left">
-                    <span className="text-[9px] text-slate-500 font-bold uppercase">Total Hours Billed</span>
-                    <span className="text-lg font-bold text-white mt-0.5">{totalHours} Hours</span>
-                    <span className="text-[9px] text-slate-400">Rate: $28.00 / hour standard</span>
-                  </div>
-                  <div className="flex flex-col text-left">
-                    <span className="text-[9px] text-slate-500 font-bold uppercase">Total Mileage km</span>
-                    <span className="text-lg font-bold text-white mt-0.5">{totalMileage} Kilometers</span>
-                    <span className="text-[9px] text-slate-400">Rate: $0.73 / km standard</span>
-                  </div>
-                  <div className="flex flex-col text-left">
-                    <span className="text-[9px] text-slate-500 font-bold uppercase">Logged Expenses</span>
-                    <span className="text-lg font-bold text-emerald-450 mt-0.5">${totalExpenseClaimed.toFixed(2)}</span>
-                    <span className="text-[9px] text-slate-400">Fuel, Parking, Tolls, Meals</span>
-                  </div>
-                  <div className="flex flex-col text-left">
-                    <span className="text-[9px] text-slate-500 font-bold uppercase">Grand Invoice Total</span>
-                    <span className="text-lg font-bold text-[#22D3EE] mt-0.5">${grandTotalWithExpenses.toFixed(2)}</span>
-                    <span className="text-[9px] text-slate-400">Hours, Mileage & Expenses</span>
-                  </div>
-                </div>
+                
+                {/* SUB-TAB 1: LOG HOURS & EXPENSES */}
+                {accountingSubTab === 'log-hours' && (
+                  <div className="grid grid-cols-2 gap-6">
+                    <form onSubmit={handleLogHoursSubmit} className="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex flex-col gap-4 text-left">
+                      <h4 className="text-xs font-bold text-white uppercase tracking-wider border-b border-slate-850 pb-2 flex items-center gap-2">
+                        <Clock className="w-4 h-4 text-[#22D3EE]" /> Log Representative Hours & Mileage
+                      </h4>
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Representative</label>
+                        <select value={logHoursRepId} onChange={(e) => setLogHoursRepId(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#0EA5E9]">
+                          {users.filter(u => u.role === 'rep').map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                        </select>
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Client (Supplier)</label>
+                        <select value={logHoursSupplierId} onChange={(e) => setLogHoursSupplierId(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#0EA5E9]">
+                          {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                        </select>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Date</label>
+                          <input type="date" value={logHoursDate} onChange={(e) => setLogHoursDate(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" />
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Hours</label>
+                          <input type="number" step="0.5" placeholder="e.g. 8.0" value={logHoursQty} onChange={(e) => setLogHoursQty(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" />
+                        </div>
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Mileage (KM)</label>
+                        <input type="number" placeholder="KM travelled" value={logHoursMileage} onChange={(e) => setLogHoursMileage(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" />
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Notes</label>
+                        <input type="text" placeholder="Shift sorting notes" value={logHoursNotes} onChange={(e) => setLogHoursNotes(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" />
+                      </div>
+                      <button type="submit" className="bg-[#0EA5E9] hover:bg-[#0EA5E9]/90 text-white font-bold py-2 rounded-xl text-xs cursor-pointer transition-colors mt-2">Log Hours</button>
+                    </form>
 
-                <div className="overflow-x-auto">
-                  {timeEntries.length > 0 && (
-                    <span className="text-[9px] text-[#22D3EE] font-bold mb-1.5 block">
-                      💡 Tip: Scroll down to view the full timesheet.
-                    </span>
-                  )}
-                  <table className="w-full border-collapse text-xs text-left">
-                    <thead>
-                      <tr className="border-b border-slate-800 text-slate-500 font-bold uppercase tracking-wider text-[9px]">
-                        <th className="py-2 px-3">Rep Name</th>
-                        <th className="py-2 px-3">Date</th>
-                        <th className="py-2 px-3">Plant</th>
-                        <th className="py-2 px-3">Hours Logged</th>
-                        <th className="py-2 px-3">Mileage (KM)</th>
-                        <th className="py-2 px-3">Mileage Cost ($0.73)</th>
-                        <th className="py-2 px-3">Total Billing</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-850 text-slate-300">
-                      {timeEntries.map(entry => {
-                        const rep = users.find(u => u.id === entry.rep_id)?.name || 'Unknown Rep';
-                        const mileageCost = entry.mileage_km * ratePerKm;
-                        const hourlyBilling = entry.hours * standardHourlyRate;
-                        return (
-                          <tr key={entry.id} className="hover:bg-slate-900/40">
-                            <td className="py-2.5 px-3 font-semibold text-white">{rep}</td>
-                            <td className="py-2.5 px-3">{entry.date}</td>
-                            <td className="py-2.5 px-3">GM Oshawa</td>
-                            <td className="py-2.5 px-3 font-bold text-slate-105">{entry.hours} hrs</td>
-                            <td className="py-2.5 px-3 text-sky-400 font-bold">{entry.mileage_km} km</td>
-                            <td className="py-2.5 px-3 text-emerald-400 font-semibold">${mileageCost.toFixed(2)}</td>
-                            <td className="py-2.5 px-3 text-white font-extrabold">${(mileageCost + hourlyBilling).toFixed(2)}</td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-
-                {/* Expense Claims Section */}
-                <div className="mt-8 border-t border-slate-800 pt-6">
-                  <div className="flex justify-between items-center mb-3">
-                    <h4 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                      <DollarSign className="w-4 h-4 text-emerald-400" />
-                      <span>Expense Claims & Receipts Audit</span>
-                    </h4>
-                    <span className="text-[10px] text-slate-500 font-medium">Total: {expenseEntries.length} entries</span>
+                    <form onSubmit={handleLogExpenseSubmit} className="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex flex-col gap-4 text-left h-fit">
+                      <h4 className="text-xs font-bold text-white uppercase tracking-wider border-b border-slate-850 pb-2 flex items-center gap-2">
+                        <DollarSign className="w-4 h-4 text-emerald-400" /> Log Rep Expense Claim
+                      </h4>
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Representative</label>
+                        <select value={logExpRepId} onChange={(e) => setLogExpRepId(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                          {users.filter(u => u.role === 'rep').map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                        </select>
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Client (Supplier)</label>
+                        <select value={logExpSupplierId} onChange={(e) => setLogExpSupplierId(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                          {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                        </select>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Date</label>
+                          <input type="date" value={logExpDate} onChange={(e) => setLogExpDate(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" />
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Category</label>
+                          <select value={logExpCategory} onChange={(e) => setLogExpCategory(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white">
+                            <option value="Fuel">Fuel</option>
+                            <option value="Meals">Meals</option>
+                            <option value="Parking">Parking</option>
+                            <option value="Tolls">Tolls</option>
+                            <option value="Supplies">Supplies</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Amount ($)</label>
+                        <input type="number" step="0.01" placeholder="0.00" value={logExpAmount} onChange={(e) => setLogExpAmount(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" />
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Notes</label>
+                        <input type="text" placeholder="Purpose of expense" value={logExpNotes} onChange={(e) => setLogExpNotes(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" />
+                      </div>
+                      <button type="submit" className="bg-[#10B981] hover:bg-[#10B981]/90 text-white font-bold py-2 rounded-xl text-xs cursor-pointer transition-colors mt-2">Log Expense</button>
+                    </form>
                   </div>
+                )}
 
-                  {expenseEntries.length === 0 ? (
-                    <div className="text-center py-6 bg-slate-900/20 rounded-xl border border-slate-850">
-                      <span className="text-xs text-slate-500">No expense claims logged.</span>
+                {/* SUB-TAB 2: INVOICING CONTROL CENTER */}
+                {accountingSubTab === 'invoice-gen' && (() => {
+                  const client = suppliers.find(s => s.id === selectedInvoiceSupplier) || suppliers[0];
+                  const clientEntries = timeEntries.filter(t => t.supplier_id === selectedInvoiceSupplier && !t.invoiced);
+                  const clientExpenses = expenseEntries.filter(e => e.supplier_id === selectedInvoiceSupplier && !e.invoiced);
+                  const clientHourlySub = clientEntries.reduce((acc, curr) => acc + (curr.hours * getRepSupplierRates(curr.rep_id, curr.supplier_id).billing_rate), 0);
+                  const clientMileageSub = clientEntries.reduce((acc, curr) => acc + (curr.mileage_km * 0.73), 0);
+                  const clientExpenseSub = clientExpenses.reduce((acc, curr) => acc + parseFloat(curr.amount || 0), 0);
+                  const clientGrandTotal = clientHourlySub + clientMileageSub + clientExpenseSub;
+                  
+                  // Safe min/max dates lookup
+                  const dates = clientEntries.map(e => e.date).sort();
+                  const dateRangeStr = dates.length > 0 ? `From ${dates[0]} to ${dates[dates.length - 1]}` : 'No pending periods';
+
+                  return (
+                    <div className="flex flex-col gap-4 text-left">
+                      <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl flex items-center justify-between">
+                        <div className="flex flex-col">
+                          <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Select Client</label>
+                          <select value={selectedInvoiceSupplier} onChange={(e) => setSelectedInvoiceSupplier(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-white">
+                            {suppliers.map(s => <option key={s.id} value={s.id}>{s.name} ({s.invoice_schedule.toUpperCase()})</option>)}
+                          </select>
+                        </div>
+                        <div className="flex gap-2">
+                          <button onClick={() => handleGenerateClientInvoicePDF(client, dateRangeStr, clientEntries, clientExpenses)} disabled={clientEntries.length === 0 && clientExpenses.length === 0} className="flex items-center gap-1.5 bg-[#0EA5E9] disabled:opacity-40 hover:bg-[#0EA5E9]/90 text-white font-bold py-2 px-4 rounded-xl text-xs transition-colors cursor-pointer"><Printer className="w-4 h-4" /> PDF Invoice</button>
+                          <button onClick={() => handleExportQuickBooks(clientEntries)} disabled={clientEntries.length === 0} className="flex items-center gap-1.5 bg-[#10B981] disabled:opacity-40 hover:bg-[#10B981]/90 text-white font-bold py-2 px-4 rounded-xl text-xs transition-colors cursor-pointer"><FileSpreadsheet className="w-4 h-4" /> QuickBooks CSV</button>
+                          <button onClick={() => handleMarkAsInvoiced(clientEntries, clientExpenses)} disabled={clientEntries.length === 0 && clientExpenses.length === 0} className="flex items-center gap-1.5 bg-slate-950 border border-slate-850 disabled:opacity-40 text-slate-300 font-bold py-2 px-4 rounded-xl text-xs cursor-pointer"><CheckCircle2 className="w-4 h-4" /> Mark Invoiced</button>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-4 gap-3 bg-slate-900 border border-slate-800 p-4 rounded-2xl">
+                        <div className="flex flex-col"><span className="text-[9px] text-slate-500 font-bold uppercase">Hours Billing</span><span className="text-lg font-bold text-white mt-0.5">{clientEntries.reduce((acc, curr) => acc + curr.hours, 0)} hrs</span><span className="text-[10px] text-slate-400 mt-1">Sub: ${clientHourlySub.toFixed(2)}</span></div>
+                        <div className="flex flex-col"><span className="text-[9px] text-slate-500 font-bold uppercase">Mileage</span><span className="text-lg font-bold text-white mt-0.5">{clientEntries.reduce((acc, curr) => acc + curr.mileage_km, 0)} km</span><span className="text-[10px] text-slate-400 mt-1">Sub: ${clientMileageSub.toFixed(2)}</span></div>
+                        <div className="flex flex-col"><span className="text-[9px] text-slate-500 font-bold uppercase">Expenses</span><span className="text-lg font-bold text-emerald-450 mt-0.5">${clientExpenseSub.toFixed(2)}</span><span className="text-[10px] text-slate-400 mt-1">Reimbursable claims</span></div>
+                        <div className="flex flex-col"><span className="text-[9px] text-slate-500 font-bold uppercase">Invoice Total</span><span className="text-lg font-bold text-[#22D3EE] mt-0.5">${clientGrandTotal.toFixed(2)}</span><span className="text-[9px] text-slate-400 mt-1">{dateRangeStr}</span></div>
+                      </div>
+                      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4">
+                        <h4 className="text-xs font-bold text-white uppercase tracking-wider mb-3 flex items-center gap-2"><FileText className="w-4 h-4 text-[#22D3EE]" /> Consolidated Items List</h4>
+                        {clientEntries.length === 0 && clientExpenses.length === 0 ? <div className="text-center py-6 text-slate-550">All hours and expenses are invoiced for this client.</div> : (
+                          <div className="flex flex-col gap-4">
+                            {clientEntries.length > 0 && (
+                              <table className="w-full text-xs text-left">
+                                <thead>
+                                  <tr className="border-b border-slate-800 text-slate-500 font-bold uppercase text-[9px]"><th className="py-2">Rep</th><th className="py-2">Date</th><th className="py-2 text-right">Hours</th><th className="py-2 text-right">Rate</th><th className="py-2 text-right">Hours Billing</th><th className="py-2 text-right">Mileage</th><th className="py-2 text-right">Mileage Billing</th></tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-850 text-slate-300">
+                                  {clientEntries.map(entry => {
+                                    const { billing_rate } = getRepSupplierRates(entry.rep_id, entry.supplier_id);
+                                    return (
+                                      <tr key={entry.id} className="hover:bg-slate-950/40">
+                                        <td className="py-2 text-white font-semibold">{users.find(u => u.id === entry.rep_id)?.name || 'Rep'}</td>
+                                        <td className="py-2 font-mono">{entry.date}</td>
+                                        <td className="py-2 text-right">{entry.hours} hrs</td>
+                                        <td className="py-2 text-right text-slate-400">${billing_rate.toFixed(2)}/hr</td>
+                                        <td className="py-2 text-right text-white font-bold">${(entry.hours * billing_rate).toFixed(2)}</td>
+                                        <td className="py-2 text-right text-sky-400">{entry.mileage_km} km</td>
+                                        <td className="py-2 text-right text-emerald-450">${(entry.mileage_km * 0.73).toFixed(2)}</td>
+                                      </tr>
+                                    );
+                                  })}
+                                </tbody>
+                              </table>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  ) : (
-                    <table className="w-full border-collapse text-xs text-left">
+                  );
+                })()}
+
+                {/* SUB-TAB 3: PAYROLL */}
+                {accountingSubTab === 'payroll' && (
+                  <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex flex-col gap-4 text-left">
+                    <h4 className="text-xs font-bold text-white uppercase tracking-wider pb-2 border-b border-slate-850">Rep Bi-Weekly Payroll Preview</h4>
+                    <table className="w-full text-xs text-left">
                       <thead>
-                        <tr className="border-b border-slate-800 text-slate-500 font-bold uppercase tracking-wider text-[9px]">
-                          <th className="py-2 px-3">Rep Name</th>
-                          <th className="py-2 px-3">Date</th>
-                          <th className="py-2 px-3">Category</th>
-                          <th className="py-2 px-3">Amount</th>
-                          <th className="py-2 px-3">Purpose / Notes</th>
-                          <th className="py-2 px-3">Receipt Photo</th>
-                          <th className="py-2 px-3 text-right">Actions</th>
-                        </tr>
+                        <tr className="border-b border-slate-800 text-slate-500 font-bold uppercase text-[9px]"><th className="py-2">Rep</th><th className="py-2">Client</th><th className="py-2 text-right">Hours</th><th className="py-2 text-right">Rate</th><th className="py-2 text-right">Hours Pay</th><th className="py-2 text-right">Mileage</th><th className="py-2 text-right">Mileage Pay</th><th className="py-2 text-right">Expenses</th><th className="py-2 text-right">Net Payout</th></tr>
                       </thead>
                       <tbody className="divide-y divide-slate-850 text-slate-300">
-                        {expenseEntries.map(exp => {
-                          const rep = users.find(u => u.id === exp.rep_id)?.name || 'Unknown Rep';
-                          const hasPhoto = !!exp.receipt_photo;
-                          return (
-                            <tr key={exp.id} className="hover:bg-slate-900/40">
-                              <td className="py-2.5 px-3 font-semibold text-white">{rep}</td>
-                              <td className="py-2.5 px-3">{exp.date}</td>
-                              <td className="py-2.5 px-3">
-                                <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold ${
-                                  exp.category === 'Fuel' ? 'bg-amber-400/10 text-amber-400 border border-amber-400/20' :
-                                  exp.category === 'Meals' ? 'bg-purple-400/10 text-purple-400 border border-purple-400/20' :
-                                  exp.category === 'Parking' ? 'bg-blue-400/10 text-blue-400 border border-blue-400/20' :
-                                  'bg-cyan-400/10 text-cyan-400 border border-cyan-400/20'
-                                }`}>
-                                  {exp.category}
-                                </span>
-                              </td>
-                              <td className="py-2.5 px-3 font-bold text-white">${parseFloat(exp.amount).toFixed(2)}</td>
-                              <td className="py-2.5 px-3 text-slate-400 max-w-[200px] truncate" title={exp.notes}>
-                                {exp.notes || '—'}
-                              </td>
-                              <td className="py-2.5 px-3">
-                                {hasPhoto ? (
-                                  <span className="inline-flex items-center gap-1 text-[10px] text-emerald-400 font-semibold bg-emerald-500/10 border border-emerald-500/25 px-1.5 py-0.5 rounded-md">
-                                    <CheckCircle2 className="w-3 h-3" />
-                                    <span>Attached</span>
-                                  </span>
-                                ) : (
-                                  <span className="inline-flex items-center gap-1 text-[10px] text-rose-400 font-semibold bg-rose-500/10 border border-rose-500/25 px-1.5 py-0.5 rounded-md">
-                                    <AlertCircle className="w-3 h-3" />
-                                    <span>No Receipt</span>
-                                  </span>
-                                )}
-                              </td>
-                              <td className="py-2.5 px-3 text-right">
-                                {hasPhoto ? (
-                                  <button
-                                    onClick={() => setSelectedReceiptPhoto(exp.receipt_photo)}
-                                    className="px-2 py-1 bg-slate-800 hover:bg-slate-750 text-sky-400 hover:text-sky-300 rounded-md font-bold text-[10px] uppercase transition-colors cursor-pointer"
-                                  >
-                                    View Receipt
-                                  </button>
-                                ) : (
-                                  <span className="text-[10px] text-slate-650 font-bold uppercase select-none">Unavailable</span>
-                                )}
-                              </td>
-                            </tr>
-                          );
+                        {users.filter(u => u.role === 'rep').map(rep => {
+                          const repTime = timeEntries.filter(t => t.rep_id === rep.id);
+                          const repExpenses = expenseEntries.filter(e => e.rep_id === rep.id);
+                          const clients = [...new Set(repTime.map(e => e.supplier_id))];
+                          if (clients.length === 0 && repExpenses.length === 0) return <tr key={rep.id}><td className="py-2 text-slate-500 font-semibold">{rep.name}</td><td colSpan="8" className="py-2 text-center text-slate-600 italic">No logs in cycle</td></tr>;
+                          return clients.map((clientId, idx) => {
+                            const clientHours = repTime.filter(t => t.supplier_id === clientId).reduce((acc, curr) => acc + curr.hours, 0);
+                            const clientMileage = repTime.filter(t => t.supplier_id === clientId).reduce((acc, curr) => acc + curr.mileage_km, 0);
+                            const expAmt = idx === 0 ? repExpenses.reduce((acc, curr) => acc + parseFloat(curr.amount || 0), 0) : 0;
+                            const { pay_rate } = getRepSupplierRates(rep.id, clientId);
+                            const hoursPay = clientHours * pay_rate;
+                            const mileagePay = clientMileage * 0.73;
+                            return (
+                              <tr key={`${rep.id}_${clientId}`} className="hover:bg-slate-950/40">
+                                {idx === 0 ? <td className="py-2 text-white font-extrabold" rowSpan={clients.length}>{rep.name}</td> : null}
+                                <td className="py-2 text-slate-400">{suppliers.find(s => s.id === clientId)?.name || 'Client'}</td>
+                                <td className="py-2 text-right">{clientHours} hrs</td>
+                                <td className="py-2 text-right font-mono text-slate-500">${pay_rate.toFixed(2)}</td>
+                                <td className="py-2 text-right text-white font-semibold">${hoursPay.toFixed(2)}</td>
+                                <td className="py-2 text-right text-sky-400">{clientMileage} km</td>
+                                <td className="py-2 text-right text-emerald-450">${mileagePay.toFixed(2)}</td>
+                                <td className="py-2 text-right text-emerald-400">${expAmt > 0 ? `$${expAmt.toFixed(2)}` : '—'}</td>
+                                <td className="py-2 text-right text-[#22D3EE] font-black">${(hoursPay + mileagePay + expAmt).toFixed(2)}</td>
+                              </tr>
+                            );
+                          });
                         })}
                       </tbody>
                     </table>
-                  )}
-                </div>
+                  </div>
+                )}
+
+                {/* SUB-TAB 4: CLIENTS & RATES */}
+                {accountingSubTab === 'rates-config' && (
+                  <div className="flex flex-col gap-6 text-left">
+                    <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex flex-col gap-3">
+                      <h4 className="text-xs font-bold text-white uppercase tracking-wider border-b border-slate-850 pb-2">Manage Clients & Schedules</h4>
+                      <table className="w-full text-xs text-left">
+                        <thead>
+                          <tr className="border-b border-slate-800 text-slate-500 font-bold uppercase text-[9px]"><th>Client</th><th>Brand</th><th>Schedule</th><th className="text-right">Actions</th></tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-850 text-slate-300">
+                          {suppliers.map(sup => (
+                            <tr key={sup.id} className="hover:bg-slate-950/40">
+                              <td className="py-2 text-white font-bold">{sup.name}</td>
+                              <td className="py-2 font-mono text-slate-450">{sup.plants_served.join(", ").toUpperCase()}</td>
+                              <td className="py-2"><span className="px-2 py-0.5 rounded bg-sky-400/10 text-sky-400 text-[9px] font-bold uppercase">{sup.invoice_schedule}</span></td>
+                              <td className="py-2 text-right">
+                                <button onClick={() => { sup.invoice_schedule = sup.invoice_schedule === 'weekly' ? 'monthly' : 'weekly'; saveEntity('suppliers', sup); setSuppliers(getEntities('suppliers')); }} className="px-2 py-0.5 bg-slate-800 text-sky-405 rounded font-bold text-[9px] uppercase cursor-pointer">Toggle Schedule</button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-6">
+                      <form onSubmit={handleSaveRateConfig} className="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex flex-col gap-4">
+                        <h4 className="text-xs font-bold text-white uppercase tracking-wider border-b border-slate-850 pb-2">Set Custom Rate</h4>
+                        <div className="flex flex-col gap-1"><label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Representative</label>
+                          <select value={configRepId} onChange={(e) => setConfigRepId(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white">
+                            {users.filter(u => u.role === 'rep').map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                          </select>
+                        </div>
+                        <div className="flex flex-col gap-1"><label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Client</label>
+                          <select value={configSupplierId} onChange={(e) => setConfigSupplierId(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white">
+                            {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                          </select>
+                        </div>
+                        <div className="flex flex-col gap-1"><label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Pay Rate ($/hr)</label>
+                          <input type="number" step="0.5" value={configPayRate} onChange={(e) => setConfigPayRate(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" />
+                        </div>
+                        <div className="flex flex-col gap-1"><label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Bill Rate ($/hr)</label>
+                          <input type="number" step="0.5" value={configBillingRate} onChange={(e) => setConfigBillingRate(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" />
+                        </div>
+                        <button type="submit" className="bg-[#0EA5E9] text-white font-bold py-2 rounded-xl text-xs mt-2">Save Rate</button>
+                      </form>
+                      
+                      <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl col-span-2 flex flex-col gap-3">
+                        <h4 className="text-xs font-bold text-white uppercase tracking-wider border-b border-slate-850 pb-2">Custom Rates Matrix</h4>
+                        {rates.length === 0 ? <div className="text-center py-6 text-slate-550 italic">No custom rates configured. System defaults applied ($28/hr billing, $20/hr pay).</div> : (
+                          <table className="w-full text-xs text-left">
+                            <thead>
+                              <tr className="border-b border-slate-800 text-slate-500 font-bold uppercase text-[9px]"><th>Rep</th><th>Client</th><th className="text-right">Bill Rate</th><th className="text-right">Pay Rate</th><th className="text-right">Action</th></tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-850 text-slate-300">
+                              {rates.map(r => (
+                                <tr key={r.id}>
+                                  <td className="py-2 text-white font-semibold">{users.find(u => u.id === r.rep_id)?.name || 'Rep'}</td>
+                                  <td className="py-2 text-slate-400">{suppliers.find(s => s.id === r.supplier_id)?.name || 'Client'}</td>
+                                  <td className="py-2 text-right font-bold text-[#22D3EE]">${parseFloat(r.billing_rate).toFixed(2)}/hr</td>
+                                  <td className="py-2 text-right font-bold text-emerald-450">${parseFloat(r.pay_rate).toFixed(2)}/hr</td>
+                                  <td className="py-2 text-right"><button onClick={() => handleDeleteRate(r.id)} className="px-2 py-0.5 bg-slate-800 text-rose-400 text-[9px] uppercase rounded">Delete</button></td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
 
               </div>
             </div>
-          )}
-
-          {/* TAB 4: EMAIL LOGS (INSPECTABLE EMAILS VIEWER) */}
+          )}{/* TAB 4: EMAIL LOGS (INSPECTABLE EMAILS VIEWER) */}
           {activeTab === 'emails' && (
             <div className="flex-1 flex flex-col min-h-0">
               <h3 className="text-sm font-bold text-white uppercase tracking-wider pb-2 border-b border-slate-800 mb-3">Outgoing Transaction Mail Audit</h3>

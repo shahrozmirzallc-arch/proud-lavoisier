@@ -32,6 +32,7 @@ function App() {
   const [currentUserCustomerId, setCurrentUserCustomerId] = useState(() => sessionStorage.getItem('ids_pulse_customer_id') || '');
   const [systemPassword, setSystemPassword] = useState('');
   const [authError, setAuthError] = useState(false);
+  const [revokedError, setRevokedError] = useState(false);
 
   useEffect(() => {
     document.body.classList.remove('theme-royal-blue', 'theme-neon-violet', 'theme-emerald-green', 'theme-ruby-red');
@@ -123,52 +124,31 @@ function App() {
 
           {/* Form */}
           <form 
-            onSubmit={(e) => {
+            onSubmit={async (e) => {
               e.preventDefault();
-              const pw = systemPassword.trim().toLowerCase().replace(/\s+/g, '');
-              if (pw === 'shahroz') {
+              const rawPw = systemPassword.trim();
+              const pw = rawPw.toLowerCase().replace(/\s+/g, '');
+              
+              // Verify Masterpassword using secure SHA-256 comparison
+              const msgBuffer = new TextEncoder().encode(rawPw);
+              const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+              const hashArray = Array.from(new Uint8Array(hashBuffer));
+              const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+              
+              if (hashHex === '3dc913cc6d99a4f6fa13c07c646c8efa8b9410d323c484dfc1fef45322782131') {
                 setIsUnlocked(true);
                 setUserRole('shahroz');
                 sessionStorage.setItem('ids_pulse_unlocked', 'true');
                 sessionStorage.setItem('ids_pulse_role', 'shahroz');
                 setAuthError(false);
-              } else if (pw === 'idspulse') {
-                setIsUnlocked(true);
-                setUserRole('admin');
-                sessionStorage.setItem('ids_pulse_unlocked', 'true');
-                sessionStorage.setItem('ids_pulse_role', 'admin');
+                setRevokedError(false);
+              } else if (['shahroz', 'idspulse', 'colleen', 'donna', 'hugo', 'nabil', 'rogelio', 'autokabel', 'magna', 'hutchinson', 'brose'].includes(pw)) {
+                setRevokedError(true);
                 setAuthError(false);
-              } else if (pw === 'colleen') {
-                setIsUnlocked(true);
-                setUserRole('accountant');
-                sessionStorage.setItem('ids_pulse_unlocked', 'true');
-                sessionStorage.setItem('ids_pulse_role', 'accountant');
-                setAuthError(false);
-              } else if (pw === 'donna') {
-                setIsUnlocked(true);
-                setUserRole('lead');
-                sessionStorage.setItem('ids_pulse_unlocked', 'true');
-                sessionStorage.setItem('ids_pulse_role', 'lead');
-                setAuthError(false);
-              } else if (['hugo', 'nabil', 'rogelio'].includes(pw)) {
-                const repId = pw === 'hugo' ? 'rep_hugo' : pw === 'nabil' ? 'rep_nabil' : 'rep_rogelio';
-                setIsUnlocked(true);
-                setUserRole('qre');
-                setCurrentUserRepId(repId);
-                sessionStorage.setItem('ids_pulse_unlocked', 'true');
-                sessionStorage.setItem('ids_pulse_role', 'qre');
-                sessionStorage.setItem('ids_pulse_rep_id', repId);
-                setAuthError(false);
-              } else if (['autokabel', 'magna', 'hutchinson', 'brose'].includes(pw)) {
-                setIsUnlocked(true);
-                setUserRole('customer');
-                setCurrentUserCustomerId(pw);
-                sessionStorage.setItem('ids_pulse_unlocked', 'true');
-                sessionStorage.setItem('ids_pulse_role', 'customer');
-                sessionStorage.setItem('ids_pulse_customer_id', pw);
-                setAuthError(false);
+                setSystemPassword('');
               } else {
                 setAuthError(true);
+                setRevokedError(false);
                 setSystemPassword('');
                 setTimeout(() => setAuthError(false), 800);
               }
@@ -202,8 +182,14 @@ function App() {
 
           {/* Validation Notice */}
           {authError && (
-            <span className="text-[10px] text-red-400 font-bold mt-3 block animate-pulse">
+            <span className="text-[10px] text-red-400 font-bold mt-3 block animate-pulse text-center">
               ⚠️ Invalid password. Authentication rejected.
+            </span>
+          )}
+
+          {revokedError && (
+            <span className="text-[10px] text-amber-500 font-bold mt-3 block text-center leading-relaxed">
+              ⚠️ Right now, the development is going through a Security Audit. Your password has been revoked temporarily.
             </span>
           )}
 

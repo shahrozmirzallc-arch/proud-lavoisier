@@ -242,7 +242,14 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
 
   const handleQuickLoginAs = (role) => {
     const dbUsers = getEntities('users');
-    const user = dbUsers.find(u => role === 'Clarence' ? u.name.includes('Clarence') : u.name.includes('Donna'));
+    const user = dbUsers.find(u => {
+      if (role === 'Clarence') return u.name.includes('Clarence');
+      if (role === 'Donna') return u.name.includes('Donna');
+      if (role === 'Hugo') return u.name.includes('Hugo');
+      if (role === 'Nabil') return u.name.includes('Nabil');
+      if (role === 'Rogelio') return u.name.includes('Rogelio');
+      return false;
+    });
     if (user) {
       setEmail(user.email);
       performAuthLogin(user);
@@ -972,21 +979,15 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
               </button>
             </form>
 
-            <div className="flex gap-2">
-              <button 
-                type="button"
-                onClick={() => handleQuickLoginAs('Clarence')}
-                className="phone-btn-secondary flex-1 py-2 text-[10px]"
-              >
-                Demo Clarence (Rep)
-              </button>
-              <button 
-                type="button"
-                onClick={() => handleQuickLoginAs('Donna')}
-                className="phone-btn-secondary flex-1 py-2 text-[10px]"
-              >
-                Demo Donna (Lead)
-              </button>
+            <div className="flex flex-col gap-2 pt-2 border-t border-slate-800/80">
+              <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider text-center">Quick Login Presets</span>
+              <div className="flex flex-wrap gap-1.5 justify-center">
+                <button type="button" onClick={() => handleQuickLoginAs('Clarence')} className="px-2 py-1 rounded bg-slate-950 border border-slate-850 text-[9px] font-bold text-slate-400 hover:text-white transition-all cursor-pointer">Clarence</button>
+                <button type="button" onClick={() => handleQuickLoginAs('Hugo')} className="px-2 py-1 rounded bg-slate-950 border border-slate-850 text-[9px] font-bold text-sky-400 hover:text-white transition-all cursor-pointer">Hugo (QRE)</button>
+                <button type="button" onClick={() => handleQuickLoginAs('Nabil')} className="px-2 py-1 rounded bg-slate-950 border border-slate-850 text-[9px] font-bold text-sky-400 hover:text-white transition-all cursor-pointer">Nabil (QRE)</button>
+                <button type="button" onClick={() => handleQuickLoginAs('Rogelio')} className="px-2 py-1 rounded bg-slate-950 border border-slate-850 text-[9px] font-bold text-sky-400 hover:text-white transition-all cursor-pointer">Rogelio (QRE)</button>
+                <button type="button" onClick={() => handleQuickLoginAs('Donna')} className="px-2 py-1 rounded bg-slate-950 border border-slate-850 text-[9px] font-bold text-indigo-400 hover:text-white transition-all cursor-pointer">Donna</button>
+              </div>
             </div>
           </div>
         )}

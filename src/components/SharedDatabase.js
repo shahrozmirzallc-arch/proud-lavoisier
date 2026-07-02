@@ -10,6 +10,10 @@ const SEED_DATA = {
     { id: '3', name: 'Greg Phillippe', email: 'greg.p@integritydriven.com', role: 'owner', phone: '+1 905-555-0100', avatar: 'GP' },
     { id: '4', name: 'Colleen Boyd', email: 'colleen.b@integritydriven.com', role: 'accountant', phone: '+1 905-555-0122', avatar: 'CB' }
   ],
+  rates: [
+    { id: 'rate_1', rep_id: '1', supplier_id: 'magna', billing_rate: 28.00, pay_rate: 20.00 },
+    { id: 'rate_2', rep_id: '1', supplier_id: 'hutchinson', billing_rate: 30.00, pay_rate: 22.00 }
+  ],
   plants: [
     { id: 'gm_oshawa', name: 'GM Oshawa Plant', address: '900 Park Rd S, Oshawa, ON', oem_brand: 'GM' },
     { id: 'magna_autosystems', name: 'Magna AutoSystems', address: 'Belleville, ON', oem_brand: 'Magna' },
@@ -19,6 +23,7 @@ const SEED_DATA = {
     { 
       id: 'magna', 
       name: 'Magna AutoSystems', 
+      invoice_schedule: 'weekly',
       contacts: [
         { name: 'Shahroz Mirza', email: 'shahroz.m@magna.com', role: 'Quality Manager' },
         { name: 'Martin', email: 'martin.s@magna.com', role: 'Sequence Supervisor' }
@@ -28,6 +33,7 @@ const SEED_DATA = {
     { 
       id: 'hutchinson', 
       name: 'Hutchinson Rubber', 
+      invoice_schedule: 'monthly',
       contacts: [
         { name: 'Sarah Jenkins', email: 'sjenkins@hutchinson.ca', role: 'Supplier Quality Engineer' }
       ],
@@ -282,7 +288,8 @@ const SEED_DATA = {
       date: '2026-05-28',
       hours: 9,
       mileage_km: 45,
-      notes: 'Standard day shift. Conducted area walks, sorted Matt\'s bin request, reworked one tail light.'
+      notes: 'Standard day shift. Conducted area walks, sorted Matt\'s bin request, reworked one tail light.',
+      invoiced: false
     }
   ],
   emailLogs: [
@@ -326,11 +333,13 @@ const SEED_DATA = {
     {
       id: 'exp_1',
       rep_id: '1',
+      supplier_id: 'magna',
       date: '2026-06-03',
       category: 'Fuel',
       amount: 45.50,
       receipt_photo: 'https://images.unsplash.com/photo-1554415707-6e8cfc93fe23?auto=format&fit=crop&w=800&q=80',
-      notes: 'Fuel fill-up for GM Oshawa site travel.'
+      notes: 'Fuel fill-up for GM Oshawa site travel.',
+      invoiced: false
     }
   ]
 };
@@ -466,5 +475,35 @@ export function addExpenseEntry(entry) {
     ...entry
   };
   return saveEntity('expenseEntries', newEntry);
+}
+
+// Get all rates
+export function getRates() {
+  const db = getDB();
+  return db.rates || [];
+}
+
+// Save or update a rate
+export function saveRate(rate) {
+  const db = getDB();
+  if (!db.rates) db.rates = [];
+  
+  const index = db.rates.findIndex(r => r.id === rate.id || (r.rep_id === rate.rep_id && r.supplier_id === rate.supplier_id));
+  if (index >= 0) {
+    db.rates[index] = { ...db.rates[index], ...rate };
+  } else {
+    const newRate = { id: `rate_${Date.now()}`, ...rate };
+    db.rates.push(newRate);
+  }
+  saveDB(db);
+  return rate;
+}
+
+// Delete a rate
+export function deleteRate(rateId) {
+  const db = getDB();
+  if (!db.rates) return;
+  db.rates = db.rates.filter(r => r.id !== rateId);
+  saveDB(db);
 }
 

@@ -237,8 +237,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       doc.setFont("Helvetica", "bold");
       doc.text("BILL TO:", 14, 45);
       doc.setFont("Helvetica", "normal");
-      doc.text(client.name, 14, 50);
-      doc.text("Billing Schedule: " + client.invoice_schedule.toUpperCase(), 14, 55);
+      doc.text(client?.name || 'Unknown Client', 14, 50);
+      doc.text("Billing Schedule: " + (client?.invoice_schedule || 'weekly').toUpperCase(), 14, 55);
 
       doc.setFont("Helvetica", "bold");
       doc.text("INVOICE DETAILS:", 120, 45);
@@ -5062,9 +5062,9 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
                   {/* SUB-TAB 2: INVOICING CONTROL CENTER */}
                   {accountingSubTab === 'invoice-gen' && (() => {
-                    const client = suppliers.find(s => s.id === selectedInvoiceSupplier) || suppliers[0];
-                    const clientEntries = timeEntries.filter(t => t.supplier_id === selectedInvoiceSupplier && !t.invoiced);
-                    const clientExpenses = expenseEntries.filter(e => e.supplier_id === selectedInvoiceSupplier && !e.invoiced);
+                    const client = suppliers.find(s => s.id === selectedInvoiceSupplier) || suppliers[0] || { id: 'unknown', name: 'Unknown Client', invoice_schedule: 'weekly' };
+                    const clientEntries = timeEntries.filter(t => t.supplier_id === (client?.id || selectedInvoiceSupplier) && !t.invoiced);
+                    const clientExpenses = expenseEntries.filter(e => e.supplier_id === (client?.id || selectedInvoiceSupplier) && !e.invoiced);
                     const clientHourlySub = clientEntries.reduce((acc, curr) => acc + (curr.hours * getRepSupplierRates(curr.rep_id, curr.supplier_id, curr.plant_id).billing_rate), 0);
                     const clientMileageSub = clientEntries.reduce((acc, curr) => acc + (curr.mileage_km * 0.73), 0);
                     const clientExpenseSub = clientExpenses.reduce((acc, curr) => acc + parseFloat(curr.amount || 0), 0);
@@ -5133,7 +5133,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                           <div className="flex flex-col">
                             <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Select Client</label>
                             <select value={selectedInvoiceSupplier} onChange={(e) => setSelectedInvoiceSupplier(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-white">
-                              {suppliers.map(s => <option key={s.id} value={s.id}>{s.name} ({s.invoice_schedule.toUpperCase()})</option>)}
+                              {suppliers.map(s => <option key={s.id} value={s.id}>{s.name} ({(s.invoice_schedule || 'weekly').toUpperCase()})</option>)}
                             </select>
                           </div>
                           <div className="flex gap-2">
@@ -5266,7 +5266,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                     <td className="py-2 text-white font-bold">{s.name}</td>
                                     <td className="py-2 font-mono text-slate-450">{s.id.toUpperCase()}</td>
                                     <td className="py-2">{s.contacts.map(c => c.name).join(", ")}</td>
-                                    <td className="py-2"><span className="px-2 py-0.5 rounded bg-sky-400/10 text-sky-400 text-[9px] font-bold uppercase">{s.invoice_schedule}</span></td>
+                                    <td className="py-2"><span className="px-2 py-0.5 rounded bg-sky-400/10 text-sky-400 text-[9px] font-bold uppercase">{s.invoice_schedule || 'weekly'}</span></td>
                                   </tr>
                                 ))}
                               </tbody>

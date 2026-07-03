@@ -142,7 +142,14 @@ function App() {
                 sessionStorage.setItem('ids_pulse_role', 'shahroz');
                 setAuthError(false);
                 setRevokedError(false);
-              } else if (['shahroz', 'idspulse', 'colleen', 'donna', 'hugo', 'nabil', 'rogelio', 'autokabel', 'magna', 'hutchinson', 'brose'].includes(pw)) {
+              } else if (pw === 'colleen') {
+                setIsUnlocked(true);
+                setUserRole('accountant');
+                sessionStorage.setItem('ids_pulse_unlocked', 'true');
+                sessionStorage.setItem('ids_pulse_role', 'accountant');
+                setAuthError(false);
+                setRevokedError(false);
+              } else if (['shahroz', 'idspulse', 'donna', 'hugo', 'nabil', 'rogelio', 'autokabel', 'magna', 'hutchinson', 'brose'].includes(pw)) {
                 setRevokedError(true);
                 setAuthError(false);
                 setSystemPassword('');

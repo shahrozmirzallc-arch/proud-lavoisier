@@ -3241,7 +3241,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
         <div className="grid grid-cols-4 gap-4 mt-5 flex-shrink-0">
         <div className="glass-panel hover:border-slate-700/60 glow-pulse-red rounded-2xl p-4 flex flex-col justify-between h-28 border-red-500/10 hover:border-red-500/30 transition-all">
           <div>
-            <span className="text-[9px] font-extrabold text-slate-500 uppercase tracking-wider block">Active Defect Alerts</span>
+            <span className="text-[9px] font-extrabold text-slate-500 uppercase tracking-wider block">Active Suspect Materials</span>
             <span className="text-2xl font-extrabold text-white mt-0.5 block leading-none">{totalOpenIncidents}</span>
           </div>
           <span className="text-[9px] text-[#22D3EE] bg-[#22D3EE]/10 border border-[#22D3EE]/20 px-2 py-0.5 rounded font-bold w-fit">
@@ -3251,7 +3251,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
         
         <div className="glass-panel hover:border-slate-700/60 glow-pulse-emerald rounded-2xl p-4 flex flex-col justify-between h-28 border-emerald-500/10 hover:border-emerald-500/30 transition-all">
           <div>
-            <span className="text-[9px] font-extrabold text-slate-500 uppercase tracking-wider block">Parts Repaired (Rework)</span>
+            <span className="text-[9px] font-extrabold text-slate-500 uppercase tracking-wider block">Parts Reworked</span>
             <span className="text-2xl font-extrabold text-white mt-0.5 block leading-none">{totalReworkPcs} pcs</span>
           </div>
           <span className="text-[9px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded font-bold w-fit">
@@ -4969,6 +4969,14 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     >
                       Clients & Rates
                     </button>
+                    <button
+                      onClick={() => setAccountingSubTab('bulk-entry')}
+                      className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+                        accountingSubTab === 'bulk-entry' ? 'bg-[#0EA5E9] text-white' : 'text-slate-400 hover:text-slate-200'
+                      }`}
+                    >
+                      Bulk Hours Entry
+                    </button>
                   </div>
                 </div>
 
@@ -5224,6 +5232,110 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                           })}
                         </tbody>
                       </table>
+                    </div>
+                  )}
+
+                  {accountingSubTab === 'bulk-entry' && (
+                    <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex flex-col gap-4 text-left">
+                      <h4 className="text-xs font-bold text-white uppercase tracking-wider pb-2 border-b border-slate-850 flex items-center gap-1.5">
+                        <Users className="w-4 h-4 text-[#22D3EE]" /> Weekly Manager Bulk Entry Portal
+                      </h4>
+                      <p className="text-[10px] text-slate-400 max-w-[500px]">
+                        Log or backdate hours and mileage for multiple supplier locations in a single form at the end of the week.
+                      </p>
+                      
+                      <form 
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          const date = document.getElementById('bulk_date').value;
+                          const repId = document.getElementById('bulk_rep').value;
+                          const supId = document.getElementById('bulk_sup').value;
+                          const plantId = document.getElementById('bulk_plant').value;
+                          const hours = parseFloat(document.getElementById('bulk_hours').value || 0);
+                          const mileage = parseFloat(document.getElementById('bulk_mileage').value || 0);
+                          
+                          if (hours <= 0 && mileage <= 0) {
+                            return alert("Please enter valid hours or mileage!");
+                          }
+                          
+                          const dbTime = getEntities('timeEntries') || [];
+                          const newEntry = {
+                            id: 'time_' + Date.now(),
+                            rep_id: repId,
+                            supplier_id: supId,
+                            plant_id: plantId,
+                            date: date,
+                            hours: hours,
+                            mileage_km: mileage,
+                            invoiced: false,
+                            sent_to_payroll: false
+                          };
+                          
+                          dbTime.push(newEntry);
+                          saveEntity('timeEntries', newEntry);
+                          window.dispatchEvent(new Event('ids_pulse_db_update'));
+                          alert("Bulk log entry successfully added to Colleen's billing overview!");
+                          document.getElementById('bulk_hours').value = '';
+                          document.getElementById('bulk_mileage').value = '';
+                        }}
+                        className="flex flex-col gap-4 max-w-[450px] mt-2"
+                      >
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="flex flex-col gap-1">
+                            <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Date</label>
+                            <input type="date" id="bulk_date" defaultValue={new Date().toISOString().substring(0, 10)} required className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" />
+                          </div>
+                          
+                          <div className="flex flex-col gap-1">
+                            <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Representative</label>
+                            <select id="bulk_rep" className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white">
+                              {users.filter(u => u.role === 'rep').map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                            </select>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="flex flex-col gap-1">
+                            <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Client Supplier</label>
+                            <select id="bulk_sup" defaultValue="autokabel" onChange={(ev) => {
+                              const sId = ev.target.value;
+                              const plantSel = document.getElementById('bulk_plant');
+                              if (plantSel) {
+                                const supObj = suppliers.find(s => s.id === sId);
+                                const plantsList = supObj?.plants_served || [];
+                                plantSel.innerHTML = plantsList.map(pId => `<option value="${pId}">${plants.find(p => p.id === pId)?.name || pId}</option>`).join('');
+                              }
+                            }} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white">
+                              {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                            </select>
+                          </div>
+
+                          <div className="flex flex-col gap-1">
+                            <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Location / Plant</label>
+                            <select id="bulk_plant" className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white">
+                              {(suppliers.find(s => s.id === 'autokabel')?.plants_served || []).map(pId => (
+                                <option key={pId} value={pId}>{plants.find(p => p.id === pId)?.name || pId}</option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="flex flex-col gap-1">
+                            <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Hours Worked</label>
+                            <input type="number" step="0.5" id="bulk_hours" placeholder="e.g. 10.0" className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" />
+                          </div>
+
+                          <div className="flex flex-col gap-1">
+                            <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Mileage (km)</label>
+                            <input type="number" step="1" id="bulk_mileage" placeholder="e.g. 45" className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" />
+                          </div>
+                        </div>
+
+                        <button type="submit" className="bg-[#0EA5E9] hover:bg-[#0EA5E9]/90 text-white font-extrabold py-2.5 rounded-xl text-xs uppercase tracking-wider transition-colors mt-2 cursor-pointer">
+                          Add Bulk Log Entry
+                        </button>
+                      </form>
                     </div>
                   )}
 
@@ -6901,7 +7013,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     <span>1. Incident Defects Feed</span>
                   </h5>
                   <p className="text-[10px] mt-0.5 text-slate-400 pl-3">
-                    Shows defect alerts sent from reps. Red Alert means outstanding. Clicking <strong>Inspect</strong> lets you download a PDF report or open a print-ready window to email Magna.
+                    Shows suspect materials logged by reps. Red Alert means outstanding. Clicking <strong>Inspect</strong> lets you download a PDF report or open a print-ready window to email Magna.
                   </p>
                 </div>
 

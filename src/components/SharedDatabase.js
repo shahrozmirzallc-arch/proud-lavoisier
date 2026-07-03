@@ -292,7 +292,7 @@ const SEED_DATA = {
         { name: 'Online assembly', status: 'no_issues', contact: 'T/L and installers', notes: 'Checked with team leader and installers on line.' },
         { name: 'Sequence area', status: 'issues', contact: 'Martin', notes: 'Found rattling tail light. See incident inc_1.' },
         { name: 'Heavy repair', status: 'no_issues', contact: 'Martin', notes: 'Checked all heavy repair bays.' },
-        { name: 'Scrap tables', status: 'issues', contact: 'Martin', notes: 'Reworked tail light on scrap table.' }
+        { name: 'Review Scrap Table', status: 'issues', contact: 'Martin', notes: 'Reworked tail light on scrap table.' }
       ],
       incidents_count: 1,
       bonus_tasks: [
@@ -362,7 +362,7 @@ const SEED_DATA = {
     { id: 'dt_1', rep_id: '1', date: '2026-05-28', task: 'Verify Magna tail light rattles on sequence line', status: 'completed' },
     { id: 'dt_2', rep_id: '1', date: '2026-05-28', task: "Conduct Matt's bin sorting audit request on PN 86291945", status: 'completed' },
     { id: 'dt_3', rep_id: '1', date: '2026-06-01', task: 'Verify sequence area scrap bins are empty and tagged', status: 'pending' },
-    { id: 'dt_4', rep_id: '1', date: '2026-06-01', task: 'Inspect scrap tables for bulb rattles', status: 'pending' },
+    { id: 'dt_4', rep_id: '1', date: '2026-06-01', task: 'Review Scrap Table for bulb rattles', status: 'pending' },
     { id: 'dt_5', rep_id: '1', date: '2026-06-01', task: 'Submit end-of-shift walkthrough checklist', status: 'pending' }
   ],
   expenseEntries: [

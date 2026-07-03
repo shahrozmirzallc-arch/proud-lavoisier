@@ -89,8 +89,8 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
   const [areasWalked, setAreasWalked] = useState([
     { id: 'wa_1', name: 'Online assembly', status: 'pending', contact: 'Martin', notes: '' },
     { id: 'wa_2', name: 'Sequence area', status: 'pending', contact: 'Martin', notes: '' },
-    { id: 'wa_3', name: 'Heavy repair', status: 'pending', contact: 'Martin', notes: '' },
-    { id: 'wa_4', name: 'Scrap tables', status: 'pending', contact: 'Martin', notes: '' }
+    { id: 'wa_3', name: 'Heavy rework', status: 'pending', contact: 'Martin', notes: '' },
+    { id: 'wa_4', name: 'Review Scrap Table', status: 'pending', contact: 'Martin', notes: '' }
   ]);
   const [bonusTasks, setBonusTasks] = useState([
     { id: 'bt_1', task: 'Matt\'s bin check audit on PN 86291945', status: 'pending', notes: '' }
@@ -277,8 +277,8 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
     const initialAreas = [
       { id: 'wa_1', name: 'Online assembly', status: 'pending', contact: 'T/L and installers', notes: '' },
       { id: 'wa_2', name: 'Sequence area', status: 'pending', contact: 'Martin', notes: '' },
-      { id: 'wa_3', name: 'Heavy repair', status: 'pending', contact: 'Martin', notes: '' },
-      { id: 'wa_4', name: 'Scrap tables', status: 'pending', contact: 'Martin', notes: '' }
+      { id: 'wa_3', name: 'Heavy rework', status: 'pending', contact: 'Martin', notes: '' },
+      { id: 'wa_4', name: 'Review Scrap Table', status: 'pending', contact: 'Martin', notes: '' }
     ];
     const initialBonus = [
       { id: 'bt_1', task: 'Matt\'s bin check audit on PN 86291945', status: 'pending', notes: '' }
@@ -489,7 +489,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
     ]);
     
     // Fill Describe Info
-    setSelectedArea('Scrap tables');
+    setSelectedArea('Review Scrap Table');
     setDefectType('Spare bulb loose in housing (rattle)');
     setDescription('Light on scrap table at sequence area for rattle. Spare bulb in housing again. Removed bulb and returned light to sequence area. Bulb was removed before scrap tag was written up. Please ensure all base lights do not have spare bulbs in housing causing rattling sound.');
     setActionTaken('Removed bulb, returned light to sequence area');
@@ -1168,18 +1168,17 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
               <p className="text-[9px] text-slate-500 font-bold uppercase tracking-wider pl-1">Actions Feed</p>
               <div className="grid grid-cols-2 gap-2">
                 <button 
-                  disabled={!shiftActive}
                   onClick={() => {
                     setActiveScreen('incident');
                     setIncStep(1);
                   }}
-                  className="bg-slate-900 hover:bg-slate-800 disabled:opacity-40 border border-slate-800/60 rounded-xl p-3 text-left transition-colors cursor-pointer group disabled:cursor-not-allowed"
+                  className="bg-slate-900 hover:bg-slate-800 border border-slate-800/60 rounded-xl p-3 text-left transition-colors cursor-pointer group"
                 >
                   <div className="w-6 h-6 rounded-lg bg-red-500/10 flex items-center justify-center mb-1.5 border border-red-500/10">
                     <AlertTriangle className="w-3.5 h-3.5 text-red-400" />
                   </div>
-                  <span className="text-xs font-bold block text-white group-hover:text-[#0EA5E9] transition-colors">New Incident</span>
-                  <span className="text-[8px] text-slate-500 block leading-tight mt-0.5">Report part defect</span>
+                  <span className="text-xs font-bold block text-white group-hover:text-[#0EA5E9] transition-colors">New Suspect Material</span>
+                  <span className="text-[8px] text-slate-500 block leading-tight mt-0.5">Log suspect materials on floor</span>
                 </button>
 
                 <button 
@@ -1218,6 +1217,19 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                   <span>Shift Logs & Summary</span>
                 </div>
                 <span className="text-[9px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full font-bold">1</span>
+              </button>
+
+              <button 
+                onClick={() => setActiveScreen('history')}
+                className="w-full h-11 bg-slate-900/60 hover:bg-slate-900 border border-slate-800/60 rounded-xl px-3.5 flex items-center justify-between text-xs font-semibold text-slate-350 hover:text-white cursor-pointer transition-colors mt-2"
+              >
+                <div className="flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-[#0EA5E9]" />
+                  <span>Suspect Material Logs</span>
+                </div>
+                <span className="text-[9px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full font-bold">
+                  {getEntities('incidents')?.filter(inc => inc.rep_id === (currentUser?.id || '1')).length || 0}
+                </span>
               </button>
             </div>
 
@@ -1305,7 +1317,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
               {incStep === 1 && (
                 <div className="flex flex-col gap-4">
                   <div className="flex justify-between items-center">
-                    <span className="text-[10px] text-[#22D3EE] font-bold uppercase tracking-wider">Step 1: Defect Visual Proof</span>
+                    <span className="text-[10px] text-[#22D3EE] font-bold uppercase tracking-wider">Step 1: Suspect Material Visual Proof</span>
                     <span className="text-[9px] text-slate-500">Min 3 photos recommended</span>
                   </div>
 
@@ -1468,7 +1480,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                   {capturedPhotos.closeup && (
                     <div className="flex flex-col gap-2 bg-slate-900/60 p-3 rounded-xl border border-slate-850">
                       <div className="flex justify-between items-center">
-                        <span className="text-[10px] text-[#22D3EE] font-bold uppercase tracking-wider">Defect Location Placement</span>
+                        <span className="text-[10px] text-[#22D3EE] font-bold uppercase tracking-wider">Suspect Material Placement</span>
                         <span className="text-[9px] text-slate-500">Tap part below</span>
                       </div>
                       
@@ -1789,7 +1801,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
               {/* STEP 3: DESCRIBE & CONTEXT (FIELDS WITH COUNTER AND AUTOCOMPLETE) */}
               {incStep === 3 && (
                 <div className="flex flex-col gap-3">
-                  <span className="text-[10px] text-[#22D3EE] font-bold uppercase tracking-wider">Step 3: Defect Metadata</span>
+                  <span className="text-[10px] text-[#22D3EE] font-bold uppercase tracking-wider">Step 3: Suspect Material Metadata</span>
 
                   {/* Area Found */}
                   <div className="flex flex-col gap-1">
@@ -1801,15 +1813,15 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                     >
                       <option value="Online assembly">Online assembly</option>
                       <option value="Sequence Area">Sequence Area</option>
-                      <option value="Heavy repair">Heavy repair</option>
-                      <option value="Scrap tables">Scrap tables</option>
+                      <option value="Heavy rework">Heavy rework</option>
+                      <option value="Review Scrap Table">Scrap tables</option>
                       <option value="Other">Other</option>
                     </select>
                   </div>
 
                   {/* Defect Type Suggestions */}
                   <div className="flex flex-col gap-1">
-                    <label className="text-[9px] font-bold text-slate-500 uppercase pl-1">Defect Category Suggestion</label>
+                    <label className="text-[9px] font-bold text-slate-500 uppercase pl-1">Suspect Material Category</label>
                     <select 
                       value={defectType}
                       onChange={(e) => {
@@ -1831,7 +1843,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                   {/* Custom Description Text with Word Count guidance (50 - 300 words recommended) */}
                   <div className="flex flex-col gap-1">
                     <div className="flex justify-between items-center pl-1">
-                      <label className="text-[9px] font-bold text-slate-500 uppercase">Defect Narrative Description</label>
+                      <label className="text-[9px] font-bold text-slate-500 uppercase">Suspect Material Narrative</label>
                       <span className={`text-[8px] font-bold ${description.split(/\s+/).filter(Boolean).length < 20 ? 'text-amber-400' : 'text-slate-500'}`}>
                         {description.split(/\s+/).filter(Boolean).length} words
                       </span>
@@ -2626,6 +2638,78 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                 <span>Save & Submit Expense</span>
               </button>
             </form>
+          </div>
+        )}
+
+        {activeScreen === 'history' && isLoggedIn && currentUser && (
+          <div className="flex-1 flex flex-col gap-4 text-left p-1 overflow-y-auto scrollbar-thin">
+            <div className="flex items-center gap-2 border-b border-slate-850 pb-2">
+              <button onClick={() => setActiveScreen('home')} className="p-1 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white"><X className="w-4 h-4" /></button>
+              <h2 className="text-xs font-black uppercase text-white tracking-wider flex items-center gap-1.5">
+                <FileText className="w-4 h-4 text-[#0EA5E9]" /> Suspect Material Logs
+              </h2>
+            </div>
+            
+            <div className="flex flex-col gap-2">
+              {getEntities('incidents')?.filter(inc => inc.rep_id === currentUser.id).length === 0 ? (
+                <div className="text-[10px] text-slate-500 italic text-center py-6">No suspect materials logged yet.</div>
+              ) : (
+                getEntities('incidents')
+                  ?.filter(inc => inc.rep_id === currentUser.id)
+                  .map(inc => {
+                    const hasRevision = inc.revision_request;
+                    return (
+                      <div key={inc.id} className="p-3 bg-slate-950 rounded-xl border border-slate-850 flex flex-col gap-2">
+                        <div className="flex justify-between items-center text-[10px]">
+                          <span className="font-extrabold text-[#22D3EE]">{inc.id.toUpperCase()}</span>
+                          <span className="text-slate-400 font-mono">{new Date(inc.sent_at).toLocaleDateString()}</span>
+                        </div>
+                        <div className="text-[10px] text-slate-300">
+                          <strong>Area Found:</strong> {inc.area}
+                        </div>
+                        <div className="text-[10px] text-slate-300 leading-relaxed">
+                          <strong>Description:</strong> {inc.description}
+                        </div>
+                        
+                        {hasRevision ? (
+                          <div className="bg-slate-900 border border-slate-800 p-2 rounded-lg text-[9px] text-amber-400">
+                            <strong>Revision Requested:</strong> "{inc.revision_request}"
+                          </div>
+                        ) : (
+                          <div className="flex flex-col gap-1.5 mt-1 border-t border-slate-900 pt-2">
+                            <span className="text-[9px] font-bold text-slate-500 uppercase">Request Correction</span>
+                            <div className="flex gap-1.5">
+                              <input 
+                                id={`rev_input_${inc.id}`}
+                                type="text" 
+                                placeholder="Explain correction needed..." 
+                                className="bg-slate-900 border border-slate-800 text-[10px] px-2 py-1 rounded flex-1 text-white placeholder-slate-650 focus:outline-none"
+                              />
+                              <button 
+                                onClick={() => {
+                                  const val = document.getElementById(`rev_input_${inc.id}`)?.value;
+                                  if (!val) return alert("Please enter correction description!");
+                                  const dbIncs = getEntities('incidents') || [];
+                                  const match = dbIncs.find(i => i.id === inc.id);
+                                  if (match) {
+                                    match.revision_request = val;
+                                    saveEntity('incidents', match);
+                                    window.dispatchEvent(new Event('ids_pulse_db_update'));
+                                    alert("Revision request successfully logged and sent to quality lead!");
+                                  }
+                                }} 
+                                className="px-2 py-1 bg-[#0EA5E9] hover:bg-[#0EA5E9]/80 text-white font-bold text-[9px] rounded uppercase cursor-pointer"
+                              >
+                                Submit
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })
+              )}
+            </div>
           </div>
         )}
 

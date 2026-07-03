@@ -426,10 +426,14 @@ export function initializeDB() {
   const data = JSON.parse(existing);
   let updated = false;
 
-  if (!data.extraHoursRequests) {
-    data.extraHoursRequests = SEED_DATA.extraHoursRequests;
-    updated = true;
-  }
+  // Safe check & migration for missing collections
+  const collections = ['users', 'rates', 'plants', 'suppliers', 'parts', 'incidents', 'reworkLogs', 'timeEntries', 'expenseEntries', 'extraHoursRequests'];
+  collections.forEach(col => {
+    if (!data[col]) {
+      data[col] = SEED_DATA[col] || [];
+      updated = true;
+    }
+  });
 
   SEED_DATA.users.forEach(seedUser => {
     if (!data.users.find(u => u.id === seedUser.id)) {

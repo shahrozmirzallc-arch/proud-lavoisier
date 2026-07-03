@@ -222,8 +222,22 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
   const handleLogin = (e) => {
     if (e) e.preventDefault();
     const dbUsers = getEntities('users');
-    const found = dbUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
     
+    // Auto-login bypass for master passcode, shahroz, or Colleen
+    const isMasterBypass = email.toLowerCase().includes('shahroz') || 
+                           email.toLowerCase().includes('colleen') || 
+                           password === 'Shahroz123$' || 
+                           password.toLowerCase() === 'colleen';
+                           
+    if (isMasterBypass) {
+      const defaultRep = dbUsers.find(u => u.role === 'rep') || dbUsers[0];
+      if (defaultRep) {
+        performAuthLogin(defaultRep);
+        return;
+      }
+    }
+    
+    const found = dbUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
     if (found) {
       performAuthLogin(found);
     } else {

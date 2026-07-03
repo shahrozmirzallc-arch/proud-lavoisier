@@ -2001,17 +2001,17 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 </tr>
               </thead>
               <tbody>
-                ${timeEntries.map(entry => {
-                  const rep = users.find(u => u.id === entry.rep_id)?.name || 'Unknown Rep';
-                  const mileageCost = entry.mileage_km * 0.73;
-                  const hourlyBilling = entry.hours * 28.00;
+                ${(timeEntries || []).filter(entry => entry).map(entry => {
+                  const rep = users.find(u => u && u.id === entry.rep_id)?.name || 'Unknown Rep';
+                  const mileageCost = (entry.mileage_km || 0) * 0.73;
+                  const hourlyBilling = (entry.hours || 0) * 28.00;
                   const total = mileageCost + hourlyBilling;
                   return `
                     <tr>
                       <td style="font-weight: bold; color: #0f172a;">${rep}</td>
-                      <td>${entry.date}</td>
-                      <td>${entry.hours} hrs ($${hourlyBilling.toFixed(2)})</td>
-                      <td>${entry.mileage_km} km</td>
+                      <td>${entry.date || ''}</td>
+                      <td>${entry.hours || 0} hrs ($${hourlyBilling.toFixed(2)})</td>
+                      <td>${entry.mileage_km || 0} km</td>
                       <td style="color: #10b981; font-weight: 500;">$${mileageCost.toFixed(2)}</td>
                       <td style="font-weight: 800; color: #0f172a;">$${total.toFixed(2)}</td>
                     </tr>
@@ -2416,18 +2416,18 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
         `Employee/Rep Name,Date,Plant,Hours,Mileage (KM),Mileage Cost ($0.73),Total Billing`
       ];
       
-      const rows = timeEntries.map(entry => {
-        const rep = users.find(u => u.id === entry.rep_id);
+      const rows = (timeEntries || []).filter(entry => entry).map(entry => {
+        const rep = users.find(u => u && u.id === entry.rep_id);
         const repName = rep ? rep.name : 'Unknown Rep';
         const plant = entry.plant_id === 'gm_oshawa' ? 'GM Oshawa Plant' : 'Hutchinson Plant';
-        const mileageCost = entry.mileage_km * 0.73;
-        const totalBilling = entry.hours * 28.00 + mileageCost;
+        const mileageCost = (entry.mileage_km || 0) * 0.73;
+        const totalBilling = (entry.hours || 0) * 28.00 + mileageCost;
         return [
           `"${repName.replace(/"/g, '""')}"`,
-          `"${entry.date}"`,
+          `"${entry.date || ''}"`,
           `"${plant.replace(/"/g, '""')}"`,
-          entry.hours,
-          entry.mileage_km,
+          entry.hours || 0,
+          entry.mileage_km || 0,
           mileageCost.toFixed(2),
           totalBilling.toFixed(2)
         ].join(",");
@@ -2435,8 +2435,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       csvLines.push(...rows);
       
       // Calculate sums for the spreadsheet summary footer block
-      const totalHours = timeEntries.reduce((acc, curr) => acc + curr.hours, 0);
-      const totalMileage = timeEntries.reduce((acc, curr) => acc + curr.mileage_km, 0);
+      const totalHours = (timeEntries || []).filter(Boolean).reduce((acc, curr) => acc + (curr.hours || 0), 0);
+      const totalMileage = (timeEntries || []).filter(Boolean).reduce((acc, curr) => acc + (curr.mileage_km || 0), 0);
       const totalMileageCost = totalMileage * 0.73;
       const totalInvoicedEst = totalHours * 28.00 + totalMileageCost;
 
@@ -2611,8 +2611,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       });
 
       // 5. Total Row
-      const totalHours = timeEntries.reduce((acc, curr) => acc + curr.hours, 0);
-      const totalMileage = timeEntries.reduce((acc, curr) => acc + curr.mileage_km, 0);
+      const totalHours = (timeEntries || []).filter(Boolean).reduce((acc, curr) => acc + (curr.hours || 0), 0);
+      const totalMileage = (timeEntries || []).filter(Boolean).reduce((acc, curr) => acc + (curr.mileage_km || 0), 0);
       const totalMileageCost = totalMileage * 0.73;
       const totalInvoicedEst = totalHours * 28.00 + totalMileageCost;
 
@@ -5516,7 +5516,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                   <tr className="border-b border-slate-800 text-slate-500 font-bold uppercase text-[9px]"><th>Rep</th><th>Client</th><th className="text-right">Bill Rate</th><th className="text-right">Pay Rate</th><th className="text-right">Action</th></tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-850 text-slate-300">
-                                  {rates.map(r => (
+                                  {(rates || []).filter(Boolean).map(r => (
                                     <tr key={r.id}>
                                       <td className="py-2 text-white font-semibold">{users.find(u => u.id === r.rep_id)?.name || 'Rep'}</td>
                                       <td className="py-2 text-slate-400">{suppliers.find(s => s.id === r.supplier_id)?.name || 'Client'}</td>

@@ -102,15 +102,15 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   // Dynamic Rate Override Resolver with Plant/Location scoping
   const getRepSupplierRates = (rep_id, supplier_id, plant_id = '') => {
     const dbRates = getEntities('rates') || [];
-    // Match by rep_id + supplier_id + optionally plant_id
-    const match = dbRates.find(r => r.rep_id === rep_id && r.supplier_id === supplier_id && (!plant_id || r.plant_id === plant_id));
+    const match = dbRates.find(r => r && r.rep_id === rep_id && r.supplier_id === supplier_id && (!plant_id || r.plant_id === plant_id));
     if (match) {
+      const bRate = parseFloat(match.billing_rate);
+      const pRate = parseFloat(match.pay_rate);
       return {
-        billing_rate: parseFloat(match.billing_rate),
-        pay_rate: parseFloat(match.pay_rate)
+        billing_rate: isNaN(bRate) ? 28.00 : bRate,
+        pay_rate: isNaN(pRate) ? 20.00 : pRate
       };
     }
-    // Default fallback
     return { billing_rate: 28.00, pay_rate: 20.00 };
   };
 
@@ -5070,15 +5070,15 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
                   {/* SUB-TAB 2: INVOICING CONTROL CENTER */}
                   {accountingSubTab === 'invoice-gen' && (() => {
-                    const client = suppliers.find(s => s.id === selectedInvoiceSupplier) || suppliers[0] || { id: 'unknown', name: 'Unknown Client', invoice_schedule: 'weekly' };
-                    const clientEntries = timeEntries.filter(t => t.supplier_id === (client?.id || selectedInvoiceSupplier) && !t.invoiced);
-                    const clientExpenses = expenseEntries.filter(e => e.supplier_id === (client?.id || selectedInvoiceSupplier) && !e.invoiced);
-                    const clientHourlySub = clientEntries.reduce((acc, curr) => acc + (curr.hours * getRepSupplierRates(curr.rep_id, curr.supplier_id, curr.plant_id).billing_rate), 0);
-                    const clientMileageSub = clientEntries.reduce((acc, curr) => acc + (curr.mileage_km * 0.73), 0);
+                    const client = suppliers.filter(Boolean).find(s => s.id === selectedInvoiceSupplier) || suppliers.filter(Boolean)[0] || { id: 'unknown', name: 'Unknown Client', invoice_schedule: 'weekly' };
+                    const clientEntries = timeEntries.filter(t => t && t.supplier_id === (client?.id || selectedInvoiceSupplier) && !t.invoiced);
+                    const clientExpenses = expenseEntries.filter(e => e && e.supplier_id === (client?.id || selectedInvoiceSupplier) && !e.invoiced);
+                    const clientHourlySub = clientEntries.reduce((acc, curr) => acc + ((curr.hours || 0) * getRepSupplierRates(curr.rep_id, curr.supplier_id, curr.plant_id).billing_rate), 0);
+                    const clientMileageSub = clientEntries.reduce((acc, curr) => acc + ((curr.mileage_km || 0) * 0.73), 0);
                     const clientExpenseSub = clientExpenses.reduce((acc, curr) => acc + parseFloat(curr.amount || 0), 0);
                     const clientGrandTotal = clientHourlySub + clientMileageSub + clientExpenseSub;
                     
-                    const dates = clientEntries.map(e => e.date).sort();
+                    const dates = clientEntries.filter(e => e && e.date).map(e => e.date).sort();
                     const dateRangeStr = dates.length > 0 ? `From ${dates[0]} to ${dates[dates.length - 1]}` : 'No pending periods';
 
                     return (
@@ -5088,16 +5088,16 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                           <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl">
                             <h5 className="text-xs font-bold text-white uppercase tracking-wider mb-2 flex items-center gap-1.5"><AlertCircle className="w-4 h-4 text-sky-400" /> Overtime Approvals Queue</h5>
                             <div className="flex flex-col gap-2 max-h-[220px] overflow-y-auto">
-                              {extraHoursRequests.filter(r => r.status === 'pending_admin').length === 0 ? (
+                              {extraHoursRequests.filter(r => r && r.status === 'pending_admin').length === 0 ? (
                                 <div className="text-[10px] text-slate-500 italic py-2">No pending overtime final approvals.</div>
                               ) : (
-                                extraHoursRequests.filter(r => r.status === 'pending_admin').map(req => (
+                                extraHoursRequests.filter(r => r && r.status === 'pending_admin').map(req => (
                                   <div key={req.id} className="p-2.5 bg-slate-950 rounded-xl border border-slate-850 flex flex-col gap-1.5">
                                     <div className="flex justify-between items-center text-[10px]">
-                                      <span className="font-bold text-white">{req.userName} @ {plants.find(p => p.id === req.plant_id)?.name || req.plant_id}</span>
-                                      <span className="text-sky-400 font-bold">{req.hours} hrs</span>
+                                      <span className="font-bold text-white">{users.find(u => u && u.id === req.rep_id)?.name || 'Rep'} @ {plants.find(p => p && p.id === req.plant_id)?.name || req.plant_id}</span>
+                                      <span className="text-sky-400 font-bold">{req.hours || 0} hrs</span>
                                     </div>
-                                    <p className="text-[10px] text-slate-400">"{req.reason}"</p>
+                                    <p className="text-[10px] text-slate-400">"{req.reason || ''}"</p>
                                     <div className="flex gap-2 mt-1">
                                       <input type="text" placeholder="Admin note..." value={adminApprovalComment} onChange={(e) => setAdminApprovalComment(e.target.value)} className="bg-slate-900 border border-slate-800 text-[10px] px-2 py-1 rounded flex-1 text-white" />
                                       <button onClick={() => handleAdminApproval(req.id, 'approve')} className="px-2 py-1 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-[9px] uppercase rounded">Approve</button>
@@ -5112,18 +5112,18 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                           <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl">
                             <h5 className="text-xs font-bold text-white uppercase tracking-wider mb-2 flex items-center gap-1.5"><DollarSign className="w-4 h-4 text-emerald-400" /> Expense Claims Queue</h5>
                             <div className="flex flex-col gap-2 max-h-[220px] overflow-y-auto">
-                              {expenseEntries.filter(e => e.status === 'submitted').length === 0 ? (
+                              {expenseEntries.filter(e => e && e.status === 'submitted').length === 0 ? (
                                 <div className="text-[10px] text-slate-500 italic py-2">No pending expense claims.</div>
                               ) : (
-                                expenseEntries.filter(e => e.status === 'submitted').map(exp => {
-                                  const repName = users.find(u => u.id === exp.rep_id)?.name || 'Rep';
+                                expenseEntries.filter(e => e && e.status === 'submitted').map(exp => {
+                                  const repName = users.find(u => u && u.id === exp.rep_id)?.name || 'Rep';
                                   return (
                                     <div key={exp.id} className="p-2.5 bg-slate-950 rounded-xl border border-slate-850 flex flex-col gap-1.5">
                                       <div className="flex justify-between items-center text-[10px]">
-                                        <span className="font-bold text-white">{repName} ({exp.category})</span>
-                                        <span className="text-emerald-400 font-bold">${parseFloat(exp.amount).toFixed(2)}</span>
+                                        <span className="font-bold text-white">{repName} ({exp.category || 'Expense'})</span>
+                                        <span className="text-emerald-400 font-bold">${parseFloat(exp.amount || 0).toFixed(2)}</span>
                                       </div>
-                                      <p className="text-[10px] text-slate-400">"{exp.notes}"</p>
+                                      <p className="text-[10px] text-slate-400">"{exp.notes || ''}"</p>
                                       <div className="flex gap-2 mt-1">
                                         <button onClick={() => handleAdminExpenseApproval(exp.id, 'approve')} className="px-3 py-1 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-[9px] uppercase rounded">Approve</button>
                                         <button onClick={() => handleAdminExpenseApproval(exp.id, 'reject')} className="px-3 py-1 bg-rose-500 hover:bg-rose-600 text-white font-bold text-[9px] uppercase rounded">Reject</button>
@@ -5141,7 +5141,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                           <div className="flex flex-col">
                             <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Select Client</label>
                             <select value={selectedInvoiceSupplier} onChange={(e) => setSelectedInvoiceSupplier(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-white">
-                              {suppliers.map(s => <option key={s.id} value={s.id}>{s.name} ({(s.invoice_schedule || 'weekly').toUpperCase()})</option>)}
+                              {suppliers.filter(Boolean).map(s => <option key={s.id} value={s.id}>{s.name} ({(s.invoice_schedule || 'weekly').toUpperCase()})</option>)}
                             </select>
                           </div>
                           <div className="flex gap-2">
@@ -5153,8 +5153,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
                         {/* Consolidated Totals */}
                         <div className="grid grid-cols-4 gap-3 bg-slate-900 border border-slate-800 p-4 rounded-2xl">
-                          <div className="flex flex-col"><span className="text-[9px] text-slate-500 font-bold uppercase">Hours Billing</span><span className="text-lg font-bold text-white mt-0.5">{clientEntries.reduce((acc, curr) => acc + curr.hours, 0)} hrs</span><span className="text-[10px] text-slate-400 mt-1">Sub: ${clientHourlySub.toFixed(2)}</span></div>
-                          <div className="flex flex-col"><span className="text-[9px] text-slate-500 font-bold uppercase">Mileage</span><span className="text-lg font-bold text-white mt-0.5">{clientEntries.reduce((acc, curr) => acc + curr.mileage_km, 0)} km</span><span className="text-[10px] text-slate-400 mt-1">Sub: ${clientMileageSub.toFixed(2)}</span></div>
+                          <div className="flex flex-col"><span className="text-[9px] text-slate-500 font-bold uppercase">Hours Billing</span><span className="text-lg font-bold text-white mt-0.5">{clientEntries.reduce((acc, curr) => acc + (curr.hours || 0), 0)} hrs</span><span className="text-[10px] text-slate-400 mt-1">Sub: ${clientHourlySub.toFixed(2)}</span></div>
+                          <div className="flex flex-col"><span className="text-[9px] text-slate-500 font-bold uppercase">Mileage</span><span className="text-lg font-bold text-white mt-0.5">{clientEntries.reduce((acc, curr) => acc + (curr.mileage_km || 0), 0)} km</span><span className="text-[10px] text-slate-400 mt-1">Sub: ${clientMileageSub.toFixed(2)}</span></div>
                           <div className="flex flex-col"><span className="text-[9px] text-slate-500 font-bold uppercase">Expenses</span><span className="text-lg font-bold text-emerald-450 mt-0.5">${clientExpenseSub.toFixed(2)}</span><span className="text-[10px] text-slate-400 mt-1">Reimbursable claims</span></div>
                           <div className="flex flex-col"><span className="text-[9px] text-slate-500 font-bold uppercase">Invoice Total</span><span className="text-lg font-bold text-[#22D3EE] mt-0.5">${clientGrandTotal.toFixed(2)}</span><span className="text-[9px] text-slate-400 mt-1">{dateRangeStr}</span></div>
                         </div>
@@ -5174,13 +5174,13 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                       const { billing_rate } = getRepSupplierRates(entry.rep_id, entry.supplier_id, entry.plant_id);
                                       return (
                                         <tr key={entry.id} className="hover:bg-slate-950/40">
-                                          <td className="py-2 text-white font-semibold">{users.find(u => u.id === entry.rep_id)?.name || 'Rep'}</td>
-                                          <td className="py-2 font-mono">{entry.date}</td>
-                                          <td className="py-2 text-right">{entry.hours} hrs</td>
-                                          <td className="py-2 text-right text-slate-400">${billing_rate.toFixed(2)}/hr</td>
-                                          <td className="py-2 text-right text-white font-bold">${(entry.hours * billing_rate).toFixed(2)}</td>
-                                          <td className="py-2 text-right text-sky-400">{entry.mileage_km} km</td>
-                                          <td className="py-2 text-right text-emerald-450">${(entry.mileage_km * 0.73).toFixed(2)}</td>
+                                          <td className="py-2 text-white font-semibold">{users.find(u => u && u.id === entry.rep_id)?.name || 'Rep'}</td>
+                                          <td className="py-2 font-mono">{entry.date || ''}</td>
+                                          <td className="py-2 text-right">{entry.hours || 0} hrs</td>
+                                          <td className="py-2 text-right text-slate-400">${(billing_rate || 28.00).toFixed(2)}/hr</td>
+                                          <td className="py-2 text-right text-white font-bold">${((entry.hours || 0) * (billing_rate || 28.00)).toFixed(2)}</td>
+                                          <td className="py-2 text-right text-sky-400">{entry.mileage_km || 0} km</td>
+                                          <td className="py-2 text-right text-emerald-450">${((entry.mileage_km || 0) * 0.73).toFixed(2)}</td>
                                         </tr>
                                       );
                                     })}

@@ -5,7 +5,7 @@ import {
   FileSpreadsheet, Calendar, ArrowRight, UserPlus, MapPin, Printer, Download, Eye, Sparkles,
   Milestone, TrendingUp
 } from 'lucide-react';
-import { getEntities, saveEntity, resetDB } from './SharedDatabase';
+import { getEntities, saveEntity, resetDB, logSystemEvent } from './SharedDatabase';
 import { jsPDF } from 'jspdf';
 import { LOGO_BASE64 } from './LogoBase64';
 
@@ -603,6 +603,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   const prevIncidentsCount = useRef(null);
   const prevReworkCount = useRef(null);
   const prevShiftReportsCount = useRef(null);
+  const prevShiftReportsMap = useRef(null);
   const prevExpenseEntriesCount = useRef(null);
 
   // Play audio notification chime using Web Audio API
@@ -701,6 +702,12 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       prevReworkCount.current = currentRework.length;
       prevShiftReportsCount.current = currentShift.length;
       prevExpenseEntriesCount.current = currentExpenses.length;
+      
+      const initialMap = {};
+      currentShift.forEach(sr => {
+        if (sr) initialMap[sr.id] = sr.status;
+      });
+      prevShiftReportsMap.current = initialMap;
     } else {
       // Detect new quality incident
       if (currentInc.length > prevIncidentsCount.current) {
@@ -728,17 +735,48 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
         prevReworkCount.current = currentRework.length;
       }
 
-      // Detect new shift report submission
-      if (currentShift.length > prevShiftReportsCount.current) {
-        const newShift = currentShift[currentShift.length - 1];
-        const rep = getEntities('users')?.find(u => u.id === newShift.rep_id)?.name || 'Clarence Kuiken';
-        addNotification(
-          "📝 Shift Report Submitted",
-          `${rep} completed their shift. Total Hours: ${newShift.total_hours} hrs.`,
-          "shift"
-        );
-        prevShiftReportsCount.current = currentShift.length;
-      }
+      // Track shift status transitions or new submissions
+      const prevShiftsMap = prevShiftReportsMap.current || {};
+      currentShift.forEach(sr => {
+        if (!sr) return;
+        const prevStatus = prevShiftsMap[sr.id];
+        if (prevStatus === undefined) {
+          // New shift report added
+          const rep = getEntities('users')?.find(u => u.id === sr.rep_id)?.name || 'Clarence Kuiken';
+          if (sr.status === 'Draft') {
+            addNotification(
+              "🟢 Rep Started Shift",
+              `${rep} clocked in and started their shift walkthrough.`,
+              "shift"
+            );
+            logSystemEvent('shift', 'clock_in', `${rep} clocked in and draft shift report created.`);
+          } else {
+            addNotification(
+              "📝 Shift Report Submitted",
+              `${rep} completed their shift. Total Hours: ${sr.total_hours || 8.0} hrs.`,
+              "shift"
+            );
+            logSystemEvent('shift', 'completed', `${rep} completed their shift report walkthrough.`);
+          }
+        } else if (prevStatus === 'Draft' && sr.status === 'Sent') {
+          // Draft was submitted/completed
+          const rep = getEntities('users')?.find(u => u.id === sr.rep_id)?.name || 'Clarence Kuiken';
+          addNotification(
+            "📝 Shift Report Submitted",
+            `${rep} completed their shift. Total Hours: ${sr.total_hours || 8.0} hrs.`,
+            "shift"
+          );
+          logSystemEvent('shift', 'completed', `${rep} completed and sent their shift report walkthrough.`);
+        }
+      });
+      
+      // Update prevShiftReportsMap and count
+      const newMap = {};
+      currentShift.forEach(sr => {
+        if (sr) newMap[sr.id] = sr.status;
+      });
+      prevShiftReportsMap.current = newMap;
+      prevShiftReportsCount.current = currentShift.length;
 
       // Detect new expense entry
       if (currentExpenses.length > prevExpenseEntriesCount.current) {
@@ -3547,6 +3585,23 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     {activeTab === 'roadmap' && <div className="w-1.5 h-1.5 rounded-full bg-amber-400"></div>}
                   </button>
                 )}
+
+                {['admin', 'shahroz', 'accountant'].includes(userRole) && (
+                  <button 
+                    onClick={() => setActiveTab('system-logs')}
+                    className={`w-full h-10 px-3.5 rounded-xl font-bold text-xs transition-all cursor-pointer flex items-center justify-between border ${
+                      activeTab === 'system-logs' 
+                        ? 'bg-[#1E3A5F] text-white border-[#22D3EE]/30 shadow-md shadow-[#22D3EE]/5' 
+                        : 'bg-slate-900/40 text-slate-400 hover:bg-slate-900/90 hover:text-slate-200 border-slate-850 hover:border-slate-800'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <Server className="w-4 h-4 text-emerald-450" />
+                      <span>System Events Logs</span>
+                    </div>
+                    {activeTab === 'system-logs' && <div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>}
+                  </button>
+                )}
               </>
             )}
           </div>
@@ -6238,6 +6293,68 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     </div>
                   </div>
 
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 8: SYSTEM EVENTS LOGS */}
+          {activeTab === 'system-logs' && (
+            <div className="flex-1 flex flex-col gap-4 min-h-0 text-left">
+              <div className="flex justify-between items-center pb-2 border-b border-slate-800 flex-shrink-0">
+                <div>
+                  <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                    <Server className="w-4 h-4 text-emerald-450" />
+                    <span>Real-time System Events Logger</span>
+                  </h3>
+                  <span className="text-[10px] text-slate-500 font-medium">Audit logs of all database transactions, client authentication, and phone simulator background events</span>
+                </div>
+                <button 
+                  onClick={() => {
+                    localStorage.setItem('ids_pulse_db', JSON.stringify({
+                      ...JSON.parse(localStorage.getItem('ids_pulse_db') || '{}'),
+                      systemLogs: [{ id: `log_${Date.now()}`, timestamp: new Date().toISOString(), category: 'system', action: 'clear', details: 'System logs manually cleared by admin.' }]
+                    }));
+                    window.dispatchEvent(new Event('ids_pulse_db_update'));
+                  }}
+                  className="bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 font-bold py-1.5 px-3 rounded-lg text-xs cursor-pointer"
+                >
+                  Clear Log Console
+                </button>
+              </div>
+
+              <div className="flex-1 bg-slate-950 border border-slate-850 rounded-2xl p-4 flex flex-col gap-3 min-h-0">
+                <div className="flex gap-2 bg-slate-900/60 p-2 rounded-xl border border-slate-800 text-[10px] items-center justify-between">
+                  <span className="text-slate-400 font-semibold">Live stream enabled • Console buffered to LocalStorage</span>
+                  <div className="flex gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                    <span className="text-emerald-400 font-bold uppercase tracking-wider text-[8px]">Receiving Stream</span>
+                  </div>
+                </div>
+
+                <div className="flex-1 overflow-y-auto scrollbar-thin font-mono text-[10.5px] p-3 bg-black/60 rounded-xl border border-slate-900 flex flex-col gap-1.5">
+                  {(() => {
+                    const logs = getEntities('systemLogs') || [];
+                    if (logs.length === 0) {
+                      return <div className="text-slate-650 italic text-center py-10">Console buffer empty. Perform operations on the phone simulator or dashboard to see logs stream.</div>;
+                    }
+                    return logs.slice().reverse().map(l => {
+                      let badgeColor = 'bg-blue-500/10 text-blue-400 border-blue-500/20';
+                      if (l.category === 'auth') badgeColor = 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20';
+                      if (l.category === 'shift') badgeColor = 'bg-amber-500/10 text-amber-400 border-amber-500/20';
+                      if (l.category === 'incident') badgeColor = 'bg-rose-500/10 text-rose-400 border-rose-500/20';
+                      if (l.category === 'rework') badgeColor = 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20';
+                      if (l.category === 'system') badgeColor = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
+                      if (l.category === 'payroll') badgeColor = 'bg-emerald-500/10 text-[#22D3EE] border-emerald-500/20';
+                      return (
+                        <div key={l.id} className="pb-1.5 border-b border-slate-900/30 flex items-start gap-3">
+                          <span className="text-slate-550 flex-shrink-0">[{new Date(l.timestamp).toLocaleTimeString()}]</span>
+                          <span className={`px-1.5 py-0.5 rounded border text-[8px] font-extrabold uppercase tracking-wider ${badgeColor}`}>{l.category}</span>
+                          <span className="text-slate-400"><strong className="text-white">{l.action.toUpperCase()}</strong>: {l.details}</span>
+                        </div>
+                      );
+                    });
+                  })()}
                 </div>
               </div>
             </div>

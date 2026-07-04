@@ -4,6 +4,75 @@ import WebDashboard from './components/WebDashboard';
 import { initializeDB } from './components/SharedDatabase';
 import { Shield, Activity, Monitor, Smartphone, RefreshCw, Laptop, Milestone, Lock, Key, Sun, Moon } from 'lucide-react';
 
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error, info) {
+    console.error("ErrorBoundary caught an error:", error, info);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{
+          padding: '24px',
+          backgroundColor: '#0f172a',
+          border: '1px solid rgba(239, 68, 68, 0.2)',
+          borderRadius: '16px',
+          color: '#f8fafc',
+          textAlign: 'left',
+          margin: '16px'
+        }}>
+          <h3 style={{ fontSize: '14px', fontWeight: 'bold', color: '#f87171', margin: '0 0 8px 0', textTransform: 'uppercase' }}>
+            ⚠️ Render Crash Detected
+          </h3>
+          <p style={{ fontSize: '12px', color: '#cbd5e1', lineHeight: '1.5', margin: '0 0 16px 0' }}>
+            An error occurred while rendering this section: <code style={{ backgroundColor: '#020617', padding: '2px 6px', borderRadius: '4px', color: '#fca5a5', fontFamily: 'monospace' }}>{this.state.error?.toString()}</code>
+          </p>
+          <pre style={{
+            backgroundColor: '#020617',
+            padding: '12px',
+            borderRadius: '12px',
+            fontSize: '10px',
+            fontFamily: 'monospace',
+            color: '#64748b',
+            overflowX: 'auto',
+            maxHeight: '250px',
+            margin: '0'
+          }}>
+            {this.state.error?.stack}
+          </pre>
+          <button 
+            type="button"
+            onClick={() => this.setState({ hasError: false, error: null })}
+            style={{
+              marginTop: '16px',
+              padding: '6px 12px',
+              backgroundColor: '#0ea5e9',
+              border: 'none',
+              borderRadius: '8px',
+              color: '#ffffff',
+              fontSize: '11px',
+              fontWeight: 'bold',
+              cursor: 'pointer'
+            }}
+          >
+            Retry Render
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 function App() {
   const [layoutMode, setLayoutMode] = useState('side-by-side'); // 'side-by-side' | 'phone-only' | 'dashboard-only' | 'roadmap-only'
   const [isOffline, setIsOffline] = useState(false);
@@ -20,9 +89,7 @@ function App() {
   const [dayNight, setDayNight] = useState(() => {
     const saved = localStorage.getItem('ids_pulse_daynight');
     if (saved) return saved;
-    // Auto-detect based on hour: Day (6am - 6pm) -> 'day' (Dark), Night -> 'night' (Light)
-    const hour = new Date().getHours();
-    return (hour >= 6 && hour < 18) ? 'day' : 'night';
+    return 'night'; // Default is Light Theme
   });
 
   // Password Lock State
@@ -388,7 +455,7 @@ function App() {
                  userRole === 'customer' ? "Customer Quality Portal" :
                  "Greg's Admin Dashboard (Web CRM Portal)"}
               </span>
-              <WebDashboard dbUpdateTrigger={dbUpdateTrigger} userRole={userRole} currentUserRepId={currentUserRepId} currentUserCustomerId={currentUserCustomerId} />
+              <ErrorBoundary><WebDashboard dbUpdateTrigger={dbUpdateTrigger} userRole={userRole} currentUserRepId={currentUserRepId} currentUserCustomerId={currentUserCustomerId} /></ErrorBoundary>
             </div>
           )}
 
@@ -396,7 +463,7 @@ function App() {
           {layoutMode === 'roadmap-only' && userRole === 'shahroz' && (
             <div className="flex-1 w-full max-w-5xl flex flex-col min-h-0">
               <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-2 pl-2">IDS Pulse Project Launch Roadmap & Timeline</span>
-              <WebDashboard dbUpdateTrigger={dbUpdateTrigger} forceRoadmapOnly={true} userRole={userRole} />
+              <ErrorBoundary><WebDashboard dbUpdateTrigger={dbUpdateTrigger} forceRoadmapOnly={true} userRole={userRole} /></ErrorBoundary>
             </div>
           )}
 

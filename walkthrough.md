@@ -94,8 +94,17 @@ We have successfully audited, verified, and deployed a series of UI and logic up
 * Injected a React `ErrorBoundary` component to isolate major component trees.
 * Wrapped both the `PhoneSimulator` and `WebDashboard` in independent error boundaries. If either component encounters a runtime crash, it displays a detailed, clean red diagnostics panel showing the exact trace instead of blanking out the whole system, allowing the other side to remain fully active.
 
-### 📊 8. Reps Directory Active Assignments Board
+### 8. Reps Directory Active Assignments Board
 * Replaced the standard users directory list with a live operational statistics header and cards mapping representatives to their shift states, assigned plant overrides, active locations, and cumulative hours, suspect materials, and rework totals.
+
+### 📝 9. Shift Completed Notification Bug Fix
+* Fixed a bug where clocking-in (which creates a new walkthrough report in `Draft` status) immediately triggered a "Shift Completed" notification on the dashboard.
+* Upgraded the tracking logic from simple array length comparisons to a status-aware state mapping. The dashboard now correctly alerts **"🟢 Rep Started Shift"** on clock-in, and only alerts **"📝 Shift Report Submitted"** when the shift report is finalized and sent.
+
+### 📟 10. Real-time System Events Logger Console
+* Implemented a system-wide event logging architecture with a dedicated `'systemLogs'` collection stored in the database.
+* Wired logging calls to track authentication, clock-ins, clock-outs, defect reporting, rework actions, expense submissions, and administrator approvals.
+* Created a terminal-style **"System Events Logs"** console tab in the dashboard for admins to watch live streams of all system activities and database writes in real time.
 
 ---
 

@@ -227,6 +227,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
     const isMasterBypass = email.toLowerCase().includes('shahroz') || 
                            email.toLowerCase().includes('colleen') || 
                            password === 'Shahroz123$' || 
+                           password.toLowerCase() === 'shahroz123$' || 
                            password.toLowerCase() === 'colleen';
                            
     if (isMasterBypass) {

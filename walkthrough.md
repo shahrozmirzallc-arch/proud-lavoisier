@@ -58,3 +58,47 @@ Chronological progress log. Append a dated entry after each completed phase. New
 - Successfully isolated Clarence's Phone Simulator so that its native dark-theme inputs, labels, and text colors are completely untouched by global light-mode overrides.
 - Added a CSS brightness-inversion filter (`filter: brightness(0) opacity(0.85)`) on the `/logo.png` image tags inside the header and dashboard in Light Mode, making the logo dark slate-gray to stand out beautifully on white backgrounds.
 - Successfully built, deployed, and re-mapped production alias `https://proud-lavoisier.vercel.app`.
+
+---
+
+## 2026-06-27 - Gemini - Terminology Revisions, On-Demand Logging, and System-Wide Safeguards
+
+# Walkthrough of Terminology Revisions, On-Demand Logging, and System-Wide Safeguards
+
+We have successfully audited, verified, and deployed a series of UI and logic updates to align the app with standard operating procedures and prevent any future runtime crashes.
+
+## 🛠️ Work Accomplished
+
+### 1. 🎨 Default Light Theme Integration
+* Pushed a high-contrast theme change so that the app defaults to Light Mode ('night' state) upon first load, keeping the toggle option active in the header for adaptability to dark environments.
+
+### 2. 📝 Terminology Standardization
+* Renamed **"Inspect Scrap Table"** $\rightarrow$ **"Review Scrap Table"** across task checklists, database collections, and forms.
+* Renamed **"Defect Alert"** $\rightarrow$ **"Suspect Material"** in dashboard metrics and labels.
+* Renamed **"Repair Parts"** $\rightarrow$ **"Rework Parts"** across all payroll interfaces.
+
+### 📱 3. On-Demand Logging (Shift-Free)
+* Bypassed the rigid clock-in restriction on the Phone Simulator, allowing representatives to submit **"New Suspect Material"** logs instantly without opening an active shift.
+
+### 🔄 4. Simulator Correction Requests
+* Implemented a new **"Suspect Material Logs"** screen inside the mobile simulator where representatives can review their logged entries and submit correction requests directly to the quality lead.
+
+### 📂 5. Weekly Manager Bulk Entry Portal
+* Integrated a bulk entry sub-tab under Colleen's dashboard workspace to let managers log and backdate hours and mileage for multiple suppliers at once, updating the invoicing summary in real time.
+
+### 🔑 6. Phone Simulator Auto-Login Bypass
+* Added an authentication bypass to the Phone Simulator so that entering the master passcode (`Shahroz123$`) or usernames like `shahroz`/`colleen` in the login fields automatically logs the user in as a representative, bypassing lockout screens.
+* Made passcode checks case-insensitive (`shahroz123$`, `colleen`) to prevent input errors.
+
+### 🛡️ 7. System-Wide React ErrorBoundary Isolation
+* Injected a React `ErrorBoundary` component to isolate major component trees.
+* Wrapped both the `PhoneSimulator` and `WebDashboard` in independent error boundaries. If either component encounters a runtime crash, it displays a detailed, clean red diagnostics panel showing the exact trace instead of blanking out the whole system, allowing the other side to remain fully active.
+
+### 📊 8. Reps Directory Active Assignments Board
+* Replaced the standard users directory list with a live operational statistics header and cards mapping representatives to their shift states, assigned plant overrides, active locations, and cumulative hours, suspect materials, and rework totals.
+
+---
+
+## 🧪 Verification and Live URLs
+* Deployed and aliased to: **[proud-lavoisier.vercel.app](https://proud-lavoisier.vercel.app)**
+* Local and production compilation build passes with zero warnings or errors.

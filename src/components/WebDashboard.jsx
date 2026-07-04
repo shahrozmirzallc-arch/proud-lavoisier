@@ -5586,7 +5586,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
           {activeTab === 'users' && (
             <div className="flex-1 flex flex-col gap-4 min-h-0">
               <div className="flex justify-between items-center pb-2 border-b border-slate-800 flex-shrink-0">
-                <h3 className="text-sm font-bold text-white uppercase tracking-wider">Operational Rep Directory</h3>
+                <h3 className="text-sm font-bold text-white uppercase tracking-wider">Operational Rep Directory & Active Assignments</h3>
                 <button 
                   onClick={() => setShowAssignRepModal(true)}
                   className="bg-[#0EA5E9] hover:bg-[#0EA5E9]/90 text-white font-bold py-1.5 px-3 rounded-lg text-xs cursor-pointer flex items-center gap-1"
@@ -5596,21 +5596,103 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 </button>
               </div>
 
-              <div className="flex-1 overflow-y-auto scrollbar-thin pr-1 grid grid-cols-2 gap-3 h-fit">
-                {users.map(u => (
-                  <div key={u.id} className="bg-slate-900 border border-slate-855 p-3.5 rounded-xl flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-[#1E3A5F] flex items-center justify-center font-bold text-sm text-[#22D3EE] border border-[#0EA5E9]/25">
-                        {u.avatar}
-                      </div>
-                      <div>
-                        <h4 className="text-xs font-bold text-white">{u.name}</h4>
-                        <p className="text-[10px] text-[#0EA5E9] font-bold uppercase tracking-wider mt-0.5">{u.role}</p>
-                      </div>
-                    </div>
-                    <span className="text-[10px] text-slate-500 font-mono">{u.phone}</span>
+              <div className="flex-1 overflow-y-auto scrollbar-thin pr-1 flex flex-col gap-4">
+                {/* Statistics Cards Header */}
+                <div className="grid grid-cols-4 gap-3 flex-shrink-0">
+                  <div className="bg-slate-900 border border-slate-800 p-3.5 rounded-2xl text-left">
+                    <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Total Active Reps</span>
+                    <span className="text-xl font-extrabold text-white mt-1 block leading-none">{users.filter(u => u.role === 'rep').length}</span>
                   </div>
-                ))}
+                  <div className="bg-slate-900 border border-slate-800 p-3.5 rounded-2xl text-left">
+                    <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Reps On Shift</span>
+                    <span className="text-xl font-extrabold text-emerald-450 mt-1 block leading-none">
+                      {users.filter(u => u && u.role === 'rep' && shiftReports.some(sr => sr.rep_id === u.id && sr.status === 'Draft')).length}
+                    </span>
+                  </div>
+                  <div className="bg-slate-900 border border-slate-800 p-3.5 rounded-2xl text-left">
+                    <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Total Suspect Materials</span>
+                    <span className="text-xl font-extrabold text-amber-450 mt-1 block leading-none">{incidents.length}</span>
+                  </div>
+                  <div className="bg-slate-900 border border-slate-800 p-3.5 rounded-2xl text-left">
+                    <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Total Rework Logged</span>
+                    <span className="text-xl font-extrabold text-[#22D3EE] mt-1 block leading-none">
+                      {reworkLogs.reduce((acc, curr) => acc + (curr.pieces_reworked || curr.quantity || 0), 0)} pcs
+                    </span>
+                  </div>
+                </div>
+
+                {/* Reps Detail List Grid */}
+                <div className="grid grid-cols-2 gap-4">
+                  {users.filter(u => u && u.role === 'rep').map(u => {
+                    const activeShift = shiftReports.find(r => r.rep_id === u.id && r.status === 'Draft');
+                    const assignedRates = rates.filter(r => r.rep_id === u.id);
+                    const assignedPlants = assignedRates.map(r => plants.find(p => p.id === r.plant_id || p.id === r.supplier_id)).filter(Boolean);
+                    
+                    const totalHours = timeEntries.filter(t => t.rep_id === u.id).reduce((acc, curr) => acc + (curr.hours || 0), 0);
+                    const totalIncidents = incidents.filter(i => i.rep_id === u.id).length;
+                    const totalRework = reworkLogs.filter(rl => rl.rep_id === u.id).reduce((acc, curr) => acc + (curr.pieces_reworked || curr.quantity || 0), 0);
+                    
+                    return (
+                      <div key={u.id} className="bg-slate-900 border border-slate-800 p-4 rounded-2xl flex flex-col gap-3.5 hover:border-slate-700 transition-colors">
+                        <div className="flex justify-between items-start">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-[#1E3A5F] flex items-center justify-center font-bold text-sm text-[#22D3EE] border border-[#0EA5E9]/25">
+                              {u.avatar}
+                            </div>
+                            <div className="text-left">
+                              <h4 className="text-xs font-black text-white">{u.name}</h4>
+                              <p className="text-[8.5px] text-slate-400 font-mono mt-0.5">{u.email} • {u.phone}</p>
+                            </div>
+                          </div>
+                          
+                          {activeShift ? (
+                            <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 text-[8px] font-extrabold uppercase rounded-full tracking-wider animate-pulse flex items-center gap-1 border border-emerald-500/20">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> On Shift
+                            </span>
+                          ) : (
+                            <span className="px-2 py-0.5 bg-slate-950 text-slate-500 text-[8px] font-extrabold uppercase rounded-full tracking-wider border border-slate-850">
+                              Off Shift
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Location Details */}
+                        <div className="bg-slate-950 border border-slate-850 p-2.5 rounded-xl flex flex-col gap-1.5 text-[10px] text-left">
+                          <div className="flex justify-between">
+                            <span className="text-slate-500 uppercase font-bold text-[8.5px]">Assigned Locations:</span>
+                            <span className="text-slate-300 font-semibold text-right max-w-[150px] truncate">
+                              {assignedPlants.map(p => p.name).join(', ') || 'General / Dispatch Queue'}
+                            </span>
+                          </div>
+                          {activeShift && (
+                            <div className="flex justify-between border-t border-slate-900 pt-1.5">
+                              <span className="text-emerald-400 uppercase font-bold text-[8.5px]">Active Plant Location:</span>
+                              <span className="text-emerald-350 font-bold">
+                                {plants.find(p => p.id === activeShift.plant_id)?.name || activeShift.plant_id}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Performance Stats */}
+                        <div className="grid grid-cols-3 gap-2 bg-slate-950/60 p-2 rounded-xl border border-slate-850/60 text-center">
+                          <div className="flex flex-col">
+                            <span className="text-[8px] text-slate-500 uppercase font-bold">Hours Logged</span>
+                            <span className="text-xs font-black text-white mt-0.5">{totalHours.toFixed(1)} hrs</span>
+                          </div>
+                          <div className="flex flex-col border-l border-r border-slate-900">
+                            <span className="text-[8px] text-slate-500 uppercase font-bold">Suspect Materials</span>
+                            <span className="text-xs font-black text-white mt-0.5">{totalIncidents}</span>
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="text-[8px] text-slate-500 uppercase font-bold">Rework Logged</span>
+                            <span className="text-xs font-black text-white mt-0.5">{totalRework} pcs</span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </div>
           )}

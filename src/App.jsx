@@ -435,11 +435,13 @@ function App() {
             <div className="flex-shrink-0 flex items-center justify-center py-4 mx-auto lg:mx-0">
               <div className="flex flex-col items-center">
                 <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-2">Clarence's Phone (Mobile App)</span>
-                <PhoneSimulator 
-                  isOffline={isOffline} 
-                  setIsOffline={setIsOffline}
-                  dbUpdateTrigger={dbUpdateTrigger}
-                />
+                <ErrorBoundary>
+                  <PhoneSimulator 
+                    isOffline={isOffline} 
+                    setIsOffline={setIsOffline}
+                    dbUpdateTrigger={dbUpdateTrigger}
+                  />
+                </ErrorBoundary>
               </div>
             </div>
           )}

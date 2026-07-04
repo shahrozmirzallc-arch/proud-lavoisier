@@ -74,7 +74,14 @@ class ErrorBoundary extends React.Component {
 }
 
 function App() {
-  const [layoutMode, setLayoutMode] = useState('side-by-side'); // 'side-by-side' | 'phone-only' | 'dashboard-only' | 'roadmap-only'
+  const [layoutMode, setLayoutMode] = useState(() => {
+    const role = sessionStorage.getItem('ids_pulse_role') || 'admin';
+    const unlocked = sessionStorage.getItem('ids_pulse_unlocked') === 'true';
+    if (unlocked && role !== 'qre') {
+      return 'dashboard-only';
+    }
+    return 'side-by-side';
+  }); // 'side-by-side' | 'phone-only' | 'dashboard-only' | 'roadmap-only'
   const [isOffline, setIsOffline] = useState(false);
   
   // Database update trigger to force component re-renders when data updates
@@ -205,6 +212,7 @@ function App() {
               if (hashHex === '3dc913cc6d99a4f6fa13c07c646c8efa8b9410d323c484dfc1fef45322782131') {
                 setIsUnlocked(true);
                 setUserRole('shahroz');
+                setLayoutMode('dashboard-only');
                 sessionStorage.setItem('ids_pulse_unlocked', 'true');
                 sessionStorage.setItem('ids_pulse_role', 'shahroz');
                 setAuthError(false);
@@ -212,6 +220,7 @@ function App() {
               } else if (pw === 'colleen') {
                 setIsUnlocked(true);
                 setUserRole('accountant');
+                setLayoutMode('dashboard-only');
                 sessionStorage.setItem('ids_pulse_unlocked', 'true');
                 sessionStorage.setItem('ids_pulse_role', 'accountant');
                 setAuthError(false);

@@ -20,6 +20,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   const [suppliers, setSuppliers] = useState([]);
   const [shiftReports, setShiftReports] = useState([]);
   const [dailyTasks, setDailyTasks] = useState([]);
+  const [plants, setPlants] = useState([]);
   
   // Navigation & Date Navigation Filtering
   const [activeTab, setActiveTab] = useState(
@@ -762,6 +763,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     setSuppliers(getEntities('suppliers') || []);
     setShiftReports(currentShift);
     setDailyTasks(getEntities('dailyTasks') || []);
+    setPlants(getEntities('plants') || []);
   }, [dbUpdateTrigger]);
 
   const handleReset = () => {

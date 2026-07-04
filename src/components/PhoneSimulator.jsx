@@ -3,7 +3,7 @@ import {
   Shield, Activity, Wifi, WifiOff, MapPin, Clock, 
   User, Lock, LogOut, CheckCircle, AlertTriangle, Play, Square, X, Calendar,
   Camera, Scan, Plus, ChevronRight, Mail, Send, RotateCcw, Volume2, Video, ArrowLeft, Trash2,
-  Receipt, DollarSign
+  Receipt, DollarSign, FileText
 } from 'lucide-react';
 import { getEntities, addIncident, addEmailLog, addReworkLog, saveEntity, addExpenseEntry } from './SharedDatabase';
 

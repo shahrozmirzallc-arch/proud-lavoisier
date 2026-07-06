@@ -5,7 +5,7 @@ import {
   FileSpreadsheet, Calendar, ArrowRight, UserPlus, MapPin, Printer, Download, Eye, Sparkles,
   Milestone, TrendingUp, FolderKanban, PlusCircle
 } from 'lucide-react';
-import { getEntities, saveEntity, resetDB, logSystemEvent, addProject } from './SharedDatabase';
+import { getEntities, saveEntity, resetDB, logSystemEvent, addProject, deleteRate } from './SharedDatabase';
 import { jsPDF } from 'jspdf';
 import { LOGO_BASE64 } from './LogoBase64';
 
@@ -227,12 +227,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   };
 
   const handleDeleteRate = (rateId) => {
-    const db = getDB();
-    if (db.rates) {
-      db.rates = db.rates.filter(r => r.id !== rateId);
-      saveDB(db);
-      setRates(db.rates);
-    }
+    deleteRate(rateId);
+    setRates(getEntities('rates') || []);
   };
 
   const handleMarkAsInvoiced = (clientEntries, clientExpenses) => {

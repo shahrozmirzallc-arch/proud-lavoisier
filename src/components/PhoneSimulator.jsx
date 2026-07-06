@@ -321,7 +321,10 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
       };
       saveEntity('shiftReports', draftReport);
       window.dispatchEvent(new Event('ids_pulse_db_update'));
-      logSystemEvent('shift', 'clock_in', `${currentUser.name} clocked in at plant ${selectedPlant} serving supplier ${selectedSupplier}.`);
+      const dbProjects = getEntities('projects') || [];
+      const projMatch = dbProjects.find(p => p && p.rep_id === currentUser.id && p.plant_id === selectedPlant);
+      const supplierName = projMatch ? projMatch.client_id : 'unknown';
+      logSystemEvent('shift', 'clock_in', `${currentUser.name} clocked in at plant ${selectedPlant} serving supplier ${supplierName}.`);
     }
   };
 

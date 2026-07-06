@@ -150,6 +150,16 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     return 'CAD';
   };
 
+  // Look up project currency for expenses based on rep & supplier combination
+  const getExpenseCurrency = (exp) => {
+    const dbProjects = getEntities('projects') || [];
+    const projMatch = dbProjects.find(p => p && p.rep_id === exp.rep_id && p.client_id === exp.supplier_id);
+    if (projMatch) {
+      return projMatch.currency || 'USD';
+    }
+    return 'USD';
+  };
+
   // Submit handers
   const handleLogHoursSubmit = (e) => {
     e.preventDefault();

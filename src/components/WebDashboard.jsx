@@ -3,13 +3,13 @@ import {
   Shield, Activity, Server, FileText, Users, Mail, DollarSign, Database, 
   Search, Filter, ChevronRight, X, Clock, CheckCircle2, UserCheck, AlertCircle, 
   FileSpreadsheet, Calendar, ArrowRight, UserPlus, MapPin, Printer, Download, Eye, Sparkles,
-  Milestone, TrendingUp
+  Milestone, TrendingUp, FolderKanban, PlusCircle
 } from 'lucide-react';
-import { getEntities, saveEntity, resetDB, logSystemEvent } from './SharedDatabase';
+import { getEntities, saveEntity, resetDB, logSystemEvent, addProject } from './SharedDatabase';
 import { jsPDF } from 'jspdf';
 import { LOGO_BASE64 } from './LogoBase64';
 
-export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false, userRole = 'admin', currentUserRepId = '', currentUserCustomerId = '' }) {
+export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false, userRole = 'admin', currentUserRepId = '', currentUserCustomerId = '', layoutMode = 'side-by-side' }) {
   const [incidents, setIncidents] = useState([]);
   const [emailLogs, setEmailLogs] = useState([]);
   const [reworkLogs, setReworkLogs] = useState([]);
@@ -21,6 +21,18 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   const [shiftReports, setShiftReports] = useState([]);
   const [dailyTasks, setDailyTasks] = useState([]);
   const [plants, setPlants] = useState([]);
+  const [projects, setProjects] = useState([]);
+  const [selectedCurrencyFilter, setSelectedCurrencyFilter] = useState('all');
+  
+  // New Project Form state
+  const [newProjRep, setNewProjRep] = useState('');
+  const [newProjClient, setNewProjClient] = useState('');
+  const [newProjPlant, setNewProjPlant] = useState('');
+  const [newProjDesc, setNewProjDesc] = useState('');
+  const [newProjStartDate, setNewProjStartDate] = useState(new Date().toISOString().substring(0, 10));
+  const [newProjBilling, setNewProjBilling] = useState('');
+  const [newProjPay, setNewProjPay] = useState('');
+  const [newProjCurrency, setNewProjCurrency] = useState('USD');
   
   // Navigation & Date Navigation Filtering
   const [activeTab, setActiveTab] = useState(
@@ -61,6 +73,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
   // Invoicing States
   const [selectedInvoiceSupplier, setSelectedInvoiceSupplier] = useState('autokabel');
+  const [selectedInvoiceCurrency, setSelectedInvoiceCurrency] = useState('all');
 
   // Extra Hours Requests State
   const [extraHoursRequests, setExtraHoursRequests] = useState([]);
@@ -93,6 +106,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   const [newRepName, setNewRepName] = useState('');
   const [newRepEmail, setNewRepEmail] = useState('');
   const [newRepPhone, setNewRepPhone] = useState('');
+  const [newRepPayCurrency, setNewRepPayCurrency] = useState('CAD');
 
   // Load rates and extra hours requests from database on mount and update
   useEffect(() => {
@@ -102,6 +116,15 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
   // Dynamic Rate Override Resolver with Plant/Location scoping
   const getRepSupplierRates = (rep_id, supplier_id, plant_id = '') => {
+    const dbProjects = getEntities('projects') || [];
+    const projMatch = dbProjects.find(p => p && p.rep_id === rep_id && p.client_id === supplier_id && (!plant_id || p.plant_id === plant_id));
+    if (projMatch) {
+      return {
+        billing_rate: parseFloat(projMatch.billing_rate) || 28.00,
+        pay_rate: parseFloat(projMatch.pay_rate) || 20.00,
+        currency: projMatch.currency || 'USD'
+      };
+    }
     const dbRates = getEntities('rates') || [];
     const match = dbRates.find(r => r && r.rep_id === rep_id && r.supplier_id === supplier_id && (!plant_id || r.plant_id === plant_id));
     if (match) {
@@ -109,10 +132,22 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       const pRate = parseFloat(match.pay_rate);
       return {
         billing_rate: isNaN(bRate) ? 28.00 : bRate,
-        pay_rate: isNaN(pRate) ? 20.00 : pRate
+        pay_rate: isNaN(pRate) ? 20.00 : pRate,
+        currency: 'USD'
       };
     }
-    return { billing_rate: 28.00, pay_rate: 20.00 };
+    return { billing_rate: 28.00, pay_rate: 20.00, currency: 'USD' };
+  };
+
+  const getRepPayCurrency = (rep_id) => {
+    const rep = users.find(u => u && u.id === rep_id);
+    if (rep && rep.pay_currency) {
+      return rep.pay_currency;
+    }
+    if (rep_id === 'rep_hugo' || rep_id === 'rep_nabil' || rep_id === 'rep_rogelio') {
+      return 'USD';
+    }
+    return 'CAD';
   };
 
   // Submit handers
@@ -205,6 +240,10 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   };
 
   const handleExportClientQuickBooks = (clientEntries) => {
+    if (selectedInvoiceCurrency === 'all') {
+      alert("Please select a specific Billing Currency (CAD or USD) to export separate timesheets.");
+      return;
+    }
     let csv = "Date,Name,Customer:Job,Service Item,Duration,Notes,Billing Status\n";
     clientEntries.forEach(entry => {
       const repName = users.find(u => u.id === entry.rep_id)?.name || 'Rep';
@@ -224,6 +263,11 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   };
 
   const handleGenerateClientInvoicePDF = (client, dateRangeStr, clientEntries, clientExpenses) => {
+    if (selectedInvoiceCurrency === 'all') {
+      alert("Please select a specific Billing Currency (CAD or USD) to print separate statements for the client.");
+      return;
+    }
+    const curSymbol = selectedInvoiceCurrency === 'CAD' ? 'C$' : 'US$';
     try {
       const doc = new jsPDF();
       doc.setFont("Helvetica", "bold");
@@ -265,13 +309,13 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
       clientEntries.forEach(entry => {
         const repName = users.find(u => u.id === entry.rep_id)?.name || 'Rep';
-        const { billing_rate } = getRepSupplierRates(entry.rep_id, entry.supplier_id);
+        const { billing_rate } = getRepSupplierRates(entry.rep_id, entry.supplier_id, entry.plant_id);
         const sub = entry.hours * billing_rate;
         totalBill += sub;
         doc.text(`${repName} - Hours worked (${entry.date})`, 16, y);
         doc.text(`${entry.hours} hrs`, 100, y);
-        doc.text(`$${billing_rate.toFixed(2)}/hr`, 130, y);
-        doc.text(`$${sub.toFixed(2)}`, 160, y);
+        doc.text(`${curSymbol}${billing_rate.toFixed(2)}/hr`, 130, y);
+        doc.text(`${curSymbol}${sub.toFixed(2)}`, 160, y);
         y += 8;
       });
 
@@ -282,8 +326,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
           totalBill += sub;
           doc.text(`${repName} - Travel Mileage (${entry.date})`, 16, y);
           doc.text(`${entry.mileage_km} km`, 100, y);
-          doc.text(`$0.73/km`, 130, y);
-          doc.text(`$${sub.toFixed(2)}`, 160, y);
+          doc.text(`${curSymbol}0.73/km`, 130, y);
+          doc.text(`${curSymbol}${sub.toFixed(2)}`, 160, y);
           y += 8;
         }
       });
@@ -294,8 +338,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
         totalBill += sub;
         doc.text(`${repName} - Reimbursement (${exp.category}: ${exp.notes})`, 16, y);
         doc.text(`1 qty`, 100, y);
-        doc.text(`$${sub.toFixed(2)}`, 130, y);
-        doc.text(`$${sub.toFixed(2)}`, 160, y);
+        doc.text(`${curSymbol}${sub.toFixed(2)}`, 130, y);
+        doc.text(`${curSymbol}${sub.toFixed(2)}`, 160, y);
         y += 8;
       });
 
@@ -304,7 +348,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       y += 8;
       doc.setFont("Helvetica", "bold");
       doc.text("TOTAL DUE:", 120, y);
-      doc.text(`$${totalBill.toFixed(2)}`, 160, y);
+      doc.text(`${curSymbol}${totalBill.toFixed(2)}`, 160, y);
 
       doc.save(`Invoice_${client.name.replace(/\s+/g, '_')}_${Date.now()}.pdf`);
     } catch (err) {
@@ -391,6 +435,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       email: newRepEmail,
       role: 'rep',
       phone: newRepPhone,
+      pay_currency: newRepPayCurrency,
       avatar: newRepName.split(' ').map(n => n[0]).join('').toUpperCase()
     };
     saveEntity('users', newRep);
@@ -398,6 +443,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     setNewRepName('');
     setNewRepEmail('');
     setNewRepPhone('');
+    setNewRepPayCurrency('CAD');
     alert("Representative onboarding successful!");
   };
 
@@ -802,6 +848,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     setShiftReports(currentShift);
     setDailyTasks(getEntities('dailyTasks') || []);
     setPlants(getEntities('plants') || []);
+    setProjects(getEntities('projects') || []);
   }, [dbUpdateTrigger]);
 
   const handleReset = () => {
@@ -3077,7 +3124,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   };
 
   return (
-    <div className="web-dashboard-frame flex-1 bg-[#080d1a] border border-slate-850 rounded-3xl p-6 shadow-2xl flex flex-col h-[780px] overflow-hidden text-left relative">
+    <div className={`web-dashboard-frame flex-1 bg-[#080d1a] border border-slate-850 rounded-3xl p-6 shadow-2xl flex flex-col ${layoutMode === 'dashboard-only' || layoutMode === 'roadmap-only' ? 'min-h-[calc(100vh-140px)]' : 'h-[780px]'} overflow-hidden text-left relative`}>
       
       {/* Dashboard Top Header */}
       <div className="flex items-center justify-between pb-5 border-b border-slate-800 flex-shrink-0">
@@ -3583,6 +3630,23 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                       <span>Launch Roadmap</span>
                     </div>
                     {activeTab === 'roadmap' && <div className="w-1.5 h-1.5 rounded-full bg-amber-400"></div>}
+                  </button>
+                )}
+
+                {['admin', 'shahroz', 'accountant'].includes(userRole) && (
+                  <button 
+                    onClick={() => setActiveTab('projects')}
+                    className={`w-full h-10 px-3.5 rounded-xl font-bold text-xs transition-all cursor-pointer flex items-center justify-between border ${
+                      activeTab === 'projects' 
+                        ? 'bg-[#1E3A5F] text-white border-[#22D3EE]/30 shadow-md shadow-[#22D3EE]/5' 
+                        : 'bg-slate-900/40 text-slate-400 hover:bg-slate-900/90 hover:text-slate-200 border-slate-850 hover:border-slate-800'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <FolderKanban className="w-4 h-4 text-cyan-400" />
+                      <span>Projects Registry</span>
+                    </div>
+                    {activeTab === 'projects' && <div className="w-1.5 h-1.5 rounded-full bg-cyan-400"></div>}
                   </button>
                 )}
 
@@ -5128,13 +5192,35 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   {/* SUB-TAB 2: INVOICING CONTROL CENTER */}
                   {accountingSubTab === 'invoice-gen' && (() => {
                     const client = suppliers.filter(Boolean).find(s => s.id === selectedInvoiceSupplier) || suppliers.filter(Boolean)[0] || { id: 'unknown', name: 'Unknown Client', invoice_schedule: 'weekly' };
-                    const clientEntries = timeEntries.filter(t => t && t.supplier_id === (client?.id || selectedInvoiceSupplier) && !t.invoiced);
-                    const clientExpenses = expenseEntries.filter(e => e && e.supplier_id === (client?.id || selectedInvoiceSupplier) && !e.invoiced);
-                    const clientHourlySub = clientEntries.reduce((acc, curr) => acc + ((curr.hours || 0) * getRepSupplierRates(curr.rep_id, curr.supplier_id, curr.plant_id).billing_rate), 0);
-                    const clientMileageSub = clientEntries.reduce((acc, curr) => acc + ((curr.mileage_km || 0) * 0.73), 0);
-                    const clientExpenseSub = clientExpenses.reduce((acc, curr) => acc + parseFloat(curr.amount || 0), 0);
-                    const clientGrandTotal = clientHourlySub + clientMileageSub + clientExpenseSub;
                     
+                    const clientEntries = timeEntries.filter(t => t && t.supplier_id === (client?.id || selectedInvoiceSupplier) && !t.invoiced && (selectedInvoiceCurrency === 'all' || getRepSupplierRates(t.rep_id, t.supplier_id, t.plant_id).currency === selectedInvoiceCurrency));
+                    const clientExpenses = expenseEntries.filter(e => e && e.supplier_id === (client?.id || selectedInvoiceSupplier) && !e.invoiced && (selectedInvoiceCurrency === 'all' || getExpenseCurrency(e) === selectedInvoiceCurrency));
+
+                    const cadEntries = clientEntries.filter(t => getRepSupplierRates(t.rep_id, t.supplier_id, t.plant_id).currency === 'CAD');
+                    const cadExpenses = clientExpenses.filter(e => getExpenseCurrency(e) === 'CAD');
+                    const cadHourly = cadEntries.reduce((acc, curr) => acc + ((curr.hours || 0) * getRepSupplierRates(curr.rep_id, curr.supplier_id, curr.plant_id).billing_rate), 0);
+                    const cadMileage = cadEntries.reduce((acc, curr) => acc + ((curr.mileage_km || 0) * 0.73), 0);
+                    const cadExpense = cadExpenses.reduce((acc, curr) => acc + parseFloat(curr.amount || 0), 0);
+                    const cadTotal = cadHourly + cadMileage + cadExpense;
+
+                    const usdEntries = clientEntries.filter(t => getRepSupplierRates(t.rep_id, t.supplier_id, t.plant_id).currency === 'USD');
+                    const usdExpenses = clientExpenses.filter(e => getExpenseCurrency(e) === 'USD');
+                    const usdHourly = usdEntries.reduce((acc, curr) => acc + ((curr.hours || 0) * getRepSupplierRates(curr.rep_id, curr.supplier_id, curr.plant_id).billing_rate), 0);
+                    const usdMileage = usdEntries.reduce((acc, curr) => acc + ((curr.mileage_km || 0) * 0.73), 0);
+                    const usdExpense = usdExpenses.reduce((acc, curr) => acc + parseFloat(curr.amount || 0), 0);
+                    const usdTotal = usdHourly + usdMileage + usdExpense;
+
+                    const clientHourlySub = selectedInvoiceCurrency === 'CAD' ? cadHourly : (selectedInvoiceCurrency === 'USD' ? usdHourly : cadHourly + usdHourly);
+                    const clientMileageSub = selectedInvoiceCurrency === 'CAD' ? cadMileage : (selectedInvoiceCurrency === 'USD' ? usdMileage : cadMileage + usdMileage);
+                    const clientExpenseSub = selectedInvoiceCurrency === 'CAD' ? cadExpense : (selectedInvoiceCurrency === 'USD' ? usdExpense : cadExpense + usdExpense);
+                    const clientGrandTotal = selectedInvoiceCurrency === 'CAD' ? cadTotal : (selectedInvoiceCurrency === 'USD' ? usdTotal : cadTotal + usdTotal);
+
+                    const hoursSubDisplay = selectedInvoiceCurrency === 'all' ? `C$ ${cadHourly.toFixed(2)} + US$ ${usdHourly.toFixed(2)}` : (selectedInvoiceCurrency === 'CAD' ? `C$ ${cadHourly.toFixed(2)}` : `US$ ${usdHourly.toFixed(2)}`);
+                    const mileageSubDisplay = selectedInvoiceCurrency === 'all' ? `C$ ${cadMileage.toFixed(2)} + US$ ${usdMileage.toFixed(2)}` : (selectedInvoiceCurrency === 'CAD' ? `C$ ${cadMileage.toFixed(2)}` : `US$ ${usdMileage.toFixed(2)}`);
+                    const expenseSubDisplay = selectedInvoiceCurrency === 'all' ? `C$ ${cadExpense.toFixed(2)} + US$ ${usdExpense.toFixed(2)}` : (selectedInvoiceCurrency === 'CAD' ? `C$ ${cadExpense.toFixed(2)}` : `US$ ${usdExpense.toFixed(2)}`);
+                    const grandTotalDisplay = selectedInvoiceCurrency === 'all' ? `C$ ${cadTotal.toFixed(2)} & US$ ${usdTotal.toFixed(2)}` : (selectedInvoiceCurrency === 'CAD' ? `C$ ${cadTotal.toFixed(2)}` : `US$ ${usdTotal.toFixed(2)}`);
+                    const invoiceCurrencySymbol = selectedInvoiceCurrency === 'all' ? '' : (selectedInvoiceCurrency === 'CAD' ? 'C$' : 'US$');
+
                     const dates = clientEntries.filter(e => e && e.date).map(e => e.date).sort();
                     const dateRangeStr = dates.length > 0 ? `From ${dates[0]} to ${dates[dates.length - 1]}` : 'No pending periods';
 
@@ -5146,7 +5232,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                             <h5 className="text-xs font-bold text-white uppercase tracking-wider mb-2 flex items-center gap-1.5"><AlertCircle className="w-4 h-4 text-sky-400" /> Overtime Approvals Queue</h5>
                             <div className="flex flex-col gap-2 max-h-[220px] overflow-y-auto">
                               {extraHoursRequests.filter(r => r && r.status === 'pending_admin').length === 0 ? (
-                                <div className="text-[10px] text-slate-500 italic py-2">No pending overtime final approvals.</div>
+                                <div className="text-[10px] text-slate-550 italic py-2">No pending overtime final approvals.</div>
                               ) : (
                                 extraHoursRequests.filter(r => r && r.status === 'pending_admin').map(req => (
                                   <div key={req.id} className="p-2.5 bg-slate-950 rounded-xl border border-slate-850 flex flex-col gap-1.5">
@@ -5170,7 +5256,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                             <h5 className="text-xs font-bold text-white uppercase tracking-wider mb-2 flex items-center gap-1.5"><DollarSign className="w-4 h-4 text-emerald-400" /> Expense Claims Queue</h5>
                             <div className="flex flex-col gap-2 max-h-[220px] overflow-y-auto">
                               {expenseEntries.filter(e => e && e.status === 'submitted').length === 0 ? (
-                                <div className="text-[10px] text-slate-500 italic py-2">No pending expense claims.</div>
+                                <div className="text-[10px] text-slate-550 italic py-2">No pending expense claims.</div>
                               ) : (
                                 expenseEntries.filter(e => e && e.status === 'submitted').map(exp => {
                                   const repName = users.find(u => u && u.id === exp.rep_id)?.name || 'Rep';
@@ -5194,12 +5280,22 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         </div>
 
                         {/* Invoicing Controls */}
-                        <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl flex items-center justify-between">
-                          <div className="flex flex-col">
-                            <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Select Client</label>
-                            <select value={selectedInvoiceSupplier} onChange={(e) => setSelectedInvoiceSupplier(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-white">
-                              {suppliers.filter(Boolean).map(s => <option key={s.id} value={s.id}>{s.name} ({(s.invoice_schedule || 'weekly').toUpperCase()})</option>)}
-                            </select>
+                        <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl flex items-center justify-between gap-4">
+                          <div className="flex gap-4 col-span-2">
+                            <div className="flex flex-col">
+                              <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Select Client</label>
+                              <select value={selectedInvoiceSupplier} onChange={(e) => setSelectedInvoiceSupplier(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-white">
+                                {suppliers.filter(Boolean).map(s => <option key={s.id} value={s.id}>{s.name} ({(s.invoice_schedule || 'weekly').toUpperCase()})</option>)}
+                              </select>
+                            </div>
+                            <div className="flex flex-col">
+                              <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Billing Currency</label>
+                              <select value={selectedInvoiceCurrency} onChange={(e) => setSelectedInvoiceCurrency(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-white">
+                                <option value="all">All Currencies (Combined View)</option>
+                                <option value="CAD">CAD Only (C$)</option>
+                                <option value="USD">USD Only (US$)</option>
+                              </select>
+                            </div>
                           </div>
                           <div className="flex gap-2">
                             <button onClick={() => handleGenerateClientInvoicePDF(client, dateRangeStr, clientEntries, clientExpenses)} disabled={clientEntries.length === 0 && clientExpenses.length === 0} className="flex items-center gap-1.5 bg-[#0EA5E9] disabled:opacity-40 hover:bg-[#0EA5E9]/90 text-white font-bold py-2 px-4 rounded-xl text-xs transition-colors cursor-pointer"><Printer className="w-4 h-4" /> PDF Invoice</button>
@@ -5210,10 +5306,10 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
                         {/* Consolidated Totals */}
                         <div className="grid grid-cols-4 gap-3 bg-slate-900 border border-slate-800 p-4 rounded-2xl">
-                          <div className="flex flex-col"><span className="text-[9px] text-slate-500 font-bold uppercase">Hours Billing</span><span className="text-lg font-bold text-white mt-0.5">{clientEntries.reduce((acc, curr) => acc + (curr.hours || 0), 0)} hrs</span><span className="text-[10px] text-slate-400 mt-1">Sub: ${clientHourlySub.toFixed(2)}</span></div>
-                          <div className="flex flex-col"><span className="text-[9px] text-slate-500 font-bold uppercase">Mileage</span><span className="text-lg font-bold text-white mt-0.5">{clientEntries.reduce((acc, curr) => acc + (curr.mileage_km || 0), 0)} km</span><span className="text-[10px] text-slate-400 mt-1">Sub: ${clientMileageSub.toFixed(2)}</span></div>
-                          <div className="flex flex-col"><span className="text-[9px] text-slate-500 font-bold uppercase">Expenses</span><span className="text-lg font-bold text-emerald-450 mt-0.5">${clientExpenseSub.toFixed(2)}</span><span className="text-[10px] text-slate-400 mt-1">Reimbursable claims</span></div>
-                          <div className="flex flex-col"><span className="text-[9px] text-slate-500 font-bold uppercase">Invoice Total</span><span className="text-lg font-bold text-[#22D3EE] mt-0.5">${clientGrandTotal.toFixed(2)}</span><span className="text-[9px] text-slate-400 mt-1">{dateRangeStr}</span></div>
+                          <div className="flex flex-col"><span className="text-[9px] text-slate-500 font-bold uppercase">Hours Billing</span><span className="text-lg font-bold text-white mt-0.5">{clientEntries.reduce((acc, curr) => acc + (curr.hours || 0), 0)} hrs</span><span className="text-[10px] text-slate-400 mt-1">Sub: {hoursSubDisplay}</span></div>
+                          <div className="flex flex-col"><span className="text-[9px] text-slate-500 font-bold uppercase">Mileage</span><span className="text-lg font-bold text-white mt-0.5">{clientEntries.reduce((acc, curr) => acc + (curr.mileage_km || 0), 0)} km</span><span className="text-[10px] text-slate-400 mt-1">Sub: {mileageSubDisplay}</span></div>
+                          <div className="flex flex-col"><span className="text-[9px] text-slate-500 font-bold uppercase">Expenses</span><span className="text-lg font-bold text-emerald-450 mt-0.5">{expenseSubDisplay}</span><span className="text-[10px] text-slate-400 mt-1">Reimbursable claims</span></div>
+                          <div className="flex flex-col"><span className="text-[9px] text-slate-500 font-bold uppercase">Invoice Total</span><span className="text-lg font-bold text-[#22D3EE] mt-0.5">{grandTotalDisplay}</span><span className="text-[9px] text-slate-400 mt-1">{dateRangeStr}</span></div>
                         </div>
 
                         {/* Items Table list */}
@@ -5228,21 +5324,48 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                   </thead>
                                   <tbody className="divide-y divide-slate-850 text-slate-300">
                                     {clientEntries.map(entry => {
-                                      const { billing_rate } = getRepSupplierRates(entry.rep_id, entry.supplier_id, entry.plant_id);
+                                      const { billing_rate, currency } = getRepSupplierRates(entry.rep_id, entry.supplier_id, entry.plant_id);
+                                      const rowSymbol = currency === 'CAD' ? 'C$' : 'US$';
                                       return (
                                         <tr key={entry.id} className="hover:bg-slate-950/40">
                                           <td className="py-2 text-white font-semibold">{users.find(u => u && u.id === entry.rep_id)?.name || 'Rep'}</td>
                                           <td className="py-2 font-mono">{entry.date || ''}</td>
                                           <td className="py-2 text-right">{entry.hours || 0} hrs</td>
-                                          <td className="py-2 text-right text-slate-400">${(billing_rate || 28.00).toFixed(2)}/hr</td>
-                                          <td className="py-2 text-right text-white font-bold">${((entry.hours || 0) * (billing_rate || 28.00)).toFixed(2)}</td>
+                                          <td className="py-2 text-right text-slate-400">{rowSymbol} {(billing_rate || 28.00).toFixed(2)}/hr</td>
+                                          <td className="py-2 text-right text-white font-bold">{rowSymbol} {((entry.hours || 0) * (billing_rate || 28.00)).toFixed(2)}</td>
                                           <td className="py-2 text-right text-sky-400">{entry.mileage_km || 0} km</td>
-                                          <td className="py-2 text-right text-emerald-450">${((entry.mileage_km || 0) * 0.73).toFixed(2)}</td>
+                                          <td className="py-2 text-right text-emerald-450">{rowSymbol} {((entry.mileage_km || 0) * 0.73).toFixed(2)}</td>
                                         </tr>
                                       );
                                     })}
                                   </tbody>
                                 </table>
+                              )}
+
+                              {clientExpenses.length > 0 && (
+                                <div className="mt-4 pt-4 border-t border-slate-850">
+                                  <h5 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Pending Reimbursements</h5>
+                                  <table className="w-full text-xs text-left">
+                                    <thead>
+                                      <tr className="border-b border-slate-800 text-slate-500 font-bold uppercase text-[9px]"><th className="py-2">Rep</th><th className="py-2">Date</th><th className="py-2">Category</th><th className="py-2">Notes</th><th className="py-2 text-right">Amount</th></tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-850 text-slate-300">
+                                      {clientExpenses.map(exp => {
+                                        const expCurr = getExpenseCurrency(exp);
+                                        const expSymbol = expCurr === 'CAD' ? 'C$' : 'US$';
+                                        return (
+                                          <tr key={exp.id} className="hover:bg-slate-950/40">
+                                            <td className="py-2 text-white font-semibold">{users.find(u => u && u.id === exp.rep_id)?.name || 'Rep'}</td>
+                                            <td className="py-2 font-mono">{exp.date || ''}</td>
+                                            <td className="py-2"><span className="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 text-[8px] font-bold uppercase">{exp.category}</span></td>
+                                            <td className="py-2 text-slate-400">{exp.notes || ''}</td>
+                                            <td className="py-2 text-right text-emerald-400 font-bold">{expSymbol} {parseFloat(exp.amount || 0).toFixed(2)}</td>
+                                          </tr>
+                                        );
+                                      })}
+                                    </tbody>
+                                  </table>
+                                </div>
                               )}
                             </div>
                           )}
@@ -5514,6 +5637,12 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                             <div className="flex flex-col gap-1"><label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Phone Contact</label>
                               <input type="text" value={newRepPhone} onChange={(e) => setNewRepPhone(e.target.value)} placeholder="+1 555-123-4567" className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" />
                             </div>
+                            <div className="flex flex-col gap-1"><label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Payment Currency</label>
+                              <select value={newRepPayCurrency} onChange={(e) => setNewRepPayCurrency(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white">
+                                <option value="CAD">CAD (C$)</option>
+                                <option value="USD">USD (US$)</option>
+                              </select>
+                            </div>
                             <button type="submit" className="bg-[#0EA5E9] text-white font-bold py-2 rounded-xl text-xs mt-2">Onboard QRE</button>
                           </form>
 
@@ -5521,7 +5650,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                             <h4 className="text-xs font-bold text-white uppercase tracking-wider border-b border-slate-850 pb-2">Active Field Representatives</h4>
                             <table className="w-full text-xs text-left">
                               <thead>
-                                <tr className="border-b border-slate-800 text-slate-500 font-bold uppercase text-[9px]"><th>Rep Name</th><th>Email</th><th>Phone</th><th>Role</th></tr>
+                                <tr className="border-b border-slate-800 text-slate-500 font-bold uppercase text-[9px]"><th>Rep Name</th><th>Email</th><th>Phone</th><th>Pay Currency</th><th>Role</th></tr>
                               </thead>
                               <tbody className="divide-y divide-slate-850 text-slate-300">
                                 {users.filter(u => u.role === 'rep').map(r => (
@@ -5532,6 +5661,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                     </td>
                                     <td className="py-2 font-mono text-slate-450">{r.email}</td>
                                     <td className="py-2 text-slate-400">{r.phone}</td>
+                                    <td className="py-2 font-mono text-[#22D3EE] font-bold">{r.pay_currency || getRepPayCurrency(r.id)}</td>
                                     <td className="py-2"><span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 text-[8px] font-bold uppercase">Field QRE</span></td>
                                   </tr>
                                 ))}
@@ -5573,15 +5703,21 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                   <tr className="border-b border-slate-800 text-slate-500 font-bold uppercase text-[9px]"><th>Rep</th><th>Client</th><th className="text-right">Bill Rate</th><th className="text-right">Pay Rate</th><th className="text-right">Action</th></tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-850 text-slate-300">
-                                  {(rates || []).filter(Boolean).map(r => (
-                                    <tr key={r.id}>
-                                      <td className="py-2 text-white font-semibold">{users.find(u => u.id === r.rep_id)?.name || 'Rep'}</td>
-                                      <td className="py-2 text-slate-400">{suppliers.find(s => s.id === r.supplier_id)?.name || 'Client'}</td>
-                                      <td className="py-2 text-right font-bold text-[#22D3EE]">${parseFloat(r.billing_rate).toFixed(2)}/hr</td>
-                                      <td className="py-2 text-right font-bold text-emerald-450">${parseFloat(r.pay_rate).toFixed(2)}/hr</td>
-                                      <td className="py-2 text-right"><button onClick={() => handleDeleteRate(r.id)} className="px-2 py-0.5 bg-slate-800 text-rose-400 text-[9px] uppercase rounded">Delete</button></td>
-                                    </tr>
-                                  ))}
+                                  {(rates || []).filter(Boolean).map(r => {
+                                    const projMatch = (projects || []).find(p => p && p.rep_id === r.rep_id && p.client_id === r.supplier_id);
+                                    const billSymbol = projMatch && projMatch.currency === 'CAD' ? 'C$' : 'US$';
+                                    const repPayCurrency = getRepPayCurrency(r.rep_id);
+                                    const paySymbol = repPayCurrency === 'CAD' ? 'C$' : 'US$';
+                                    return (
+                                      <tr key={r.id}>
+                                        <td className="py-2 text-white font-semibold">{users.find(u => u.id === r.rep_id)?.name || 'Rep'}</td>
+                                        <td className="py-2 text-slate-400">{suppliers.find(s => s.id === r.supplier_id)?.name || 'Client'}</td>
+                                        <td className="py-2 text-right font-bold text-[#22D3EE]">{billSymbol} {parseFloat(r.billing_rate).toFixed(2)}/hr</td>
+                                        <td className="py-2 text-right font-bold text-emerald-450">{paySymbol} {parseFloat(r.pay_rate).toFixed(2)}/hr</td>
+                                        <td className="py-2 text-right"><button onClick={() => handleDeleteRate(r.id)} className="px-2 py-0.5 bg-slate-800 text-rose-400 text-[9px] uppercase rounded">Delete</button></td>
+                                      </tr>
+                                    );
+                                  })}
                                 </tbody>
                               </table>
                             )}
@@ -6293,6 +6429,314 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     </div>
                   </div>
 
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 7.5: PROJECTS REGISTRY & RATES MANAGER */}
+          {activeTab === 'projects' && (
+            <div className="flex-1 flex flex-col gap-6 min-h-0 text-left">
+              {/* Top Summary Row */}
+              {(() => {
+                const activeProjects = projects.filter(p => p.status === 'Active');
+                const cadBilled = activeProjects
+                  .filter(p => p.currency === 'CAD')
+                  .reduce((sum, p) => sum + (parseFloat(p.billing_rate) || 0) * 160, 0);
+                const usdBilled = activeProjects
+                  .filter(p => p.currency === 'USD')
+                  .reduce((sum, p) => sum + (parseFloat(p.billing_rate) || 0) * 160, 0);
+
+                return (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 flex-shrink-0">
+                    <div className="bg-slate-900/60 border border-slate-850 rounded-2xl p-6 flex flex-col gap-1 shadow-md shadow-black/10">
+                      <div className="flex justify-between items-start">
+                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Total Active Projects</span>
+                        <FolderKanban className="w-5 h-5 text-cyan-400" />
+                      </div>
+                      <div className="text-2xl font-black text-white mt-2">{activeProjects.length} Projects</div>
+                      <div className="text-[10px] text-emerald-450 font-semibold flex items-center gap-1 mt-1">
+                        <span>🟢 Monitoring live assignments</span>
+                      </div>
+                    </div>
+
+                    <div className="bg-slate-900/60 border border-slate-850 rounded-2xl p-6 flex flex-col gap-1 shadow-md shadow-black/10">
+                      <div className="flex justify-between items-start">
+                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">CAD Est. Monthly Revenue</span>
+                        <DollarSign className="w-5 h-5 text-emerald-450" />
+                      </div>
+                      <div className="text-2xl font-black text-white mt-2">C$ {cadBilled.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                      <div className="text-[10px] text-slate-400 mt-1">Based on 160 standard hrs/rep</div>
+                    </div>
+
+                    <div className="bg-slate-900/60 border border-slate-850 rounded-2xl p-6 flex flex-col gap-1 shadow-md shadow-black/10">
+                      <div className="flex justify-between items-start">
+                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">USD Est. Monthly Revenue</span>
+                        <DollarSign className="w-5 h-5 text-cyan-400" />
+                      </div>
+                      <div className="text-2xl font-black text-white mt-2">US$ {usdBilled.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                      <div className="text-[10px] text-slate-400 mt-1">Based on 160 standard hrs/rep</div>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Main Workspace Layout */}
+              <div className="flex-1 grid grid-cols-1 xl:grid-cols-3 gap-6 min-h-0">
+                {/* Left Column: Projects Registry Table (Span 2) */}
+                <div className="xl:col-span-2 bg-slate-900/40 border border-slate-850 rounded-2xl flex flex-col min-h-0">
+                  <div className="px-6 py-4 border-b border-slate-850 flex justify-between items-center bg-slate-950/20">
+                    <div>
+                      <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                        <FolderKanban className="w-4 h-4 text-cyan-400" />
+                        <span>Active Projects Registry</span>
+                      </h3>
+                      <span className="text-[10px] text-slate-500 font-medium">Registry of representatives actively working at supplier locations</span>
+                    </div>
+                    {/* Currency filter toggle */}
+                    <div className="flex bg-slate-950 p-1 rounded-xl border border-slate-850 text-[10px]">
+                      <button 
+                        onClick={() => setSelectedCurrencyFilter('all')}
+                        className={`px-3 py-1 rounded-lg font-bold cursor-pointer transition-all ${
+                          selectedCurrencyFilter === 'all' ? 'bg-[#1E3A5F] text-white' : 'text-slate-400 hover:text-slate-200'
+                        }`}
+                      >
+                        ALL
+                      </button>
+                      <button 
+                        onClick={() => setSelectedCurrencyFilter('USD')}
+                        className={`px-3 py-1 rounded-lg font-bold cursor-pointer transition-all ${
+                          selectedCurrencyFilter === 'USD' ? 'bg-[#1E3A5F] text-white' : 'text-slate-400 hover:text-slate-200'
+                        }`}
+                      >
+                        USD
+                      </button>
+                      <button 
+                        onClick={() => setSelectedCurrencyFilter('CAD')}
+                        className={`px-3 py-1 rounded-lg font-bold cursor-pointer transition-all ${
+                          selectedCurrencyFilter === 'CAD' ? 'bg-[#1E3A5F] text-white' : 'text-slate-400 hover:text-slate-200'
+                        }`}
+                      >
+                        CAD
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="flex-1 overflow-auto scrollbar-thin">
+                    <table className="w-full text-left border-collapse text-xs">
+                      <thead className="bg-slate-950/50 sticky top-0 z-10 border-b border-slate-850">
+                        <tr className="font-bold text-slate-400 uppercase tracking-wider">
+                          <th className="py-3.5 px-6">Client/Supplier</th>
+                          <th className="py-3.5 px-6">Project #</th>
+                          <th className="py-3.5 px-6">Description</th>
+                          <th className="py-3.5 px-6">Location</th>
+                          <th className="py-3.5 px-6">Representative</th>
+                          <th className="py-3.5 px-6">Start Date</th>
+                          <th className="py-3.5 px-6 text-right">Billing Rate</th>
+                          <th className="py-3.5 px-6 text-right">Pay Rate</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-850/40 text-slate-300">
+                        {(() => {
+                          const filtered = projects.filter(p => {
+                            if (selectedCurrencyFilter !== 'all' && p.currency !== selectedCurrencyFilter) return false;
+                            return true;
+                          });
+                          if (filtered.length === 0) {
+                            return (
+                              <tr>
+                                <td colSpan="8" className="py-8 text-center text-slate-500 italic">No projects found matching the criteria.</td>
+                              </tr>
+                            );
+                          }
+                          return filtered.map(p => {
+                            const clientName = suppliers.find(s => s.id === p.client_id)?.name || p.client_id;
+                            const plantName = plants.find(pl => pl.id === p.plant_id)?.name || p.plant_id;
+                            const repName = users.find(u => u.id === p.rep_id)?.name || p.rep_id;
+                            return (
+                              <tr key={p.id} className="hover:bg-slate-950/40 transition-colors">
+                                <td className="py-3 px-6 font-semibold text-white capitalize">{clientName}</td>
+                                <td className="py-3 px-6 font-mono text-[#22D3EE] font-bold">{p.project_number}</td>
+                                <td className="py-3 px-6 text-slate-400">{p.description}</td>
+                                <td className="py-3 px-6 text-slate-300">{plantName}</td>
+                                <td className="py-3 px-6 font-medium text-slate-200">{repName}</td>
+                                <td className="py-3 px-6 text-slate-400">{p.start_date}</td>
+                                <td className="py-3 px-6 text-right font-bold text-emerald-400">{p.currency === 'CAD' ? 'C$' : 'US$'} {parseFloat(p.billing_rate).toFixed(2)}/hr</td>
+                                <td className="py-3 px-6 text-right text-slate-400">{p.currency === 'CAD' ? 'C$' : 'US$'} {parseFloat(p.pay_rate).toFixed(2)}/hr</td>
+                              </tr>
+                            );
+                          });
+                        })()}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Right Column: Create / Edit Project Form Panel (Span 1) */}
+                <div className="xl:col-span-1 bg-slate-900/40 border border-slate-850 rounded-2xl p-6 flex flex-col min-h-0">
+                  <h3 className="text-sm font-bold text-white uppercase tracking-wider mb-6 pb-2 border-b border-slate-850">
+                    Register New Project
+                  </h3>
+                  <form 
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      if (!newProjRep || !newProjClient || !newProjPlant || !newProjBilling || !newProjPay) {
+                        alert("Please fill in all required fields.");
+                        return;
+                      }
+                      const repDetails = users.find(u => u.id === newProjRep);
+                      const newProjectItem = {
+                        project_number: `PRJ-${newProjClient.substring(0, 3).toUpperCase()}-${Math.floor(100 + Math.random() * 900)}`,
+                        client_id: newProjClient,
+                        description: `Rep ${repDetails ? repDetails.name.split(' ')[1] || repDetails.name : 'Staff'} ${newProjDesc || 'Inspection'}`,
+                        plant_id: newProjPlant,
+                        rep_id: newProjRep,
+                        start_date: newProjStartDate || new Date().toISOString().split('T')[0],
+                        currency: newProjCurrency,
+                        billing_rate: parseFloat(newProjBilling),
+                        pay_rate: parseFloat(newProjPay),
+                        status: 'Active'
+                      };
+                      addProject(newProjectItem);
+                      logSystemEvent('system', 'create_project', `Registered new project ${newProjectItem.project_number} for client ${newProjClient} at location ${newProjPlant}.`);
+                      alert("Project registered successfully!");
+                      // Reset fields
+                      setNewProjDesc('');
+                      setNewProjBilling('');
+                      setNewProjPay('');
+                      window.dispatchEvent(new Event('ids_pulse_db_update'));
+                    }}
+                    className="flex flex-col gap-4 flex-1 overflow-y-auto pr-1 scrollbar-thin"
+                  >
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Assign Representative</label>
+                      <select 
+                        value={newProjRep} 
+                        onChange={(e) => setNewProjRep(e.target.value)}
+                        className="bg-slate-950 border border-slate-850 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-cyan-500 transition-colors"
+                      >
+                        <option value="">Select Rep...</option>
+                        {users.filter(u => u.role === 'rep').map(u => (
+                          <option key={u.id} value={u.id}>{u.name}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Client / Supplier</label>
+                      <select 
+                        value={newProjClient} 
+                        onChange={(e) => setNewProjClient(e.target.value)}
+                        className="bg-slate-950 border border-slate-850 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-cyan-500 transition-colors"
+                      >
+                        <option value="">Select Client...</option>
+                        {suppliers.map(s => (
+                          <option key={s.id} value={s.id}>{s.name}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Plant Location</label>
+                      <select 
+                        value={newProjPlant} 
+                        onChange={(e) => setNewProjPlant(e.target.value)}
+                        className="bg-slate-950 border border-slate-850 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-cyan-500 transition-colors"
+                      >
+                        <option value="">Select Plant...</option>
+                        {plants.map(p => (
+                          <option key={p.id} value={p.id}>{p.name}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Description / Scope</label>
+                      <input 
+                        type="text" 
+                        value={newProjDesc} 
+                        onChange={(e) => setNewProjDesc(e.target.value)}
+                        placeholder="e.g. Line Quality Audit" 
+                        className="bg-slate-950 border border-slate-850 rounded-xl px-3 py-2.5 text-xs text-white placeholder-slate-650 focus:outline-none focus:border-cyan-500 transition-colors"
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Start Date</label>
+                      <input 
+                        type="date" 
+                        value={newProjStartDate} 
+                        onChange={(e) => setNewProjStartDate(e.target.value)}
+                        className="bg-slate-950 border border-slate-850 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-cyan-500 transition-colors"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Billing Rate / Hr</label>
+                        <div className="relative">
+                          <span className="absolute left-3.5 top-3.5 text-slate-500 text-[10px] font-mono">$</span>
+                          <input 
+                            type="number" 
+                            step="0.01" 
+                            value={newProjBilling} 
+                            onChange={(e) => setNewProjBilling(e.target.value)}
+                            placeholder="0.00" 
+                            className="w-full bg-slate-950 border border-slate-850 rounded-xl pl-6 pr-3 py-2.5 text-xs text-white placeholder-slate-650 focus:outline-none focus:border-cyan-500 transition-colors"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Pay Rate / Hr</label>
+                        <div className="relative">
+                          <span className="absolute left-3.5 top-3.5 text-slate-500 text-[10px] font-mono">$</span>
+                          <input 
+                            type="number" 
+                            step="0.01" 
+                            value={newProjPay} 
+                            onChange={(e) => setNewProjPay(e.target.value)}
+                            placeholder="0.00" 
+                            className="w-full bg-slate-950 border border-slate-850 rounded-xl pl-6 pr-3 py-2.5 text-xs text-white placeholder-slate-650 focus:outline-none focus:border-cyan-500 transition-colors"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col gap-2 mt-1 text-left">
+                      <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Billing Currency</label>
+                      <div className="flex gap-4">
+                        <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-300">
+                          <input 
+                            type="radio" 
+                            name="newProjCurrency" 
+                            checked={newProjCurrency === 'USD'}
+                            onChange={() => setNewProjCurrency('USD')}
+                            className="text-[#22D3EE] focus:ring-[#22D3EE] bg-slate-950 border-slate-850"
+                          />
+                          USD (US$)
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-300">
+                          <input 
+                            type="radio" 
+                            name="newProjCurrency" 
+                            checked={newProjCurrency === 'CAD'}
+                            onChange={() => setNewProjCurrency('CAD')}
+                            className="text-[#22D3EE] focus:ring-[#22D3EE] bg-slate-950 border-slate-850"
+                          />
+                          CAD (C$)
+                        </label>
+                      </div>
+                    </div>
+
+                    <button 
+                      type="submit"
+                      className="mt-4 w-full bg-cyan-500/10 hover:bg-cyan-500/20 text-[#22D3EE] border border-cyan-500/20 font-bold py-2.5 rounded-xl text-xs cursor-pointer flex justify-center items-center gap-2"
+                    >
+                      <PlusCircle className="w-4 h-4" />
+                      <span>Register Project Assignment</span>
+                    </button>
+                  </form>
                 </div>
               </div>
             </div>

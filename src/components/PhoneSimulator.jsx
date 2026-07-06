@@ -5,7 +5,7 @@ import {
   Camera, Scan, Plus, ChevronRight, Mail, Send, RotateCcw, Volume2, Video, ArrowLeft, Trash2,
   Receipt, DollarSign, FileText
 } from 'lucide-react';
-import { getEntities, addIncident, addEmailLog, addReworkLog, saveEntity, addExpenseEntry } from './SharedDatabase';
+import { getEntities, addIncident, addEmailLog, addReworkLog, saveEntity, addExpenseEntry, logSystemEvent } from './SharedDatabase';
 
 export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigger }) {
   // Authentication & Shift States
@@ -211,6 +211,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
     setCurrentUser(foundUser);
     setIsLoggedIn(true);
     setActiveScreen('home');
+    logSystemEvent('auth', 'login', `${foundUser.name} logged in successfully.`);
     if (rememberDevice) {
       localStorage.setItem('ids_pulse_saved_user', foundUser.id);
     } else {
@@ -320,6 +321,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
       };
       saveEntity('shiftReports', draftReport);
       window.dispatchEvent(new Event('ids_pulse_db_update'));
+      logSystemEvent('shift', 'clock_in', `${currentUser.name} clocked in at plant ${selectedPlant} serving supplier ${selectedSupplier}.`);
     }
   };
 
@@ -562,6 +564,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
       };
 
       const savedIncident = addIncident(newInc);
+      logSystemEvent('incident', 'create', `${currentUser.name} reported suspect material for Part #${partSubject} in area ${selectedArea}.`);
 
       const firstPN = defaultPartsList[0]?.part_number || scannedPN;
       const partSubject = defaultPartsList.length > 1 
@@ -787,6 +790,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
       time_spent_minutes: reworkHours * 60,
       notes: reworkNotes
     });
+    logSystemEvent('rework', 'create', `${currentUser.name} logged rework of ${reworkQty} pieces of Part #${reworkPN}.`);
 
     alert('Rework logged successfully!');
     setReworkPN('86286761');
@@ -817,6 +821,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
       receipt_photo: expenseReceiptPhoto,
       notes: expenseNotes
     });
+    logSystemEvent('payroll', 'expense_create', `${currentUser.name} logged $${expenseAmount} expense claim for ${expenseCategory}.`);
 
     alert('Expense claim submitted successfully!');
     setExpenseAmount('');
@@ -867,6 +872,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
       
       // Save walkthrough log
       saveEntity('shiftReports', newReport);
+      logSystemEvent('shift', 'clock_out', `${currentUser.name} completed shift at plant ${selectedPlant}. Walkthrough status set to Sent.`);
       
       // Clean up localStorage active shift indicators
       localStorage.removeItem('ids_pulse_active_shift_rep_id');

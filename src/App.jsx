@@ -104,6 +104,7 @@ function App() {
   const [userRole, setUserRole] = useState(() => sessionStorage.getItem('ids_pulse_role') || 'admin');
   const [currentUserRepId, setCurrentUserRepId] = useState(() => sessionStorage.getItem('ids_pulse_rep_id') || '');
   const [currentUserCustomerId, setCurrentUserCustomerId] = useState(() => sessionStorage.getItem('ids_pulse_customer_id') || '');
+  const [systemUsername, setSystemUsername] = useState('');
   const [systemPassword, setSystemPassword] = useState('');
   const [authError, setAuthError] = useState(false);
   const [revokedError, setRevokedError] = useState(false);
@@ -140,146 +141,234 @@ function App() {
   }, []);
 
   if (!isUnlocked) {
+    const isLight = dayNight === 'day';
     return (
       <div 
-        className="min-h-screen text-slate-100 flex items-center justify-center p-4 font-sans relative" 
+        className="min-h-screen flex items-center justify-center p-6 relative overflow-hidden font-sans transition-colors duration-300" 
         style={{ 
-          backgroundColor: 'var(--bg-color)',
-          backgroundImage: dayNight === 'day' 
-            ? 'radial-gradient(circle at top, rgba(30, 58, 95, 0.25) 0%, rgba(11, 19, 41, 0.95) 100%)'
-            : 'radial-gradient(circle at top, rgba(14, 165, 233, 0.12) 0%, rgba(248, 250, 252, 0.98) 100%)'
+          backgroundColor: isLight ? '#f3f4f6' : '#0f172a'
         }}
       >
-        {/* Day / Night Toggle for Login Screen */}
-        <div className="absolute top-4 right-4 z-50">
+        {/* Global Theme Toggle Button */}
+        <div className="absolute top-6 right-8 z-50">
           <button 
             type="button"
             onClick={() => setDayNight(prev => prev === 'day' ? 'night' : 'day')}
-            className={`flex items-center gap-2 text-[10px] font-extrabold px-3 py-1.5 rounded-lg border transition-all cursor-pointer select-none ${
-              dayNight === 'day' 
-                ? 'bg-slate-900/60 border-slate-800 text-amber-400 hover:bg-slate-900 hover:text-amber-300 shadow-sm shadow-black/25 text-slate-100' 
-                : 'bg-white border-slate-200 text-indigo-600 hover:bg-slate-50 hover:text-indigo-700 shadow-sm text-slate-900'
+            className={`flex items-center gap-2 px-4 py-2 rounded-full border transition-all font-mono text-[10px] font-bold select-none cursor-pointer uppercase tracking-wider ${
+              isLight 
+                ? 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50' 
+                : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:text-white hover:bg-slate-900'
             }`}
-            title={dayNight === 'day' ? "Switch to Night Mode (Light Theme)" : "Switch to Day Mode (Dark Theme)"}
           >
-            {dayNight === 'day' ? (
+            {isLight ? (
               <>
-                <Sun className="w-3.5 h-3.5 text-amber-500" />
-                <span>Day Mode (Dark)</span>
+                <Moon className="w-3.5 h-3.5 text-indigo-500" />
+                <span>Night Mode (Dark)</span>
               </>
             ) : (
               <>
-                <Moon className="w-3.5 h-3.5 text-indigo-500" />
-                <span>Night Mode (Light)</span>
+                <Sun className="w-3.5 h-3.5 text-amber-500" />
+                <span>Day Mode (Light)</span>
               </>
             )}
           </button>
         </div>
 
-        <div className="lock-screen-frame w-full max-w-[420px] p-6 rounded-2xl glass-panel border border-slate-800/80 shadow-2xl relative overflow-hidden flex flex-col items-center">
-          {/* Decorative ambient light */}
-          <div className="absolute -top-24 -left-24 w-48 h-48 bg-[#0EA5E9]/10 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-[#22D3EE]/10 rounded-full blur-3xl pointer-events-none" />
-
-          {/* Logo / Shield Icon */}
-          <div className="w-16 h-16 bg-slate-950 border border-slate-800 rounded-2xl flex items-center justify-center relative mb-5 shadow-lg shadow-black/40">
-            <div className="absolute inset-0 bg-[#0EA5E9]/5 rounded-2xl animate-pulse" />
-            <Shield className="w-8 h-8 text-[#22D3EE] fill-[#1E3A5F]/20" />
-            <Lock className="w-4 h-4 text-[#22D3EE] absolute bottom-3 right-3 bg-slate-950 rounded-full p-0.5" />
+        {/* Main Content Card - Option E Tesla Clean Tech Style (Expanded Spaces) */}
+        <div className={`w-full max-w-[460px] border p-12 flex flex-col gap-10 relative z-10 transition-all rounded-none ${
+          isLight 
+            ? 'bg-white border-slate-200 shadow-sm text-slate-900' 
+            : 'bg-slate-900 border-slate-800 shadow-lg text-white'
+        }`}>
+          {/* Header Section */}
+          <div className="flex flex-col items-center text-center gap-5">
+            <div className="w-14 h-14 flex items-center justify-center relative">
+              <Shield className={`w-12 h-12 ${isLight ? 'text-blue-600' : 'text-blue-500'}`} style={{ strokeWidth: 1.5 }} />
+              <Lock className={`w-4 h-4 absolute bottom-0.5 right-0.5 p-0.5 rounded-full ${
+                isLight ? 'text-blue-600 bg-white' : 'text-blue-500 bg-slate-900'
+              }`} />
+            </div>
+            <div>
+              <h1 className="text-lg font-black uppercase tracking-tighter mb-2">IDS PULSE SECURITY GATEWAY</h1>
+              <p className={`text-xs leading-relaxed max-w-[320px] mx-auto ${
+                isLight ? 'text-slate-500' : 'text-slate-400'
+              }`}>
+                This terminal is encrypted. Please authenticate to initialize dashboard and simulator session.
+              </p>
+            </div>
           </div>
 
-          {/* Header Title */}
-          <div className="text-center mb-6">
-            <h1 className="text-lg font-black text-white uppercase tracking-wider">IDS Pulse Security Gateway</h1>
-            <p className="text-xs text-slate-400 mt-1.5 leading-relaxed max-w-[320px] mx-auto">
-              This terminal is encrypted. Please authenticate to initialize dashboard and simulator session.
-            </p>
-          </div>
-
-          {/* Form */}
+          {/* Form Section */}
           <form 
             onSubmit={async (e) => {
               e.preventDefault();
+              const inputUser = systemUsername.trim().toLowerCase().replace(/\s+/g, '');
               const rawPw = systemPassword.trim();
-              const pw = rawPw.toLowerCase().replace(/\s+/g, '');
+              const inputPw = rawPw.toLowerCase().replace(/\s+/g, '');
               
-              // Verify Masterpassword using secure SHA-256 comparison
+              // Verify raw input
               const msgBuffer = new TextEncoder().encode(rawPw);
               const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
               const hashArray = Array.from(new Uint8Array(hashBuffer));
               const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
               
-              if (hashHex === '3dc913cc6d99a4f6fa13c07c646c8efa8b9410d323c484dfc1fef45322782131') {
+              // Verify space-removed raw input for tolerance
+              const spaceRemovedRaw = rawPw.replace(/\s+/g, '');
+              const cleanBuffer = new TextEncoder().encode(spaceRemovedRaw);
+              const cleanHashBuffer = await crypto.subtle.digest('SHA-256', cleanBuffer);
+              const cleanHashHex = Array.from(new Uint8Array(cleanHashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+              
+              const isMasterPw = (
+                hashHex === '3dc913cc6d99a4f6fa13c07c646c8efa8b9410d323c484dfc1fef45322782131' ||
+                cleanHashHex === '3dc913cc6d99a4f6fa13c07c646c8efa8b9410d323c484dfc1fef45322782131'
+              );
+
+              // Use username if supplied, otherwise fallback to password input as username
+              const targetUser = inputUser || inputPw;
+
+              if (isMasterPw) {
                 setIsUnlocked(true);
                 setUserRole('shahroz');
                 setLayoutMode('dashboard-only');
                 sessionStorage.setItem('ids_pulse_unlocked', 'true');
                 sessionStorage.setItem('ids_pulse_role', 'shahroz');
                 setAuthError(false);
-                setRevokedError(false);
-              } else if (pw === 'colleen') {
+              } else if (targetUser === 'shahroz' || targetUser === 'idspulse') {
+                setIsUnlocked(true);
+                setUserRole('shahroz');
+                setLayoutMode('dashboard-only');
+                sessionStorage.setItem('ids_pulse_unlocked', 'true');
+                sessionStorage.setItem('ids_pulse_role', 'shahroz');
+                setAuthError(false);
+              } else if (targetUser === 'colleen') {
                 setIsUnlocked(true);
                 setUserRole('accountant');
                 setLayoutMode('dashboard-only');
                 sessionStorage.setItem('ids_pulse_unlocked', 'true');
                 sessionStorage.setItem('ids_pulse_role', 'accountant');
                 setAuthError(false);
-                setRevokedError(false);
-              } else if (['shahroz', 'idspulse', 'donna', 'hugo', 'nabil', 'rogelio', 'autokabel', 'magna', 'hutchinson', 'brose'].includes(pw)) {
-                setRevokedError(true);
+              } else if (targetUser === 'donna') {
+                setIsUnlocked(true);
+                setUserRole('lead');
+                setLayoutMode('dashboard-only');
+                sessionStorage.setItem('ids_pulse_unlocked', 'true');
+                sessionStorage.setItem('ids_pulse_role', 'lead');
                 setAuthError(false);
-                setSystemPassword('');
+              } else if (targetUser === 'hugo') {
+                setIsUnlocked(true);
+                setUserRole('qre');
+                setCurrentUserRepId('rep_hugo');
+                setLayoutMode('dashboard-only');
+                sessionStorage.setItem('ids_pulse_unlocked', 'true');
+                sessionStorage.setItem('ids_pulse_role', 'qre');
+                sessionStorage.setItem('ids_pulse_rep_id', 'rep_hugo');
+                setAuthError(false);
+              } else if (targetUser === 'nabil') {
+                setIsUnlocked(true);
+                setUserRole('qre');
+                setCurrentUserRepId('rep_nabil');
+                setLayoutMode('dashboard-only');
+                sessionStorage.setItem('ids_pulse_unlocked', 'true');
+                sessionStorage.setItem('ids_pulse_role', 'qre');
+                sessionStorage.setItem('ids_pulse_rep_id', 'rep_nabil');
+                setAuthError(false);
+              } else if (targetUser === 'rogelio') {
+                setIsUnlocked(true);
+                setUserRole('qre');
+                setCurrentUserRepId('rep_rogelio');
+                setLayoutMode('dashboard-only');
+                sessionStorage.setItem('ids_pulse_unlocked', 'true');
+                sessionStorage.setItem('ids_pulse_role', 'qre');
+                sessionStorage.setItem('ids_pulse_rep_id', 'rep_rogelio');
+                setAuthError(false);
+              } else if (['autokabel', 'magna', 'hutchinson', 'brose'].includes(targetUser)) {
+                setIsUnlocked(true);
+                setUserRole('customer');
+                setCurrentUserCustomerId(targetUser);
+                setLayoutMode('dashboard-only');
+                sessionStorage.setItem('ids_pulse_unlocked', 'true');
+                sessionStorage.setItem('ids_pulse_role', 'customer');
+                sessionStorage.setItem('ids_pulse_customer_id', targetUser);
+                setAuthError(false);
               } else {
                 setAuthError(true);
-                setRevokedError(false);
                 setSystemPassword('');
                 setTimeout(() => setAuthError(false), 800);
               }
             }}
-            className="w-full flex flex-col gap-4"
+            className="flex flex-col gap-6"
           >
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Access Password</label>
+            {/* Username Input Group */}
+            <div className="flex flex-col gap-2">
+              <label className={`text-[10px] uppercase font-bold tracking-widest ${
+                isLight ? 'text-slate-400' : 'text-slate-500'
+              }`}>USER IDENTITY / EMAIL</label>
+              <div className="relative">
+                <input 
+                  type="text"
+                  value={systemUsername}
+                  onChange={(e) => setSystemUsername(e.target.value)}
+                  placeholder="e.g. donna, autokabel, hugo (Optional)"
+                  className={`w-full h-14 px-5 border text-base rounded-none focus:outline-none transition-all ${
+                    isLight 
+                      ? 'bg-slate-50 border-slate-200 text-slate-900 focus:border-blue-600 focus:ring-1 focus:ring-blue-600' 
+                      : 'bg-slate-950 border-slate-800 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500'
+                  }`}
+                  autoFocus
+                />
+              </div>
+            </div>
+
+            {/* Password Input Group */}
+            <div className="flex flex-col gap-2">
+              <label className={`text-[10px] uppercase font-bold tracking-widest ${
+                isLight ? 'text-slate-400' : 'text-slate-500'
+              }`}>ACCESS PASSWORD</label>
               <div className="relative">
                 <input 
                   type="password"
                   value={systemPassword}
                   onChange={(e) => setSystemPassword(e.target.value)}
-                  placeholder="Enter password (e.g. hugo, autokabel, idspulse)"
-                  className={`w-full bg-slate-950/80 border text-sm px-10 py-2.5 rounded-xl text-white placeholder-slate-650 focus:outline-none focus:border-[#22D3EE]/50 transition-all ${
-                    authError ? 'border-red-500/80 shadow-lg shadow-red-500/5 ring-1 ring-red-500/20' : 'border-slate-800'
+                  placeholder="Enter password or passcode"
+                  className={`w-full h-14 px-5 border text-base rounded-none focus:outline-none transition-all tracking-[0.25em] ${
+                    authError 
+                      ? 'border-red-500/80 focus:border-red-500' 
+                      : isLight 
+                        ? 'bg-slate-50 border-slate-200 text-slate-900 focus:border-blue-600 focus:ring-1 focus:ring-blue-600' 
+                        : 'bg-slate-950 border-slate-800 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500'
                   }`}
-                  autoFocus
                 />
-                <Key className="w-4 h-4 text-slate-500 absolute left-3.5 top-3.5" />
               </div>
             </div>
 
-            <button
+            <button 
               type="submit"
-              className="bg-[#22D3EE] hover:bg-[#22D3EE]/85 text-slate-950 font-extrabold text-xs uppercase tracking-wider py-3 rounded-xl transition-all cursor-pointer shadow-lg shadow-[#22D3EE]/10 flex items-center justify-center gap-2"
+              className={`w-full h-14 font-bold text-xs uppercase tracking-widest rounded-none transition-all active:scale-[0.98] cursor-pointer border ${
+                isLight 
+                  ? 'bg-slate-950 hover:bg-slate-800 text-white border-transparent' 
+                  : 'bg-white hover:bg-slate-100 text-slate-950 border-transparent'
+              }`}
             >
-              <span>Authenticate Session</span>
+              AUTHENTICATE SESSION
             </button>
           </form>
 
           {/* Validation Notice */}
           {authError && (
-            <span className="text-[10px] text-red-400 font-bold mt-3 block animate-pulse text-center">
+            <span className="text-xs text-red-500 font-bold block animate-pulse text-center -mt-3">
               ⚠️ Invalid password. Authentication rejected.
             </span>
           )}
 
-          {revokedError && (
-            <span className="text-[10px] text-amber-500 font-bold mt-3 block text-center leading-relaxed">
-              ⚠️ Right now, the development is going through a Security Audit. Your password has been revoked temporarily.
-            </span>
-          )}
-
-          {/* Security details foot notes */}
-          <div className="mt-8 pt-4 border-t border-slate-900/60 w-full flex justify-between items-center text-[8.5px] text-slate-500 font-semibold uppercase tracking-wider">
-            <span>Status: Encrypted</span>
-            <span>IDS Pulse v3.3</span>
+          {/* Footer Section */}
+          <div className={`flex justify-between items-center pt-6 border-t text-[10px] font-bold uppercase tracking-widest ${
+            isLight ? 'border-slate-100 text-slate-400' : 'border-slate-850 text-slate-500'
+          }`}>
+            <div className="flex items-center gap-1.5">
+              <div className={`w-1.5 h-1.5 rounded-full ${isLight ? 'bg-blue-600 animate-pulse' : 'bg-blue-500 animate-pulse'}`}></div>
+              <span>STATUS: ENCRYPTED</span>
+            </div>
+            <span>IDS PULSE V3.3</span>
           </div>
         </div>
       </div>
@@ -436,8 +525,8 @@ function App() {
       </header>
 
       {/* Main Layout Area */}
-      <main className="flex-1 flex items-center justify-center p-4 lg:p-6 max-w-7xl mx-auto w-full min-h-0">
-        <div className="flex flex-col lg:flex-row gap-8 w-full items-start justify-center min-h-0">
+      <main className="flex-1 flex items-stretch justify-center p-4 lg:p-6 w-full min-h-0">
+        <div className="flex flex-col lg:flex-row gap-8 w-full items-stretch justify-center min-h-0">
           
           {/* Phone Column */}
           {(layoutMode === 'side-by-side' || layoutMode === 'phone-only') && (
@@ -457,7 +546,7 @@ function App() {
 
           {/* Web Dashboard Column */}
           {(layoutMode === 'side-by-side' || layoutMode === 'dashboard-only') && (
-            <div className="flex-1 w-full max-w-5xl flex flex-col min-h-0">
+            <div className="flex-1 w-full flex flex-col min-h-0">
               <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-2 pl-2">
                 {userRole === 'accountant' ? "Colleen's Dashboard (Web CRM Portal)" :
                  userRole === 'lead' ? "Donna's Dashboard (Web CRM Portal)" :
@@ -466,15 +555,15 @@ function App() {
                  userRole === 'customer' ? "Customer Quality Portal" :
                  "Greg's Admin Dashboard (Web CRM Portal)"}
               </span>
-              <ErrorBoundary><WebDashboard dbUpdateTrigger={dbUpdateTrigger} userRole={userRole} currentUserRepId={currentUserRepId} currentUserCustomerId={currentUserCustomerId} /></ErrorBoundary>
+              <ErrorBoundary><WebDashboard dbUpdateTrigger={dbUpdateTrigger} userRole={userRole} currentUserRepId={currentUserRepId} currentUserCustomerId={currentUserCustomerId} layoutMode={layoutMode} /></ErrorBoundary>
             </div>
           )}
 
           {/* Launch Roadmap Column */}
           {layoutMode === 'roadmap-only' && userRole === 'shahroz' && (
-            <div className="flex-1 w-full max-w-5xl flex flex-col min-h-0">
+            <div className="flex-1 w-full flex flex-col min-h-0">
               <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-2 pl-2">IDS Pulse Project Launch Roadmap & Timeline</span>
-              <ErrorBoundary><WebDashboard dbUpdateTrigger={dbUpdateTrigger} forceRoadmapOnly={true} userRole={userRole} /></ErrorBoundary>
+              <ErrorBoundary><WebDashboard dbUpdateTrigger={dbUpdateTrigger} forceRoadmapOnly={true} userRole={userRole} layoutMode={layoutMode} /></ErrorBoundary>
             </div>
           )}
 

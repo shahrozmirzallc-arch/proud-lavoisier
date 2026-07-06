@@ -5,13 +5,13 @@ const STORAGE_KEY = 'ids_pulse_db';
 
 const SEED_DATA = {
   users: [
-    { id: '1', name: 'Clarence Kuiken', email: 'clarence.k@integritydriven.com', role: 'rep', phone: '+1 905-914-2788', avatar: 'CK' },
-    { id: '2', name: 'Donna Cabral', email: 'donna.c@integritydriven.com', role: 'lead', phone: '+1 905-555-0199', avatar: 'DC' },
-    { id: '3', name: 'Greg Phillippe', email: 'greg.p@integritydriven.com', role: 'owner', phone: '+1 905-555-0100', avatar: 'GP' },
-    { id: '4', name: 'Colleen Boyd', email: 'colleen.b@integritydriven.com', role: 'accountant', phone: '+1 905-555-0122', avatar: 'CB' },
-    { id: 'rep_hugo', name: 'Hugo Picon', email: 'hugo.p@integritydriven.com', role: 'rep', phone: '+1 555-123-4567', avatar: 'HP' },
-    { id: 'rep_nabil', name: 'Nabil Obad', email: 'nabil.o@integritydriven.com', role: 'rep', phone: '+1 555-987-6543', avatar: 'NO' },
-    { id: 'rep_rogelio', name: 'Rogelio Velasco', email: 'rogelio.v@integritydriven.com', role: 'rep', phone: '+1 555-555-0987', avatar: 'RV' }
+    { id: '1', name: 'Clarence Kuiken', email: 'clarence.k@integritydriven.com', role: 'rep', phone: '+1 905-914-2788', avatar: 'CK', pay_currency: 'CAD' },
+    { id: '2', name: 'Donna Cabral', email: 'donna.c@integritydriven.com', role: 'lead', phone: '+1 905-555-0199', avatar: 'DC', pay_currency: 'CAD' },
+    { id: '3', name: 'Greg Phillippe', email: 'greg.p@integritydriven.com', role: 'owner', phone: '+1 905-555-0100', avatar: 'GP', pay_currency: 'CAD' },
+    { id: '4', name: 'Colleen Boyd', email: 'colleen.b@integritydriven.com', role: 'accountant', phone: '+1 905-555-0122', avatar: 'CB', pay_currency: 'CAD' },
+    { id: 'rep_hugo', name: 'Hugo Picon', email: 'hugo.p@integritydriven.com', role: 'rep', phone: '+1 555-123-4567', avatar: 'HP', pay_currency: 'USD' },
+    { id: 'rep_nabil', name: 'Nabil Obad', email: 'nabil.o@integritydriven.com', role: 'rep', phone: '+1 555-987-6543', avatar: 'NO', pay_currency: 'USD' },
+    { id: 'rep_rogelio', name: 'Rogelio Velasco', email: 'rogelio.v@integritydriven.com', role: 'rep', phone: '+1 555-555-0987', avatar: 'RV', pay_currency: 'USD' }
   ],
   rates: [
     { id: 'rate_1', rep_id: '1', supplier_id: 'magna', billing_rate: 28.00, pay_rate: 20.00 },
@@ -33,6 +33,7 @@ const SEED_DATA = {
       id: 'magna', 
       name: 'Magna AutoSystems', 
       invoice_schedule: 'weekly',
+      allotted_hours: 45,
       contacts: [
         { name: 'Shahroz Mirza', email: 'shahroz.m@magna.com', role: 'Quality Manager' },
         { name: 'Martin', email: 'martin.s@magna.com', role: 'Sequence Supervisor' }
@@ -43,6 +44,7 @@ const SEED_DATA = {
       id: 'hutchinson', 
       name: 'Hutchinson Rubber', 
       invoice_schedule: 'monthly',
+      allotted_hours: 30,
       contacts: [
         { name: 'Sarah Jenkins', email: 'sjenkins@hutchinson.ca', role: 'Supplier Quality Engineer' }
       ],
@@ -52,6 +54,7 @@ const SEED_DATA = {
       id: 'autokabel',
       name: 'Auto Kabel de Mexico S.A. de C.V',
       invoice_schedule: 'weekly',
+      allotted_hours: 50,
       contacts: [
         { name: 'Juan Carlos', email: 'jc@autokabel.mx', role: 'Plant Quality Manager' }
       ],
@@ -61,6 +64,7 @@ const SEED_DATA = {
       id: 'brose',
       name: 'Brose México S.A. de C.V.',
       invoice_schedule: 'weekly',
+      allotted_hours: 40,
       contacts: [
         { name: 'Maria Gomez', email: 'mg@brose.mx', role: 'Supplier Quality Manager' }
       ],
@@ -70,6 +74,7 @@ const SEED_DATA = {
       id: 'borgwarner',
       name: 'BorgWarner PDS Irapuato',
       invoice_schedule: 'monthly',
+      allotted_hours: 35,
       contacts: [
         { name: 'Alejandro', email: 'al@borgwarner.com', role: 'Supplier Quality Engineer' }
       ],
@@ -379,6 +384,14 @@ const SEED_DATA = {
       status: 'approved'
     }
   ],
+  projects: [
+    { id: 'proj_1', project_number: 'PRJ-MAG-101', client_id: 'magna', description: 'Line Quality Audit', plant_id: 'gm_oshawa', rep_id: '1', start_date: '2023-10-12', currency: 'CAD', billing_rate: 85.00, pay_rate: 55.00, status: 'Active' },
+    { id: 'proj_2', project_number: 'PRJ-TES-204', client_id: 'brose', description: 'Robotics Calibration', plant_id: 'gm_slp', rep_id: 'rep_rogelio', start_date: '2023-11-01', currency: 'USD', billing_rate: 120.00, pay_rate: 80.00, status: 'Active' },
+    { id: 'proj_3', project_number: 'PRJ-FOR-092', client_id: 'autokabel', description: 'Safety Inspector', plant_id: 'ford_dearborn', rep_id: 'rep_nabil', start_date: '2023-09-28', currency: 'USD', billing_rate: 95.00, pay_rate: 65.00, status: 'Active' }
+  ],
+  systemLogs: [
+    { id: 'log_seed_1', timestamp: new Date().toISOString(), category: 'system', action: 'initialize', details: 'Demo database initialized with integrity seeds.' }
+  ],
   extraHoursRequests: [
     {
       id: 'ehr_1',
@@ -427,7 +440,7 @@ export function initializeDB() {
   let updated = false;
 
   // Safe check & migration for missing collections
-  const collections = ['users', 'rates', 'plants', 'suppliers', 'parts', 'incidents', 'reworkLogs', 'timeEntries', 'expenseEntries', 'extraHoursRequests'];
+  const collections = ['users', 'rates', 'plants', 'suppliers', 'parts', 'incidents', 'reworkLogs', 'timeEntries', 'expenseEntries', 'extraHoursRequests', 'systemLogs', 'projects'];
   collections.forEach(col => {
     if (!data[col]) {
       data[col] = SEED_DATA[col] || [];
@@ -436,8 +449,12 @@ export function initializeDB() {
   });
 
   SEED_DATA.users.forEach(seedUser => {
-    if (!data.users.find(u => u.id === seedUser.id)) {
+    const match = data.users.find(u => u.id === seedUser.id);
+    if (!match) {
       data.users.push(seedUser);
+      updated = true;
+    } else if (!match.pay_currency) {
+      match.pay_currency = seedUser.pay_currency;
       updated = true;
     }
   });
@@ -642,4 +659,28 @@ export function addExtraHoursRequest(req) {
     ...req
   };
   return saveEntity('extraHoursRequests', newReq);
+}
+
+// Log a system event
+export function logSystemEvent(category, action, details) {
+  const newLog = {
+    id: `log_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+    timestamp: new Date().toISOString(),
+    category,
+    action,
+    details
+  };
+  saveEntity('systemLogs', newLog);
+  return newLog;
+}
+
+// Add new project
+export function addProject(proj) {
+  const newProj = {
+    id: `proj_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+    ...proj,
+    status: proj.status || 'Active'
+  };
+  saveEntity('projects', newProj);
+  return newProj;
 }

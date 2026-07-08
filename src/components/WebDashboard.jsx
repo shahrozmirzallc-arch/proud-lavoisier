@@ -23,6 +23,30 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   const [plants, setPlants] = useState([]);
   const [projects, setProjects] = useState([]);
   const [selectedCurrencyFilter, setSelectedCurrencyFilter] = useState('all');
+
+  // Quick Add Modal States
+  const [showQuickAddRep, setShowQuickAddRep] = useState(false);
+  const [showQuickAddClient, setShowQuickAddClient] = useState(false);
+  const [showQuickAddPlant, setShowQuickAddPlant] = useState(false);
+  
+  // Quick Add Rep Form State
+  const [quickRepName, setQuickRepName] = useState('');
+  const [quickRepEmail, setQuickRepEmail] = useState('');
+  const [quickRepPhone, setQuickRepPhone] = useState('');
+  const [quickRepPayCurrency, setQuickRepPayCurrency] = useState('CAD');
+
+  // Quick Add Client Form State
+  const [quickClientName, setQuickClientName] = useState('');
+  const [quickClientSchedule, setQuickClientSchedule] = useState('weekly');
+
+  // Quick Add Plant Form State
+  const [quickPlantName, setQuickPlantName] = useState('');
+  const [quickPlantAddress, setQuickPlantAddress] = useState('');
+  const [quickPlantSupplierId, setQuickPlantSupplierId] = useState('');
+
+  // Task Assignee State
+  const [selectedTaskRepId, setSelectedTaskRepId] = useState('all');
+  const [selectedDispatchRepId, setSelectedDispatchRepId] = useState('1');
   
   // New Project Form state
   const [newProjRep, setNewProjRep] = useState('');
@@ -451,6 +475,104 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     setNewRepPhone('');
     setNewRepPayCurrency('CAD');
     alert("Representative onboarding successful!");
+  };
+
+  const handleQuickAddRepSubmit = (e) => {
+    if (e) e.preventDefault();
+    if (!quickRepName) {
+      alert("Representative name is required.");
+      return;
+    }
+    const newId = `rep_${quickRepName.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
+    const newRep = {
+      id: newId,
+      name: quickRepName,
+      email: quickRepEmail,
+      role: 'rep',
+      phone: quickRepPhone,
+      pay_currency: quickRepPayCurrency,
+      avatar: quickRepName.split(' ').map(n => n[0]).join('').toUpperCase()
+    };
+    saveEntity('users', newRep);
+    setUsers(getEntities('users'));
+    setQuickRepName('');
+    setQuickRepEmail('');
+    setQuickRepPhone('');
+    setQuickRepPayCurrency('CAD');
+    setShowQuickAddRep(false);
+    
+    // Auto-select in registry & matrix overrides
+    setNewProjRep(newId);
+    setConfigRepId(newId);
+    setSelectedDispatchRepId(newId);
+    
+    alert(`Representative ${quickRepName} added successfully!`);
+  };
+
+  const handleQuickAddClientSubmit = (e) => {
+    if (e) e.preventDefault();
+    if (!quickClientName) {
+      alert("Client name is required.");
+      return;
+    }
+    const newId = quickClientName.toLowerCase().replace(/[^a-z0-9]/g, '_');
+    const newCust = {
+      id: newId,
+      name: quickClientName,
+      invoice_schedule: quickClientSchedule,
+      contacts: [],
+      plants_served: []
+    };
+    saveEntity('suppliers', newCust);
+    setSuppliers(getEntities('suppliers'));
+    setQuickClientName('');
+    setQuickClientSchedule('weekly');
+    setShowQuickAddClient(false);
+
+    // Auto-select
+    setNewProjClient(newId);
+    setConfigSupplierId(newId);
+    setSelectedInvoiceSupplier(newId);
+    
+    alert(`Client ${quickClientName} added successfully!`);
+  };
+
+  const handleQuickAddPlantSubmit = (e) => {
+    if (e) e.preventDefault();
+    if (!quickPlantName) {
+      alert("Plant name is required.");
+      return;
+    }
+    const newId = quickPlantName.toLowerCase().replace(/[^a-z0-9]/g, '_');
+    const newPlant = {
+      id: newId,
+      name: quickPlantName,
+      address: quickPlantAddress,
+      oem_brand: quickPlantName.split(' ')[0] || 'OEM'
+    };
+    saveEntity('plants', newPlant);
+    setPlants(getEntities('plants'));
+
+    if (quickPlantSupplierId) {
+      const sup = suppliers.find(s => s.id === quickPlantSupplierId);
+      if (sup) {
+        if (!sup.plants_served.includes(newId)) {
+          sup.plants_served.push(newId);
+          saveEntity('suppliers', sup);
+          setSuppliers(getEntities('suppliers'));
+        }
+      }
+    }
+
+    setQuickPlantName('');
+    setQuickPlantAddress('');
+    setQuickPlantSupplierId('');
+    setShowQuickAddPlant(false);
+
+    // Auto-select
+    setNewProjPlant(newId);
+    
+    alert(`Plant ${quickPlantName} added successfully!`);
   };
 
   const handleExtraHoursSubmit = (e) => {
@@ -916,11 +1038,11 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     saveEntity('dailyTasks', updated);
   };
 
-  const handleAddTask = (text) => {
+  const handleAddTask = (text, assignedRepId = selectedDispatchRepId) => {
     if (!text.trim()) return;
     const newTask = {
       id: `dt_${Date.now()}`,
-      rep_id: '1', // Default Clarence
+      rep_id: assignedRepId || '1',
       date: selectedDate,
       task: text.trim(),
       status: 'pending'
@@ -3928,22 +4050,44 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
             </div>
           )}
 
-          {/* TAB 0.5: DAILY TASKS PLANNER (Super convenient date-driven checklist) */}
-          {activeTab === 'daily-planner' && (
+              {activeTab === 'daily-planner' && (
             <div className="flex-1 flex gap-4 min-h-0">
               
               <div className="flex-1 flex flex-col min-h-0 border-r border-slate-800/60 pr-4">
                 <div className="flex justify-between items-center pb-2.5 border-b border-slate-800/60 mb-3 flex-shrink-0">
-                  <div>
-                    <h3 className="text-sm font-bold text-white uppercase tracking-wider">Today's Audit Tasks</h3>
-                    <p className="text-[10px] text-slate-500 mt-0.5">
-                      Assign and check off floor tasks for <span className="text-[#22D3EE] font-bold">{new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
-                    </p>
+                  <div className="flex items-center gap-4">
+                    <div>
+                      <h3 className="text-sm font-bold text-white uppercase tracking-wider">Today's Audit Tasks</h3>
+                      <p className="text-[10px] text-slate-500 mt-0.5">
+                        Assign and check off floor tasks for <span className="text-[#22D3EE] font-bold">{new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 ml-2">
+                      <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Filter:</span>
+                      <select 
+                        value={selectedTaskRepId}
+                        onChange={(e) => {
+                          if (e.target.value === 'ADD_NEW') {
+                            setShowQuickAddRep(true);
+                          } else {
+                            setSelectedTaskRepId(e.target.value);
+                          }
+                        }}
+                        className="bg-slate-950 border border-slate-850 rounded-xl px-2.5 py-1 text-xs text-white focus:outline-none focus:border-[#0EA5E9]"
+                      >
+                        <option value="all">All Representatives</option>
+                        {users.filter(u => u.role === 'rep' || u.role === 'qre' || u.id === '1' || u.id === 'rep_hugo' || u.id === 'rep_nabil' || u.id === 'rep_rogelio').map(u => (
+                          <option key={u.id} value={u.id}>{u.name}</option>
+                        ))}
+                        <option value="ADD_NEW" className="text-cyan-400 font-bold">+ Add New Rep...</option>
+                      </select>
+                    </div>
                   </div>
                   
                   {/* Task completion rate badge */}
                   {(() => {
-                    const dayTasks = dailyTasks.filter(t => t.date === selectedDate);
+                    const dayTasks = dailyTasks.filter(t => t.date === selectedDate && (selectedTaskRepId === 'all' || t.rep_id === selectedTaskRepId));
                     const completed = dayTasks.filter(t => t.status === 'completed').length;
                     const total = dayTasks.length;
                     const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
@@ -3966,8 +4110,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
                 {/* Tasks List */}
                 <div className="flex-1 overflow-y-auto min-h-0 flex flex-col gap-2.5 pr-1">
-                  {dailyTasks.filter(t => t.date === selectedDate).length > 0 ? (
-                    dailyTasks.filter(t => t.date === selectedDate).map(t => (
+                  {dailyTasks.filter(t => t.date === selectedDate && (selectedTaskRepId === 'all' || t.rep_id === selectedTaskRepId)).length > 0 ? (
+                    dailyTasks.filter(t => t.date === selectedDate && (selectedTaskRepId === 'all' || t.rep_id === selectedTaskRepId)).map(t => (
                       <div 
                         key={t.id}
                         onClick={() => handleToggleTaskStatus(t)}
@@ -3980,9 +4124,14 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                             onChange={() => {}} // handled by onClick on parent card for glove/easy tap
                             className="rounded border-slate-800 text-[#0EA5E9] focus:ring-0 focus:ring-offset-0 w-4 h-4 cursor-pointer"
                           />
-                          <span className={`text-xs ${t.status === 'completed' ? 'line-through text-slate-500' : 'text-slate-200 font-semibold'}`}>
-                            {t.task}
-                          </span>
+                          <div className="flex flex-col gap-0.5 text-left">
+                            <span className={`text-xs ${t.status === 'completed' ? 'line-through text-slate-500' : 'text-slate-200 font-semibold'}`}>
+                              {t.task}
+                            </span>
+                            <span className="text-[9px] text-[#22D3EE]/80 font-bold uppercase tracking-wider">
+                              Assigned to: {users.find(u => u.id === t.rep_id)?.name || 'Clarence Kuiken'}
+                            </span>
+                          </div>
                         </div>
                         <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${
                           t.status === 'completed' 
@@ -3999,7 +4148,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                       <p className="text-xs font-semibold">
                         {!showAllDates && !hasDataForSelectedDate() ? "No records found for this date." : "No tasks scheduled for this day."}
                       </p>
-                      <p className="text-[10px] text-slate-500 mt-1">Use the quick presets below to dispatch items to Clarence's phone!</p>
+                      <p className="text-[10px] text-slate-500 mt-1">Use the quick presets below to dispatch items to representatives!</p>
                     </div>
                   )}
                 </div>
@@ -4008,6 +4157,27 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 <div className="mt-4 pt-3 border-t border-slate-800/80 flex-shrink-0">
                   <span className="text-[10px] text-slate-500 font-extrabold uppercase tracking-wider block mb-2">Create & Dispatch Task</span>
                   
+                  {/* Rep Assignment Selector for dispatch */}
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Assign To Rep:</span>
+                    <select 
+                      value={selectedDispatchRepId}
+                      onChange={(e) => {
+                        if (e.target.value === 'ADD_NEW') {
+                          setShowQuickAddRep(true);
+                        } else {
+                          setSelectedDispatchRepId(e.target.value);
+                        }
+                      }}
+                      className="bg-slate-950 border border-slate-850 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-[#0EA5E9]"
+                    >
+                      {users.filter(u => u.role === 'rep' || u.role === 'qre' || u.id === '1' || u.id === 'rep_hugo' || u.id === 'rep_nabil' || u.id === 'rep_rogelio').map(u => (
+                        <option key={u.id} value={u.id}>{u.name}</option>
+                      ))}
+                      <option value="ADD_NEW" className="text-cyan-400 font-bold">+ Add New Rep...</option>
+                    </select>
+                  </div>
+
                   {/* Preset Buttons */}
                   <div className="flex flex-wrap gap-1.5 mb-3">
                     {[
@@ -4021,7 +4191,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                       <button
                         key={idx}
                         type="button"
-                        onClick={() => handleAddTask(preset.task)}
+                        onClick={() => handleAddTask(preset.task, selectedDispatchRepId)}
                         className="text-[9px] bg-slate-950 hover:bg-slate-900 border border-slate-850 hover:border-slate-750 text-slate-400 hover:text-white px-2 py-1 rounded-lg font-bold transition-all cursor-pointer"
                       >
                         {preset.label}
@@ -4033,7 +4203,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   <form 
                     onSubmit={(e) => {
                       e.preventDefault();
-                      handleAddTask(newTaskText);
+                      handleAddTask(newTaskText, selectedDispatchRepId);
                     }}
                     className="flex gap-2"
                   >
@@ -4061,31 +4231,37 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 
                 {/* Active check-in status card */}
                 {(() => {
-                  const entry = timeEntries.find(t => t.date === selectedDate);
-                  const report = shiftReports.find(r => r.date === selectedDate);
-                  const reworkToday = reworkLogs.filter(r => r.created_at.startsWith(selectedDate));
+                  const dayEntries = timeEntries.filter(t => t.date === selectedDate && (selectedTaskRepId === 'all' || t.rep_id === selectedTaskRepId));
+                  const report = shiftReports.find(r => r.date === selectedDate && (selectedTaskRepId === 'all' || r.rep_id === selectedTaskRepId));
+                  const reworkToday = reworkLogs.filter(r => r.created_at.startsWith(selectedDate) && (selectedTaskRepId === 'all' || r.rep_id === selectedTaskRepId));
                   const qtyReworked = reworkToday.reduce((acc, curr) => acc + curr.qty, 0);
                   
                   return (
                     <div className="bg-slate-900/60 border border-slate-800 p-3.5 rounded-2xl flex flex-col gap-3">
                       <div>
-                        <span className="text-[9px] text-[#22D3EE] font-bold uppercase tracking-wider">Rep Check-In Status</span>
-                        {entry ? (
-                          <div className="mt-1.5 flex items-start gap-2.5">
-                            <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 mt-1 animate-pulse"></div>
-                            <div>
-                              <p className="text-xs font-bold text-white">Clarence Kuiken</p>
-                              <p className="text-[10px] text-slate-400 mt-0.5">Shift Logged: <span className="text-white font-semibold">{entry.hours} hrs</span></p>
-                              <p className="text-[10px] text-slate-400">Mileage Driving: <span className="text-white font-semibold">{entry.mileage_km} km</span></p>
-                            </div>
+                        <span className="text-[9px] text-[#22D3EE] font-bold uppercase tracking-wider block mb-1.5">Rep Check-In Status</span>
+                        {dayEntries.length > 0 ? (
+                          <div className="flex flex-col gap-2.5 max-h-[150px] overflow-y-auto pr-1">
+                            {dayEntries.map(entry => {
+                              const repUser = users.find(u => u.id === entry.rep_id);
+                              return (
+                                <div key={entry.id} className="flex items-start gap-2.5 border-b border-slate-850/50 pb-2 last:border-b-0 last:pb-0">
+                                  <div className="w-2 h-2 rounded-full bg-emerald-500 mt-1 animate-pulse"></div>
+                                  <div className="text-left">
+                                    <p className="text-xs font-bold text-white">{repUser?.name || 'Representative'}</p>
+                                    <p className="text-[9px] text-slate-400">Shift: <span className="text-white font-semibold">{entry.hours} hrs</span> | Mileage: <span className="text-white font-semibold">{entry.mileage_km} km</span></p>
+                                  </div>
+                                </div>
+                              );
+                            })}
                           </div>
                         ) : (
-                          <p className="text-[10px] text-slate-500 italic mt-1">No rep clocked in on this date.</p>
+                          <p className="text-[10px] text-slate-500 italic text-left">No rep clocked in on this date.</p>
                         )}
                       </div>
 
                       <div className="border-t border-slate-850 pt-2.5">
-                        <span className="text-[9px] text-[#22D3EE] font-bold uppercase tracking-wider">Rework & Defect Metrics</span>
+                        <span className="text-[9px] text-[#22D3EE] font-bold uppercase tracking-wider block text-left">Rework & Defect Metrics</span>
                         <div className="mt-1.5 grid grid-cols-2 gap-2 text-center text-xs">
                           <div className="bg-slate-950 p-2 rounded-xl border border-slate-850">
                             <span className="text-[18px] font-extrabold text-white block leading-none">{qtyReworked}</span>
@@ -4093,7 +4269,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                           </div>
                           <div className="bg-slate-950 p-2 rounded-xl border border-slate-850">
                             <span className="text-[18px] font-extrabold text-red-400 block leading-none">
-                              {incidents.filter(inc => inc.created_at.startsWith(selectedDate)).length}
+                              {incidents.filter(inc => inc.created_at.startsWith(selectedDate) && (selectedTaskRepId === 'all' || inc.rep_id === selectedTaskRepId)).length}
                             </span>
                             <span className="text-[8px] text-slate-500 uppercase tracking-wide block mt-1">Incidents</span>
                           </div>
@@ -4101,9 +4277,9 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                       </div>
 
                       <div className="border-t border-slate-850 pt-2.5">
-                        <span className="text-[9px] text-[#22D3EE] font-bold uppercase tracking-wider">Shift Walkthrough checklist</span>
+                        <span className="text-[9px] text-[#22D3EE] font-bold uppercase tracking-wider block text-left">Shift Walkthrough checklist</span>
                         {report ? (
-                          <div className="mt-1.5 flex flex-col gap-1 text-[10px]">
+                          <div className="mt-1.5 flex flex-col gap-1 text-[10px] text-left">
                             <p className="font-bold text-emerald-400 flex items-center gap-1">
                               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
                               <span>Checklist Submitted</span>
@@ -5290,8 +5466,19 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                           <div className="flex gap-4 col-span-2">
                             <div className="flex flex-col">
                               <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Select Client</label>
-                              <select value={selectedInvoiceSupplier} onChange={(e) => setSelectedInvoiceSupplier(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-white">
+                              <select 
+                                value={selectedInvoiceSupplier} 
+                                onChange={(e) => {
+                                  if (e.target.value === 'ADD_NEW') {
+                                    setShowQuickAddClient(true);
+                                  } else {
+                                    setSelectedInvoiceSupplier(e.target.value);
+                                  }
+                                }}
+                                className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-white"
+                              >
                                 {suppliers.filter(Boolean).map(s => <option key={s.id} value={s.id}>{s.name} ({(s.invoice_schedule || 'weekly').toUpperCase()})</option>)}
+                                <option value="ADD_NEW" className="text-cyan-400 font-bold">+ Add New Client...</option>
                               </select>
                             </div>
                             <div className="flex flex-col">
@@ -5683,13 +5870,35 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                           <form onSubmit={handleSaveRateConfig} className="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex flex-col gap-4">
                             <h4 className="text-xs font-bold text-white uppercase tracking-wider border-b border-slate-850 pb-2">Set Custom Rate Override</h4>
                             <div className="flex flex-col gap-1"><label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Representative</label>
-                              <select value={configRepId} onChange={(e) => setConfigRepId(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white">
-                                {users.filter(u => u.role === 'rep').map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                              <select 
+                                value={configRepId} 
+                                onChange={(e) => {
+                                  if (e.target.value === 'ADD_NEW') {
+                                    setShowQuickAddRep(true);
+                                  } else {
+                                    setConfigRepId(e.target.value);
+                                  }
+                                }}
+                                className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white"
+                              >
+                                {users.filter(u => u.role === 'rep' || u.role === 'qre' || u.id === '1' || u.id === 'rep_hugo' || u.id === 'rep_nabil' || u.id === 'rep_rogelio').map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                                <option value="ADD_NEW" className="text-cyan-400 font-bold">+ Add New Rep...</option>
                               </select>
                             </div>
                             <div className="flex flex-col gap-1"><label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Client</label>
-                              <select value={configSupplierId} onChange={(e) => setConfigSupplierId(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white">
+                              <select 
+                                value={configSupplierId} 
+                                onChange={(e) => {
+                                  if (e.target.value === 'ADD_NEW') {
+                                    setShowQuickAddClient(true);
+                                  } else {
+                                    setConfigSupplierId(e.target.value);
+                                  }
+                                }}
+                                className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white"
+                              >
                                 {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                                <option value="ADD_NEW" className="text-cyan-400 font-bold">+ Add New Client...</option>
                               </select>
                             </div>
                             <div className="flex flex-col gap-1"><label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Pay Rate ($/hr)</label>
@@ -6618,13 +6827,20 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                       <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Assign Representative</label>
                       <select 
                         value={newProjRep} 
-                        onChange={(e) => setNewProjRep(e.target.value)}
+                        onChange={(e) => {
+                          if (e.target.value === 'ADD_NEW') {
+                            setShowQuickAddRep(true);
+                          } else {
+                            setNewProjRep(e.target.value);
+                          }
+                        }}
                         className="bg-slate-950 border border-slate-850 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-cyan-500 transition-colors"
                       >
                         <option value="">Select Rep...</option>
-                        {users.filter(u => u.role === 'rep').map(u => (
+                        {users.filter(u => u.role === 'rep' || u.role === 'qre' || u.id === '1' || u.id === 'rep_hugo' || u.id === 'rep_nabil' || u.id === 'rep_rogelio').map(u => (
                           <option key={u.id} value={u.id}>{u.name}</option>
                         ))}
+                        <option value="ADD_NEW" className="text-cyan-400 font-bold">+ Add New Rep...</option>
                       </select>
                     </div>
 
@@ -6632,13 +6848,20 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                       <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Client / Supplier</label>
                       <select 
                         value={newProjClient} 
-                        onChange={(e) => setNewProjClient(e.target.value)}
+                        onChange={(e) => {
+                          if (e.target.value === 'ADD_NEW') {
+                            setShowQuickAddClient(true);
+                          } else {
+                            setNewProjClient(e.target.value);
+                          }
+                        }}
                         className="bg-slate-950 border border-slate-850 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-cyan-500 transition-colors"
                       >
                         <option value="">Select Client...</option>
                         {suppliers.map(s => (
                           <option key={s.id} value={s.id}>{s.name}</option>
                         ))}
+                        <option value="ADD_NEW" className="text-cyan-400 font-bold">+ Add New Client...</option>
                       </select>
                     </div>
 
@@ -6646,13 +6869,20 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                       <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Plant Location</label>
                       <select 
                         value={newProjPlant} 
-                        onChange={(e) => setNewProjPlant(e.target.value)}
+                        onChange={(e) => {
+                          if (e.target.value === 'ADD_NEW') {
+                            setShowQuickAddPlant(true);
+                          } else {
+                            setNewProjPlant(e.target.value);
+                          }
+                        }}
                         className="bg-slate-950 border border-slate-850 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-cyan-500 transition-colors"
                       >
                         <option value="">Select Plant...</option>
                         {plants.map(p => (
                           <option key={p.id} value={p.id}>{p.name}</option>
                         ))}
+                        <option value="ADD_NEW" className="text-cyan-400 font-bold">+ Add New Plant...</option>
                       </select>
                     </div>
 
@@ -7748,6 +7978,198 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
           </div>
         ))}
       </div>
+
+      {/* QUICK ADD REPRESENTATIVE MODAL */}
+      {showQuickAddRep && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl w-full max-w-sm flex flex-col gap-4 text-left shadow-2xl animate-in fade-in zoom-in duration-200">
+            <div className="flex justify-between items-center border-b border-slate-800 pb-2">
+              <h4 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
+                <UserPlus className="w-4 h-4 text-purple-400" /> Quick Add Representative
+              </h4>
+              <button onClick={() => setShowQuickAddRep(false)} className="text-slate-400 hover:text-white text-sm">✕</button>
+            </div>
+            <form onSubmit={handleQuickAddRepSubmit} className="flex flex-col gap-3">
+              <div className="flex flex-col gap-1">
+                <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Full Name</label>
+                <input 
+                  type="text" 
+                  value={quickRepName} 
+                  onChange={(e) => setQuickRepName(e.target.value)} 
+                  placeholder="e.g. Hugo Picon" 
+                  className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-650 focus:outline-none focus:border-purple-500"
+                  required
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Email Address</label>
+                <input 
+                  type="email" 
+                  value={quickRepEmail} 
+                  onChange={(e) => setQuickRepEmail(e.target.value)} 
+                  placeholder="e.g. hugo.p@integritydriven.com" 
+                  className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-650 focus:outline-none focus:border-purple-500"
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Phone Contact</label>
+                <input 
+                  type="text" 
+                  value={quickRepPhone} 
+                  onChange={(e) => setQuickRepPhone(e.target.value)} 
+                  placeholder="e.g. +1 555-123-4567" 
+                  className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-650 focus:outline-none focus:border-purple-500"
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Payment Currency</label>
+                <select 
+                  value={quickRepPayCurrency} 
+                  onChange={(e) => setQuickRepPayCurrency(e.target.value)} 
+                  className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none"
+                >
+                  <option value="CAD">CAD (C$)</option>
+                  <option value="USD">USD (US$)</option>
+                </select>
+              </div>
+              <div className="flex gap-3 mt-2">
+                <button 
+                  type="button" 
+                  onClick={() => setShowQuickAddRep(false)}
+                  className="flex-1 bg-slate-950 border border-slate-800 hover:bg-slate-900 text-slate-400 hover:text-white py-2 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit"
+                  className="flex-1 bg-purple-500 hover:bg-purple-600 text-white py-2 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                >
+                  Save Rep
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* QUICK ADD CLIENT / SUPPLIER MODAL */}
+      {showQuickAddClient && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl w-full max-w-sm flex flex-col gap-4 text-left shadow-2xl animate-in fade-in zoom-in duration-200">
+            <div className="flex justify-between items-center border-b border-slate-800 pb-2">
+              <h4 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
+                <PlusCircle className="w-4 h-4 text-cyan-400" /> Quick Add Client / Supplier
+              </h4>
+              <button onClick={() => setShowQuickAddClient(false)} className="text-slate-400 hover:text-white text-sm">✕</button>
+            </div>
+            <form onSubmit={handleQuickAddClientSubmit} className="flex flex-col gap-3">
+              <div className="flex flex-col gap-1">
+                <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Client Name</label>
+                <input 
+                  type="text" 
+                  value={quickClientName} 
+                  onChange={(e) => setQuickClientName(e.target.value)} 
+                  placeholder="e.g. Brose Automotive" 
+                  className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-650 focus:outline-none focus:border-cyan-500"
+                  required
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Invoice Schedule</label>
+                <select 
+                  value={quickClientSchedule} 
+                  onChange={(e) => setQuickClientSchedule(e.target.value)} 
+                  className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none"
+                >
+                  <option value="weekly">Weekly</option>
+                  <option value="bi-weekly">Bi-Weekly</option>
+                  <option value="monthly">Monthly</option>
+                </select>
+              </div>
+              <div className="flex gap-3 mt-2">
+                <button 
+                  type="button" 
+                  onClick={() => setShowQuickAddClient(false)}
+                  className="flex-1 bg-slate-950 border border-slate-800 hover:bg-slate-900 text-slate-400 hover:text-white py-2 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit"
+                  className="flex-1 bg-cyan-500 hover:bg-cyan-600 text-white py-2 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                >
+                  Save Client
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* QUICK ADD PLANT / LOCATION MODAL */}
+      {showQuickAddPlant && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl w-full max-w-sm flex flex-col gap-4 text-left shadow-2xl animate-in fade-in zoom-in duration-200">
+            <div className="flex justify-between items-center border-b border-slate-800 pb-2">
+              <h4 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
+                <MapPin className="w-4 h-4 text-emerald-400" /> Quick Add Plant Location
+              </h4>
+              <button onClick={() => setShowQuickAddPlant(false)} className="text-slate-400 hover:text-white text-sm">✕</button>
+            </div>
+            <form onSubmit={handleQuickAddPlantSubmit} className="flex flex-col gap-3">
+              <div className="flex flex-col gap-1">
+                <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Plant Name</label>
+                <input 
+                  type="text" 
+                  value={quickPlantName} 
+                  onChange={(e) => setQuickPlantName(e.target.value)} 
+                  placeholder="e.g. Magna Belleville" 
+                  className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-650 focus:outline-none focus:border-emerald-500"
+                  required
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Address / Details</label>
+                <input 
+                  type="text" 
+                  value={quickPlantAddress} 
+                  onChange={(e) => setQuickPlantAddress(e.target.value)} 
+                  placeholder="e.g. 100 University Ave, Belleville, ON" 
+                  className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-650 focus:outline-none focus:border-emerald-500"
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Map to Client / Supplier</label>
+                <select 
+                  value={quickPlantSupplierId} 
+                  onChange={(e) => setQuickPlantSupplierId(e.target.value)} 
+                  className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none"
+                >
+                  <option value="">Select Client...</option>
+                  {suppliers.map(s => (
+                    <option key={s.id} value={s.id}>{s.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex gap-3 mt-2">
+                <button 
+                  type="button" 
+                  onClick={() => setShowQuickAddPlant(false)}
+                  className="flex-1 bg-slate-950 border border-slate-850 hover:bg-slate-900 text-slate-400 hover:text-white py-2 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit"
+                  className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-slate-950 py-2 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                >
+                  Save Plant
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

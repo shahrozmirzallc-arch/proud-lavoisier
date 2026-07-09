@@ -106,6 +106,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   const [extraHoursReason, setExtraHoursReason] = useState('');
   const [extraHoursSupplierId, setExtraHoursSupplierId] = useState('autokabel');
   const [extraHoursPlantId, setExtraHoursPlantId] = useState('mercedes_tuscaloosa');
+  const [selectedEditingRequestId, setSelectedEditingRequestId] = useState(null);
   
   // Comments for Approval workflows
   const [customerApprovalComment, setCustomerApprovalComment] = useState('');
@@ -138,8 +139,14 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     setExtraHoursRequests(getEntities('extraHoursRequests') || []);
   }, [dbUpdateTrigger]);
 
-  // Dynamic Rate Override Resolver with Plant/Location scoping
+  // Dynamic Rate Override Resolver with Plant/Location scoping and active session role protection
   const getRepSupplierRates = (rep_id, supplier_id, plant_id = '') => {
+    const role = sessionStorage.getItem('ids_pulse_role') || 'rep';
+    const isAdmin = ['admin', 'owner', 'accountant', 'lead', 'shahroz'].includes(role);
+    if (!isAdmin) {
+      return { billing_rate: 0, pay_rate: 0, currency: 'USD' };
+    }
+
     const dbProjects = getEntities('projects') || [];
     const projMatch = dbProjects.find(p => p && p.rep_id === rep_id && p.client_id === supplier_id && (!plant_id || p.plant_id === plant_id));
     if (projMatch) {
@@ -581,6 +588,33 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       alert("Enter a valid number of extra hours.");
       return;
     }
+
+    if (selectedEditingRequestId) {
+      const dbReqs = getEntities('extraHoursRequests') || [];
+      const match = dbReqs.find(r => r.id === selectedEditingRequestId);
+      if (match) {
+        match.supplier_id = extraHoursSupplierId;
+        match.plant_id = extraHoursPlantId;
+        match.date = extraHoursDate;
+        match.hours = parseFloat(extraHoursQty);
+        match.reason = extraHoursReason;
+        match.status = 'pending_customer';
+        if (!match.history) match.history = [];
+        match.history.push({
+          status: 'pending_customer',
+          user: users.find(u => u.id === currentUserRepId)?.name || 'Rep',
+          timestamp: new Date().toISOString(),
+          comment: 'Request revised and resubmitted for customer approval.'
+        });
+        saveEntity('extraHoursRequests', match);
+        setSelectedEditingRequestId(null);
+        setExtraHoursRequests(getEntities('extraHoursRequests'));
+        setExtraHoursReason('');
+        alert("Overtime request revised and resubmitted successfully!");
+        return;
+      }
+    }
+
     const newReq = {
       rep_id: currentUserRepId,
       supplier_id: extraHoursSupplierId,
@@ -590,7 +624,6 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       reason: extraHoursReason,
       userName: users.find(u => u.id === currentUserRepId)?.name || 'Rep'
     };
-    const dbReqs = getEntities('extraHoursRequests') || [];
     const newReqItem = {
       id: `ehr_${Date.now()}`,
       status: 'pending_customer',
@@ -1216,8 +1249,6 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   
   // Hours and Mileage cost calculation (Colleen's Phase 1 utility)
   const ratePerKm = 0.73;
-  const standardHourlyRate = 28.00; // IDS Standard billing rate for suppliers
-  
   const totalMileage = timeEntries
     .filter(t => showAllDates || t.date === selectedDate)
     .reduce((acc, curr) => acc + curr.mileage_km, 0);
@@ -1227,8 +1258,24 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     .reduce((acc, curr) => acc + curr.hours, 0);
   
   const totalMileageCost = totalMileage * ratePerKm;
-  const totalHoursCost = totalHours * standardHourlyRate;
+  const totalHoursCost = totalHours * 28.00;
   const totalInvoicedEst = totalMileageCost + totalHoursCost;
+
+  // Dynamic currency-aware totals for Admin billing overview
+  const activeEntries = timeEntries.filter(t => showAllDates || t.date === selectedDate);
+  const cadInvoicedTotal = activeEntries
+    .filter(t => getRepSupplierRates(t.rep_id, t.supplier_id, t.plant_id).currency === 'CAD')
+    .reduce((acc, curr) => {
+      const rates = getRepSupplierRates(curr.rep_id, curr.supplier_id, curr.plant_id);
+      return acc + (curr.hours * rates.billing_rate) + (curr.mileage_km * 0.73);
+    }, 0);
+    
+  const usdInvoicedTotal = activeEntries
+    .filter(t => getRepSupplierRates(t.rep_id, t.supplier_id, t.plant_id).currency === 'USD')
+    .reduce((acc, curr) => {
+      const rates = getRepSupplierRates(curr.rep_id, curr.supplier_id, curr.plant_id);
+      return acc + (curr.hours * rates.billing_rate) + (curr.mileage_km * 0.73);
+    }, 0);
   
   const totalExpenseClaimed = expenseEntries
     .filter(e => showAllDates || e.date === selectedDate)
@@ -3484,15 +3531,31 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
           </span>
         </div>
         
-        <div className="glass-panel hover:border-slate-700/60 glow-pulse-purple rounded-2xl p-4 flex flex-col justify-between h-28 border-purple-500/10 hover:border-purple-500/30 transition-all">
-          <div>
-            <span className="text-[9px] font-extrabold text-slate-500 uppercase tracking-wider block">Supplier Invoice Billable</span>
-            <span className="text-2xl font-extrabold text-white mt-0.5 block leading-none">${totalInvoicedEst.toFixed(2)}</span>
+        {['admin', 'owner', 'accountant', 'lead', 'shahroz'].includes(userRole) ? (
+          <div className="glass-panel hover:border-slate-700/60 glow-pulse-purple rounded-2xl p-4 flex flex-col justify-between h-28 border-purple-500/10 hover:border-purple-500/30 transition-all">
+            <div>
+              <span className="text-[9px] font-extrabold text-slate-500 uppercase tracking-wider block">Supplier Invoice Billable</span>
+              <span className="text-2xl font-extrabold text-white mt-0.5 block leading-none">
+                {selectedCurrencyFilter === 'CAD' ? `C$ ${cadInvoicedTotal.toFixed(2)}` : 
+                 selectedCurrencyFilter === 'USD' ? `US$ ${usdInvoicedTotal.toFixed(2)}` : 
+                 `C$ ${cadInvoicedTotal.toFixed(2)} / US$ ${usdInvoicedTotal.toFixed(2)}`}
+              </span>
+            </div>
+            <span className="text-[9px] text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-2 py-0.5 rounded font-bold w-fit">
+              Rate: $0.73/km standard
+            </span>
           </div>
-          <span className="text-[9px] text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-2 py-0.5 rounded font-bold w-fit">
-            Rate: $0.73/km standard
-          </span>
-        </div>
+        ) : (
+          <div className="glass-panel hover:border-slate-700/60 glow-pulse-purple rounded-2xl p-4 flex flex-col justify-between h-28 border-purple-500/10 hover:border-purple-500/30 transition-all">
+            <div>
+              <span className="text-[9px] font-extrabold text-slate-500 uppercase tracking-wider block">Total Audited Hours</span>
+              <span className="text-2xl font-extrabold text-white mt-0.5 block leading-none">{totalHours.toFixed(1)} hrs</span>
+            </div>
+            <span className="text-[9px] text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-2 py-0.5 rounded font-bold w-fit">
+              Audited Floor Hours Logged
+            </span>
+          </div>
+        )}
       </div>
       )}
 
@@ -3591,8 +3654,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   <span className="text-[7.5px] bg-[#22D3EE]/10 border border-[#22D3EE]/30 text-[#22D3EE] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider scale-90">Beta</span>
                 </button>
 
-                {userRole !== 'accountant' && (
-                  <button
+                 <button
                     onClick={() => setActiveTab('incidents')}
                     className={`w-full h-10 px-3.5 rounded-xl font-bold text-xs transition-all cursor-pointer flex items-center justify-between border ${
                       activeTab === 'incidents' 
@@ -3606,9 +3668,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     </div>
                     {activeTab === 'incidents' && <div className="w-1.5 h-1.5 rounded-full bg-[#22D3EE]"></div>}
                   </button>
-                )}
 
-                {userRole !== 'accountant' && (
                   <button 
                     onClick={() => setActiveTab('heatmap')}
                     className={`w-full h-10 px-3.5 rounded-xl font-bold text-xs transition-all cursor-pointer flex items-center justify-between border ${
@@ -3623,9 +3683,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     </div>
                     {activeTab === 'heatmap' && <div className="w-1.5 h-1.5 rounded-full bg-[#22D3EE]"></div>}
                   </button>
-                )}
 
-                {userRole !== 'accountant' && (
                   <button 
                     onClick={() => setActiveTab('daily-planner')}
                     className={`w-full h-10 px-3.5 rounded-xl font-bold text-xs transition-all cursor-pointer flex items-center justify-between border ${
@@ -3640,9 +3698,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     </div>
                     {activeTab === 'daily-planner' && <div className="w-1.5 h-1.5 rounded-full bg-[#22D3EE]"></div>}
                   </button>
-                )}
 
-                {userRole !== 'accountant' && (
                   <button 
                     onClick={() => setActiveTab('shift-logs')}
                     className={`w-full h-10 px-3.5 rounded-xl font-bold text-xs transition-all cursor-pointer flex items-center justify-between border ${
@@ -3657,9 +3713,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     </div>
                     {activeTab === 'shift-logs' && <div className="w-1.5 h-1.5 rounded-full bg-[#0EA5E9]"></div>}
                   </button>
-                )}
 
-                {userRole !== 'accountant' && (
                   <button 
                     onClick={() => setActiveTab('suppliers')}
                     className={`w-full h-10 px-3.5 rounded-xl font-bold text-xs transition-all cursor-pointer flex items-center justify-between border ${
@@ -3674,9 +3728,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     </div>
                     {activeTab === 'suppliers' && <div className="w-1.5 h-1.5 rounded-full bg-[#0EA5E9]"></div>}
                   </button>
-                )}
 
-                {userRole !== 'lead' && (
                   <button 
                     onClick={() => setActiveTab('time-tracking')}
                     className={`w-full h-10 px-3.5 rounded-xl font-bold text-xs transition-all cursor-pointer flex items-center justify-between border ${
@@ -3691,9 +3743,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     </div>
                     {activeTab === 'time-tracking' && <div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>}
                   </button>
-                )}
 
-                {userRole !== 'accountant' && (
                   <button 
                     onClick={() => setActiveTab('rework-logs')}
                     className={`w-full h-10 px-3.5 rounded-xl font-bold text-xs transition-all cursor-pointer flex items-center justify-between border ${
@@ -3708,9 +3758,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     </div>
                     {activeTab === 'rework-logs' && <div className="w-1.5 h-1.5 rounded-full bg-[#22D3EE]"></div>}
                   </button>
-                )}
 
-                {userRole !== 'accountant' && (
                   <button 
                     onClick={() => setActiveTab('emails')}
                     className={`w-full h-10 px-3.5 rounded-xl font-bold text-xs transition-all cursor-pointer flex items-center justify-between border ${
@@ -3725,9 +3773,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     </div>
                     {activeTab === 'emails' && <div className="w-1.5 h-1.5 rounded-full bg-purple-400"></div>}
                   </button>
-                )}
 
-                {userRole !== 'accountant' && (
                   <button 
                     onClick={() => setActiveTab('users')}
                     className={`w-full h-10 px-3.5 rounded-xl font-bold text-xs transition-all cursor-pointer flex items-center justify-between border ${
@@ -3742,26 +3788,24 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     </div>
                     {activeTab === 'users' && <div className="w-1.5 h-1.5 rounded-full bg-indigo-400"></div>}
                   </button>
-                )}
 
-                {userRole === 'shahroz' && (
-                  <button 
-                    onClick={() => setActiveTab('roadmap')}
-                    className={`w-full h-10 px-3.5 rounded-xl font-bold text-xs transition-all cursor-pointer flex items-center justify-between border ${
-                      activeTab === 'roadmap' 
-                        ? 'bg-[#1E3A5F] text-white border-[#22D3EE]/30 shadow-md shadow-[#22D3EE]/5' 
-                        : 'bg-slate-900/40 text-slate-400 hover:bg-slate-900/90 hover:text-slate-200 border-slate-850 hover:border-slate-800'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <Milestone className="w-4 h-4 text-amber-400" />
-                      <span>Launch Roadmap</span>
-                    </div>
-                    {activeTab === 'roadmap' && <div className="w-1.5 h-1.5 rounded-full bg-amber-400"></div>}
-                  </button>
-                )}
+                  {userRole === 'shahroz' && (
+                    <button 
+                      onClick={() => setActiveTab('roadmap')}
+                      className={`w-full h-10 px-3.5 rounded-xl font-bold text-xs transition-all cursor-pointer flex items-center justify-between border ${
+                        activeTab === 'roadmap' 
+                          ? 'bg-[#1E3A5F] text-white border-[#22D3EE]/30 shadow-md shadow-[#22D3EE]/5' 
+                          : 'bg-slate-900/40 text-slate-400 hover:bg-slate-900/90 hover:text-slate-200 border-slate-850 hover:border-slate-800'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <Milestone className="w-4 h-4 text-amber-400" />
+                        <span>Launch Roadmap</span>
+                      </div>
+                      {activeTab === 'roadmap' && <div className="w-1.5 h-1.5 rounded-full bg-amber-400"></div>}
+                    </button>
+                  )}
 
-                {['admin', 'shahroz', 'accountant'].includes(userRole) && (
                   <button 
                     onClick={() => setActiveTab('projects')}
                     className={`w-full h-10 px-3.5 rounded-xl font-bold text-xs transition-all cursor-pointer flex items-center justify-between border ${
@@ -3776,9 +3820,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     </div>
                     {activeTab === 'projects' && <div className="w-1.5 h-1.5 rounded-full bg-cyan-400"></div>}
                   </button>
-                )}
 
-                {['admin', 'shahroz', 'accountant'].includes(userRole) && (
                   <button 
                     onClick={() => setActiveTab('system-logs')}
                     className={`w-full h-10 px-3.5 rounded-xl font-bold text-xs transition-all cursor-pointer flex items-center justify-between border ${
@@ -3793,10 +3835,9 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     </div>
                     {activeTab === 'system-logs' && <div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>}
                   </button>
-                )}
-              </>
-            )}
-          </div>
+                </>
+              )}
+            </div>
         )}
 
         <div className="flex-1 bg-slate-900/40 border border-slate-850 rounded-2xl p-5 flex flex-col min-h-0">
@@ -5107,8 +5148,24 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     <div className="grid grid-cols-2 gap-6">
                       <form onSubmit={handleExtraHoursSubmit} className="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex flex-col gap-4 text-left">
                         <h4 className="text-xs font-bold text-white uppercase tracking-wider border-b border-slate-850 pb-2 flex items-center gap-2">
-                          <AlertCircle className="w-4 h-4 text-sky-400" /> File Request for Overtime / Extra Hours
+                          <AlertCircle className="w-4 h-4 text-sky-400" /> {selectedEditingRequestId ? "Revise Overtime Request" : "File Request for Overtime / Extra Hours"}
                         </h4>
+                        {selectedEditingRequestId && (
+                          <div className="bg-cyan-500/10 border border-cyan-500/35 p-2.5 rounded-xl text-[10px] text-cyan-400 font-bold flex justify-between items-center">
+                            <span>Editing Rejected Request: #{selectedEditingRequestId}</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedEditingRequestId(null);
+                                setExtraHoursReason('');
+                              }}
+                              className="text-xs font-black text-cyan-400 hover:text-white cursor-pointer px-1"
+                              title="Cancel Edit Mode"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        )}
                         <div className="flex flex-col gap-1">
                           <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Client (Supplier)</label>
                           <select value={extraHoursSupplierId} onChange={(e) => setExtraHoursSupplierId(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
@@ -5160,6 +5217,22 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                 <div className="text-[10px] text-slate-400 italic">" {req.reason} "</div>
                                 {req.customer_comment && <div className="text-[9px] text-slate-500"><strong className="text-slate-400">Customer Note:</strong> {req.customer_comment}</div>}
                                 {req.admin_comment && <div className="text-[9px] text-slate-500"><strong className="text-slate-400">Admin Note:</strong> {req.admin_comment}</div>}
+                                {req.status.startsWith('rejected') && (
+                                  <button
+                                    onClick={() => {
+                                      setSelectedEditingRequestId(req.id);
+                                      setExtraHoursSupplierId(req.supplier_id);
+                                      setExtraHoursPlantId(req.plant_id);
+                                      setExtraHoursDate(req.date);
+                                      setExtraHoursQty(req.hours.toString());
+                                      setExtraHoursReason(req.reason);
+                                      alert("Form loaded with rejected request details. Modify and submit to resubmit.");
+                                    }}
+                                    className="mt-1 px-2.5 py-1 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 font-bold text-[9px] uppercase rounded border border-cyan-500/20 transition-colors w-fit cursor-pointer"
+                                  >
+                                    Revise & Resubmit
+                                  </button>
+                                )}
                               </div>
                             ))
                           )}

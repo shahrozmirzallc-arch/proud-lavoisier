@@ -1,6 +1,13 @@
 // SharedDatabase.js
 // Handles localStorage persistence and data synchronization.
 
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
 const STORAGE_KEY = 'ids_pulse_db';
 
 const SEED_DATA = {
@@ -434,6 +441,7 @@ export function initializeDB() {
   const existing = localStorage.getItem(STORAGE_KEY);
   if (!existing) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(SEED_DATA));
+    setTimeout(() => syncWithSupabase(), 100);
     return SEED_DATA;
   }
   const data = JSON.parse(existing);
@@ -490,7 +498,67 @@ export function initializeDB() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     window.dispatchEvent(new Event('ids_pulse_db_update'));
   }
+
+  // Trigger Supabase background sync asynchronously
+  setTimeout(() => syncWithSupabase(), 100);
+
   return data;
+}
+
+// Supabase Async Sync Engine
+export async function syncWithSupabase() {
+  console.log("Starting Supabase Sync...");
+  const collections = [
+    'users',
+    'plants',
+    'suppliers',
+    'rates',
+    'projects',
+    'timeEntries',
+    'expenseEntries',
+    'extraHoursRequests',
+    'systemLogs',
+    'incidents',
+    'reworkLogs',
+    'dailyTasks',
+    'emailLogs'
+  ];
+
+  const db = getDB();
+  let updated = false;
+
+  for (const col of collections) {
+    try {
+      const { data, error } = await supabase.from(col).select('*');
+      if (error) {
+        console.error(`[Supabase Pull Error] table "${col}":`, error.message);
+        continue;
+      }
+
+      if (!data || data.length === 0) {
+        const localItems = db[col] || [];
+        if (localItems.length > 0) {
+          console.log(`[Supabase Seeding] table "${col}": uploading ${localItems.length} items...`);
+          const { error: upsertError } = await supabase.from(col).upsert(localItems);
+          if (upsertError) {
+            console.error(`[Supabase Seed Error] table "${col}":`, upsertError.message);
+          }
+        }
+      } else {
+        db[col] = data;
+        updated = true;
+      }
+    } catch (err) {
+      console.error(`[Supabase Sync Exception] table "${col}":`, err);
+    }
+  }
+
+  if (updated) {
+    console.log("[Supabase Sync Success] Local cache refreshed with live cloud data.");
+    saveDB(db);
+  } else {
+    console.log("[Supabase Sync Checked] Cache matches cloud.");
+  }
 }
 
 // Get the entire database
@@ -596,6 +664,16 @@ export function saveEntity(type, entity) {
   }
   
   saveDB(db);
+
+  // Sync to Supabase in background
+  supabase.from(type).upsert(entity)
+    .then(({ error }) => {
+      if (error) {
+        console.error(`[Supabase Push Error] table "${type}":`, error.message);
+      }
+    })
+    .catch(err => console.error(`[Supabase Push Exception] table "${type}":`, err));
+
   return entity;
 }
 
@@ -697,14 +775,25 @@ export function saveRate(rate) {
   if (!db.rates) db.rates = [];
   
   const index = db.rates.findIndex(r => r.id === rate.id || (r.rep_id === rate.rep_id && r.supplier_id === rate.supplier_id));
+  let finalRate = rate;
   if (index >= 0) {
     db.rates[index] = { ...db.rates[index], ...rate };
+    finalRate = db.rates[index];
   } else {
     const newRate = { id: `rate_${Date.now()}`, ...rate };
     db.rates.push(newRate);
+    finalRate = newRate;
   }
   saveDB(db);
-  return rate;
+
+  // Sync to Supabase in background
+  supabase.from('rates').upsert(finalRate)
+    .then(({ error }) => {
+      if (error) console.error('[Supabase Push Error] table "rates":', error.message);
+    })
+    .catch(err => console.error('[Supabase Push Exception] table "rates":', err));
+
+  return finalRate;
 }
 
 // Delete a rate
@@ -713,6 +802,13 @@ export function deleteRate(rateId) {
   if (!db.rates) return;
   db.rates = db.rates.filter(r => r.id !== rateId);
   saveDB(db);
+
+  // Sync delete to Supabase in background
+  supabase.from('rates').delete().eq('id', rateId)
+    .then(({ error }) => {
+      if (error) console.error('[Supabase Delete Error] table "rates":', error.message);
+    })
+    .catch(err => console.error('[Supabase Delete Exception] table "rates":', err));
 }
 
 

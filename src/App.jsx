@@ -77,7 +77,7 @@ function App() {
   const [layoutMode, setLayoutMode] = useState(() => {
     const role = sessionStorage.getItem('ids_pulse_role') || 'admin';
     const unlocked = sessionStorage.getItem('ids_pulse_unlocked') === 'true';
-    if (unlocked && role !== 'qre') {
+    if (unlocked && role !== 'qre' && role !== 'rep') {
       return 'dashboard-only';
     }
     return 'side-by-side';
@@ -226,62 +226,33 @@ function App() {
               // Use username if supplied, otherwise fallback to password input as username
               const targetUser = inputUser || inputPw;
 
-              if (isMasterPw) {
+              const admins = ['greg', 'colleen', 'monica', 'iris', 'donna', 'miriam', 'diana', 'shahroz', 'idspulse'];
+              const reps = ['hugo', 'nabil', 'rogelio', 'clarence'];
+              const customers = ['autokabel', 'magna', 'hutchinson', 'brose'];
+
+              if (isMasterPw || admins.includes(targetUser)) {
                 setIsUnlocked(true);
-                setUserRole('shahroz');
+                const adminName = admins.includes(targetUser) ? targetUser : 'greg';
+                const reactRole = (adminName === 'shahroz' || adminName === 'idspulse') ? 'shahroz' : 
+                                  (adminName === 'colleen' ? 'accountant' : 
+                                  (adminName === 'donna' ? 'lead' : 'owner'));
+                setUserRole(reactRole);
                 setLayoutMode('dashboard-only');
                 sessionStorage.setItem('ids_pulse_unlocked', 'true');
-                sessionStorage.setItem('ids_pulse_role', 'shahroz');
+                sessionStorage.setItem('ids_pulse_role', 'admin');
+                sessionStorage.setItem('ids_pulse_admin_user', adminName);
                 setAuthError(false);
-              } else if (targetUser === 'shahroz' || targetUser === 'idspulse') {
+              } else if (reps.includes(targetUser)) {
                 setIsUnlocked(true);
-                setUserRole('shahroz');
+                setUserRole('qre'); // keep internal React role state for rep to prevent routing crashes
+                const repId = targetUser === 'clarence' ? '1' : `rep_${targetUser}`;
+                setCurrentUserRepId(repId);
                 setLayoutMode('dashboard-only');
                 sessionStorage.setItem('ids_pulse_unlocked', 'true');
-                sessionStorage.setItem('ids_pulse_role', 'shahroz');
+                sessionStorage.setItem('ids_pulse_role', 'rep');
+                sessionStorage.setItem('ids_pulse_rep_id', repId);
                 setAuthError(false);
-              } else if (targetUser === 'colleen') {
-                setIsUnlocked(true);
-                setUserRole('accountant');
-                setLayoutMode('dashboard-only');
-                sessionStorage.setItem('ids_pulse_unlocked', 'true');
-                sessionStorage.setItem('ids_pulse_role', 'accountant');
-                setAuthError(false);
-              } else if (targetUser === 'donna') {
-                setIsUnlocked(true);
-                setUserRole('lead');
-                setLayoutMode('dashboard-only');
-                sessionStorage.setItem('ids_pulse_unlocked', 'true');
-                sessionStorage.setItem('ids_pulse_role', 'lead');
-                setAuthError(false);
-              } else if (targetUser === 'hugo') {
-                setIsUnlocked(true);
-                setUserRole('qre');
-                setCurrentUserRepId('rep_hugo');
-                setLayoutMode('dashboard-only');
-                sessionStorage.setItem('ids_pulse_unlocked', 'true');
-                sessionStorage.setItem('ids_pulse_role', 'qre');
-                sessionStorage.setItem('ids_pulse_rep_id', 'rep_hugo');
-                setAuthError(false);
-              } else if (targetUser === 'nabil') {
-                setIsUnlocked(true);
-                setUserRole('qre');
-                setCurrentUserRepId('rep_nabil');
-                setLayoutMode('dashboard-only');
-                sessionStorage.setItem('ids_pulse_unlocked', 'true');
-                sessionStorage.setItem('ids_pulse_role', 'qre');
-                sessionStorage.setItem('ids_pulse_rep_id', 'rep_nabil');
-                setAuthError(false);
-              } else if (targetUser === 'rogelio') {
-                setIsUnlocked(true);
-                setUserRole('qre');
-                setCurrentUserRepId('rep_rogelio');
-                setLayoutMode('dashboard-only');
-                sessionStorage.setItem('ids_pulse_unlocked', 'true');
-                sessionStorage.setItem('ids_pulse_role', 'qre');
-                sessionStorage.setItem('ids_pulse_rep_id', 'rep_rogelio');
-                setAuthError(false);
-              } else if (['autokabel', 'magna', 'hutchinson', 'brose'].includes(targetUser)) {
+              } else if (customers.includes(targetUser)) {
                 setIsUnlocked(true);
                 setUserRole('customer');
                 setCurrentUserCustomerId(targetUser);
@@ -389,6 +360,24 @@ function App() {
             <div className="flex items-center gap-2">
               <span className="font-extrabold text-sm text-white tracking-tight">IDS Pulse Operations Suite</span>
               <span className="text-[9px] bg-[#0EA5E9]/15 text-[#22D3EE] border border-[#0EA5E9]/20 px-2 py-0.5 rounded-full font-bold uppercase">Active</span>
+              {sessionStorage.getItem('ids_pulse_role') === 'admin' && (
+                <div className="flex items-center gap-1.5 bg-slate-900/80 border border-slate-800 rounded-lg px-2 py-0.5 ml-1 flex-shrink-0">
+                  <span className="text-[8px] text-slate-500 font-black uppercase">Admin Profile:</span>
+                  <select
+                    value={userRole}
+                    onChange={(e) => {
+                      setUserRole(e.target.value);
+                      setDbUpdateTrigger(prev => prev + 1);
+                    }}
+                    className="bg-transparent border-none text-[9.5px] font-bold text-[#22D3EE] focus:outline-none cursor-pointer p-0.5"
+                  >
+                    <option value="owner" className="bg-slate-950 text-white">Greg (Owner)</option>
+                    <option value="accountant" className="bg-slate-950 text-white">Colleen (Finance)</option>
+                    <option value="lead" className="bg-slate-950 text-white">Donna (Shift Lead)</option>
+                    <option value="shahroz" className="bg-slate-950 text-white">Shahroz (Super Admin)</option>
+                  </select>
+                </div>
+              )}
             </div>
             <p className="text-[10px] text-slate-400">Enterprise quality tracking, audit metrics, and field dispatch operations.</p>
           </div>

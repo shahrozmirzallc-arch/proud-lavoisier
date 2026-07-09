@@ -5,13 +5,13 @@ const STORAGE_KEY = 'ids_pulse_db';
 
 const SEED_DATA = {
   users: [
-    { id: '1', name: 'Clarence Kuiken', email: 'clarence.k@integritydriven.com', role: 'rep', phone: '+1 905-914-2788', avatar: 'CK', pay_currency: 'CAD' },
-    { id: '2', name: 'Donna Cabral', email: 'donna.c@integritydriven.com', role: 'lead', phone: '+1 905-555-0199', avatar: 'DC', pay_currency: 'CAD' },
-    { id: '3', name: 'Greg Phillippe', email: 'greg.p@integritydriven.com', role: 'owner', phone: '+1 905-555-0100', avatar: 'GP', pay_currency: 'CAD' },
-    { id: '4', name: 'Colleen Boyd', email: 'colleen.b@integritydriven.com', role: 'accountant', phone: '+1 905-555-0122', avatar: 'CB', pay_currency: 'CAD' },
-    { id: 'rep_hugo', name: 'Hugo Picon', email: 'hugo.p@integritydriven.com', role: 'rep', phone: '+1 555-123-4567', avatar: 'HP', pay_currency: 'USD' },
-    { id: 'rep_nabil', name: 'Nabil Obad', email: 'nabil.o@integritydriven.com', role: 'rep', phone: '+1 555-987-6543', avatar: 'NO', pay_currency: 'USD' },
-    { id: 'rep_rogelio', name: 'Rogelio Velasco', email: 'rogelio.v@integritydriven.com', role: 'rep', phone: '+1 555-555-0987', avatar: 'RV', pay_currency: 'USD' }
+    { id: '1', name: 'Clarence Kuiken', email: 'clarence.k@integritydriven.com', role: 'rep', phone: '+1 905-914-2788', avatar: 'CK', pay_currency: 'CAD', company_affiliation: 'IDS' },
+    { id: '2', name: 'Donna Cabral', email: 'donna.c@integritydriven.com', role: 'lead', phone: '+1 905-555-0199', avatar: 'DC', pay_currency: 'CAD', company_affiliation: 'IDS' },
+    { id: '3', name: 'Greg Phillippe', email: 'greg.p@integritydriven.com', role: 'owner', phone: '+1 905-555-0100', avatar: 'GP', pay_currency: 'CAD', company_affiliation: 'IDS' },
+    { id: '4', name: 'Colleen Boyd', email: 'colleen.b@integritydriven.com', role: 'accountant', phone: '+1 905-555-0122', avatar: 'CB', pay_currency: 'CAD', company_affiliation: 'IDS' },
+    { id: 'rep_hugo', name: 'Hugo Picon', email: 'hugo.p@integritydriven.com', role: 'rep', phone: '+1 555-123-4567', avatar: 'HP', pay_currency: 'USD', company_affiliation: 'IDS' },
+    { id: 'rep_nabil', name: 'Nabil Obad', email: 'nabil.o@integritydriven.com', role: 'rep', phone: '+1 555-987-6543', avatar: 'NO', pay_currency: 'USD', company_affiliation: 'IDS' },
+    { id: 'rep_rogelio', name: 'Rogelio Velasco', email: 'rogelio.v@integritydriven.com', role: 'rep', phone: '+1 555-555-0987', avatar: 'RV', pay_currency: 'USD', company_affiliation: 'FQS' }
   ],
   rates: [
     { id: 'rate_1', rep_id: '1', supplier_id: 'magna', billing_rate: 28.00, pay_rate: 20.00 },
@@ -453,9 +453,15 @@ export function initializeDB() {
     if (!match) {
       data.users.push(seedUser);
       updated = true;
-    } else if (!match.pay_currency) {
-      match.pay_currency = seedUser.pay_currency;
-      updated = true;
+    } else {
+      if (!match.pay_currency) {
+        match.pay_currency = seedUser.pay_currency;
+        updated = true;
+      }
+      if (!match.company_affiliation) {
+        match.company_affiliation = seedUser.company_affiliation;
+        updated = true;
+      }
     }
   });
 
@@ -501,10 +507,79 @@ export function saveDB(data) {
   window.dispatchEvent(new Event('ids_pulse_db_update'));
 }
 
-// Get entities helper
+// Get entities helper with role-based data sanitization
 export function getEntities(type) {
   const db = getDB();
-  return db[type] || [];
+  let entities = db[type] || [];
+
+  const isUnlocked = sessionStorage.getItem('ids_pulse_unlocked') === 'true';
+  const role = sessionStorage.getItem('ids_pulse_role') || 'rep';
+  const customerId = sessionStorage.getItem('ids_pulse_customer_id') || '';
+  const repId = sessionStorage.getItem('ids_pulse_rep_id') || '';
+
+  if (isUnlocked) {
+    const isAdmin = ['admin', 'owner', 'accountant', 'lead', 'shahroz'].includes(role);
+
+    if (!isAdmin) {
+      if (type === 'rates') {
+        return [];
+      }
+      
+      if (type === 'users') {
+        return entities.map(u => {
+          const { pay_currency, ...cleanUser } = u;
+          return cleanUser;
+        });
+      }
+
+      if (role === 'customer' && customerId) {
+        if (type === 'timeEntries') {
+          return entities.filter(t => t.supplier_id === customerId).map(t => {
+            const { billing_rate, ...cleanTime } = t;
+            return cleanTime;
+          });
+        }
+        if (type === 'expenseEntries') {
+          return [];
+        }
+        if (type === 'extraHoursRequests') {
+          return entities.filter(e => e.supplier_id === customerId);
+        }
+        if (type === 'shiftReports') {
+          return entities.filter(r => r.supplier_id === customerId && r.status === 'published');
+        }
+        if (type === 'plants') {
+          const supplier = (db.suppliers || []).find(s => s.id === customerId);
+          const served = supplier?.plants_served || [];
+          return entities.filter(p => served.includes(p.id));
+        }
+        if (type === 'suppliers') {
+          return entities.filter(s => s.id === customerId);
+        }
+      }
+
+      if (role === 'qre' || role === 'rep') {
+        const targetRepId = repId || '1';
+        if (type === 'timeEntries') {
+          return entities.filter(t => t.rep_id === targetRepId).map(t => {
+            const { billing_rate, ...cleanTime } = t;
+            return cleanTime;
+          });
+        }
+        if (type === 'expenseEntries') {
+          return entities.filter(e => e.rep_id === targetRepId);
+        }
+        if (type === 'extraHoursRequests') {
+          return entities.filter(e => e.rep_id === targetRepId);
+        }
+        if (type === 'shiftReports') {
+          return entities.filter(r => r.rep_id === targetRepId);
+        }
+      }
+    }
+  }
+
+  return entities;
 }
 
 // Save entity helper

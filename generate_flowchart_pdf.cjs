@@ -2,28 +2,17 @@ const { jsPDF } = require('jspdf');
 const fs = require('fs');
 const path = require('path');
 
-// Import Logo Base64
-const logoFilePath = path.join(__dirname, 'src/components/LogoBase64.js');
-let logoBase64 = null;
-
-if (fs.existsSync(logoFilePath)) {
-  const logoFileContent = fs.readFileSync(logoFilePath, 'utf8');
-  const logoMatch = logoFileContent.match(/export const LOGO_BASE64 = "(data:image\/png;base64,[A-Za-z0-9+/=]+)";/);
-  if (logoMatch) {
-    logoBase64 = logoMatch[1];
-  }
-}
-
 const doc = new jsPDF();
 
-// Helper to draw header
+// Helper to draw header (Logo replaced with clean text badge)
 const drawHeader = (pageNumber) => {
-  // Draw Dark Blue background container for the logo
-  if (logoBase64) {
-    doc.setFillColor(30, 58, 95);
-    doc.roundedRect(20, 13, 50, 13, 2, 2, "F");
-    doc.addImage(logoBase64, 'PNG', 22, 14, 46, 11);
-  }
+  doc.setFillColor(30, 58, 95);
+  doc.roundedRect(20, 13, 26, 12, 1, 1, "F");
+  
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(9.5);
+  doc.setTextColor(255, 255, 255);
+  doc.text("IDS PULSE", 33, 21.2, { align: "center" });
   
   // Title
   doc.setFont("helvetica", "bold");
@@ -43,7 +32,7 @@ const drawHeader = (pageNumber) => {
   doc.text(`Confidential — IDS Pulse Functional Workflow & Operational Flowchart — Page ${pageNumber}`, 20, 285);
 };
 
-// Helper to draw boxes with text
+// Helper to draw boxes with text (with automatic wrapping to prevent overflow)
 const drawFlowBox = (x, y, w, h, title, lines) => {
   doc.setFillColor(248, 250, 252);
   doc.roundedRect(x, y, w, h, 2, 2, "F");
@@ -58,12 +47,15 @@ const drawFlowBox = (x, y, w, h, title, lines) => {
   doc.text(title, x + 3, y + 5);
   
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(7.5);
+  doc.setFontSize(7.0);
   doc.setTextColor(71, 85, 105);
   let ly = y + 10;
   lines.forEach(line => {
-    doc.text(line, x + 3, ly);
-    ly += 3.8;
+    const wrapped = doc.splitTextToSize(line, w - 6);
+    wrapped.forEach(wl => {
+      doc.text(wl, x + 3, ly);
+      ly += 3.4;
+    });
   });
 };
 
@@ -327,9 +319,15 @@ const drawStepCard = (y, stepNo, title, desc) => {
   doc.text(title, 38, y + 7);
   
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(8.5);
+  doc.setFontSize(8.0);
   doc.setTextColor(71, 85, 105);
-  doc.text(desc, 38, y + 12);
+  
+  const wrappedDesc = doc.splitTextToSize(desc, 148);
+  let ly = y + 12;
+  wrappedDesc.forEach(line => {
+    doc.text(line, 38, ly);
+    ly += 3.8;
+  });
 };
 
 let sy = 52;
@@ -344,6 +342,6 @@ sy += 19;
 drawStepCard(sy, 5, "Reactive Dashboard Rerender", "Web dashboard receives sync broadcast, fetches latest updates, plays synthesizer bell chime, and displays notification toast.");
 
 // Save PDF
-const pdfPath = path.join(__dirname, 'IDS_Pulse_System_Flowchart.pdf');
+const pdfPath = path.join(__dirname, 'IDS_Pulse_System_Flowchart_v2.pdf');
 fs.writeFileSync(pdfPath, Buffer.from(doc.output('arraybuffer')));
 console.log(`Successfully generated flowchart PDF at: ${pdfPath}`);

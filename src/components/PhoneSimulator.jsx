@@ -524,65 +524,69 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
   const handleSendIncident = () => {
     setIsSendingIncident(true);
 
-    // Simulate 3-second rule with loader
+    // Simulate 2-second rule with loader
     setTimeout(() => {
-      const partsList = getEntities('parts');
-      const part = partsList.find(p => p.part_number === scannedPN) || { id: 'unknown', part_number: scannedPN, supplier_id: 'magna', description: 'Unknown Custom Part' };
-      
-      const defaultPartsList = scannedPartsList.length > 0 ? scannedPartsList : [
-        {
-          id: `sp_def_${Date.now()}`,
-          part_number: scannedPN || '86286761',
-          description: part.description,
-          supplier_id: part.supplier_id,
-          bin: scannedBin || 'BIN-MAG-6761',
-          qty: 1
-        }
-      ];
+      let savedIncident = null;
+      try {
+        const partsList = getEntities('parts');
+        const part = partsList.find(p => p.part_number === scannedPN) || { id: 'unknown', part_number: scannedPN, supplier_id: 'magna', description: 'Unknown Custom Part' };
+        
+        const defaultPartsList = scannedPartsList.length > 0 ? scannedPartsList : [
+          {
+            id: `sp_def_${Date.now()}`,
+            part_number: scannedPN || '86286761',
+            description: part.description,
+            supplier_id: part.supplier_id,
+            bin: scannedBin || 'BIN-MAG-6761',
+            qty: 1
+          }
+        ];
 
-      const newInc = {
-        rep_id: currentUser.id,
-        plant_id: selectedPlant,
-        supplier_id: defaultPartsList[0]?.supplier_id || 'magna',
-        part_id: defaultPartsList[0]?.part_number || '86286761', // fallback for single-value legacy references
-        area: selectedArea,
-        description: description || `Incident in ${selectedArea}`,
-        action_taken: actionTaken,
-        supplier_contact: supplierContact,
-        photos: [
-          { id: 'ph_w', url: annotatedPhotos.wide || capturedPhotos.wide, type: 'Wide' },
-          { id: 'ph_m', url: annotatedPhotos.medium || capturedPhotos.medium, type: 'Medium' },
-          { id: 'ph_c', url: annotatedPhotos.closeup || capturedPhotos.closeup, type: 'Closeup' }
-        ],
-        concern_classification: concernClassification,
-        defect_returned: isReturningDefect,
-        sort_required: isSortRequired,
-        rma_required: isRmaRequired,
-        status: 'Open',
-        sent_at: new Date().toISOString(),
-        parts_list: defaultPartsList,
-        defect_location_x: defectLocationX,
-        defect_location_y: defectLocationY,
-        part_view: 'top'
-      };
+        // Prepare subject and parts HTML first to prevent TDZ error
+        const firstPN = defaultPartsList[0]?.part_number || scannedPN;
+        const partSubject = defaultPartsList.length > 1 
+          ? `${firstPN} (+${defaultPartsList.length - 1} others)` 
+          : firstPN;
+        
+        const partsHtml = defaultPartsList.map(p => `<li><strong>PN ${p.part_number}</strong>: ${p.description} (Qty: ${p.qty}) [Bin: ${p.bin}]</li>`).join("");
 
-      const savedIncident = addIncident(newInc);
-      logSystemEvent('incident', 'create', `${currentUser.name} reported suspect material for Part #${partSubject} in area ${selectedArea}.`);
+        const newInc = {
+          rep_id: currentUser.id,
+          plant_id: selectedPlant,
+          supplier_id: defaultPartsList[0]?.supplier_id || 'magna',
+          part_id: defaultPartsList[0]?.part_number || '86286761', // fallback for single-value legacy references
+          area: selectedArea,
+          description: description || `Incident in ${selectedArea}`,
+          action_taken: actionTaken,
+          supplier_contact: supplierContact,
+          photos: [
+            { id: 'ph_w', url: annotatedPhotos.wide || capturedPhotos.wide, type: 'Wide' },
+            { id: 'ph_m', url: annotatedPhotos.medium || capturedPhotos.medium, type: 'Medium' },
+            { id: 'ph_c', url: annotatedPhotos.closeup || capturedPhotos.closeup, type: 'Closeup' }
+          ],
+          concern_classification: concernClassification,
+          defect_returned: isReturningDefect,
+          sort_required: isSortRequired,
+          rma_required: isRmaRequired,
+          status: 'Open',
+          sent_at: new Date().toISOString(),
+          parts_list: defaultPartsList,
+          defect_location_x: defectLocationX,
+          defect_location_y: defectLocationY,
+          part_view: 'top'
+        };
 
-      const firstPN = defaultPartsList[0]?.part_number || scannedPN;
-      const partSubject = defaultPartsList.length > 1 
-        ? `${firstPN} (+${defaultPartsList.length - 1} others)` 
-        : firstPN;
-      
-      const partsHtml = defaultPartsList.map(p => `<li><strong>PN ${p.part_number}</strong>: ${p.description} (Qty: ${p.qty}) [Bin: ${p.bin}]</li>`).join("");
+        // Commit database writes inside the try-catch block
+        savedIncident = addIncident(newInc);
+        logSystemEvent('incident', 'create', `${currentUser.name} reported suspect material for Part #${partSubject} in area ${selectedArea}.`);
 
-      // Log email delivery
-      addEmailLog({
-        incident_id: savedIncident.id,
-        to_emails: part.supplier_id === 'magna' ? 'martin.s@magna.com, shahroz.m@magna.com' : 'sjenkins@hutchinson.ca',
-        cc_emails: 'donna.c@integritydriven.com, greg.p@integritydriven.com',
-        subject: `[INCIDENT] PN ${partSubject} | ${selectedArea} | ${plants.find(p => p.id === selectedPlant)?.name || 'GM Oshawa'} | ${new Date().toLocaleDateString()}`,
-        body: `<h3>INCIDENT REPORT — IDS PULSE</h3>
+        // Log email delivery
+        addEmailLog({
+          incident_id: savedIncident.id,
+          to_emails: part.supplier_id === 'magna' ? 'martin.s@magna.com, shahroz.m@magna.com' : 'sjenkins@hutchinson.ca',
+          cc_emails: 'donna.c@integritydriven.com, greg.p@integritydriven.com',
+          subject: `[INCIDENT] PN ${partSubject} | ${selectedArea} | ${plants.find(p => p.id === selectedPlant)?.name || 'GM Oshawa'} | ${new Date().toLocaleDateString()}`,
+          body: `<h3>INCIDENT REPORT — IDS PULSE</h3>
 <p><strong>Date:</strong> ${new Date().toLocaleDateString()}<br/>
 <strong>Rep:</strong> ${currentUser.name}<br/>
 <strong>Area Discovered:</strong> ${selectedArea}</p>
@@ -592,11 +596,17 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
 <hr/>
 <p><strong>Description:</strong> ${description}</p>
 <p><strong>Action Taken:</strong> ${actionTaken}</p>`
-      });
+        });
 
-      setIsSendingIncident(false);
-      setSentIncidentId(savedIncident.id);
-      setIncidentSentConfirmation(true);
+        setIsSendingIncident(false);
+        setSentIncidentId(savedIncident.id);
+        setIncidentSentConfirmation(true);
+        window.dispatchEvent(new Event('ids_pulse_db_update'));
+      } catch (err) {
+        console.error("Error during incident release:", err);
+        setIsSendingIncident(false);
+        alert(`Failed to send incident report: ${err.message || err}`);
+      }
     }, 2000);
   };
 

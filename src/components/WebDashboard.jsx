@@ -252,12 +252,16 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     };
     saveEntity('rates', newRate);
     setRates(getEntities('rates'));
+    const user = sessionStorage.getItem('ids_pulse_admin_user') || 'Admin';
+    logSystemEvent('system', 'save_rate', `${user} configured custom rate for Rep ${configRepId} serving client ${configSupplierId} (Bill: $${configBillingRate}, Pay: $${configPayRate}).`);
     alert("Custom rate override saved successfully!");
   };
 
   const handleDeleteRate = (rateId) => {
     deleteRate(rateId);
     setRates(getEntities('rates') || []);
+    const user = sessionStorage.getItem('ids_pulse_admin_user') || 'Admin';
+    logSystemEvent('system', 'delete_rate', `${user} deleted custom rate override configuration ID ${rateId}.`);
   };
 
   const handleMarkAsInvoiced = (clientEntries, clientExpenses) => {
@@ -287,7 +291,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       const duration = entry.hours;
       const notes = entry.notes || 'Shift sorting log';
       csv += `"${date}","${repName}","${clientName}","Standard Sorting Support","${duration}","${notes}","Billable"\n`;
-    });
+    const user = sessionStorage.getItem('ids_pulse_admin_user') || 'Admin';
+    logSystemEvent('payroll', 'quickbooks_export', `${user} exported QuickBooks CSV timesheets for supplier ${selectedInvoiceSupplier}.`);
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
@@ -412,6 +417,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       doc.text("TOTAL DUE:", 120, y);
       doc.text(`${curSymbol}${totalBill.toFixed(2)}`, 160, y);
 
+      const user = sessionStorage.getItem('ids_pulse_admin_user') || 'Admin';
+      logSystemEvent('payroll', 'invoice_export', `${user} generated client billing invoice PDF for ${client.name}.`);
       doc.save(`Invoice_${client.name.replace(/\s+/g, '_')}_${Date.now()}.pdf`);
     } catch (err) {
       console.error(err);
@@ -437,6 +444,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     };
     saveEntity('suppliers', newCust);
     setSuppliers(getEntities('suppliers'));
+    const user = sessionStorage.getItem('ids_pulse_admin_user') || 'Admin';
+    logSystemEvent('system', 'create_customer', `${user} onboarded new client/supplier ${newCustomerName} with contact ${newCustomerContactName}.`);
     setNewCustomerName('');
     setNewCustomerAddress('');
     setNewCustomerContactName('');
@@ -478,6 +487,9 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     };
     saveEntity('rates', newRate);
     setRates(getEntities('rates'));
+    
+    const userLoc = sessionStorage.getItem('ids_pulse_admin_user') || 'Admin';
+    logSystemEvent('system', 'create_location', `${userLoc} created plant location ${newLocationName} mapped to supplier ${newLocationSupplierId}.`);
 
     setNewLocationName('');
     setNewLocationAddress('');
@@ -502,6 +514,10 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     };
     saveEntity('users', newRep);
     setUsers(getEntities('users'));
+    
+    const userRep = sessionStorage.getItem('ids_pulse_admin_user') || 'Admin';
+    logSystemEvent('system', 'create_representative', `${userRep} onboarded representative ${newRepName} (${newRepPayCurrency}).`);
+
     setNewRepName('');
     setNewRepEmail('');
     setNewRepPhone('');
@@ -527,6 +543,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     };
     saveEntity('users', newRep);
     setUsers(getEntities('users'));
+    const user = sessionStorage.getItem('ids_pulse_admin_user') || 'Admin';
+    logSystemEvent('system', 'quick_add_rep', `${user} quick-added representative ${quickRepName}.`);
     setQuickRepName('');
     setQuickRepEmail('');
     setQuickRepPhone('');
@@ -677,6 +695,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       });
       saveEntity('extraHoursRequests', match);
       setExtraHoursRequests(getEntities('extraHoursRequests'));
+      const user = suppliers.find(s => s.id === currentUserCustomerId)?.name || 'Customer Manager';
+      logSystemEvent('payroll', 'customer_overtime_approval', `Customer ${user} ${statusAction}d overtime request ${reqId} for ${match.hours} hrs.`);
       setCustomerApprovalComment('');
       alert(`Request ${statusAction === 'approve' ? 'Approved' : 'Rejected'}!`);
     }
@@ -714,6 +734,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
       saveEntity('extraHoursRequests', match);
       setExtraHoursRequests(getEntities('extraHoursRequests'));
+      const user = sessionStorage.getItem('ids_pulse_admin_user') || 'Admin';
+      logSystemEvent('payroll', 'admin_overtime_approval', `${user} ${statusAction}d overtime request ${reqId} for Rep ${match.rep_id}.`);
       setAdminApprovalComment('');
       alert(`Request ${statusAction === 'approve' ? 'Approved & Added to Timesheets' : 'Rejected'}!`);
     }
@@ -726,6 +748,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       match.status = statusAction === 'approve' ? 'approved' : 'rejected';
       saveEntity('expenseEntries', match);
       setExpenseEntries(getEntities('expenseEntries'));
+      const user = sessionStorage.getItem('ids_pulse_admin_user') || 'Admin';
+      logSystemEvent('payroll', 'admin_expense_approval', `${user} ${statusAction}d expense claim ${expId} for Rep ${match.rep_id}.`);
       alert(`Expense claim ${statusAction === 'approve' ? 'Approved' : 'Rejected'}!`);
     }
   };
@@ -737,6 +761,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       match.status = 'published';
       saveEntity('shiftReports', match);
       setShiftReports(getEntities('shiftReports'));
+      const user = sessionStorage.getItem('ids_pulse_admin_user') || 'Admin';
+      logSystemEvent('shift', 'publish_report', `${user} published shift report ${reportId} to Customer Portal.`);
       alert("Report published successfully to Customer!");
     }
   };
@@ -1056,6 +1082,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     if (found) {
       found.status = newStatus;
       saveEntity('incidents', found);
+      const user = sessionStorage.getItem('ids_pulse_admin_user') || 'Admin';
+      logSystemEvent('incident', 'update_status', `${user} updated incident ${incidentId} status to ${newStatus}.`);
       
       // Update local state immediately
       setIncidents(getEntities('incidents'));
@@ -3846,20 +3874,22 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     {activeTab === 'projects' && <div className="w-1.5 h-1.5 rounded-full bg-cyan-400"></div>}
                   </button>
 
-                  <button 
-                    onClick={() => setActiveTab('system-logs')}
-                    className={`w-full h-10 px-3.5 rounded-xl font-bold text-xs transition-all cursor-pointer flex items-center justify-between border ${
-                      activeTab === 'system-logs' 
-                        ? 'bg-[#1E3A5F] text-white border-[#22D3EE]/30 shadow-md shadow-[#22D3EE]/5' 
-                        : 'bg-slate-900/40 text-slate-400 hover:bg-slate-900/90 hover:text-slate-200 border-slate-850 hover:border-slate-800'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <Server className="w-4 h-4 text-emerald-450" />
-                      <span>System Events Logs</span>
-                    </div>
-                    {activeTab === 'system-logs' && <div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>}
-                  </button>
+                  {userRole === 'shahroz' && (
+                    <button 
+                      onClick={() => setActiveTab('system-logs')}
+                      className={`w-full h-10 px-3.5 rounded-xl font-bold text-xs transition-all cursor-pointer flex items-center justify-between border ${
+                        activeTab === 'system-logs' 
+                          ? 'bg-[#1E3A5F] text-white border-[#22D3EE]/30 shadow-md shadow-[#22D3EE]/5' 
+                          : 'bg-slate-900/40 text-slate-400 hover:bg-slate-900/90 hover:text-slate-200 border-slate-850 hover:border-slate-800'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <Server className="w-4 h-4 text-emerald-450" />
+                        <span>System Events Logs</span>
+                      </div>
+                      {activeTab === 'system-logs' && <div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>}
+                    </button>
+                  )}
                 </>
               )}
             </div>
@@ -7077,7 +7107,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
           )}
 
           {/* TAB 8: SYSTEM EVENTS LOGS */}
-          {activeTab === 'system-logs' && (
+          {activeTab === 'system-logs' && userRole === 'shahroz' && (
             <div className="flex-1 flex flex-col gap-4 min-h-0 text-left">
               <div className="flex justify-between items-center pb-2 border-b border-slate-800 flex-shrink-0">
                 <div>

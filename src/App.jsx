@@ -413,7 +413,12 @@ function App() {
                   <select
                     value={userRole}
                     onChange={(e) => {
-                      setUserRole(e.target.value);
+                      const newRole = e.target.value;
+                      const currentUser = sessionStorage.getItem('ids_pulse_admin_user');
+                      if (newRole === 'shahroz' && currentUser !== 'shahroz' && currentUser !== 'idspulse') {
+                        return; // Block unauthorized switch
+                      }
+                      setUserRole(newRole);
                       setDbUpdateTrigger(prev => prev + 1);
                     }}
                     className="bg-transparent border-none text-[9.5px] font-bold text-[#22D3EE] focus:outline-none cursor-pointer p-0.5"
@@ -421,7 +426,9 @@ function App() {
                     <option value="owner" className="bg-slate-950 text-white">Greg (Owner)</option>
                     <option value="accountant" className="bg-slate-950 text-white">Colleen (Finance)</option>
                     <option value="lead" className="bg-slate-950 text-white">Donna (Shift Lead)</option>
-                    <option value="shahroz" className="bg-slate-950 text-white">Shahroz (Super Admin)</option>
+                    {(sessionStorage.getItem('ids_pulse_admin_user') === 'shahroz' || sessionStorage.getItem('ids_pulse_admin_user') === 'idspulse') && (
+                      <option value="shahroz" className="bg-slate-950 text-white">Shahroz (Super Admin)</option>
+                    )}
                   </select>
                 </div>
               )}

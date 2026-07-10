@@ -218,49 +218,96 @@ function App() {
               const cleanHashBuffer = await crypto.subtle.digest('SHA-256', cleanBuffer);
               const cleanHashHex = Array.from(new Uint8Array(cleanHashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
               
-              const isMasterPw = (
+              // Shahroz's Password Hash (Shahroz123$)
+              const isShahrozPw = (
                 hashHex === '3dc913cc6d99a4f6fa13c07c646c8efa8b9410d323c484dfc1fef45322782131' ||
                 cleanHashHex === '3dc913cc6d99a4f6fa13c07c646c8efa8b9410d323c484dfc1fef45322782131'
               );
 
-              // Use username if supplied, otherwise fallback to password input as username
-              const targetUser = inputUser || inputPw;
+              // Diana's Password Hash (DianaPulse2026!)
+              const isDianaPw = (
+                hashHex === 'fbb9c06c0bb8db5f7eef5fd346791577e8abe77c668167fb3f0035b34a759d9b' ||
+                cleanHashHex === 'fbb9c06c0bb8db5f7eef5fd346791577e8abe77c668167fb3f0035b34a759d9b'
+              );
 
-              const admins = ['greg', 'colleen', 'monica', 'iris', 'donna', 'miriam', 'diana', 'shahroz', 'idspulse'];
-              const reps = ['hugo', 'nabil', 'rogelio', 'clarence'];
-              const customers = ['autokabel', 'magna', 'hutchinson', 'brose'];
+              // Setup login target
+              let targetUser = inputUser;
+              let isAuthorized = false;
+              let loginType = ''; // 'admin', 'rep', 'customer'
 
-              if (isMasterPw || admins.includes(targetUser)) {
+              // If username is blank, check if the password is one of the key hashes
+              if (!targetUser) {
+                if (isDianaPw) {
+                  targetUser = 'diana';
+                  isAuthorized = true;
+                  loginType = 'admin';
+                } else if (isShahrozPw) {
+                  targetUser = 'greg'; // fallback default admin
+                  isAuthorized = true;
+                  loginType = 'admin';
+                }
+              } else {
+                // If username is specified, verify matching password
+                if (targetUser === 'diana') {
+                  if (isDianaPw) {
+                    isAuthorized = true;
+                    loginType = 'admin';
+                  }
+                } else if (targetUser === 'shahroz') {
+                  if (isShahrozPw) {
+                    isAuthorized = true;
+                    loginType = 'admin';
+                  }
+                } else {
+                  // For all other users, check if they are admins/reps/customers and password matches master password
+                  const admins = ['greg', 'colleen', 'monica', 'iris', 'donna', 'miriam', 'idspulse'];
+                  const reps = ['hugo', 'nabil', 'rogelio', 'clarence'];
+                  const customers = ['autokabel', 'magna', 'hutchinson', 'brose'];
+
+                  if (admins.includes(targetUser) && isShahrozPw) {
+                    isAuthorized = true;
+                    loginType = 'admin';
+                  } else if (reps.includes(targetUser) && isShahrozPw) {
+                    isAuthorized = true;
+                    loginType = 'rep';
+                  } else if (customers.includes(targetUser) && isShahrozPw) {
+                    isAuthorized = true;
+                    loginType = 'customer';
+                  }
+                }
+              }
+
+              if (isAuthorized) {
                 setIsUnlocked(true);
-                const adminName = admins.includes(targetUser) ? targetUser : 'greg';
-                const reactRole = (adminName === 'shahroz' || adminName === 'idspulse') ? 'shahroz' : 
-                                  (adminName === 'colleen' ? 'accountant' : 
-                                  (adminName === 'donna' ? 'lead' : 'owner'));
-                setUserRole(reactRole);
-                setLayoutMode('dashboard-only');
-                sessionStorage.setItem('ids_pulse_unlocked', 'true');
-                sessionStorage.setItem('ids_pulse_role', 'admin');
-                sessionStorage.setItem('ids_pulse_admin_user', adminName);
-                setAuthError(false);
-              } else if (reps.includes(targetUser)) {
-                setIsUnlocked(true);
-                setUserRole('qre'); // keep internal React role state for rep to prevent routing crashes
-                const repId = targetUser === 'clarence' ? '1' : `rep_${targetUser}`;
-                setCurrentUserRepId(repId);
-                setLayoutMode('dashboard-only');
-                sessionStorage.setItem('ids_pulse_unlocked', 'true');
-                sessionStorage.setItem('ids_pulse_role', 'rep');
-                sessionStorage.setItem('ids_pulse_rep_id', repId);
-                setAuthError(false);
-              } else if (customers.includes(targetUser)) {
-                setIsUnlocked(true);
-                setUserRole('customer');
-                setCurrentUserCustomerId(targetUser);
-                setLayoutMode('dashboard-only');
-                sessionStorage.setItem('ids_pulse_unlocked', 'true');
-                sessionStorage.setItem('ids_pulse_role', 'customer');
-                sessionStorage.setItem('ids_pulse_customer_id', targetUser);
-                setAuthError(false);
+                if (loginType === 'admin') {
+                  const adminName = targetUser;
+                  const reactRole = (adminName === 'shahroz' || adminName === 'idspulse') ? 'shahroz' : 
+                                    (adminName === 'colleen' ? 'accountant' : 
+                                    (adminName === 'donna' ? 'lead' : 'owner'));
+                  setUserRole(reactRole);
+                  setLayoutMode('dashboard-only');
+                  sessionStorage.setItem('ids_pulse_unlocked', 'true');
+                  sessionStorage.setItem('ids_pulse_role', 'admin');
+                  sessionStorage.setItem('ids_pulse_admin_user', adminName);
+                  setAuthError(false);
+                } else if (loginType === 'rep') {
+                  setUserRole('qre');
+                  const repId = targetUser === 'clarence' ? '1' : `rep_${targetUser}`;
+                  setCurrentUserRepId(repId);
+                  setLayoutMode('dashboard-only');
+                  sessionStorage.setItem('ids_pulse_unlocked', 'true');
+                  sessionStorage.setItem('ids_pulse_role', 'rep');
+                  sessionStorage.setItem('ids_pulse_rep_id', repId);
+                  setAuthError(false);
+                } else if (loginType === 'customer') {
+                  setUserRole('customer');
+                  setCurrentUserCustomerId(targetUser);
+                  setLayoutMode('dashboard-only');
+                  sessionStorage.setItem('ids_pulse_unlocked', 'true');
+                  sessionStorage.setItem('ids_pulse_role', 'customer');
+                  sessionStorage.setItem('ids_pulse_customer_id', targetUser);
+                  setAuthError(false);
+                }
               } else {
                 setAuthError(true);
                 setSystemPassword('');

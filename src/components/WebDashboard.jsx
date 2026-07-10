@@ -59,9 +59,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   const [newProjCurrency, setNewProjCurrency] = useState('USD');
   
   // Navigation & Date Navigation Filtering
-  const [activeTab, setActiveTab] = useState(
-    (forceRoadmapOnly && userRole === 'shahroz') ? 'roadmap' : (userRole === 'accountant' ? 'time-tracking' : 'incidents')
-  );
+  const [activeTab, setActiveTab] = useState('projects');
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSupplierFilter, setSelectedSupplierFilter] = useState('all');

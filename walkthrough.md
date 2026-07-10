@@ -156,4 +156,19 @@ We have successfully audited, verified, and deployed a series of UI and logic up
 - Built the production package locally (`dist/assets/index-Bd9DT2lp.js`) and pushed commit `f7c72d1` to Git master.
 - Completed Vercel production deployment and verified that the production domain `proud-lavoisier.vercel.app` is live and active with the new seeds.
 
+---
+
+## 2026-07-10 - Gemini - Diana User Access & Operational Flowchart PDF
+
+**Task:** Register Diana as a user with Owner privileges and generate a PDF flowchart of the system architecture and operational flows.
+
+**Done:**
+- Registered Diana (`user_diana`) inside `SharedDatabase.js` seed users with `owner` role, enabling her to log in using her name and password to test real system operations.
+- Developed `generate_flowchart_pdf.cjs` using jsPDF to generate a 3-page system flowchart detailing:
+  - Page 1: Field Quality Representative (Mobile App) Operational Flow.
+  - Page 2: Web CRM Dashboard & Customer Portal Workflow.
+  - Page 3: Real-Time Sockets & Cloud Database Synced Flow.
+- Generated `IDS_Pulse_System_Flowchart.pdf` and copied it to the artifacts directory.
+- Pushed updates (commit `374e2de`) to Git master and deployed to Vercel production.
+
 

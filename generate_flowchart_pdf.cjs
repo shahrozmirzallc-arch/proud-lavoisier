@@ -160,7 +160,7 @@ drawArrow(48, 143, 48, 155);
 drawArrow(104, 143, 104, 155);
 drawArrow(160, 143, 160, 155);
 
-drawFlowBox(24, 155, 160, 20, "Local Sync Manager (WatermelonDB / SQLite)", [
+drawFlowBox(24, 155, 160, 20, "Local Cache Manager (Browser LocalStorage)", [
   "Ensures zero floor latency. Every logged incident, rework quantity, or expense receipt",
   "is immediately cached locally and queued for background Supabase PostgreSQL upload."
 ]);
@@ -331,7 +331,7 @@ const drawStepCard = (y, stepNo, title, desc) => {
 };
 
 let sy = 52;
-drawStepCard(sy, 1, "Mobile Local Commit", "Rep logs suspect material. Local database commits it immediately to SQLite/WatermelonDB (instant responsiveness).");
+drawStepCard(sy, 1, "Mobile Local Commit", "Rep logs suspect material. Local database commits it immediately to Browser LocalStorage (instant responsiveness).");
 sy += 19;
 drawStepCard(sy, 2, "Async Cloud Storage Upload", "Mobile app uploads annotated photo assets directly to secure cloud storage (AWS S3) to resolve image path URLs.");
 sy += 19;
@@ -342,6 +342,6 @@ sy += 19;
 drawStepCard(sy, 5, "Reactive Dashboard Rerender", "Web dashboard receives sync broadcast, fetches latest updates, plays synthesizer bell chime, and displays notification toast.");
 
 // Save PDF
-const pdfPath = path.join(__dirname, 'IDS_Pulse_System_Flowchart_v2.pdf');
+const pdfPath = path.join(__dirname, 'IDS_Pulse_System_Flowchart_v3.pdf');
 fs.writeFileSync(pdfPath, Buffer.from(doc.output('arraybuffer')));
 console.log(`Successfully generated flowchart PDF at: ${pdfPath}`);

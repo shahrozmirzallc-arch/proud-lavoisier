@@ -325,6 +325,39 @@ const SEED_DATA = {
       time_spent_minutes: 5,
       notes: 'Removed loose bulb from tail light housing to eliminate rattle.',
       created_at: '2026-05-28T08:31:00Z'
+    },
+    {
+      id: 'rw_2',
+      rep_id: '1',
+      plant_id: 'gm_oshawa',
+      supplier_id: 'magna',
+      part_id: '86286761',
+      qty: 12,
+      time_spent_minutes: 60,
+      notes: 'Sorted 12 light housings, verified gasket seal alignment.',
+      created_at: '2026-07-02T10:00:00Z'
+    },
+    {
+      id: 'rw_3',
+      rep_id: 'rep_hugo',
+      plant_id: 'mercedes_tuscaloosa',
+      supplier_id: 'autokabel',
+      part_id: '86286761',
+      qty: 45,
+      time_spent_minutes: 180,
+      notes: 'Reworked copper connectors on 45 Auto Kabel harnesses to Mercedes specifications.',
+      created_at: '2026-07-01T15:30:00Z'
+    },
+    {
+      id: 'rw_4',
+      rep_id: 'rep_rogelio',
+      plant_id: 'gm_slp',
+      supplier_id: 'brose',
+      part_id: '86291945',
+      qty: 90,
+      time_spent_minutes: 240,
+      notes: 'Full sort of Brose door regulator brackets. Identified 4 loose brackets.',
+      created_at: '2026-07-02T14:00:00Z'
     }
   ],
   timeEntries: [
@@ -337,7 +370,80 @@ const SEED_DATA = {
       hours: 9,
       mileage_km: 45,
       notes: 'Standard day shift. Conducted area walks, sorted Matt\'s bin request, reworked one tail light.',
-      invoiced: false
+      invoiced: false,
+      sent_to_payroll: false
+    },
+    {
+      id: 'te_2',
+      rep_id: '1',
+      plant_id: 'gm_oshawa',
+      supplier_id: 'magna',
+      date: '2026-07-02',
+      hours: 8.5,
+      mileage_km: 45,
+      notes: 'Regular audit on sequence racks. Checked bulb rattle issue.',
+      invoiced: false,
+      sent_to_payroll: false
+    },
+    {
+      id: 'te_3',
+      rep_id: 'rep_hugo',
+      plant_id: 'mercedes_tuscaloosa',
+      supplier_id: 'autokabel',
+      date: '2026-07-01',
+      hours: 10.0,
+      mileage_km: 85,
+      notes: 'Containment line sort for SWG insulation gaps. Required overtime support.',
+      invoiced: false,
+      sent_to_payroll: false
+    },
+    {
+      id: 'te_4',
+      rep_id: 'rep_hugo',
+      plant_id: 'mercedes_tuscaloosa',
+      supplier_id: 'autokabel',
+      date: '2026-07-02',
+      hours: 8.0,
+      mileage_km: 85,
+      notes: 'Inspected wire rack components at Mercedes assembly Line 4.',
+      invoiced: false,
+      sent_to_payroll: false
+    },
+    {
+      id: 'te_5',
+      rep_id: 'rep_nabil',
+      plant_id: 'ford_dearborn',
+      supplier_id: 'autokabel',
+      date: '2026-07-02',
+      hours: 8.0,
+      mileage_km: 32,
+      notes: 'Quality walk at Ford Dearborn plant. Verified tag compliance.',
+      invoiced: false,
+      sent_to_payroll: false
+    },
+    {
+      id: 'te_6',
+      rep_id: 'rep_nabil',
+      plant_id: 'ford_dearborn',
+      supplier_id: 'autokabel',
+      date: '2026-07-03',
+      hours: 9.5,
+      mileage_km: 32,
+      notes: 'Assisted in rework containment of tail light harness assemblies.',
+      invoiced: false,
+      sent_to_payroll: false
+    },
+    {
+      id: 'te_7',
+      rep_id: 'rep_rogelio',
+      plant_id: 'gm_slp',
+      supplier_id: 'autokabel',
+      date: '2026-07-02',
+      hours: 11.0,
+      mileage_km: 60,
+      notes: 'Supported GM SLP engine room wiring harness sort. High urgency shift.',
+      invoiced: false,
+      sent_to_payroll: false
     }
   ],
   emailLogs: [
@@ -388,6 +494,46 @@ const SEED_DATA = {
       receipt_photo: 'https://images.unsplash.com/photo-1554415707-6e8cfc93fe23?auto=format&fit=crop&w=800&q=80',
       notes: 'Fuel fill-up for GM Oshawa site travel.',
       invoiced: false,
+      sent_to_payroll: false,
+      status: 'approved'
+    },
+    {
+      id: 'exp_2',
+      rep_id: 'rep_hugo',
+      supplier_id: 'autokabel',
+      date: '2026-07-02',
+      category: 'Tolls',
+      amount: 15.00,
+      receipt_photo: 'https://images.unsplash.com/photo-1554415707-6e8cfc93fe23?auto=format&fit=crop&w=800&q=80',
+      notes: 'Highway toll receipts for Tuscaloosa quality walk.',
+      invoiced: false,
+      sent_to_payroll: false,
+      status: 'approved'
+    },
+    {
+      id: 'exp_3',
+      rep_id: 'rep_nabil',
+      supplier_id: 'autokabel',
+      date: '2026-07-03',
+      category: 'Meals',
+      amount: 28.50,
+      receipt_photo: 'https://images.unsplash.com/photo-1554415707-6e8cfc93fe23?auto=format&fit=crop&w=800&q=80',
+      notes: 'Overtime dinner support during containment sort.',
+      invoiced: false,
+      sent_to_payroll: false,
+      status: 'pending'
+    },
+    {
+      id: 'exp_4',
+      rep_id: 'rep_rogelio',
+      supplier_id: 'autokabel',
+      date: '2026-07-02',
+      category: 'Safety Gear',
+      amount: 75.00,
+      receipt_photo: 'https://images.unsplash.com/photo-1554415707-6e8cfc93fe23?auto=format&fit=crop&w=800&q=80',
+      notes: 'Replacement steel-toe safety shoes for SLP floor audit.',
+      invoiced: false,
+      sent_to_payroll: false,
       status: 'approved'
     }
   ],

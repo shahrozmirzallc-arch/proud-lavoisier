@@ -2,826 +2,814 @@ const { jsPDF } = require('jspdf');
 const fs = require('fs');
 const path = require('path');
 
-const doc = new jsPDF();
-let currentPage = 1;
+const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+let pageNum = 1;
+const pw = 210; // page width
+const ph = 297; // page height
+const ml = 16; // margin left
+const mr = 16; // margin right
+const cw = pw - ml - mr; // content width = 178
 
-// ─── HELPERS ────────────────────────────────────────────────────────────────
+// ─── COLOR PALETTE ─────────────────────────────────────────────────────────
+const C = {
+  navy:      [17, 24, 39],
+  darkBlue:  [30, 58, 95],
+  midBlue:   [37, 99, 235],
+  lightBlue: [219, 234, 254],
+  cyan:      [14, 165, 233],
+  teal:      [20, 184, 166],
+  green:     [16, 185, 129],
+  emerald:   [5, 150, 105],
+  amber:     [245, 158, 11],
+  orange:    [249, 115, 22],
+  red:       [239, 68, 68],
+  purple:    [139, 92, 246],
+  pink:      [236, 72, 153],
+  slate50:   [248, 250, 252],
+  slate100:  [241, 245, 249],
+  slate200:  [226, 232, 240],
+  slate300:  [203, 213, 225],
+  slate400:  [148, 163, 184],
+  slate500:  [100, 116, 139],
+  slate600:  [71, 85, 105],
+  slate700:  [51, 65, 85],
+  slate800:  [30, 41, 59],
+  slate900:  [15, 23, 42],
+  white:     [255, 255, 255],
+};
 
-const drawHeader = (pageNum, subtitle) => {
-  doc.setFillColor(30, 58, 95);
-  doc.roundedRect(14, 8, 28, 11, 1.5, 1.5, "F");
-  doc.setFont("helvetica", "bold");
+// ─── DRAWING PRIMITIVES ────────────────────────────────────────────────────
+
+const setColor = (type, color) => {
+  if (type === 'fill') doc.setFillColor(...color);
+  else if (type === 'draw') doc.setDrawColor(...color);
+  else doc.setTextColor(...color);
+};
+
+const drawPageHeader = (subtitle) => {
+  // Top accent bar
+  setColor('fill', C.darkBlue);
+  doc.rect(0, 0, pw, 3, 'F');
+
+  // Logo badge
+  setColor('fill', C.darkBlue);
+  doc.roundedRect(ml, 8, 30, 10, 2, 2, 'F');
+  doc.setFont('helvetica', 'bold');
   doc.setFontSize(9);
-  doc.setTextColor(255, 255, 255);
-  doc.text("IDS PULSE", 28, 15.5, { align: "center" });
+  setColor('text', C.white);
+  doc.text('IDS PULSE', ml + 15, 14.8, { align: 'center' });
 
-  doc.setFont("helvetica", "bold");
+  // Subtitle (ASCII-safe text)
+  doc.setFont('helvetica', 'normal');
   doc.setFontSize(8);
-  doc.setTextColor(30, 58, 95);
-  doc.text(subtitle.toUpperCase(), 196, 15, { align: "right" });
+  setColor('text', C.slate500);
+  const safeSubtitle = subtitle.replace(/\u2014/g, '-').replace(/—/g, '-');
+  doc.text(safeSubtitle, pw - mr, 14.8, { align: 'right' });
 
-  doc.setDrawColor(30, 58, 95);
-  doc.setLineWidth(0.6);
-  doc.line(14, 23, 196, 23);
+  // Divider
+  setColor('draw', C.slate200);
+  doc.setLineWidth(0.3);
+  doc.line(ml, 21, pw - mr, 21);
 
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(7);
-  doc.setTextColor(148, 163, 184);
-  doc.text(`Confidential — IDS Pulse Complete System Flowchart — Page ${pageNum}`, 14, 290);
-};
-
-const drawSectionTitle = (y, title) => {
-  doc.setFillColor(30, 58, 95);
-  doc.roundedRect(14, y, 182, 9, 1.5, 1.5, "F");
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(9);
-  doc.setTextColor(255, 255, 255);
-  doc.text(title, 19, y + 6.2);
-  return y + 13;
-};
-
-const drawBox = (x, y, w, h, title, lines, opts = {}) => {
-  const fill = opts.fill || [248, 250, 252];
-  const border = opts.border || [203, 213, 225];
-  const titleColor = opts.titleColor || [15, 23, 42];
-  
-  doc.setFillColor(...fill);
-  doc.roundedRect(x, y, w, h, 2, 2, "F");
-  doc.setDrawColor(...border);
-  doc.setLineWidth(0.4);
-  doc.roundedRect(x, y, w, h, 2, 2, "D");
-
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(7.5);
-  doc.setTextColor(...titleColor);
-  doc.text(title, x + 3, y + 5);
-
-  doc.setFont("helvetica", "normal");
+  // Footer
+  doc.setFont('helvetica', 'normal');
   doc.setFontSize(6.5);
-  doc.setTextColor(71, 85, 105);
-  let ly = y + 9.5;
-  lines.forEach(line => {
-    const wrapped = doc.splitTextToSize(line, w - 6);
-    wrapped.forEach(wl => {
-      doc.text(wl, x + 3, ly);
-      ly += 3.2;
+  setColor('text', C.slate400);
+  doc.text('CONFIDENTIAL', ml, 289);
+  doc.text('IDS Pulse - Complete System Architecture & Operational Flowchart', pw / 2, 289, { align: 'center' });
+  doc.text(`Page ${pageNum}`, pw - mr, 289, { align: 'right' });
+};
+
+const newPage = (subtitle) => {
+  doc.addPage();
+  pageNum++;
+  drawPageHeader(subtitle);
+};
+
+const drawSectionHeader = (y, number, title) => {
+  // Accent line
+  setColor('fill', C.darkBlue);
+  doc.rect(ml, y, 3, 8, 'F');
+
+  // Number circle
+  setColor('fill', C.darkBlue);
+  doc.circle(ml + 9, y + 4, 4, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  setColor('text', C.white);
+  doc.text(String(number), ml + 9, y + 5.8, { align: 'center' });
+
+  // Title
+  const safeTitle = title.replace(/\u2014/g, '-').replace(/—/g, '-');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  setColor('text', C.navy);
+  doc.text(safeTitle, ml + 16, y + 5.8);
+
+  // Underline
+  setColor('draw', C.slate200);
+  doc.setLineWidth(0.3);
+  doc.line(ml, y + 10, pw - mr, y + 10);
+
+  return y + 14;
+};
+
+const drawInfoCard = (x, y, w, _h, title, bullets, accentColor) => {
+  // Replace any Unicode em-dash/smart quotes in bullets or title
+  const safeBullets = bullets.map(b => b.replace(/\u2014/g, '-').replace(/—/g, '-').replace(/[\u2018\u2019]/g, "'").replace(/[\u201C\u201D]/g, '"'));
+  const safeTitle = title.replace(/\u2014/g, '-').replace(/—/g, '-');
+
+  // Pre-calculate total height from wrapped text
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  let totalLines = 0;
+  safeBullets.forEach(bullet => {
+    const lines = doc.splitTextToSize(bullet, w - 12);
+    totalLines += lines.length;
+  });
+  const h = Math.max(_h || 0, 11 + totalLines * 3.3 + 3); // title + lines + padding
+
+  // Card background
+  setColor('fill', C.white);
+  doc.roundedRect(x, y, w, h, 2.5, 2.5, 'F');
+
+  // Border
+  setColor('draw', C.slate200);
+  doc.setLineWidth(0.3);
+  doc.roundedRect(x, y, w, h, 2.5, 2.5, 'D');
+
+  // Top accent stripe
+  setColor('fill', accentColor || C.darkBlue);
+  doc.roundedRect(x, y, w, 1.2, 2.5, 0, 'F');
+  doc.rect(x, y + 0.6, w, 0.6, 'F');
+
+  // Title
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  setColor('text', C.slate900);
+  doc.text(safeTitle, x + 4, y + 6.5);
+
+  // Bullet points (vector drawn circles instead of unicode bullets)
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  let ly = y + 11;
+  safeBullets.forEach(bullet => {
+    const lines = doc.splitTextToSize(bullet, w - 12);
+    lines.forEach((line, i) => {
+      if (i === 0) {
+        setColor('fill', accentColor || C.darkBlue);
+        doc.circle(x + 5.5, ly - 1.2, 0.7, 'F');
+      }
+      setColor('text', C.slate600);
+      doc.text(line, x + 8, ly);
+      ly += 3.3;
     });
   });
+  return h;
 };
 
-const drawBadge = (x, y, w, h, text, bgColor, textColor) => {
-  doc.setFillColor(...bgColor);
-  doc.roundedRect(x, y, w, h, 1, 1, "F");
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(6);
-  doc.setTextColor(...textColor);
-  doc.text(text, x + w / 2, y + h / 2 + 1.5, { align: "center" });
-};
-
-const drawArrow = (x1, y1, x2, y2, label = "") => {
-  doc.setDrawColor(14, 165, 233);
+const drawFlowArrow = (x1, y1, x2, y2, label) => {
+  setColor('draw', C.cyan);
   doc.setLineWidth(0.6);
   doc.line(x1, y1, x2, y2);
+
   const angle = Math.atan2(y2 - y1, x2 - x1);
-  const hl = 2.5;
-  doc.line(x2, y2, x2 - hl * Math.cos(angle - Math.PI / 6), y2 - hl * Math.sin(angle - Math.PI / 6));
-  doc.line(x2, y2, x2 - hl * Math.cos(angle + Math.PI / 6), y2 - hl * Math.sin(angle + Math.PI / 6));
+  const hl = 2.2;
+  doc.line(x2, y2, x2 - hl * Math.cos(angle - Math.PI / 5.5), y2 - hl * Math.sin(angle - Math.PI / 5.5));
+  doc.line(x2, y2, x2 - hl * Math.cos(angle + Math.PI / 5.5), y2 - hl * Math.sin(angle + Math.PI / 5.5));
+
   if (label) {
-    doc.setFont("helvetica", "italic");
+    doc.setFont('helvetica', 'italic');
     doc.setFontSize(5.5);
-    doc.setTextColor(14, 165, 233);
-    doc.text(label, (x1 + x2) / 2, (y1 + y2) / 2 - 1.5, { align: "center" });
+    setColor('text', C.cyan);
+    const mx = (x1 + x2) / 2;
+    const my = (y1 + y2) / 2;
+    doc.text(label, mx, my - 1.5, { align: 'center' });
   }
 };
 
-const drawDashedArrow = (x1, y1, x2, y2, label = "") => {
-  doc.setDrawColor(168, 85, 247);
+const drawWorkflowStep = (x, y, w, _h, stepNum, title, desc, color) => {
+  const safeTitle = title.replace(/\u2014/g, '-').replace(/—/g, '-');
+  const safeDesc = desc.replace(/\u2014/g, '-').replace(/—/g, '-').replace(/[\u2018\u2019]/g, "'").replace(/[\u201C\u201D]/g, '"');
+
+  // Pre-calculate height from wrapped description
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6);
+  const descLines = doc.splitTextToSize(safeDesc, w - 8);
+  const h = Math.max(_h || 0, 11 + descLines.length * 3 + 3);
+
+  setColor('fill', C.white);
+  doc.roundedRect(x, y, w, h, 2, 2, 'F');
+  setColor('draw', color || C.slate200);
   doc.setLineWidth(0.5);
-  const segs = 12;
-  const dx = (x2 - x1) / segs;
-  const dy = (y2 - y1) / segs;
-  for (let i = 0; i < segs; i += 2) {
-    doc.line(x1 + dx * i, y1 + dy * i, x1 + dx * (i + 1), y1 + dy * (i + 1));
-  }
-  if (label) {
-    doc.setFont("helvetica", "italic");
-    doc.setFontSize(5.5);
-    doc.setTextColor(168, 85, 247);
-    doc.text(label, (x1 + x2) / 2, (y1 + y2) / 2 - 1.5, { align: "center" });
-  }
-};
+  doc.roundedRect(x, y, w, h, 2, 2, 'D');
 
-const addPage = (subtitle) => {
-  doc.addPage();
-  currentPage++;
-  drawHeader(currentPage, subtitle);
-};
+  // Step number badge
+  setColor('fill', color || C.darkBlue);
+  doc.roundedRect(x + 3, y + 3, 7, 5, 1, 1, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(6.5);
+  setColor('text', C.white);
+  doc.text(String(stepNum), x + 6.5, y + 6.5, { align: 'center' });
 
-const drawStepRow = (y, num, title, desc) => {
-  doc.setFillColor(248, 250, 252);
-  doc.roundedRect(14, y, 182, 14, 1.5, 1.5, "F");
-  doc.setDrawColor(226, 232, 240);
-  doc.setLineWidth(0.4);
-  doc.roundedRect(14, y, 182, 14, 1.5, 1.5, "D");
-
-  doc.setFillColor(30, 58, 95);
-  doc.roundedRect(17, y + 2.5, 9, 9, 1, 1, "F");
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(8);
-  doc.setTextColor(255, 255, 255);
-  doc.text(String(num), 21.5, y + 9, { align: "center" });
-
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(8);
-  doc.setTextColor(15, 23, 42);
-  doc.text(title, 30, y + 6);
-
-  doc.setFont("helvetica", "normal");
+  // Title
+  doc.setFont('helvetica', 'bold');
   doc.setFontSize(7);
-  doc.setTextColor(71, 85, 105);
-  const wrapped = doc.splitTextToSize(desc, 160);
-  let ly = y + 10.5;
-  wrapped.forEach(wl => { doc.text(wl, 30, ly); ly += 3; });
+  setColor('text', C.slate900);
+  doc.text(safeTitle, x + 13, y + 6.5);
+
+  // Description
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6);
+  setColor('text', C.slate600);
+  let ly = y + 11;
+  descLines.forEach(l => { doc.text(l, x + 4, ly); ly += 3; });
+  return h;
+};
+
+const drawTableRow = (y, cols, widths, isHeader, altBg) => {
+  let x = ml;
+  cols.forEach((col, i) => {
+    const safeCol = String(col).replace(/\u2014/g, '-').replace(/—/g, '-').replace(/✓/g, 'Yes');
+
+    if (isHeader) {
+      setColor('fill', C.darkBlue);
+      doc.rect(x, y, widths[i], 5.5, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(6);
+      setColor('text', C.white);
+      doc.text(safeCol, x + 2, y + 4);
+    } else {
+      setColor('fill', altBg ? C.slate100 : C.slate50);
+      doc.rect(x, y, widths[i], 5, 'F');
+      
+      if (safeCol === 'Yes') {
+        // Draw vector checkmark
+        setColor('draw', C.emerald);
+        doc.setLineWidth(0.4);
+        const cx = x + widths[i] / 2;
+        const cy = y + 2.5;
+        doc.line(cx - 1.2, cy, cx - 0.4, cy + 1.0);
+        doc.line(cx - 0.4, cy + 1.0, cx + 1.2, cy - 1.0);
+      } else if (safeCol === '-') {
+        // Draw centered hyphen
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(5.8);
+        setColor('text', C.slate300);
+        doc.text('-', x + widths[i] / 2, y + 3.5, { align: 'center' });
+      } else {
+        doc.setFont('helvetica', i === 0 ? 'bold' : 'normal');
+        doc.setFontSize(5.8);
+        setColor('text', i === 0 ? C.slate800 : C.slate700);
+        
+        if (i > 0 && (safeCol === 'Published' || safeCol === 'Own Only' || safeCol === 'Own Client')) {
+          doc.text(safeCol, x + widths[i] / 2, y + 3.5, { align: 'center' });
+        } else {
+          doc.text(safeCol, x + 2, y + 3.5);
+        }
+      }
+    }
+    x += widths[i];
+  });
+  return y + (isHeader ? 5.5 : 5);
 };
 
 // ════════════════════════════════════════════════════════════════════════════
-// PAGE 1: AUTHENTICATION & ROLE ARCHITECTURE
+// PAGE 1 — AUTHENTICATION & ROLE ARCHITECTURE
 // ════════════════════════════════════════════════════════════════════════════
-drawHeader(1, "Authentication & Role Architecture");
+drawPageHeader('Page 1 - Authentication & Role Architecture');
 
-let y = 28;
-y = drawSectionTitle(y, "1.  USER AUTHENTICATION FLOW");
+let y = 25;
+y = drawSectionHeader(y, 1, 'User Authentication Flow');
 
-drawBox(14, y, 88, 28, "Login Gateway (SHA-256 Hashed)", [
-  "User enters Username + Password at login screen.",
-  "Password is hashed via crypto.subtle.digest (SHA-256).",
-  "Hash is compared against stored admin credentials.",
-  "Username is case-insensitive and space-stripped."
-]);
-drawArrow(102, y + 14, 110, y + 14);
-drawBox(110, y, 86, 28, "Session Initialization", [
-  "sessionStorage → ids_pulse_role, ids_pulse_admin_user",
-  "sessionStorage → ids_pulse_unlocked = true",
-  "Default tab set to Projects Registry for all roles.",
-  "Profile dropdown configured per authenticated user."
-]);
+const h1 = drawInfoCard(ml, y, 86, 30, 'Secure Login Gateway', [
+  'User enters username and password on the login screen.',
+  'Password is hashed using SHA-256 via the Web Crypto API.',
+  'Hash is validated against stored admin credential hashes.',
+  'Username matching is case-insensitive with whitespace trimmed.',
+], C.darkBlue);
 
-y += 33;
-y = drawSectionTitle(y, "2.  USER ROLES & ACCESS MATRIX");
+drawFlowArrow(ml + 87, y + 15, ml + 91, y + 15, 'Validated');
 
-// Role columns
-const roles = [
-  { name: "Super Admin", key: "shahroz", users: "Shahroz", color: [220, 38, 38] },
-  { name: "Owner", key: "owner", users: "Diana, Greg, Monica, Iris, Miriam", color: [37, 99, 235] },
-  { name: "Accountant", key: "accountant", users: "Colleen", color: [16, 185, 129] },
-  { name: "Shift Lead", key: "lead", users: "Donna", color: [245, 158, 11] },
-  { name: "Field QRE", key: "qre", users: "Hugo, Nabil, Rogelio, Clarence", color: [168, 85, 247] },
-  { name: "Customer", key: "customer", users: "AutoKabel, Magna, Hutchinson, Brose", color: [236, 72, 153] },
+const h2 = drawInfoCard(ml + 92, y, 86, 30, 'Session Initialization', [
+  'User role and identity are stored in the browser session.',
+  'Workspace unlock flag is activated for dashboard access.',
+  'All users land on the Projects Registry as the default tab.',
+  'Admin profile dropdown is configured per authenticated user.',
+], C.midBlue);
+
+y += Math.max(h1, h2) + 5;
+y = drawSectionHeader(y, 2, 'User Roles & Permission Matrix');
+
+// Role badges
+const roleDefs = [
+  { name: 'Super Admin', users: 'Shahroz', color: C.red },
+  { name: 'Owner', users: 'Diana, Greg, Monica', color: C.midBlue },
+  { name: 'Accountant', users: 'Colleen', color: C.green },
+  { name: 'Shift Lead', users: 'Donna', color: C.amber },
+  { name: 'Field QRE', users: 'Hugo, Nabil, Rogelio, Clarence', color: C.purple },
+  { name: 'Customer', users: 'AutoKabel, Magna, Hutchinson, Brose', color: C.pink },
 ];
 
-let rx = 14;
-roles.forEach(role => {
-  drawBadge(rx, y, 30, 7, role.name, role.color, [255, 255, 255]);
-  doc.setFont("helvetica", "normal");
+let bx = ml;
+roleDefs.forEach(r => {
+  setColor('fill', r.color);
+  doc.roundedRect(bx, y, 28, 6.5, 1.5, 1.5, 'F');
+  doc.setFont('helvetica', 'bold');
   doc.setFontSize(5.5);
-  doc.setTextColor(71, 85, 105);
-  const wrapped = doc.splitTextToSize(role.users, 28);
-  let ry = y + 10;
-  wrapped.forEach(wl => { doc.text(wl, rx + 1, ry); ry += 2.8; });
-  rx += 31;
+  setColor('text', C.white);
+  doc.text(r.name, bx + 14, y + 4.5, { align: 'center' });
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(5);
+  setColor('text', C.slate500);
+  const wrapped = doc.splitTextToSize(r.users, 27);
+  let ry = y + 9;
+  wrapped.forEach(wl => { doc.text(wl, bx + 1, ry); ry += 2.8; });
+  bx += 30;
 });
 
-y += 22;
+y += 18;
 
-// Access matrix table
-doc.setFont("helvetica", "bold");
-doc.setFontSize(6);
-doc.setTextColor(30, 58, 95);
-const headers = ["Feature / Tab", "Super Admin", "Owner", "Accountant", "Lead", "QRE", "Customer"];
-const colW = [52, 22, 22, 22, 22, 22, 22];
-let tx = 14;
-headers.forEach((h, i) => {
-  doc.setFillColor(i === 0 ? 241 : 248, i === 0 ? 245 : 250, i === 0 ? 249 : 252);
-  doc.rect(tx, y, colW[i], 6, "F");
-  doc.text(h, tx + 2, y + 4);
-  tx += colW[i];
-});
+// Permission matrix
+const mHeaders = ['Feature / Tab', 'Super Admin', 'Owner', 'Accountant', 'Lead', 'QRE', 'Customer'];
+const mWidths = [52, 21, 21, 21, 21, 21, 21];
+y = drawTableRow(y, mHeaders, mWidths, true);
+
+const mRows = [
+  ['Incident Defects Feed', 'Yes', 'Yes', '-', 'Yes', '-', '-'],
+  ['Visual Defect Heatmap', 'Yes', 'Yes', '-', 'Yes', '-', '-'],
+  ['Daily Tasks Planner', 'Yes', 'Yes', '-', 'Yes', '-', '-'],
+  ['Shift Summaries & Publish', 'Yes', 'Yes', '-', 'Yes', '-', 'Published'],
+  ['Suppliers Directory', 'Yes', 'Yes', '-', '-', '-', '-'],
+  ['Timesheets & Mileage', 'Yes', 'Yes', 'Yes', '-', 'Own Only', 'Own Client'],
+  ['Invoice & Billing', 'Yes', 'Yes', 'Yes', '-', '-', '-'],
+  ['Rework Logs Feed', 'Yes', 'Yes', '-', 'Yes', '-', '-'],
+  ['Email Audit Logs', 'Yes', 'Yes', '-', '-', '-', '-'],
+  ['User Directory', 'Yes', 'Yes', '-', '-', '-', '-'],
+  ['Projects Registry', 'Yes', 'Yes', '-', '-', '-', '-'],
+  ['Setup & Onboarding', 'Yes', 'Yes', '-', '-', '-', '-'],
+  ['System Events Logger', 'Yes', '-', '-', '-', '-', '-'],
+  ['Launch Roadmap', 'Yes', '-', '-', '-', '-', '-'],
+  ['Customer Portal', '-', '-', '-', '-', '-', 'Yes'],
+  ['Pulse AI Chatbot', 'Yes', 'Yes', 'Yes', 'Yes', 'Yes', '-'],
+];
+
+mRows.forEach((row, i) => { y = drawTableRow(y, row, mWidths, false, i % 2 === 1); });
+
+y += 5;
+y = drawSectionHeader(y, 3, 'Profile Switching & Session Security');
+
+const h3 = drawInfoCard(ml, y, 86, 22, 'Admin Profile Dropdown', [
+  'Admins can switch views: Greg (Owner), Colleen (Finance), Donna (Lead).',
+  'Super Admin option is only visible when logged in as Shahroz.',
+  'Diana and other users are blocked from accessing the Super Admin profile.',
+], C.darkBlue);
+
+const h4 = drawInfoCard(ml + 92, y, 86, 22, 'Session Controls', [
+  'Lock Session clears the browser session and forces re-authentication.',
+  'Database Reset wipes all local data, re-seeds defaults, and re-syncs',
+  'all 15 data collections to Supabase PostgreSQL cloud database.',
+], C.midBlue);
+
+y += Math.max(h3, h4) + 5;
+
+
+// ════════════════════════════════════════════════════════════════════════════
+// PAGE 2 — MOBILE FIELD REP WORKFLOW
+// ════════════════════════════════════════════════════════════════════════════
+newPage('Page 2 - Mobile Field Rep Workflow');
+
+y = 25;
+y = drawSectionHeader(y, 4, 'Phone Simulator - Complete Field Representative Workflow');
+
+const h2_1 = drawInfoCard(ml, y, 55, 26, 'Rep Authentication', [
+  'Email and password login form.',
+  'Quick login presets for each rep.',
+  'Master passcode bypass available.',
+  'Remember device via local storage.',
+], C.purple);
+
+drawFlowArrow(ml + 56, y + 13, ml + 60, y + 13, 'Auth');
+
+const h2_2 = drawInfoCard(ml + 61, y, 55, 26, 'Shift Handover Detection', [
+  'Detects if another rep had an active shift.',
+  'Auto-locks the previous rep\'s draft report.',
+  'Shows handover alert requiring acknowledgment.',
+  'Records handover event in system logs.',
+], C.amber);
+
+drawFlowArrow(ml + 117, y + 13, ml + 121, y + 13, 'ACK');
+
+const h2_3 = drawInfoCard(ml + 122, y, 56, 26, 'Home Dashboard', [
+  'User profile with avatar, name, and role.',
+  'Plant location selector dropdown.',
+  'Online/offline status indicator.',
+  'Six action buttons and daily task list.',
+], C.teal);
+
+y += Math.max(h2_1, h2_2, h2_3) + 5;
+
+const h2_4 = drawInfoCard(ml, y, 86, 20, 'Clock In / Clock Out System', [
+  'Clock In creates a draft shift report and records the start time in local storage.',
+  'Clock Out shows elapsed hours calculation (demo mode uses 9.0 hours if under 1 minute).',
+  'Mileage is tracked per time entry through the dashboard mileage input field.',
+], C.green);
+
+const h2_5 = drawInfoCard(ml + 92, y, 86, 20, 'Daily Tasks Viewer', [
+  'Tasks filtered by representative and today\'s date from the cloud database.',
+  'Each task can be toggled between completed and pending status inline.',
+  'Tasks are dispatched by the admin from the Daily Tasks Planner tab on the dashboard.',
+], C.midBlue);
+
+y += Math.max(h2_4, h2_5) + 5;
+
+y = drawSectionHeader(y, 5, 'Incident Report Wizard - 4 Steps with AI Duplicate Check');
+
+const stepW = 41;
+const hw1 = drawWorkflowStep(ml, y, stepW, 36, 1, 'Capture Photos', 'Three photo slots: wide, medium, and close-up views. Mock camera with shutter button. Canvas overlay for freehand red annotation drawing. Defect location pin placement on a part template diagram.', C.midBlue);
+const hw2 = drawWorkflowStep(ml + stepW + 5, y, stepW, 36, 2, 'Barcode Scan', 'Mock barcode scanner with selectable part numbers from the database. QR code scanner for bin location lookup. Manual entry option with audio warning beep. Multi-part list builder to add, remove, and set quantities.', C.teal);
+const hw3 = drawWorkflowStep(ml + stepW * 2 + 10, y, stepW, 36, 3, 'Describe Defect', 'Area selector and AI-suggested defect types based on scanned part. Free-text description and actions taken. Classification as PRR or QR. Toggle switches for sort required, RMA required, and defect returned.', C.amber);
+const hw4 = drawWorkflowStep(ml + stepW * 3 + 15, y, 37, 36, '3.5', 'AI Dedup Check', 'Jaccard similarity analysis compares against incidents from the past 24 hours. Displays match percentage. Option to merge into an existing incident or continue as a new report.', C.purple);
+
+const maxH_Page2 = Math.max(hw1, hw2, hw3, hw4);
+drawFlowArrow(ml + stepW + 1, y + maxH_Page2 / 2, ml + stepW + 4, y + maxH_Page2 / 2);
+drawFlowArrow(ml + stepW * 2 + 6, y + maxH_Page2 / 2, ml + stepW * 2 + 9, y + maxH_Page2 / 2);
+drawFlowArrow(ml + stepW * 3 + 11, y + maxH_Page2 / 2, ml + stepW * 3 + 14, y + maxH_Page2 / 2);
+
+y += maxH_Page2 + 5;
+
+const h2_6 = drawInfoCard(ml, y, 86, 26, 'Step 4: Review, Preview & Submit', [
+  'Full preview of all captured data: photos, annotations, parts, and description.',
+  'Toggle to preview the formatted HTML email notification before sending.',
+  'Two-second sending animation with progress indicator.',
+  'Creates three records: incident report, email delivery log, and system event.',
+], C.emerald);
+
+const h2_7 = drawInfoCard(ml + 92, y, 86, 26, 'Additional Phone Features', [
+  'Rework Logger: select part number, enter quantity sorted, hours spent, and notes.',
+  'Expense Claims: enter amount, category, capture receipt photo, and submit.',
+  'Shift Summary: four-area walk checklist, bonus tasks, and submit final report.',
+  'Audio Feedback: distinct tones for success, scan, and warning events.',
+], C.orange);
+
+y += Math.max(h2_6, h2_7) + 5;
+
+
+// ════════════════════════════════════════════════════════════════════════════
+// PAGE 3 — DASHBOARD OPERATIONS & QUALITY
+// ════════════════════════════════════════════════════════════════════════════
+newPage('Page 3 - Dashboard Operations & Quality');
+
+y = 25;
+y = drawSectionHeader(y, 6, 'Admin Dashboard - Operations & Quality Management Tabs');
+
+const h3_1 = drawInfoCard(ml, y, 86, 32, 'Incidents & Defect Feed', [
+  'Searchable list of all defect incident reports with supplier and status filters.',
+  'Slide-out detail drawer with photo gallery, annotations, parts list, and coordinates.',
+  'Toggle incident status between Open and Closed (logged to system events).',
+  'Export individual incident as a branded PDF with logo, confidentiality badge,',
+  'and watermark. Browser print dialog. Resend supplier email notification.',
+], C.red);
+
+const h3_2 = drawInfoCard(ml + 92, y, 86, 32, 'Visual Defect Heatmap Matrix', [
+  'Interactive defect location map rendered on a part template image.',
+  'Part number selector dropdown to switch between different components.',
+  'Time scrubber slider to visualize how defect patterns cluster over time.',
+  'Hover tooltips display individual incident details and timestamps.',
+  'Dot opacity is weighted by recency of the defect occurrence.',
+], C.purple);
+
+y += Math.max(h3_1, h3_2) + 5;
+
+const h3_3 = drawInfoCard(ml, y, 86, 26, 'Daily Tasks Planner', [
+  'Date-scoped task list organized by representative assignment.',
+  'Representative filter dropdown to view a specific person\'s tasks.',
+  'Create new tasks by assigning instruction text, representative, and date.',
+  'Toggle each task between completed and pending status.',
+], C.midBlue);
+
+const h3_4 = drawInfoCard(ml + 92, y, 86, 26, 'Shift Summaries Log', [
+  'Chronological list of all shift walkthrough reports submitted by reps.',
+  'Detail drawer showing areas walked, bonus tasks, and incident counts.',
+  'Publish to Customer button changes status, making the report visible in the portal.',
+  'Export as branded shift walkthrough audit PDF or use browser print.',
+], C.teal);
+
+y += Math.max(h3_3, h3_4) + 5;
+
+const h3_5 = drawInfoCard(ml, y, 86, 20, 'Suppliers Directory', [
+  'Grid of supplier cards showing name, invoice schedule, allotted hours, and contacts.',
+  'Each card lists associated plant locations served by that supplier.',
+  'Export full directory as a branded PDF report or use browser print.',
+], C.amber);
+
+const h3_6 = drawInfoCard(ml + 92, y, 86, 20, 'Rework Logs Feed', [
+  'All rework and sort activities with date-based filtering.',
+  'Detail drawer for each individual rework entry.',
+  'Export as feed-level PDF, individual rework PDF, or browser print.',
+], C.orange);
+
+y += Math.max(h3_5, h3_6) + 5;
+
+const h3_7 = drawInfoCard(ml, y, 86, 18, 'Email Delivery Logs', [
+  'Complete email delivery audit trail for all sent notifications.',
+  'Detail view shows: recipients, CC, subject, HTML body, status, and timestamp.',
+], C.slate600);
+
+const h3_8 = drawInfoCard(ml + 92, y, 86, 18, 'User Directory', [
+  'Grid of all registered user cards: name, email, phone, role, and avatar.',
+  'Displays pay currency assignment for each representative.',
+], C.slate700);
+
+y += Math.max(h3_7, h3_8) + 5;
+
+y = drawSectionHeader(y, 7, 'Pulse AI - Conversational Database Auditor');
+
+const h3_9 = drawInfoCard(ml, y, 86, 28, 'AI Chat Console', [
+  'Natural language chat interface with persistent message history.',
+  'Role-specific welcome messages and contextual quick-action chips.',
+  'Admin commands: audit database, scan duplicates, export Excel or CSV.',
+  'Accountant commands: audit timesheets, export financial reports.',
+  'QRE commands: check hours, view assigned tasks for today.',
+], C.purple);
+
+const h3_10 = drawInfoCard(ml + 92, y, 86, 28, 'Automated Audit Engine', [
+  'Comprehensive scan triggered via chat or the Run Scan button.',
+  'Flags duplicate defect incidents matching on part number and area.',
+  'Detects timesheet anomalies: negative hours, entries exceeding 24 hours.',
+  'Identifies receipt mismatches and checks daily hour limit compliance.',
+  'Directly triggers Excel, CSV, and PDF exports through chat commands.',
+], C.midBlue);
+
+y += Math.max(h3_9, h3_10) + 5;
+
+
+// ════════════════════════════════════════════════════════════════════════════
+// PAGE 4 — FINANCIAL, BILLING & APPROVAL WORKFLOWS
+// ════════════════════════════════════════════════════════════════════════════
+newPage('Page 4 - Financial, Billing & Approvals');
+
+y = 25;
+y = drawSectionHeader(y, 8, 'Timesheets, Invoicing & Financial Operations');
+
+const h4_1 = drawInfoCard(ml, y, 56, 28, 'Log Hours & Expenses', [
+  'Hours form: representative, supplier,',
+  'date, hours worked, mileage in km, notes.',
+  'Expense form: representative, supplier,',
+  'date, category, dollar amount, notes.',
+  'Both records sync to Supabase instantly.',
+], C.midBlue);
+
+const h4_2 = drawInfoCard(ml + 60, y, 56, 28, 'Invoice Generator', [
+  'Select supplier and currency (CAD/USD).',
+  'Calculates: hours multiplied by billing rate',
+  'plus mileage at $0.73 per km plus expenses.',
+  'Export as branded client invoice PDF.',
+  'Export as QuickBooks-compatible CSV file.',
+], C.green);
+
+const h4_3 = drawInfoCard(ml + 120, y, 58, 28, 'Payroll & Expense Approvals', [
+  'Queue of pending expense claims to review.',
+  'View receipt photos in a lightbox modal.',
+  'Approve or reject each expense with status.',
+  'Extra hours admin final approval queue after',
+  'customer stage. Auto-creates time entry.',
+], C.amber);
+
+y += Math.max(h4_1, h4_2, h4_3) + 5;
+
+const h4_4 = drawInfoCard(ml, y, 86, 24, 'Rates Configuration & Admin Onboarding', [
+  'Rate override matrix: set custom billing and pay rates per representative and supplier.',
+  'Customers sub-tab: register new client companies with contact name, email, and role.',
+  'Locations sub-tab: map new plant locations, link to supplier, assign representative, set rates.',
+  'Representatives sub-tab: onboard new reps with name, email, phone, and pay currency.',
+], C.darkBlue);
+
+const h4_5 = drawInfoCard(ml + 92, y, 86, 24, 'Projects Registry & Quick Add System', [
+  'Create project records linking a representative, client, plant, with billing and pay rates.',
+  'Project-level rates take priority over the general rate override matrix.',
+  'Quick Add modals for representatives, clients, and plants from within the registry.',
+  'Each modal writes directly to Supabase and auto-selects the new record in dropdown.',
+], C.teal);
+
+y += Math.max(h4_4, h4_5) + 5;
+
+y = drawSectionHeader(y, 9, 'Extra Hours - Three-Stage Approval Workflow');
+
+const hw4_1 = drawWorkflowStep(ml, y, 42, 24, 1, 'Rep Files Request', 'Representative submits an overtime request specifying supplier, plant, date, hours, and written justification. Status is set to pending customer approval.', C.midBlue);
+const hw4_2 = drawWorkflowStep(ml + 47, y, 42, 24, 2, 'Customer Reviews', 'Customer sees the request in their portal approval queue. They can approve or reject with a written comment. Approved requests escalate to admin review.', C.amber);
+const hw4_3 = drawWorkflowStep(ml + 94, y, 42, 24, 3, 'Admin Approves', 'Admin reviews the request with customer comment in the Payroll tab. Approval automatically creates a new timesheet entry. Rejection records the reason.', C.green);
+const h4_6 = drawInfoCard(ml + 141, y, 37, 24, 'Outcome', [
+  'Approved: time entry created with',
+  'tagged note in the timesheets.',
+  'Full audit trail with timestamps',
+  'and comments from each stage.',
+], C.emerald);
+
+const maxH_Page4_Extra = Math.max(hw4_1, hw4_2, hw4_3, h4_6);
+drawFlowArrow(ml + 43, y + maxH_Page4_Extra / 2, ml + 46, y + maxH_Page4_Extra / 2, 'Notify');
+drawFlowArrow(ml + 90, y + maxH_Page4_Extra / 2, ml + 93, y + maxH_Page4_Extra / 2, 'Escalate');
+drawFlowArrow(ml + 137, y + maxH_Page4_Extra / 2, ml + 140, y + maxH_Page4_Extra / 2);
+
+y += maxH_Page4_Extra + 5;
+
+y = drawSectionHeader(y, 10, 'Expense Claims - Two-Stage Approval Workflow');
+
+const hw4_4 = drawWorkflowStep(ml, y, 56, 20, 1, 'Rep Submits Claim', 'Representative files expense via the phone app or dashboard. Includes amount, category, receipt photograph, and notes. Status is set to submitted.', C.midBlue);
+const hw4_5 = drawWorkflowStep(ml + 63, y, 56, 20, 2, 'Admin Reviews', 'Admin reviews in the Payroll Approvals panel. Can view receipt photo in a lightbox. Approves or rejects the claim with a status update.', C.green);
+const h4_7 = drawInfoCard(ml + 126, y, 52, 20, 'Billing Impact', [
+  'Approved expenses are included in client',
+  'invoice calculations and payroll reports.',
+  'Receipt photos are embedded in audit PDFs.',
+], C.emerald);
+
+const maxH_Page4_Exp = Math.max(hw4_4, hw4_5, h4_7);
+drawFlowArrow(ml + 57, y + maxH_Page4_Exp / 2, ml + 62, y + maxH_Page4_Exp / 2, 'Queue');
+drawFlowArrow(ml + 120, y + maxH_Page4_Exp / 2, ml + 125, y + maxH_Page4_Exp / 2);
+
+y += maxH_Page4_Exp + 5;
+
+y = drawSectionHeader(y, 11, 'Customer Portal - Client-Facing Dashboard');
+
+const h4_8 = drawInfoCard(ml, y, 56, 22, 'Plant Assignment Grid', [
+  'Displays the customer\'s plants with',
+  'their assigned quality representative.',
+  'Progress bar comparing unbilled vs',
+  'allotted weekly hours per location.',
+], C.pink);
+
+const h4_9 = drawInfoCard(ml + 60, y, 58, 22, 'Overtime Approval Queue', [
+  'Customer can approve or reject overtime',
+  'requests from reps at their plants.',
+  'Comment field for approval rationale.',
+  'Approved requests escalate to admin.',
+], C.amber);
+
+const h4_10 = drawInfoCard(ml + 122, y, 56, 22, 'Published Reports & Audit', [
+  'View published shift walkthrough reports.',
+  'Weekly hours audit table filtered to the',
+  'customer\'s supplier records only.',
+  'Billing rates are hidden from the client.',
+], C.midBlue);
+
+y += Math.max(h4_8, h4_9, h4_10) + 5;
+
+
+// ════════════════════════════════════════════════════════════════════════════
+// PAGE 5 — DATA ARCHITECTURE & SYNC
+// ════════════════════════════════════════════════════════════════════════════
+newPage('Page 5 - Data Architecture & Sync');
+
+y = 25;
+y = drawSectionHeader(y, 12, 'Database Architecture - 15 Entity Collections');
+
+const dbHeaders = ['Collection Name', 'Description'];
+const dbWidths = [38, 140];
+y = drawTableRow(y, dbHeaders, dbWidths, true);
+
+const dbRows = [
+  ['users', 'Representatives, leads, owners, and accountants with profile details and pay currency'],
+  ['rates', 'Billing and pay rate overrides configured per representative, supplier, and plant'],
+  ['plants', 'OEM assembly plant locations with addresses and brand associations'],
+  ['suppliers', 'Client and supplier companies with contact information and invoice schedules'],
+  ['parts', 'Part number registry used for barcode scanning and defect tracking'],
+  ['incidents', 'Defect incident reports with annotated photos, parts lists, and coordinates'],
+  ['shiftReports', 'Shift walkthrough audit summaries submitted by field representatives'],
+  ['reworkLogs', 'Rework and sort activity logs with quantities, hours, and part numbers'],
+  ['timeEntries', 'Hours worked and mileage logged per representative per day'],
+  ['emailLogs', 'Email delivery audit trail for all system-generated notifications'],
+  ['dailyTasks', 'Daily task assignments dispatched to representatives by administrators'],
+  ['expenseEntries', 'Expense claims with receipt photographs, amounts, and approval status'],
+  ['projects', 'Project registry entries linking reps, clients, plants with rates and currency'],
+  ['extraHoursRequests', 'Overtime approval workflow items with three-stage status tracking'],
+  ['systemLogs', 'System event audit trail accessible exclusively to the Super Admin'],
+];
+
+dbRows.forEach((row, i) => { y = drawTableRow(y, row, dbWidths, false, i % 2 === 1); });
+
+y += 5;
+y = drawSectionHeader(y, 13, 'Supabase Synchronization - Browser LocalStorage to PostgreSQL');
+
+const hs1 = drawWorkflowStep(ml, y, cw, 14, 1, 'Initialize & Pull from Cloud', 'On application load, the database initializer seeds the local browser cache from default data, then after a brief delay pulls the latest records from Supabase. If the cloud has data, it overwrites local. If the cloud is empty, it seeds Supabase from local defaults.', C.darkBlue);
+y += hs1 + 3;
+
+const hs2 = drawWorkflowStep(ml, y, cw, 14, 2, 'Push on Every Write Operation', 'Every save operation writes to Browser LocalStorage immediately for zero-latency user experience, then simultaneously fires a background upsert to the Supabase PostgreSQL database. Delete operations call the Supabase delete endpoint by entity ID.', C.midBlue);
+y += hs2 + 3;
+
+const hs3 = drawWorkflowStep(ml, y, cw, 14, 3, 'Cross-Component Reactivity', 'After every database write, a custom DOM event is dispatched. Both the Phone Simulator and the Web Dashboard listen for this event and re-read their local state from the updated cache, ensuring both panels stay in sync.', C.teal);
+y += hs3 + 3;
+
+const hs4 = drawWorkflowStep(ml, y, cw, 14, 4, 'Real-Time Audio & Visual Notifications', 'The dashboard detects new data arrivals via reactive props. It plays a dual-tone synthesizer chime using the Web Audio API and displays a toast notification banner for new incidents, rework logs, shift reports, and expense claims.', C.green);
+y += hs4 + 3;
+
+const hs5 = drawWorkflowStep(ml, y, cw, 14, 5, 'Role-Based Data Sanitization', 'The data access layer applies per-role filtering on every read. Representatives see only their own records. Customers see only their supplier\'s data with billing rates stripped. Administrators receive full unrestricted access to all collections.', C.purple);
+y += hs5 + 3;
+
+
+// ════════════════════════════════════════════════════════════════════════════
+// PAGE 6 — REPORTS, EXPORTS & SYSTEM EVENTS
+// ════════════════════════════════════════════════════════════════════════════
+newPage('Page 6 - Reports, Exports & System Events');
+
+y = 25;
+y = drawSectionHeader(y, 14, 'Complete Report & Export Catalog');
+
+// PDF table
+doc.setFont('helvetica', 'bold');
+doc.setFontSize(7);
+setColor('text', C.darkBlue);
+doc.text('PDF Reports - 7 Types', ml, y + 3);
 y += 6;
 
-const matrixRows = [
-  ["Incidents & Defect Feed", "✓", "✓", "—", "✓", "—", "—"],
-  ["Visual Defect Heatmap", "✓", "✓", "—", "✓", "—", "—"],
-  ["Daily Tasks Planner", "✓", "✓", "—", "✓", "—", "—"],
-  ["Shift Summaries & Publish", "✓", "✓", "—", "✓", "—", "Published Only"],
-  ["Suppliers Directory", "✓", "✓", "—", "—", "—", "—"],
-  ["Timesheets & Mileage", "✓", "✓", "✓", "—", "Own Only", "Own Supplier"],
-  ["Invoice & Billing", "✓", "✓", "✓", "—", "—", "—"],
-  ["Rework Logs Feed", "✓", "✓", "—", "✓", "—", "—"],
-  ["Email Logs", "✓", "✓", "—", "—", "—", "—"],
-  ["User Directory", "✓", "✓", "—", "—", "—", "—"],
-  ["Projects Registry", "✓", "✓", "—", "—", "—", "—"],
-  ["Setup & Onboarding (CRUD)", "✓", "✓", "—", "—", "—", "—"],
-  ["System Events Logger", "✓", "—", "—", "—", "—", "—"],
-  ["Launch Roadmap", "✓", "—", "—", "—", "—", "—"],
-  ["Customer Portal", "—", "—", "—", "—", "—", "✓"],
-  ["Pulse AI Chatbot", "✓", "✓", "✓", "✓", "✓", "—"],
-];
+const rptH = ['Report Name', 'Output Filename Pattern', 'Generated From'];
+const rptW = [50, 72, 56];
+y = drawTableRow(y, rptH, rptW, true);
 
-doc.setFont("helvetica", "normal");
-doc.setFontSize(5.5);
-matrixRows.forEach((row, ri) => {
-  tx = 14;
-  row.forEach((cell, ci) => {
-    const bg = ri % 2 === 0 ? [248, 250, 252] : [241, 245, 249];
-    doc.setFillColor(...bg);
-    doc.rect(tx, y, colW[ci], 5, "F");
-    doc.setTextColor(ci === 0 ? 30 : (cell === "✓" ? 16 : (cell === "—" ? 180 : 71)), ci === 0 ? 58 : (cell === "✓" ? 185 : (cell === "—" ? 180 : 85)), ci === 0 ? 95 : (cell === "✓" ? 129 : (cell === "—" ? 180 : 105)));
-    doc.setFont("helvetica", ci === 0 ? "bold" : "normal");
-    doc.text(cell, tx + 2, y + 3.5);
-    tx += colW[ci];
-  });
-  y += 5;
-});
+const rptRows = [
+  ['Incident Audit Report', 'IDS_Pulse_Audit_{PartNo}_{IncId}.pdf', 'Incidents tab - per incident'],
+  ['Shift Walkthrough Report', 'IDS_Shift_Walkthrough_{Date}_{SrId}.pdf', 'Shift Logs tab - per report'],
+  ['Supplier Contacts Directory', 'IDS_Supplier_Contacts_Directory.pdf', 'Suppliers tab - full directory'],
+  ['Timesheet Payroll Audit', 'IDS_Timesheets_Audit_Report.pdf', 'Timesheets tab - full payroll'],
+  ['Rework Feed Report', 'IDS_Rework_Audit_Feed_{Date}.pdf', 'Rework Logs tab - all entries'],
+  ['Individual Rework Audit', 'IDS_Rework_Audit_{RwId}.pdf', 'Rework Logs tab - per entry'],
+  ['Client Billing Invoice', 'Invoice_{ClientName}_{Timestamp}.pdf', 'Invoice Generator sub-tab'],
+];
+rptRows.forEach((row, i) => { y = drawTableRow(y, row, rptW, false, i % 2 === 1); });
 
 y += 5;
-y = drawSectionTitle(y, "3.  PROFILE SWITCHER & SESSION SECURITY");
-
-drawBox(14, y, 88, 22, "Admin Header Profile Dropdown", [
-  "Admins can switch between: Greg (Owner), Colleen (Finance),",
-  "Donna (Shift Lead). Super Admin option only visible to Shahroz.",
-  "Diana is blocked from accessing Super Admin profile."
-]);
-drawBox(108, y, 88, 22, "Session Locking & Database Reset", [
-  "Lock Session: clears sessionStorage, forces re-login.",
-  "Database Reset: wipes localStorage, re-seeds from SEED_DATA,",
-  "re-syncs all 15 collections to Supabase PostgreSQL."
-]);
-
-// ════════════════════════════════════════════════════════════════════════════
-// PAGE 2: MOBILE FIELD REP WORKFLOW
-// ════════════════════════════════════════════════════════════════════════════
-addPage("Mobile Field Rep Workflow");
-
-y = 28;
-y = drawSectionTitle(y, "4.  PHONE SIMULATOR — COMPLETE FIELD REP WORKFLOW");
-
-// Login Row
-drawBox(14, y, 55, 22, "Rep Login Screen", [
-  "Email + Password OR Quick Preset.",
-  "Presets: Clarence, Hugo, Nabil, Rogelio, Donna.",
-  "Master bypass: Shahroz123$"
-]);
-drawArrow(69, y + 11, 77, y + 11, "Auth");
-drawBox(77, y, 55, 22, "Handover Detection", [
-  "If previous rep had active shift, system",
-  "auto-locks their draft shift report and",
-  "shows Handover Alert requiring ACK."
-]);
-drawArrow(132, y + 11, 140, y + 11, "ACK");
-drawBox(140, y, 56, 22, "Home Dashboard", [
-  "Avatar, name, role, plant selector.",
-  "Wi-Fi status, online/offline toggle.",
-  "6 action buttons + daily task list."
-]);
-
-y += 27;
-
-// Clock In/Out
-drawBox(14, y, 88, 18, "Clock In / Clock Out System", [
-  "Clock In → creates Draft shiftReport, records start time in localStorage.",
-  "Clock Out → modal with elapsed hours calculation (demo: 9.0 hrs if < 1 min).",
-  "Mileage auto-tracked per time entry via dashboard mileage field."
-]);
-drawBox(108, y, 88, 18, "Daily Tasks Viewer", [
-  "Filtered by rep ID + today's date from Supabase dailyTasks.",
-  "Inline toggle: completed ↔ pending per task.",
-  "Tasks dispatched by admin from Daily Tasks Planner tab."
-]);
-
-y += 23;
-y = drawSectionTitle(y, "5.  INCIDENT REPORT WIZARD (4-STEP + AI DUPLICATE CHECK)");
-
-// Step 1
-drawBox(14, y, 44, 32, "Step 1: Capture Photos", [
-  "3 photos: Wide, Medium, Close-up.",
-  "Mock camera with shutter button.",
-  "Canvas annotation overlay per photo:",
-  "  • Freehand red pen (4px stroke)",
-  "  • Clear & redraw background",
-  "  • Save as data URL",
-  "Defect pin on part template."
-]);
-drawArrow(58, y + 16, 63, y + 16);
-
-// Step 2
-drawBox(63, y, 44, 32, "Step 2: Barcode Scan", [
-  "Mock barcode scanner (part selector).",
-  "QR code scanner (bin location).",
-  "Manual entry with warning beep.",
-  "Auto-fills part info from DB.",
-  "Multi-part list builder:",
-  "  • Add/remove parts",
-  "  • Adjust quantity per part"
-]);
-drawArrow(107, y + 16, 112, y + 16);
-
-// Step 3
-drawBox(112, y, 44, 32, "Step 3: Describe Defect", [
-  "Area selector dropdown.",
-  "AI defect type suggestions.",
-  "Custom description + action taken.",
-  "Classification: PRR / QR.",
-  "Toggles: Sort Required,",
-  "RMA Required, Defect Returned.",
-  "Audio/Video attachment toggles."
-]);
-drawArrow(156, y + 16, 161, y + 16);
-
-// Step 3.5 + 4
-drawBox(161, y, 35, 32, "Step 3.5: AI Dedup", [
-  "Jaccard similarity analysis",
-  "vs incidents in last 24hrs.",
-  "Match %: Merge into",
-  "existing OR Continue",
-  "as new incident."
-]);
-
-y += 37;
-
-drawBox(14, y, 88, 22, "Step 4: Review & Submit", [
-  "Full preview: photos, parts, description, classification.",
-  "Email preview toggle (formatted HTML notification).",
-  "2-second sending animation → creates incident + email log + system event.",
-  "Confirmation screen shows new Incident ID."
-]);
-drawArrow(102, y + 11, 110, y + 11, "Supabase Sync");
-drawBox(110, y, 86, 22, "Data Created on Submit", [
-  "1. Incident record → incidents collection (with photos, annotations, parts).",
-  "2. Email log record → emailLogs collection.",
-  "3. System event → systemLogs (hidden, Shahroz only).",
-  "All 3 upserted to Supabase PostgreSQL in background."
-]);
-
-y += 27;
-y = drawSectionTitle(y, "6.  REWORK LOGGER, EXPENSE CLAIMS & SHIFT SUMMARY");
-
-drawBox(14, y, 56, 22, "Rework Logger (Phone)", [
-  "Part number selector from DB parts list.",
-  "Quantity sorted, hours spent, notes.",
-  "Creates reworkLog record → Supabase.",
-  "Dashboard Rework Feed auto-updates."
-]);
-drawBox(75, y, 56, 22, "Expense Claims (Phone)", [
-  "Amount, category (Fuel/Tolls/Meals/Safety).",
-  "Mock receipt photo capture → data URL.",
-  "Creates expenseEntry (status: submitted).",
-  "Admin approves/rejects on dashboard."
-]);
-drawBox(136, y, 60, 22, "Shift End Summary (Phone)", [
-  "4-area walk checklist (Online Assembly,",
-  "Sequence, Heavy Rework, Scrap Table).",
-  "Bonus tasks checklist with notes.",
-  "Submit → creates shiftReport + email log."
-]);
-
-// ════════════════════════════════════════════════════════════════════════════
-// PAGE 3: DASHBOARD TABS — OPERATIONS & QUALITY
-// ════════════════════════════════════════════════════════════════════════════
-addPage("Dashboard — Operations & Quality");
-
-y = 28;
-y = drawSectionTitle(y, "7.  ADMIN DASHBOARD TABS — OPERATIONS & QUALITY MANAGEMENT");
-
-// Incidents Tab
-drawBox(14, y, 88, 30, "TAB: Incidents & Defect Feed", [
-  "Full list of incident reports with search, supplier filter, status filter.",
-  "Detail drawer (slide-out): photo gallery, annotations, parts list, coordinates.",
-  "Status toggle: Open ↔ Closed (logged to system events).",
-  "EXPORTS: Individual incident audit PDF (with logo, confidentiality badge,",
-  "watermark). Browser Print dialog. Resend supplier email notification."
-]);
-drawBox(108, y, 88, 30, "TAB: Visual Defect Heatmap Matrix", [
-  "Interactive defect location heatmap on part template image.",
-  "Part selector dropdown (by part number from DB).",
-  "Time scrubber to visualize defect clustering over time.",
-  "Hover tooltips showing individual incident details.",
-  "Dot opacity based on recency of defect occurrence."
-]);
-
-y += 35;
-
-drawBox(14, y, 88, 26, "TAB: Daily Tasks Planner", [
-  "Date-scoped task assignment per representative.",
-  "Rep filter dropdown to view specific rep's tasks.",
-  "Create new tasks: assign instruction, rep, date.",
-  "Toggle task status: completed ↔ pending.",
-  "Tasks pushed live to Phone Simulator for rep."
-]);
-drawBox(108, y, 88, 26, "TAB: Shift Summaries Log", [
-  "List of all shift walkthrough reports from reps.",
-  "Detail drawer: areas walked, bonus tasks, incidents count.",
-  "Publish to Customer: changes status → 'published',",
-  "making report visible in Customer Portal.",
-  "EXPORTS: Shift walkthrough audit PDF, browser print."
-]);
-
-y += 31;
-
-drawBox(14, y, 88, 20, "TAB: Suppliers Directory", [
-  "Grid of supplier cards: name, invoice schedule, allotted hours,",
-  "contacts (name, email, role), plants served list.",
-  "EXPORTS: Full supplier contacts directory PDF, browser print."
-]);
-drawBox(108, y, 88, 20, "TAB: Rework Logs Feed", [
-  "All rework/sort activities with date filtering.",
-  "Detail drawer per individual rework log.",
-  "EXPORTS: Feed-level PDF + individual rework audit PDF.",
-  "Browser print for both feed and individual reports."
-]);
-
-y += 25;
-
-drawBox(14, y, 88, 18, "TAB: Email Logs", [
-  "Full email delivery audit trail.",
-  "Detail view: to, cc, subject, HTML body, delivery status, timestamp."
-]);
-drawBox(108, y, 88, 18, "TAB: User Directory", [
-  "Grid of user cards: name, email, phone, role, avatar, pay currency.",
-  "All registered reps, leads, owners, and accountants."
-]);
-
-y += 23;
-y = drawSectionTitle(y, "8.  PULSE AI — CONVERSATIONAL DATABASE AUDITOR");
-
-drawBox(14, y, 88, 28, "AI Chat Console (Left Panel)", [
-  "Natural language chat interface with message history.",
-  "Role-specific welcome messages and quick prompt chips.",
-  "Admin: 'Audit Database', 'Scan Duplicates', 'Export Excel/CSV'.",
-  "Accountant: 'Audit Timesheets', 'Export Excel/CSV'.",
-  "Lead: 'Audit Quality Logs', 'Download Quality PDF'.",
-  "QRE: 'Check my hours', 'What tasks do I have today?'."
-]);
-drawBox(108, y, 88, 28, "AI Audit Engine (Right Panel)", [
-  "Run Scan button triggers comprehensive data audit:",
-  "• Flags duplicate defect incidents (same part + area).",
-  "• Detects timesheet anomalies (negative hrs, >24hr entries).",
-  "• Identifies receipt mismatches in expense claims.",
-  "• Checks daily hour limit breaches.",
-  "Triggers: Excel, CSV, PDF exports via chat commands."
-]);
-
-// ════════════════════════════════════════════════════════════════════════════
-// PAGE 4: FINANCIAL, BILLING & APPROVAL WORKFLOWS
-// ════════════════════════════════════════════════════════════════════════════
-addPage("Financial, Billing & Approvals");
-
-y = 28;
-y = drawSectionTitle(y, "9.  TIMESHEETS, INVOICING & FINANCIAL OPERATIONS");
-
-drawBox(14, y, 60, 26, "Sub-Tab: Log Hours & Expenses", [
-  "Log Hours: rep, supplier, date, hours,",
-  "mileage (km), notes → timeEntries.",
-  "Log Expense: rep, supplier, date, category,",
-  "amount, notes → expenseEntries.",
-  "Both sync to Supabase immediately."
-]);
-drawBox(78, y, 58, 26, "Sub-Tab: Invoice Generator", [
-  "Supplier selector, currency filter (CAD/USD).",
-  "Calculates: hours × billing rate +",
-  "mileage × $0.73/km + expenses.",
-  "Mark entries as invoiced.",
-  "PDF invoice + QuickBooks CSV export."
-]);
-drawBox(140, y, 56, 26, "Sub-Tab: Payroll Approvals", [
-  "Expense approval queue (approve/reject).",
-  "Extra hours admin final approval",
-  "queue (after customer approval).",
-  "Auto-creates timeEntry on approval."
-]);
-
-y += 31;
-
-drawBox(14, y, 88, 22, "Sub-Tab: Rates & Configuration + Admin CRUD", [
-  "Rate override matrix: custom billing/pay rates per rep + supplier.",
-  "CRUD Sub-Tab: Customers → register new client/supplier with contacts.",
-  "CRUD Sub-Tab: Locations → map new plant, link to supplier, assign rep, set rate.",
-  "CRUD Sub-Tab: Reps → onboard new representative (name, email, phone, currency)."
-]);
-drawBox(108, y, 88, 22, "Sub-Tab: Bulk Entry + Quick Add Modals", [
-  "Quick Add Rep: inline modal popup, auto-selects in registry.",
-  "Quick Add Client: inline modal popup with invoice schedule.",
-  "Quick Add Plant: inline modal popup with address + supplier link.",
-  "All modals write directly to Supabase via saveEntity()."
-]);
-
-y += 27;
-y = drawSectionTitle(y, "10. EXTRA HOURS — 3-STAGE APPROVAL WORKFLOW");
-
-// Workflow boxes
-drawBox(14, y, 38, 22, "Stage 1: Rep Files", [
-  "Rep submits extra hours",
-  "request with: supplier,",
-  "plant, date, hours, reason.",
-  "Status → pending_customer"
-], { fill: [239, 246, 255], border: [147, 197, 253] });
-
-drawArrow(52, y + 11, 58, y + 11, "Notify");
-
-drawBox(58, y, 42, 22, "Stage 2: Customer Review", [
-  "Customer sees request in",
-  "their Portal approval queue.",
-  "Can approve or reject with",
-  "comment. Status → pending_admin"
-], { fill: [254, 243, 199], border: [252, 211, 77] });
-
-drawArrow(100, y + 11, 106, y + 11, "Escalate");
-
-drawBox(106, y, 42, 22, "Stage 3: Admin Final", [
-  "Admin reviews in Payroll tab.",
-  "Approve → auto-creates new",
-  "timeEntry record in timesheets.",
-  "Reject → status: rejected_by_admin"
-], { fill: [209, 250, 229], border: [74, 222, 128] });
-
-drawArrow(148, y + 11, 154, y + 11, "Result");
-
-drawBox(154, y, 42, 22, "Final Outcome", [
-  "Approved: timeEntry created",
-  "with '[APPROVED EXTRA HOURS]'",
-  "note. Appears in timesheets.",
-  "History trail with comments."
-], { fill: [248, 250, 252], border: [203, 213, 225] });
-
-y += 27;
-y = drawSectionTitle(y, "11. EXPENSE CLAIMS — 2-STAGE APPROVAL WORKFLOW");
-
-drawBox(14, y, 56, 18, "Stage 1: Rep Submits Expense", [
-  "Rep files expense via Phone or Dashboard.",
-  "Includes: amount, category, receipt photo, notes.",
-  "Status → submitted. Synced to Supabase."
-], { fill: [239, 246, 255], border: [147, 197, 253] });
-
-drawArrow(70, y + 9, 78, y + 9, "Queue");
-
-drawBox(78, y, 56, 18, "Stage 2: Admin Approves/Rejects", [
-  "Admin reviews in Payroll & Expense Approvals.",
-  "View receipt photo (lightbox modal).",
-  "Approve → status: approved. Reject → status: rejected."
-], { fill: [209, 250, 229], border: [74, 222, 128] });
-
-drawArrow(134, y + 9, 142, y + 9);
-
-drawBox(142, y, 54, 18, "Impact on Billing", [
-  "Approved expenses included in client",
-  "invoice calculations and payroll reports.",
-  "Receipt photos embedded in audit PDFs."
-], { fill: [248, 250, 252], border: [203, 213, 225] });
-
-y += 23;
-y = drawSectionTitle(y, "12. CUSTOMER PORTAL (CLIENT-FACING DASHBOARD)");
-
-drawBox(14, y, 60, 24, "Location & QRE Assignment Grid", [
-  "Shows customer's plants with assigned QRE rep.",
-  "Unbilled hours progress bar per location.",
-  "Weekly allotted vs actual hours comparison."
-]);
-drawBox(78, y, 58, 24, "Extra Hours Approval Queue", [
-  "Customer can approve/reject overtime requests",
-  "filed by reps working at their plants.",
-  "Comment field for approval/rejection rationale.",
-  "Approved requests escalate to Admin."
-]);
-drawBox(140, y, 56, 24, "Published Reports & Hours Audit", [
-  "View published shift walkthrough reports.",
-  "Weekly hours audit table filtered to",
-  "customer's supplier_id only.",
-  "Billing rates are hidden from customer."
-]);
-
-// ════════════════════════════════════════════════════════════════════════════
-// PAGE 5: DATA ARCHITECTURE & REPORTS
-// ════════════════════════════════════════════════════════════════════════════
-addPage("Data Architecture & Reports");
-
-y = 28;
-y = drawSectionTitle(y, "13. DATABASE ARCHITECTURE — 15 ENTITY COLLECTIONS");
-
-const collections = [
-  ["users", "Reps, leads, owners, accountants (8 seed)"],
-  ["rates", "Billing/pay rate overrides per rep+supplier+plant"],
-  ["plants", "OEM assembly plant locations (6 seed)"],
-  ["suppliers", "Client/supplier companies with contacts (5 seed)"],
-  ["parts", "Part number registry for barcode scanning"],
-  ["incidents", "Defect incident reports with photos & annotations"],
-  ["shiftReports", "Shift walkthrough audit summaries"],
-  ["reworkLogs", "Rework/sort activity logs"],
-  ["timeEntries", "Hours + mileage per rep per day"],
-  ["emailLogs", "Email delivery audit trail"],
-  ["dailyTasks", "Assigned daily tasks per rep"],
-  ["expenseEntries", "Expense claims with receipt photos"],
-  ["projects", "Project registry with billing/pay/currency"],
-  ["extraHoursRequests", "Overtime approval workflow items"],
-  ["systemLogs", "System event audit trail (Shahroz only)"],
-];
-
-let cy = y;
-const colWidths = [35, 147];
-doc.setFillColor(30, 58, 95);
-doc.rect(14, cy, colWidths[0], 6, "F");
-doc.rect(14 + colWidths[0], cy, colWidths[1], 6, "F");
-doc.setFont("helvetica", "bold");
-doc.setFontSize(6.5);
-doc.setTextColor(255, 255, 255);
-doc.text("Collection", 16, cy + 4.2);
-doc.text("Description", 16 + colWidths[0], cy + 4.2);
-cy += 6;
-
-doc.setFont("helvetica", "normal");
-doc.setFontSize(6);
-collections.forEach((row, i) => {
-  const bg = i % 2 === 0 ? [248, 250, 252] : [241, 245, 249];
-  doc.setFillColor(...bg);
-  doc.rect(14, cy, colWidths[0], 5, "F");
-  doc.rect(14 + colWidths[0], cy, colWidths[1], 5, "F");
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(30, 58, 95);
-  doc.text(row[0], 16, cy + 3.5);
-  doc.setFont("helvetica", "normal");
-  doc.setTextColor(71, 85, 105);
-  doc.text(row[1], 16 + colWidths[0], cy + 3.5);
-  cy += 5;
-});
-
-y = cy + 5;
-y = drawSectionTitle(y, "14. SUPABASE SYNC MECHANISM (BROWSER LOCALSTORAGE → POSTGRESQL)");
-
-drawStepRow(y, 1, "Initialize & Pull", "On app load, initializeDB() seeds local cache from SEED_DATA, then calls syncWithSupabase() after 100ms delay. For each of 15 collections, pulls from Supabase. If Supabase has data → overwrites local. If empty → seeds Supabase from local.");
-y += 17;
-drawStepRow(y, 2, "Push on Write", "Every saveEntity() call writes to Browser LocalStorage immediately (zero latency) and simultaneously fires supabase.from(type).upsert(entity) in background. Delete operations call supabase.from().delete().eq('id', entityId).");
-y += 17;
-drawStepRow(y, 3, "Cross-Component Reactivity", "After every write, a custom DOM event 'ids_pulse_db_update' is dispatched. Both PhoneSimulator and WebDashboard listen for this event and re-read their local state from the updated cache.");
-y += 17;
-drawStepRow(y, 4, "Real-Time Notifications", "Dashboard detects new data via dbUpdateTrigger prop. Plays dual-tone chime (Web Audio API sine wave). Shows toast notification banner for incidents, rework logs, shift reports, and expense claims.");
-y += 17;
-drawStepRow(y, 5, "Role-Based Data Sanitization", "getEntities() applies per-role data filtering. Reps see only their own records. Customers see only their supplier's data with billing rates stripped. Admins get full unrestricted access.");
-
-// ════════════════════════════════════════════════════════════════════════════
-// PAGE 6: COMPLETE REPORT CATALOG & SYSTEM EVENTS
-// ════════════════════════════════════════════════════════════════════════════
-addPage("Reports, Exports & System Events");
-
-y = 28;
-y = drawSectionTitle(y, "15. COMPLETE REPORT & EXPORT CATALOG");
-
-// PDF Reports
-doc.setFont("helvetica", "bold");
+doc.setFont('helvetica', 'bold');
 doc.setFontSize(7);
-doc.setTextColor(30, 58, 95);
-doc.text("PDF REPORTS (7 Types)", 14, y + 4);
-y += 7;
+setColor('text', C.darkBlue);
+doc.text('Spreadsheet Exports - 3 Types', ml, y + 3);
+y += 6;
 
-const pdfReports = [
-  ["Incident Audit PDF", "IDS_Pulse_Audit_{PN}_{incId}.pdf", "Incidents tab — per incident"],
-  ["Shift Walkthrough PDF", "IDS_Shift_Walkthrough_{date}_{srId}.pdf", "Shift Logs tab — per report"],
-  ["Supplier Directory PDF", "IDS_Supplier_Contacts_Directory.pdf", "Suppliers tab — full directory"],
-  ["Timesheet Payroll PDF", "IDS_Timesheets_Audit_Report.pdf", "Timesheets tab — full payroll"],
-  ["Rework Feed PDF", "IDS_Rework_Audit_Feed_{date}.pdf", "Rework Logs tab — all rework"],
-  ["Individual Rework PDF", "IDS_Rework_Audit_{rwId}.pdf", "Rework Logs tab — per rework"],
-  ["Client Invoice PDF", "Invoice_{ClientName}_{timestamp}.pdf", "Invoice Generator sub-tab"],
+y = drawTableRow(y, rptH, rptW, true);
+const csvRows = [
+  ['QuickBooks CSV Export', 'QuickBooks_Export_{Supplier}.csv', 'Invoice Generator - per client'],
+  ['Payroll CSV Export', 'IDS_Timesheets_Payroll_{Date}.csv', 'Timesheets tab - full payroll'],
+  ['Styled Excel Workbook', 'IDS_Timesheets_Payroll_{Date}.xlsx', 'Timesheets tab - via ExcelJS'],
 ];
-
-// Table header
-doc.setFillColor(30, 58, 95);
-doc.rect(14, y, 50, 5.5, "F");
-doc.rect(64, y, 68, 5.5, "F");
-doc.rect(132, y, 64, 5.5, "F");
-doc.setFont("helvetica", "bold");
-doc.setFontSize(6);
-doc.setTextColor(255, 255, 255);
-doc.text("Report Name", 16, y + 4);
-doc.text("Output Filename", 66, y + 4);
-doc.text("Generated From", 134, y + 4);
-y += 5.5;
-
-doc.setFont("helvetica", "normal");
-doc.setFontSize(5.5);
-pdfReports.forEach((row, i) => {
-  const bg = i % 2 === 0 ? [248, 250, 252] : [241, 245, 249];
-  doc.setFillColor(...bg);
-  doc.rect(14, y, 50, 5, "F");
-  doc.rect(64, y, 68, 5, "F");
-  doc.rect(132, y, 64, 5, "F");
-  doc.setTextColor(15, 23, 42);
-  doc.setFont("helvetica", "bold");
-  doc.text(row[0], 16, y + 3.5);
-  doc.setFont("helvetica", "normal");
-  doc.setTextColor(71, 85, 105);
-  doc.text(row[1], 66, y + 3.5);
-  doc.text(row[2], 134, y + 3.5);
-  y += 5;
-});
+csvRows.forEach((row, i) => { y = drawTableRow(y, row, rptW, false, i % 2 === 1); });
 
 y += 5;
-
-doc.setFont("helvetica", "bold");
+doc.setFont('helvetica', 'bold');
 doc.setFontSize(7);
-doc.setTextColor(30, 58, 95);
-doc.text("SPREADSHEET EXPORTS (3 Types)", 14, y + 4);
-y += 7;
+setColor('text', C.darkBlue);
+doc.text('Browser Print Reports - 5 Types', ml, y + 3);
+y += 6;
 
-const csvReports = [
-  ["QuickBooks CSV", "QuickBooks_Export_{supplier}.csv", "Invoice Generator — per client"],
-  ["Payroll CSV", "IDS_Timesheets_Payroll_{date}.csv", "Timesheets tab — full payroll"],
-  ["Styled Excel (.xlsx)", "IDS_Timesheets_Payroll_{date}.xlsx", "Timesheets tab — ExcelJS workbook"],
+const printRows = [
+  ['Incident Audit Print', 'Styled HTML document', 'Incidents tab - per incident'],
+  ['Shift Walkthrough Print', 'Styled HTML document', 'Shift Logs tab - per report'],
+  ['Supplier Directory Print', 'Styled HTML document', 'Suppliers tab - full directory'],
+  ['Timesheet Payroll Print', 'Styled HTML document', 'Timesheets tab - full payroll'],
+  ['Rework Log Print', 'Styled HTML document', 'Rework Logs tab - feed or individual'],
 ];
-
-doc.setFillColor(30, 58, 95);
-doc.rect(14, y, 50, 5.5, "F");
-doc.rect(64, y, 68, 5.5, "F");
-doc.rect(132, y, 64, 5.5, "F");
-doc.setFont("helvetica", "bold");
-doc.setFontSize(6);
-doc.setTextColor(255, 255, 255);
-doc.text("Export Name", 16, y + 4);
-doc.text("Output Filename", 66, y + 4);
-doc.text("Generated From", 134, y + 4);
-y += 5.5;
-
-doc.setFont("helvetica", "normal");
-doc.setFontSize(5.5);
-csvReports.forEach((row, i) => {
-  const bg = i % 2 === 0 ? [248, 250, 252] : [241, 245, 249];
-  doc.setFillColor(...bg);
-  doc.rect(14, y, 50, 5, "F");
-  doc.rect(64, y, 68, 5, "F");
-  doc.rect(132, y, 64, 5, "F");
-  doc.setTextColor(15, 23, 42);
-  doc.setFont("helvetica", "bold");
-  doc.text(row[0], 16, y + 3.5);
-  doc.setFont("helvetica", "normal");
-  doc.setTextColor(71, 85, 105);
-  doc.text(row[1], 66, y + 3.5);
-  doc.text(row[2], 134, y + 3.5);
-  y += 5;
-});
+y = drawTableRow(y, rptH, rptW, true);
+printRows.forEach((row, i) => { y = drawTableRow(y, row, rptW, false, i % 2 === 1); });
 
 y += 5;
-doc.setFont("helvetica", "bold");
-doc.setFontSize(7);
-doc.setTextColor(30, 58, 95);
-doc.text("BROWSER PRINT REPORTS (5 Types)", 14, y + 4);
-y += 7;
+y = drawSectionHeader(y, 15, 'Hidden System Events Logger - Super Admin Exclusive');
 
-doc.setFont("helvetica", "normal");
-doc.setFontSize(6);
-doc.setTextColor(71, 85, 105);
-const prints = [
-  "1. Incident Audit Print — styled HTML from Incidents tab",
-  "2. Shift Walkthrough Print — styled HTML from Shift Logs tab",
-  "3. Supplier Directory Print — styled HTML from Suppliers tab",
-  "4. Timesheet Payroll Print — styled HTML from Timesheets tab",
-  "5. Rework Feed Print / Individual Rework Print — styled HTML from Rework Logs tab",
-];
-prints.forEach(p => { doc.text(p, 16, y); y += 4; });
+const h6_1 = drawInfoCard(ml, y, 86, 32, 'Tracked Event Categories', [
+  'Authentication: login events and session initialization records.',
+  'System: all onboarding operations - create customer, location, representative, save or delete rate overrides, quick-add actions from modals.',
+  'Shift: clock in and out, shift report submissions, publish to customer.',
+  'Incident: new incident creation, status updates between open and closed.',
+  'Rework: rework log submissions.',
+  'Payroll: overtime approvals, expense approvals, CSV, Excel, and PDF exports.',
+], C.emerald);
 
-y += 3;
-y = drawSectionTitle(y, "16. HIDDEN SYSTEM EVENTS LOGGER (SUPER ADMIN ONLY)");
+const h6_2 = drawInfoCard(ml + 92, y, 86, 32, 'Access Control & Security', [
+  'The System Events Logs tab is completely hidden from all non-Super Admin users.',
+  'The sidebar button is wrapped in a role guard that checks for the shahroz role.',
+  'The tab content panel has a secondary guard preventing direct URL navigation.',
+  'Each event records: timestamp, acting user identity, category, action, and details.',
+  'The clear console button resets the log to a single "cleared" audit entry.',
+  'All event records are synchronized to the Supabase systemLogs cloud table.',
+], C.darkBlue);
 
-drawBox(14, y, 88, 30, "Logged Event Categories", [
-  "• auth: Login authentication events.",
-  "• system: CRUD operations (create customer, location, rep,",
-  "  save/delete rate overrides, quick-add actions).",
-  "• shift: Clock in/out, shift report submit, publish to customer.",
-  "• incident: New incident creation, status updates (open/close).",
-  "• rework: Rework log submissions.",
-  "• payroll: Overtime approval, expense approval, CSV/Excel/PDF exports."
-]);
-drawBox(108, y, 88, 30, "Security & Access", [
-  "System Events Logs tab is HIDDEN from all users except Shahroz.",
-  "Sidebar button wrapped in userRole === 'shahroz' guard.",
-  "Tab content double-guarded: activeTab + userRole check.",
-  "Each event log records: timestamp, acting user (from",
-  "sessionStorage), category, action type, and detail string.",
-  "Clear console button resets log to single 'cleared' entry.",
-  "All events synced to Supabase systemLogs table."
-]);
+y += Math.max(h6_1, h6_2) + 5;
 
-y += 35;
-y = drawSectionTitle(y, "17. PROJECTS REGISTRY & QUICK ADD SYSTEM");
+y = drawSectionHeader(y, 16, 'Projects Registry & Quick Add System');
 
-drawBox(14, y, 88, 22, "Projects Registry Tab", [
-  "List of registered projects: rep, client, plant, rates, currency, status.",
-  "Create new project form with billing rate, pay rate, currency per project.",
-  "Projects used by rate resolver — project rates take priority over rate overrides."
-]);
-drawBox(108, y, 88, 22, "Quick Add Modals (Inline Popups)", [
-  "Quick Add Rep: name, email, phone, currency → auto-selects in registry.",
-  "Quick Add Client: name, invoice schedule → saves to suppliers collection.",
-  "Quick Add Plant: name, address, linked supplier → saves to plants collection.",
-  "Available from Projects Registry tab and Rates Config sub-tab."
-]);
+const h6_3 = drawInfoCard(ml, y, 86, 22, 'Projects Registry Tab', [
+  'List of registered projects: rep, client, plant, rates, currency, status.',
+  'Create new project form with billing rate, pay rate, currency per project.',
+  'Projects used by rate resolver - project rates take priority over rate overrides.',
+], C.darkBlue);
+
+const h6_4 = drawInfoCard(ml + 92, y, 86, 22, 'Quick Add Modals (Inline Popups)', [
+  'Quick Add Rep: name, email, phone, currency - auto-selects in registry.',
+  'Quick Add Client: name, invoice schedule - saves to suppliers collection.',
+  'Quick Add Plant: name, address, linked supplier - saves to plants collection.',
+  'Available from Projects Registry tab and Rates Config sub-tab.',
+], C.teal);
+
+y += Math.max(h6_3, h6_4) + 5;
 
 // ─── SAVE ───────────────────────────────────────────────────────────────────
-const pdfPath = path.join(__dirname, 'IDS_Pulse_Complete_System_Flowchart.pdf');
-fs.writeFileSync(pdfPath, Buffer.from(doc.output('arraybuffer')));
-console.log(`Successfully generated COMPLETE flowchart PDF (${currentPage} pages) at: ${pdfPath}`);
+const outputPath = path.join(__dirname, 'IDS_Pulse_System_Architecture_FIXED.pdf');
+fs.writeFileSync(outputPath, Buffer.from(doc.output('arraybuffer')));
+console.log(`Successfully generated professional ${pageNum}-page flowchart at: ${outputPath}`);

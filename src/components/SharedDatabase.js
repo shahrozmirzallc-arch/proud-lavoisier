@@ -770,7 +770,8 @@ export async function syncWithSupabase() {
     'incidents',
     'reworkLogs',
     'dailyTasks',
-    'emailLogs'
+    'emailLogs',
+    'shiftReports'
   ];
 
   const db = getDB();

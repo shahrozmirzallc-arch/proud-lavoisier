@@ -349,10 +349,19 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
         const { billing_rate } = getRepSupplierRates(entry.rep_id, entry.supplier_id, entry.plant_id);
         const sub = entry.hours * billing_rate;
         totalBill += sub;
-        doc.text(`${repName} - Hours worked (${entry.date})`, 16, y);
+        
+        const descText = `${repName} - Hours worked (${entry.date})`;
+        const wrappedDesc = doc.splitTextToSize(descText, 80);
+        
+        doc.text(wrappedDesc[0] || '', 16, y);
         doc.text(`${entry.hours} hrs`, 100, y);
         doc.text(`${curSymbol}${billing_rate.toFixed(2)}/hr`, 130, y);
         doc.text(`${curSymbol}${sub.toFixed(2)}`, 160, y);
+        
+        for (let k = 1; k < wrappedDesc.length; k++) {
+          y += 5;
+          doc.text(wrappedDesc[k], 16, y);
+        }
         y += 8;
       });
 
@@ -361,10 +370,19 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
           const repName = users.find(u => u.id === entry.rep_id)?.name || 'Rep';
           const sub = entry.mileage_km * 0.73;
           totalBill += sub;
-          doc.text(`${repName} - Travel Mileage (${entry.date})`, 16, y);
+          
+          const descText = `${repName} - Travel Mileage (${entry.date})`;
+          const wrappedDesc = doc.splitTextToSize(descText, 80);
+          
+          doc.text(wrappedDesc[0] || '', 16, y);
           doc.text(`${entry.mileage_km} km`, 100, y);
           doc.text(`${curSymbol}0.73/km`, 130, y);
           doc.text(`${curSymbol}${sub.toFixed(2)}`, 160, y);
+          
+          for (let k = 1; k < wrappedDesc.length; k++) {
+            y += 5;
+            doc.text(wrappedDesc[k], 16, y);
+          }
           y += 8;
         }
       });
@@ -373,10 +391,19 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
         const repName = users.find(u => u.id === exp.rep_id)?.name || 'Rep';
         const sub = parseFloat(exp.amount || 0);
         totalBill += sub;
-        doc.text(`${repName} - Reimbursement (${exp.category}: ${exp.notes})`, 16, y);
+        
+        const descText = `${repName} - Reimbursement (${exp.category}: ${exp.notes})`;
+        const wrappedDesc = doc.splitTextToSize(descText, 80);
+        
+        doc.text(wrappedDesc[0] || '', 16, y);
         doc.text(`1 qty`, 100, y);
         doc.text(`${curSymbol}${sub.toFixed(2)}`, 130, y);
         doc.text(`${curSymbol}${sub.toFixed(2)}`, 160, y);
+        
+        for (let k = 1; k < wrappedDesc.length; k++) {
+          y += 5;
+          doc.text(wrappedDesc[k], 16, y);
+        }
         y += 8;
       });
 

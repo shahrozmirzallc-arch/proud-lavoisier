@@ -293,6 +293,60 @@ const SEED_DATA = {
       parts_list: [
         { id: 'sp_seed_7', part_number: '86291945', description: 'Headlight Housing (Matt\'s Bin Sort)', supplier_id: 'magna', bin: 'BIN-MAG-9145', qty: 1 }
       ]
+    },
+    {
+      id: 'inc_8',
+      rep_id: 'rep_hugo',
+      plant_id: 'mercedes_tuscaloosa',
+      supplier_id: 'autokabel',
+      part_id: '86286761',
+      area: 'Mercedes Assembly Line 4',
+      description: 'Insulation gap discovered on primary battery cable sheath. Standard gauge wire exposed.',
+      action_taken: 'Placed parts in containment bin, flagged Mercedes quality auditor, notified Auto Kabel supervisor.',
+      supplier_contact: 'Juan Carlos',
+      photos: [],
+      videos: [],
+      audio_url: '',
+      status: 'Open',
+      created_at: '2026-07-01T09:30:00Z',
+      sent_at: '2026-07-01T09:35:00Z',
+      concern_classification: 'PRR',
+      defect_returned: 'N',
+      sort_required: 'Y',
+      rma_required: 'N',
+      defect_location_x: 0.45,
+      defect_location_y: 0.60,
+      part_view: 'top',
+      parts_list: [
+        { id: 'sp_seed_8', part_number: '86286761', description: 'Tail Light Assembly', supplier_id: 'autokabel', bin: 'BIN-AK-6761', qty: 1 }
+      ]
+    },
+    {
+      id: 'inc_9',
+      rep_id: 'rep_nabil',
+      plant_id: 'ford_dearborn',
+      supplier_id: 'autokabel',
+      part_id: '86291945',
+      area: 'Harness Sequencing Bay',
+      description: 'Bent electrical connector pins on wiring harnesses preventing positive locking.',
+      action_taken: 'Initiated 100% sort of containment rack. Rejected 6 bad harnesses.',
+      supplier_contact: 'Juan Carlos',
+      photos: [],
+      videos: [],
+      audio_url: '',
+      status: 'Closed',
+      created_at: '2026-07-02T11:15:00Z',
+      sent_at: '2026-07-02T11:20:00Z',
+      concern_classification: 'QR',
+      defect_returned: 'Y',
+      sort_required: 'Y',
+      rma_required: 'Y',
+      defect_location_x: 0.55,
+      defect_location_y: 0.40,
+      part_view: 'top',
+      parts_list: [
+        { id: 'sp_seed_9', part_number: '86291945', description: 'Headlight Housing (Matt\'s Bin Sort)', supplier_id: 'autokabel', bin: 'BIN-AK-9145', qty: 6 }
+      ]
     }
   ],
   shiftReports: [
@@ -313,6 +367,54 @@ const SEED_DATA = {
       ],
       status: 'Sent',
       sent_at: '2026-05-28T17:30:00Z'
+    },
+    {
+      id: 'sr_2',
+      rep_id: 'rep_hugo',
+      plant_id: 'mercedes_tuscaloosa',
+      date: '2026-07-01',
+      areas_walked: [
+        { name: 'Mercedes Assembly Line 4', status: 'issues', contact: 'Juan Carlos', notes: 'Found battery cable insulation gap. See incident inc_8.' },
+        { name: 'Parts sequencing area', status: 'no_issues', contact: 'Juan Carlos', notes: 'Checked wire racks. All tagged correctly.' }
+      ],
+      incidents_count: 1,
+      bonus_tasks: [
+        { task: 'Verify line stock tags', status: 'completed', notes: 'All tags current.' }
+      ],
+      status: 'Sent',
+      sent_at: '2026-07-01T17:45:00Z'
+    },
+    {
+      id: 'sr_3',
+      rep_id: 'rep_nabil',
+      plant_id: 'ford_dearborn',
+      date: '2026-07-02',
+      areas_walked: [
+        { name: 'Harness Sequencing Bay', status: 'issues', contact: 'Juan Carlos', notes: 'Bent electrical connector pins. See incident inc_9.' },
+        { name: 'Scrap table', status: 'no_issues', contact: 'Juan Carlos', notes: 'Scrap table verified clear.' }
+      ],
+      incidents_count: 1,
+      bonus_tasks: [
+        { task: 'Audit containment rack logs', status: 'completed', notes: 'Containment rack logs verified and matches DB counts.' }
+      ],
+      status: 'Sent',
+      sent_at: '2026-07-02T16:50:00Z'
+    },
+    {
+      id: 'sr_4',
+      rep_id: 'rep_rogelio',
+      plant_id: 'gm_slp',
+      date: '2026-07-02',
+      areas_walked: [
+        { name: 'Engine Room Line', status: 'issues', contact: 'Juan Carlos', notes: 'Assisted in wiring harness sort. High density sorting completed.' },
+        { name: 'Scrap table', status: 'no_issues', contact: 'Juan Carlos', notes: 'Scrap table verified.' }
+      ],
+      incidents_count: 0,
+      bonus_tasks: [
+        { task: 'Pre-check next shift parts', status: 'completed', notes: 'Next shift parts pre-checked.' }
+      ],
+      status: 'Sent',
+      sent_at: '2026-07-02T18:15:00Z'
     }
   ],
   reworkLogs: [

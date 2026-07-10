@@ -291,6 +291,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       const duration = entry.hours;
       const notes = entry.notes || 'Shift sorting log';
       csv += `"${date}","${repName}","${clientName}","Standard Sorting Support","${duration}","${notes}","Billable"\n`;
+    });
     const user = sessionStorage.getItem('ids_pulse_admin_user') || 'Admin';
     logSystemEvent('payroll', 'quickbooks_export', `${user} exported QuickBooks CSV timesheets for supplier ${selectedInvoiceSupplier}.`);
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });

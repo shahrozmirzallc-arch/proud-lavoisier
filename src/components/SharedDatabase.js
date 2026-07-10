@@ -16,6 +16,7 @@ const SEED_DATA = {
     { id: '2', name: 'Donna Cabral', email: 'donna.c@integritydriven.com', role: 'lead', phone: '+1 905-555-0199', avatar: 'DC', pay_currency: 'CAD', company_affiliation: 'IDS' },
     { id: '3', name: 'Greg Phillippe', email: 'greg.p@integritydriven.com', role: 'owner', phone: '+1 905-555-0100', avatar: 'GP', pay_currency: 'CAD', company_affiliation: 'IDS' },
     { id: '4', name: 'Colleen Boyd', email: 'colleen.b@integritydriven.com', role: 'accountant', phone: '+1 905-555-0122', avatar: 'CB', pay_currency: 'CAD', company_affiliation: 'IDS' },
+    { id: 'user_diana', name: 'Diana', email: 'diana@integritydriven.com', role: 'owner', phone: '+1 555-555-0155', avatar: 'DI', pay_currency: 'CAD', company_affiliation: 'IDS' },
     { id: 'rep_hugo', name: 'Hugo Picon', email: 'hugo.p@integritydriven.com', role: 'rep', phone: '+1 555-123-4567', avatar: 'HP', pay_currency: 'USD', company_affiliation: 'IDS' },
     { id: 'rep_nabil', name: 'Nabil Obad', email: 'nabil.o@integritydriven.com', role: 'rep', phone: '+1 555-987-6543', avatar: 'NO', pay_currency: 'USD', company_affiliation: 'IDS' },
     { id: 'rep_rogelio', name: 'Rogelio Velasco', email: 'rogelio.v@integritydriven.com', role: 'rep', phone: '+1 555-555-0987', avatar: 'RV', pay_currency: 'USD', company_affiliation: 'FQS' }

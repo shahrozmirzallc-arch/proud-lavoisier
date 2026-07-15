@@ -96,7 +96,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   // Invoicing States
   const [selectedInvoiceSupplier, setSelectedInvoiceSupplier] = useState('autokabel');
   const [selectedInvoiceCurrency, setSelectedInvoiceCurrency] = useState('all');
-
+  const [invoicePONumber, setInvoicePONumber] = useState('');
   // Extra Hours Requests State
   const [extraHoursRequests, setExtraHoursRequests] = useState([]);
   const [extraHoursQty, setExtraHoursQty] = useState('8.0');
@@ -331,6 +331,9 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       doc.setFont("Helvetica", "normal");
       doc.text("Invoice Period: " + dateRangeStr, 120, 50);
       doc.text("Date Generated: " + new Date().toLocaleDateString(), 120, 55);
+      if (invoicePONumber.trim() !== '') {
+        doc.text("Purchase Order: " + invoicePONumber.trim(), 120, 60);
+      }
 
       let y = 70;
       doc.setFillColor(30, 41, 59);
@@ -5790,6 +5793,16 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                 <option value="CAD">CAD Only (C$)</option>
                                 <option value="USD">USD Only (US$)</option>
                               </select>
+                            </div>
+                            <div className="flex flex-col">
+                              <label className="text-[10.5px] font-bold text-slate-500 uppercase tracking-wider mb-1">Purchase Order (Optional)</label>
+                              <input 
+                                type="text" 
+                                placeholder="e.g. PO-98432" 
+                                value={invoicePONumber} 
+                                onChange={(e) => setInvoicePONumber(e.target.value)} 
+                                className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-[13.5px] text-white w-32 placeholder:text-slate-600"
+                              />
                             </div>
                           </div>
                           <div className="flex gap-2">

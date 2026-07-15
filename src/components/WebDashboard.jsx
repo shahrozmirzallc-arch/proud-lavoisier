@@ -3747,7 +3747,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
             )}
 
             {/* ADMIN SIDEBAR BUTTONS */}
-            {['admin', 'accountant', 'lead', 'shahroz'].includes(userRole) && (
+            {['admin', 'owner', 'accountant', 'lead', 'shahroz'].includes(userRole) && (
               <>
                 <button 
                   onClick={() => setActiveTab('pulse-ai')}
@@ -5157,7 +5157,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     </div>
                     
                     <div className="flex items-center gap-2">
-                      {['admin', 'accountant', 'lead', 'shahroz'].includes(userRole) && sr.status !== 'published' && (
+                      {['admin', 'owner', 'accountant', 'lead', 'shahroz'].includes(userRole) && sr.status !== 'published' && (
                         <button 
                           onClick={() => handlePublishReport(sr.id)}
                           className="bg-emerald-500 hover:bg-emerald-600 text-slate-950 py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1 flex-shrink-0"

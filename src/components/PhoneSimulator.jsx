@@ -936,13 +936,13 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
       </div>
 
       {/* Screen Top Status Bar */}
-      <div className="flex justify-between items-center px-6 pt-3 pb-2 text-[11px] font-semibold text-slate-400 z-40 bg-slate-900/40 backdrop-blur-sm select-none">
+      <div className="flex justify-between items-center px-6 pt-3 pb-2 text-[12.5px] font-semibold text-slate-400 z-40 bg-slate-900/40 backdrop-blur-sm select-none">
         <span>18:19 PM</span>
         <div className="flex items-center gap-1.5">
           {/* Offline Toggle Indicator */}
           <button 
             onClick={() => setIsOffline(!isOffline)}
-            className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded cursor-pointer transition-colors ${
+            className={`flex items-center gap-0.5 px-2 py-1 rounded cursor-pointer transition-colors ${
               isOffline ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
             }`}
             title="Toggle Network Status"
@@ -960,7 +960,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
             )}
           </button>
           <div className="w-5 h-2.5 border border-slate-600 rounded-sm p-0.5 flex items-center">
-            <div className="h-full w-4 bg-slate-400 rounded-2xs"></div>
+            <div className="h-full w-4.5 bg-slate-400 rounded-2xs"></div>
           </div>
         </div>
       </div>
@@ -974,14 +974,14 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
             <div className="flex flex-col items-center mt-12">
               <img src="/logo.png" alt="IDS Logo" className="h-14 w-auto object-contain mb-4" />
               <h1 className="text-2xl font-bold tracking-tight text-white mb-1">IDS Pulse</h1>
-              <p className="text-xs text-slate-400 font-medium tracking-wide">Quality on the floor.</p>
+              <p className="text-[13.5px] text-slate-400 font-medium tracking-wide">Quality on the floor.</p>
             </div>
 
             <form onSubmit={handleLogin} className="flex flex-col gap-4 my-auto">
               <div className="flex flex-col gap-1.5">
-                <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Email Address</label>
+                <label className="text-[12.5px] font-semibold text-slate-400 uppercase tracking-wider">Email Address</label>
                 <div className="relative">
-                  <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                  <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-slate-500" />
                   <input 
                     type="email" 
                     value={email}
@@ -995,9 +995,9 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Password</label>
+                <label className="text-[12.5px] font-semibold text-slate-400 uppercase tracking-wider">Password</label>
                 <div className="relative">
-                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-slate-500" />
                   <input 
                     type="password" 
                     value={password}
@@ -1019,13 +1019,13 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
             </form>
 
             <div className="flex flex-col gap-2 pt-2 border-t border-slate-800/80">
-              <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider text-center">Quick Login Presets</span>
+              <span className="text-[10.5px] text-slate-500 font-bold uppercase tracking-wider text-center">Quick Login Presets</span>
               <div className="flex flex-wrap gap-1.5 justify-center">
-                <button type="button" onClick={() => handleQuickLoginAs('Clarence')} className="px-2 py-1 rounded bg-slate-950 border border-slate-850 text-[9px] font-bold text-slate-400 hover:text-white transition-all cursor-pointer">Clarence</button>
-                <button type="button" onClick={() => handleQuickLoginAs('Hugo')} className="px-2 py-1 rounded bg-slate-950 border border-slate-850 text-[9px] font-bold text-sky-400 hover:text-white transition-all cursor-pointer">Hugo (QRE)</button>
-                <button type="button" onClick={() => handleQuickLoginAs('Nabil')} className="px-2 py-1 rounded bg-slate-950 border border-slate-850 text-[9px] font-bold text-sky-400 hover:text-white transition-all cursor-pointer">Nabil (QRE)</button>
-                <button type="button" onClick={() => handleQuickLoginAs('Rogelio')} className="px-2 py-1 rounded bg-slate-950 border border-slate-850 text-[9px] font-bold text-sky-400 hover:text-white transition-all cursor-pointer">Rogelio (QRE)</button>
-                <button type="button" onClick={() => handleQuickLoginAs('Donna')} className="px-2 py-1 rounded bg-slate-950 border border-slate-850 text-[9px] font-bold text-indigo-400 hover:text-white transition-all cursor-pointer">Donna</button>
+                <button type="button" onClick={() => handleQuickLoginAs('Clarence')} className="px-2 py-1 rounded bg-slate-950 border border-slate-850 text-[10.5px] font-bold text-slate-400 hover:text-white transition-all cursor-pointer">Clarence</button>
+                <button type="button" onClick={() => handleQuickLoginAs('Hugo')} className="px-2 py-1 rounded bg-slate-950 border border-slate-850 text-[10.5px] font-bold text-sky-400 hover:text-white transition-all cursor-pointer">Hugo (QRE)</button>
+                <button type="button" onClick={() => handleQuickLoginAs('Nabil')} className="px-2 py-1 rounded bg-slate-950 border border-slate-850 text-[10.5px] font-bold text-sky-400 hover:text-white transition-all cursor-pointer">Nabil (QRE)</button>
+                <button type="button" onClick={() => handleQuickLoginAs('Rogelio')} className="px-2 py-1 rounded bg-slate-950 border border-slate-850 text-[10.5px] font-bold text-sky-400 hover:text-white transition-all cursor-pointer">Rogelio (QRE)</button>
+                <button type="button" onClick={() => handleQuickLoginAs('Donna')} className="px-2 py-1 rounded bg-slate-950 border border-slate-850 text-[10.5px] font-bold text-indigo-400 hover:text-white transition-all cursor-pointer">Donna</button>
               </div>
             </div>
           </div>
@@ -1040,11 +1040,11 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                   <div className="w-12 h-12 bg-amber-500/10 border border-amber-500/30 rounded-full flex items-center justify-center mx-auto text-amber-400">
                     <AlertTriangle className="w-6 h-6 animate-pulse" />
                   </div>
-                  <h3 className="text-xs font-bold text-white uppercase tracking-wider">Shift Handover Lock</h3>
-                  <p className="text-[11px] text-slate-300 leading-relaxed">
+                  <h3 className="text-[13.5px] font-bold text-white uppercase tracking-wider">Shift Handover Lock</h3>
+                  <p className="text-[12.5px] text-slate-300 leading-relaxed">
                     <strong>{handoverAlert.prevRepName}</strong> had an active shift running.
                   </p>
-                  <p className="text-[10px] text-slate-400 bg-slate-950 p-2.5 rounded-xl border border-slate-850 leading-relaxed">
+                  <p className="text-[11.5px] text-slate-400 bg-slate-950 p-2.5 rounded-xl border border-slate-850 leading-relaxed">
                     The active draft shift summary was automatically <strong>locked</strong>. A new shift session has been initialized for you.
                   </p>
                   <button 
@@ -1062,8 +1062,8 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                 <div className="flex items-center gap-2">
                   <img src="/logo.png" alt="IDS Logo" className="h-7 w-auto object-contain flex-shrink-0" />
                   <div>
-                    <h2 className="text-xs font-bold text-white leading-none">IDS Pulse</h2>
-                    <span className="text-[9px] text-slate-500 font-medium">Ontario, Canada</span>
+                    <h2 className="text-[13.5px] font-bold text-white leading-none">IDS Pulse</h2>
+                    <span className="text-[10.5px] text-slate-500 font-medium">Ontario, Canada</span>
                   </div>
                 </div>
                 <button 
@@ -1078,17 +1078,17 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
               <div className="mt-3 bg-slate-900 border border-slate-800 rounded-2xl p-3 flex flex-col gap-3 shadow-md">
                 <div className="flex items-center justify-between pb-2 border-b border-slate-800/60">
                   <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-full bg-[#1E3A5F] flex items-center justify-center font-bold text-xs text-[#22D3EE] border border-[#0EA5E9]/30">
+                    <div className="w-7 h-7 rounded-full bg-[#1E3A5F] flex items-center justify-center font-bold text-[13.5px] text-[#22D3EE] border border-[#0EA5E9]/30">
                       {currentUser.avatar}
                     </div>
                     <div>
-                      <p className="text-[10px] font-bold text-white leading-tight">{currentUser.name}</p>
-                      <p className="text-[9px] text-[#0EA5E9] font-medium leading-none">Field Specialist</p>
+                      <p className="text-[11.5px] font-bold text-white leading-tight">{currentUser.name}</p>
+                      <p className="text-[10.5px] text-[#0EA5E9] font-medium leading-none">Field Specialist</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <span className="text-[9px] text-slate-500 font-medium">Status:</span>
-                    <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold tracking-wider uppercase ${
+                    <span className="text-[10.5px] text-slate-500 font-medium">Status:</span>
+                    <span className={`px-2 py-1 rounded text-[10.5px] font-bold tracking-wider uppercase ${
                       shiftActive ? 'bg-emerald-500/15 text-emerald-400' : 'bg-amber-500/15 text-amber-400'
                     }`}>
                       {shiftActive ? 'ON SHIFT' : 'OFF LINE'}
@@ -1097,9 +1097,9 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                 </div>
 
                 <div className="flex flex-col gap-1">
-                  <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wide">Current Plant Location</label>
+                  <label className="text-[10.5px] font-bold text-slate-500 uppercase tracking-wide">Current Plant Location</label>
                   <div className="relative">
-                    <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 z-10" />
+                    <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-slate-500 z-10" />
                     <select 
                       value={selectedPlant}
                       onChange={(e) => setSelectedPlant(e.target.value)}
@@ -1144,28 +1144,28 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                     <div className="absolute inset-0 rounded-full border border-emerald-500/40 animate-ping opacity-20"></div>
                     <Activity className="w-6 h-6 text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.5)]" />
                   </div>
-                  <h3 className="text-xs font-bold text-white mb-1">Active: {plants.find(p => p.id === selectedPlant)?.name}</h3>
-                  <p className="text-[10px] text-slate-400">Recording reports & timesheet hours.</p>
+                  <h3 className="text-[13.5px] font-bold text-white mb-1">Active: {plants.find(p => p.id === selectedPlant)?.name}</h3>
+                  <p className="text-[11.5px] text-slate-400">Recording reports & timesheet hours.</p>
                   
                   {(() => {
                     const activeSupplier = getEntities('suppliers')?.find(s => s.plants_served.includes(selectedPlant));
                     const allotted = activeSupplier ? activeSupplier.allotted_hours : 0;
                     return (
                       <div className="mt-3 px-3 py-1.5 bg-slate-900/60 border border-slate-700/50 rounded-lg flex items-center gap-2">
-                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Allotted Weekly Hrs:</span>
-                        <span className="text-[11px] font-black text-white">{allotted} Hrs</span>
+                        <span className="text-[10.5px] font-bold text-slate-400 uppercase tracking-wider">Allotted Weekly Hrs:</span>
+                        <span className="text-[12.5px] font-black text-white">{allotted} Hrs</span>
                       </div>
                     );
                   })()}
 
                   <div className="grid grid-cols-2 gap-3 w-full mt-4 pt-3 border-t border-slate-700/50">
                     <div className="flex flex-col items-center">
-                      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Started At</span>
-                      <span className="text-xs font-bold text-slate-200 mt-1">{shiftStartTime}</span>
+                      <span className="text-[10.5px] font-bold text-slate-400 uppercase tracking-wider">Started At</span>
+                      <span className="text-[13.5px] font-bold text-slate-200 mt-1">{shiftStartTime}</span>
                     </div>
                     <div className="flex flex-col items-center">
-                      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Incidents</span>
-                      <span className="text-xs font-extrabold text-[#0EA5E9] mt-1 drop-shadow-[0_0_5px_rgba(14,165,233,0.3)]">
+                      <span className="text-[10.5px] font-bold text-slate-400 uppercase tracking-wider">Incidents</span>
+                      <span className="text-[13.5px] font-extrabold text-[#0EA5E9] mt-1 drop-shadow-[0_0_5px_rgba(14,165,233,0.3)]">
                         {getEntities('incidents').filter(inc => inc.created_at.startsWith(new Date().toISOString().substring(0, 10))).length}
                       </span>
                     </div>
@@ -1173,7 +1173,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
 
                   {/* Synced tasks checklist for easy glove tapping */}
                   <div className="w-full mt-4 flex flex-col text-left">
-                    <span className="text-[9px] font-extrabold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-1 border-t border-slate-800/60 pt-3">
+                    <span className="text-[10.5px] font-extrabold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-1 border-t border-slate-800/60 pt-3">
                       <CheckCircle className="w-3.5 h-3.5 text-[#22D3EE]" />
                       <span>Today's Assigned Tasks</span>
                     </span>
@@ -1189,15 +1189,15 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                               type="checkbox" 
                               checked={t.status === 'completed'}
                               onChange={() => {}} // handled by onClick on parent for ease of glove tap
-                              className="rounded border-slate-800 text-[#0EA5E9] focus:ring-0 focus:ring-offset-0 w-4 h-4 cursor-pointer flex-shrink-0"
+                              className="rounded border-slate-800 text-[#0EA5E9] focus:ring-0 focus:ring-offset-0 w-4.5 h-4.5 cursor-pointer flex-shrink-0"
                             />
-                            <span className={`text-[10px] leading-tight select-none ${t.status === 'completed' ? 'line-through text-slate-500 font-medium' : 'text-slate-300 font-bold'}`}>
+                            <span className={`text-[11.5px] leading-tight select-none ${t.status === 'completed' ? 'line-through text-slate-500 font-medium' : 'text-slate-300 font-bold'}`}>
                               {t.task}
                             </span>
                           </div>
                         ))
                       ) : (
-                        <p className="text-[9px] text-slate-600 italic">No tasks assigned for today.</p>
+                        <p className="text-[10.5px] text-slate-600 italic">No tasks assigned for today.</p>
                       )}
                     </div>
                   </div>
@@ -1207,8 +1207,8 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                   <div className="w-12 h-12 rounded-full bg-[#1E3A5F]/20 flex items-center justify-center border border-[#1E3A5F]/40 mb-3">
                     <Clock className="w-5 h-5 text-[#64748B]" />
                   </div>
-                  <h3 className="text-xs font-bold text-slate-300 mb-1">Shift Inactive</h3>
-                  <p className="text-[10px] text-slate-500 leading-relaxed">
+                  <h3 className="text-[13.5px] font-bold text-slate-300 mb-1">Shift Inactive</h3>
+                  <p className="text-[11.5px] text-slate-500 leading-relaxed">
                     Select your plant location in the panel above and tap **"Start Work Shift"** to begin reporting defects and logging rework.
                   </p>
                 </div>
@@ -1217,7 +1217,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
 
             {/* Quick Actions */}
             <div className="flex flex-col gap-2 mt-auto">
-              <p className="text-[9px] text-slate-500 font-bold uppercase tracking-wider pl-1">Actions Feed</p>
+              <p className="text-[10.5px] text-slate-500 font-bold uppercase tracking-wider pl-1">Actions Feed</p>
               <div className="grid grid-cols-2 gap-2">
                 <button 
                   onClick={() => {
@@ -1229,8 +1229,8 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                   <div className="w-6 h-6 rounded-lg bg-red-500/10 flex items-center justify-center mb-1.5 border border-red-500/10">
                     <AlertTriangle className="w-3.5 h-3.5 text-red-400" />
                   </div>
-                  <span className="text-xs font-bold block text-white group-hover:text-[#0EA5E9] transition-colors">New Suspect Material</span>
-                  <span className="text-[8px] text-slate-500 block leading-tight mt-0.5">Log suspect materials on floor</span>
+                  <span className="text-[13.5px] font-bold block text-white group-hover:text-[#0EA5E9] transition-colors">New Suspect Material</span>
+                  <span className="text-[12.5px] text-slate-500 block leading-tight mt-0.5">Log suspect materials on floor</span>
                 </button>
 
                 <button 
@@ -1241,8 +1241,8 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                   <div className="w-6 h-6 rounded-lg bg-[#0EA5E9]/10 flex items-center justify-center mb-1.5 border border-[#0EA5E9]/10">
                     <Clock className="w-3.5 h-3.5 text-[#0EA5E9]" />
                   </div>
-                  <span className="text-xs font-bold block text-white group-hover:text-[#0EA5E9] transition-colors">Log Rework</span>
-                  <span className="text-[8px] text-slate-500 block leading-tight mt-0.5">Track billable pcs</span>
+                  <span className="text-[13.5px] font-bold block text-white group-hover:text-[#0EA5E9] transition-colors">Log Rework</span>
+                  <span className="text-[12.5px] text-slate-500 block leading-tight mt-0.5">Track billable pcs</span>
                 </button>
 
                 <button 
@@ -1254,32 +1254,32 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                     <Receipt className="w-3.5 h-3.5 text-emerald-400" />
                   </div>
                   <div className="text-left">
-                    <span className="text-xs font-bold block text-white group-hover:text-emerald-400 transition-colors">Log Expenses & Receipts</span>
-                    <span className="text-[8px] text-slate-500 block leading-tight mt-0.5">Track fuel, parking, tolls, or meals</span>
+                    <span className="text-[13.5px] font-bold block text-white group-hover:text-emerald-400 transition-colors">Log Expenses & Receipts</span>
+                    <span className="text-[12.5px] text-slate-500 block leading-tight mt-0.5">Track fuel, parking, tolls, or meals</span>
                   </div>
                 </button>
               </div>
 
               <button 
                 onClick={() => setActiveScreen('summary')}
-                className="w-full h-11 bg-slate-900/60 hover:bg-slate-900 border border-slate-800/60 rounded-xl px-3.5 flex items-center justify-between text-xs font-semibold text-slate-350 hover:text-white cursor-pointer transition-colors"
+                className="w-full h-11 bg-slate-900/60 hover:bg-slate-900 border border-slate-800/60 rounded-xl px-3.5 flex items-center justify-between text-[13.5px] font-semibold text-slate-350 hover:text-white cursor-pointer transition-colors"
               >
                 <div className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-[#22D3EE]" />
+                  <Calendar className="w-4.5 h-4.5 text-[#22D3EE]" />
                   <span>Shift Logs & Summary</span>
                 </div>
-                <span className="text-[9px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full font-bold">1</span>
+                <span className="text-[10.5px] bg-slate-800 text-slate-400 px-2 py-1 rounded-full font-bold">1</span>
               </button>
 
               <button 
                 onClick={() => setActiveScreen('history')}
-                className="w-full h-11 bg-slate-900/60 hover:bg-slate-900 border border-slate-800/60 rounded-xl px-3.5 flex items-center justify-between text-xs font-semibold text-slate-350 hover:text-white cursor-pointer transition-colors mt-2"
+                className="w-full h-11 bg-slate-900/60 hover:bg-slate-900 border border-slate-800/60 rounded-xl px-3.5 flex items-center justify-between text-[13.5px] font-semibold text-slate-350 hover:text-white cursor-pointer transition-colors mt-2"
               >
                 <div className="flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-[#0EA5E9]" />
+                  <FileText className="w-4.5 h-4.5 text-[#0EA5E9]" />
                   <span>Suspect Material Logs</span>
                 </div>
-                <span className="text-[9px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full font-bold">
+                <span className="text-[10.5px] bg-slate-800 text-slate-400 px-2 py-1 rounded-full font-bold">
                   {getEntities('incidents')?.filter(inc => inc.rep_id === (currentUser?.id || '1')).length || 0}
                 </span>
               </button>
@@ -1291,33 +1291,33 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                 <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-[300px] overflow-hidden shadow-2xl">
                   <div className="bg-slate-950 p-4 border-b border-slate-850 flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <AlertTriangle className="w-4 h-4 text-amber-400" />
-                      <h3 className="text-xs font-bold text-white">End Shift Confirmation</h3>
+                      <AlertTriangle className="w-4.5 h-4.5 text-amber-400" />
+                      <h3 className="text-[13.5px] font-bold text-white">End Shift Confirmation</h3>
                     </div>
-                    <button onClick={() => setShowEndShiftModal(false)} className="text-slate-500"><X className="w-4 h-4" /></button>
+                    <button onClick={() => setShowEndShiftModal(false)} className="text-slate-500"><X className="w-4.5 h-4" /></button>
                   </div>
                   <div className="p-4 flex flex-col gap-3">
-                    <p className="text-[11px] text-slate-400 leading-relaxed">
+                    <p className="text-[12.5px] text-slate-400 leading-relaxed">
                       Are you sure you want to end your shift? Please review your shift hours:
                     </p>
                     <div className="bg-slate-950 rounded-xl p-3 border border-slate-850 flex flex-col gap-2">
-                      <div className="flex justify-between items-center text-[10px]"><span className="text-slate-500 uppercase font-bold">Rep:</span><span className="text-slate-300 font-semibold">{currentUser.name}</span></div>
-                      <div className="flex justify-between items-center text-[10px]"><span className="text-slate-500 uppercase font-bold">Plant:</span><span className="text-slate-300 font-semibold">{plants.find(p => p.id === selectedPlant)?.name}</span></div>
-                      <div className="flex justify-between items-center text-[10px]"><span className="text-slate-500 uppercase font-bold">Start Time:</span><span className="text-slate-300 font-semibold">{shiftStartTime}</span></div>
-                      <div className="flex justify-between items-center text-[10px]"><span className="text-slate-500 uppercase font-bold">End Time:</span><span className="text-slate-300 font-semibold">{modalEndTime}</span></div>
-                      <div className="border-t border-slate-850 pt-1.5 flex justify-between items-center text-[10px]"><span className="text-[#22D3EE] uppercase font-bold">Elapsed:</span><span className="text-[#22D3EE] font-bold">{modalElapsedTime}</span></div>
+                      <div className="flex justify-between items-center text-[11.5px]"><span className="text-slate-500 uppercase font-bold">Rep:</span><span className="text-slate-300 font-semibold">{currentUser.name}</span></div>
+                      <div className="flex justify-between items-center text-[11.5px]"><span className="text-slate-500 uppercase font-bold">Plant:</span><span className="text-slate-300 font-semibold">{plants.find(p => p.id === selectedPlant)?.name}</span></div>
+                      <div className="flex justify-between items-center text-[11.5px]"><span className="text-slate-500 uppercase font-bold">Start Time:</span><span className="text-slate-300 font-semibold">{shiftStartTime}</span></div>
+                      <div className="flex justify-between items-center text-[11.5px]"><span className="text-slate-500 uppercase font-bold">End Time:</span><span className="text-slate-300 font-semibold">{modalEndTime}</span></div>
+                      <div className="border-t border-slate-850 pt-1.5 flex justify-between items-center text-[11.5px]"><span className="text-[#22D3EE] uppercase font-bold">Elapsed:</span><span className="text-[#22D3EE] font-bold">{modalElapsedTime}</span></div>
                     </div>
                   </div>
                   <div className="bg-slate-950 px-4 py-3 border-t border-slate-850 flex gap-2 justify-end">
                     <button 
                       onClick={() => setShowEndShiftModal(false)} 
-                      className="h-9 px-3.5 bg-slate-900 border border-slate-800 text-slate-400 hover:text-white rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer"
+                      className="h-9 px-3.5 bg-slate-900 border border-slate-800 text-slate-400 hover:text-white rounded-xl text-[11.5px] font-bold uppercase tracking-wider transition-all cursor-pointer"
                     >
                       No, Cancel
                     </button>
                     <button 
                       onClick={confirmEndShift} 
-                      className="h-9 px-3.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer shadow-md shadow-rose-900/10"
+                      className="h-9 px-3.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-[11.5px] font-bold uppercase tracking-wider transition-all cursor-pointer shadow-md shadow-rose-900/10"
                     >
                       Yes, End Shift
                     </button>
@@ -1340,22 +1340,22 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                     resetIncidentScreen();
                   }
                 }}
-                className="text-slate-400 hover:text-white flex items-center gap-1 text-xs"
+                className="text-slate-400 hover:text-white flex items-center gap-1 text-[13.5px]"
               >
-                <ArrowLeft className="w-4 h-4" />
+                <ArrowLeft className="w-4.5 h-4" />
                 <span>Cancel</span>
               </button>
-              <h2 className="text-xs font-bold text-white uppercase tracking-wider">New Incident Report</h2>
+              <h2 className="text-[13.5px] font-bold text-white uppercase tracking-wider">New Incident Report</h2>
               <button 
                 onClick={autofillClarenceDemo}
-                className="text-[9px] bg-[#1E3A5F] text-[#22D3EE] font-bold border border-[#22D3EE]/25 px-2 py-1 rounded"
+                className="text-[10.5px] bg-[#1E3A5F] text-[#22D3EE] font-bold border border-[#22D3EE]/25 px-2 py-1 rounded"
               >
                 Demo Fill
               </button>
             </div>
 
             {/* Step Indicators */}
-            <div className="grid grid-cols-4 border-b border-slate-850 text-center text-[9px] bg-slate-900/50">
+            <div className="grid grid-cols-4 border-b border-slate-850 text-center text-[10.5px] bg-slate-900/50">
               <button onClick={() => setIncStep(1)} className={`py-2 font-bold ${incStep === 1 ? 'text-[#0EA5E9] border-b-2 border-[#0EA5E9] bg-[#0EA5E9]/5' : 'text-slate-500'}`}>1. Capture</button>
               <button onClick={() => setIncStep(2)} className={`py-2 font-bold ${incStep === 2 ? 'text-[#0EA5E9] border-b-2 border-[#0EA5E9] bg-[#0EA5E9]/5' : 'text-slate-500'}`}>2. Scan</button>
               <button onClick={() => setIncStep(3)} className={`py-2 font-bold ${incStep === 3 ? 'text-[#0EA5E9] border-b-2 border-[#0EA5E9] bg-[#0EA5E9]/5' : 'text-slate-500'}`}>3. Describe</button>
@@ -1369,8 +1369,8 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
               {incStep === 1 && (
                 <div className="flex flex-col gap-4">
                   <div className="flex justify-between items-center">
-                    <span className="text-[10px] text-[#22D3EE] font-bold uppercase tracking-wider">Step 1: Suspect Material Visual Proof</span>
-                    <span className="text-[9px] text-slate-500">Min 3 photos recommended</span>
+                    <span className="text-[11.5px] text-[#22D3EE] font-bold uppercase tracking-wider">Step 1: Suspect Material Visual Proof</span>
+                    <span className="text-[10.5px] text-slate-500">Min 3 photos recommended</span>
                   </div>
 
                   <div className="grid grid-cols-3 gap-2">
@@ -1390,9 +1390,9 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                         <>
                           <img src={annotatedPhotos.wide || capturedPhotos.wide} className="w-full h-full object-cover" alt="Wide" />
                           {annotatedPhotos.wide ? (
-                            <span className="absolute bottom-1 right-1 bg-red-500 text-[8px] text-white px-1 py-0.5 rounded-sm font-bold">Marked</span>
+                            <span className="absolute bottom-1 right-1 bg-red-500 text-[12.5px] text-white px-1 py-1 rounded-sm font-bold">Marked</span>
                           ) : (
-                            <span className="absolute bottom-1 right-1 bg-slate-950/80 text-[8px] text-emerald-400 px-1 py-0.5 rounded">Wide</span>
+                            <span className="absolute bottom-1 right-1 bg-slate-950/80 text-[12.5px] text-emerald-400 px-1 py-1 rounded">Wide</span>
                           )}
                           {annotatedPhotos.wide && (
                             <span className="absolute top-1 left-1 bg-slate-950/80 rounded-full p-1"><RotateCcw className="w-2.5 h-2.5 text-slate-300" /></span>
@@ -1401,8 +1401,8 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                       ) : (
                         <>
                           <Camera className="w-6 h-6 text-slate-500 mb-1" />
-                          <span className="text-[9px] font-bold text-slate-400">Wide Shot</span>
-                          <span className="text-[7px] text-slate-500 mt-0.5">(Box Label)</span>
+                          <span className="text-[10.5px] font-bold text-slate-400">Wide Shot</span>
+                          <span className="text-[11.5px] text-slate-500 mt-0.5">(Box Label)</span>
                         </>
                       )}
                     </div>
@@ -1423,9 +1423,9 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                         <>
                           <img src={annotatedPhotos.medium || capturedPhotos.medium} className="w-full h-full object-cover" alt="Medium" />
                           {annotatedPhotos.medium ? (
-                            <span className="absolute bottom-1 right-1 bg-red-500 text-[8px] text-white px-1 py-0.5 rounded-sm font-bold">Marked</span>
+                            <span className="absolute bottom-1 right-1 bg-red-500 text-[12.5px] text-white px-1 py-1 rounded-sm font-bold">Marked</span>
                           ) : (
-                            <span className="absolute bottom-1 right-1 bg-slate-950/80 text-[8px] text-emerald-400 px-1 py-0.5 rounded">Med</span>
+                            <span className="absolute bottom-1 right-1 bg-slate-950/80 text-[12.5px] text-emerald-400 px-1 py-1 rounded">Med</span>
                           )}
                           {annotatedPhotos.medium && (
                             <span className="absolute top-1 left-1 bg-slate-950/80 rounded-full p-1"><RotateCcw className="w-2.5 h-2.5 text-slate-300" /></span>
@@ -1434,8 +1434,8 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                       ) : (
                         <>
                           <Camera className="w-6 h-6 text-slate-500 mb-1" />
-                          <span className="text-[9px] font-bold text-slate-400">Medium</span>
-                          <span className="text-[7px] text-slate-500 mt-0.5">(Part View)</span>
+                          <span className="text-[10.5px] font-bold text-slate-400">Medium</span>
+                          <span className="text-[11.5px] text-slate-500 mt-0.5">(Part View)</span>
                         </>
                       )}
                     </div>
@@ -1456,9 +1456,9 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                         <>
                           <img src={annotatedPhotos.closeup || capturedPhotos.closeup} className="w-full h-full object-cover" alt="Closeup" />
                           {annotatedPhotos.closeup ? (
-                            <span className="absolute bottom-1 right-1 bg-red-500 text-[8px] text-white px-1 py-0.5 rounded-sm font-bold">Marked</span>
+                            <span className="absolute bottom-1 right-1 bg-red-500 text-[12.5px] text-white px-1 py-1 rounded-sm font-bold">Marked</span>
                           ) : (
-                            <span className="absolute bottom-1 right-1 bg-slate-950/80 text-[8px] text-emerald-400 px-1 py-0.5 rounded">Close-Up</span>
+                            <span className="absolute bottom-1 right-1 bg-slate-950/80 text-[12.5px] text-emerald-400 px-1 py-1 rounded">Close-Up</span>
                           )}
                           {annotatedPhotos.closeup && (
                             <span className="absolute top-1 left-1 bg-slate-950/80 rounded-full p-1"><RotateCcw className="w-2.5 h-2.5 text-slate-300" /></span>
@@ -1467,8 +1467,8 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                       ) : (
                         <>
                           <Camera className="w-6 h-6 text-slate-500 mb-1" />
-                          <span className="text-[9px] font-bold text-slate-400">Close-Up</span>
-                          <span className="text-[7px] text-slate-500 mt-0.5">(Defect itself)</span>
+                          <span className="text-[10.5px] font-bold text-slate-400">Close-Up</span>
+                          <span className="text-[11.5px] text-slate-500 mt-0.5">(Defect itself)</span>
                         </>
                       )}
                     </div>
@@ -1477,7 +1477,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                   {/* Annotation Actions Row */}
                   {(capturedPhotos.wide || capturedPhotos.medium || capturedPhotos.closeup) && (
                     <div className="flex flex-col gap-1 w-full bg-slate-900/40 p-2 rounded-xl border border-slate-850">
-                      <span className="text-[8px] text-slate-500 font-bold uppercase tracking-wider pl-0.5 block mb-1">Annotate Defect Photo</span>
+                      <span className="text-[12.5px] text-slate-500 font-bold uppercase tracking-wider pl-0.5 block mb-1">Annotate Defect Photo</span>
                       <div className="grid grid-cols-3 gap-1.5">
                         <button
                           type="button"
@@ -1486,7 +1486,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                             setDrawingTarget('wide');
                             setShowDrawingCanvas(true);
                           }}
-                          className={`py-1 rounded-lg text-[9px] font-bold border transition-colors ${
+                          className={`py-1 rounded-lg text-[10.5px] font-bold border transition-colors ${
                             capturedPhotos.wide 
                               ? 'bg-slate-900 border-[#22D3EE]/25 text-[#22D3EE] hover:bg-slate-850 cursor-pointer' 
                               : 'bg-slate-950 border-slate-950 text-slate-600 cursor-not-allowed opacity-40'
@@ -1501,7 +1501,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                             setDrawingTarget('medium');
                             setShowDrawingCanvas(true);
                           }}
-                          className={`py-1 rounded-lg text-[9px] font-bold border transition-colors ${
+                          className={`py-1 rounded-lg text-[10.5px] font-bold border transition-colors ${
                             capturedPhotos.medium 
                               ? 'bg-slate-900 border-[#22D3EE]/25 text-[#22D3EE] hover:bg-slate-850 cursor-pointer' 
                               : 'bg-slate-950 border-slate-950 text-slate-600 cursor-not-allowed opacity-40'
@@ -1516,7 +1516,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                             setDrawingTarget('closeup');
                             setShowDrawingCanvas(true);
                           }}
-                          className={`py-1 rounded-lg text-[9px] font-bold border transition-colors ${
+                          className={`py-1 rounded-lg text-[10.5px] font-bold border transition-colors ${
                             capturedPhotos.closeup 
                               ? 'bg-[#1E3A5F] border-[#22D3EE]/40 text-white hover:bg-[#1E3A5F]/85 cursor-pointer' 
                               : 'bg-slate-950 border-slate-950 text-slate-600 cursor-not-allowed opacity-40'
@@ -1532,15 +1532,15 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                   {capturedPhotos.closeup && (
                     <div className="flex flex-col gap-2 bg-slate-900/60 p-3 rounded-xl border border-slate-850">
                       <div className="flex justify-between items-center">
-                        <span className="text-[10px] text-[#22D3EE] font-bold uppercase tracking-wider">Suspect Material Placement</span>
-                        <span className="text-[9px] text-slate-500">Tap part below</span>
+                        <span className="text-[11.5px] text-[#22D3EE] font-bold uppercase tracking-wider">Suspect Material Placement</span>
+                        <span className="text-[10.5px] text-slate-500">Tap part below</span>
                       </div>
                       
                       <div className="flex gap-1.5 bg-slate-950 p-1 rounded-lg border border-slate-880">
                         <button 
                           type="button" 
                           onClick={() => setPartViewTemplate('86286761')}
-                          className={`flex-1 py-1 rounded text-[9px] font-bold transition-all cursor-pointer text-center ${
+                          className={`flex-1 py-1 rounded text-[10.5px] font-bold transition-all cursor-pointer text-center ${
                             partViewTemplate === '86286761' ? 'bg-[#1E3A5F] text-white border border-[#22D3EE]/25' : 'text-slate-400 hover:text-white'
                           }`}
                         >
@@ -1549,7 +1549,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                         <button 
                           type="button" 
                           onClick={() => setPartViewTemplate('86291945')}
-                          className={`flex-1 py-1 rounded text-[9px] font-bold transition-all cursor-pointer text-center ${
+                          className={`flex-1 py-1 rounded text-[10.5px] font-bold transition-all cursor-pointer text-center ${
                             partViewTemplate === '86291945' ? 'bg-[#1E3A5F] text-white border border-[#22D3EE]/25' : 'text-slate-400 hover:text-white'
                           }`}
                         >
@@ -1612,7 +1612,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                           )}
                         </svg>
                         {defectLocationX !== null && defectLocationY !== null && (
-                          <div className="absolute bottom-1 right-2 bg-slate-950/80 text-[8px] text-[#22D3EE] font-mono px-1 py-0.5 rounded">
+                          <div className="absolute bottom-1 right-2 bg-slate-950/80 text-[12.5px] text-[#22D3EE] font-mono px-1 py-1 rounded">
                             X: {defectLocationX} | Y: {defectLocationY}
                           </div>
                         )}
@@ -1624,21 +1624,21 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                   <div className="flex gap-2">
                     <button 
                       onClick={() => setHasVideo(!hasVideo)}
-                      className={`flex-1 h-11 border rounded-xl flex items-center justify-center gap-1.5 text-xs font-bold transition-all cursor-pointer ${
+                      className={`flex-1 h-11 border rounded-xl flex items-center justify-center gap-1.5 text-[13.5px] font-bold transition-all cursor-pointer ${
                         hasVideo ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
                       }`}
                     >
-                      <Video className="w-4 h-4" />
+                      <Video className="w-4.5 h-4" />
                       <span>{hasVideo ? 'Video Linked' : 'Add 15s Video'}</span>
                     </button>
                     
                     <button 
                       onClick={() => setHasAudio(!hasAudio)}
-                      className={`flex-1 h-11 border rounded-xl flex items-center justify-center gap-1.5 text-xs font-bold transition-all cursor-pointer ${
+                      className={`flex-1 h-11 border rounded-xl flex items-center justify-center gap-1.5 text-[13.5px] font-bold transition-all cursor-pointer ${
                         hasAudio ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
                       }`}
                     >
-                      <Volume2 className="w-4 h-4" />
+                      <Volume2 className="w-4.5 h-4" />
                       <span>{hasAudio ? 'Audio Note Linked' : 'Add Audio Memo'}</span>
                     </button>
                   </div>
@@ -1649,7 +1649,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                     className="phone-btn-primary mt-4"
                   >
                     <span>Proceed to Scan Part Label</span>
-                    <ChevronRight className="w-4 h-4" />
+                    <ChevronRight className="w-4.5 h-4" />
                   </button>
                 </div>
               )}
@@ -1658,9 +1658,9 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
               {incStep === 2 && (
                 <div className="flex flex-col gap-4">
                   <div className="flex justify-between items-center">
-                    <span className="text-[10px] text-[#22D3EE] font-bold uppercase tracking-wider">Step 2: Traceability Scan</span>
+                    <span className="text-[11.5px] text-[#22D3EE] font-bold uppercase tracking-wider">Step 2: Traceability Scan</span>
                     {scannedPartsList.length > 0 && (
-                      <span className="text-[9px] bg-[#10B981]/25 text-[#10B981] font-bold px-2 py-0.5 rounded-full">
+                      <span className="text-[10.5px] bg-[#10B981]/25 text-[#10B981] font-bold px-2 py-1 rounded-full">
                         {scannedPartsList.length} Added
                       </span>
                     )}
@@ -1672,7 +1672,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                       onClick={() => startScanning('barcode')}
                       className="phone-btn-primary bg-[#1e3a5f] hover:bg-[#1e3a5f]/85 active:bg-[#152943] shadow-md shadow-[#1e3a5f]/15"
                     >
-                      <Scan className="w-4 h-4 text-[#22D3EE]" />
+                      <Scan className="w-4.5 h-4.5 text-[#22D3EE]" />
                       <span>Scan Part Barcode Label</span>
                     </button>
 
@@ -1686,32 +1686,32 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                           }}
                           className="absolute top-2.5 right-2.5 text-slate-400 hover:text-rose-400 p-1 cursor-pointer transition-colors"
                         >
-                          <X className="w-4 h-4" />
+                          <X className="w-4.5 h-4" />
                         </button>
-                        <div className="flex justify-between items-center text-xs pr-6">
+                        <div className="flex justify-between items-center text-[13.5px] pr-6">
                           <span className="text-slate-400">Part Number:</span>
                           <span className="font-bold text-white">{scannedPN}</span>
                         </div>
                         {partInfo ? (
                           <>
-                            <div className="flex justify-between items-center text-xs">
+                            <div className="flex justify-between items-center text-[13.5px]">
                               <span className="text-slate-400">Description:</span>
                               <span className="text-slate-200 font-semibold text-right max-w-[160px] truncate">{partInfo.description}</span>
                             </div>
-                            <div className="flex justify-between items-center text-xs">
+                            <div className="flex justify-between items-center text-[13.5px]">
                               <span className="text-slate-400">Supplier:</span>
                               <span className="text-[#22D3EE] font-semibold">Magna AutoSystems</span>
                             </div>
                           </>
                         ) : (
-                          <div className="flex justify-between items-center text-xs">
+                          <div className="flex justify-between items-center text-[13.5px]">
                             <span className="text-slate-400">Description:</span>
                             <span className="text-slate-450 italic">Custom Part</span>
                           </div>
                         )}
                         {manualEntryWarning && (
-                          <div className="flex items-center gap-1 bg-amber-500/10 border border-amber-500/20 text-amber-400 p-1.5 rounded-lg text-[9px] font-bold">
-                            <AlertTriangle className="w-3 h-3 flex-shrink-0" />
+                          <div className="flex items-center gap-1 bg-amber-500/10 border border-amber-500/20 text-amber-400 p-1.5 rounded-lg text-[10.5px] font-bold">
+                            <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
                             <span>Manual Entry: Typos can happen without scan.</span>
                           </div>
                         )}
@@ -1725,7 +1725,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                       </div>
                     ) : (
                       <div className="flex flex-col gap-1.5">
-                        <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider pl-1">Or enter Part Number manually (last resort)</label>
+                        <label className="text-[10.5px] font-bold text-slate-500 uppercase tracking-wider pl-1">Or enter Part Number manually (last resort)</label>
                         <input 
                           type="text" 
                           value={scannedPN}
@@ -1743,12 +1743,12 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                       onClick={() => startScanning('qr')}
                       className="phone-btn-secondary"
                     >
-                      <Scan className="w-4 h-4 text-slate-400" />
+                      <Scan className="w-4.5 h-4.5 text-slate-400" />
                       <span>Scan Bin/Box Label QR</span>
                     </button>
 
                     {scannedBin && (
-                      <div className="bg-[#1E293B]/60 rounded-xl p-2.5 border border-[#334155]/60 flex justify-between items-center text-xs relative">
+                      <div className="bg-[#1E293B]/60 rounded-xl p-2.5 border border-[#334155]/60 flex justify-between items-center text-[13.5px] relative">
                         <span className="text-slate-400">Bin Location:</span>
                         <span className="font-bold text-emerald-400 pr-6">{scannedBin}</span>
                         <button 
@@ -1764,7 +1764,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                   {/* Checklist of Added Parts */}
                   {scannedPartsList.length > 0 && (
                     <div className="flex flex-col gap-2 pt-2 border-t border-slate-800">
-                      <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider pl-1">
+                      <span className="text-[10.5px] font-bold text-slate-500 uppercase tracking-wider pl-1">
                         Defective Parts List ({scannedPartsList.length})
                       </span>
                       <div className="max-h-[140px] overflow-y-auto flex flex-col gap-1.5 pr-1 scrollbar-thin">
@@ -1775,10 +1775,10 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                           >
                             <div className="flex-1 min-w-0">
                               <div className="flex justify-between items-center">
-                                <span className="font-bold text-white text-xs truncate">PN {item.part_number}</span>
-                                <span className="text-emerald-400 font-semibold text-[10px]">{item.bin}</span>
+                                <span className="font-bold text-white text-[13.5px] truncate">PN {item.part_number}</span>
+                                <span className="text-emerald-400 font-semibold text-[11.5px]">{item.bin}</span>
                               </div>
-                              <span className="text-[10px] text-slate-400 block truncate">{item.description}</span>
+                              <span className="text-[11.5px] text-slate-400 block truncate">{item.description}</span>
                             </div>
                             
                             {/* Quantity Adjuster & Delete */}
@@ -1786,14 +1786,14 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                               <div className="flex items-center bg-slate-950 border border-slate-800 rounded-lg p-0.5">
                                 <button 
                                   onClick={() => updatePartQty(item.id, -1)}
-                                  className="w-5 h-5 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-900 rounded text-xs font-bold transition-all cursor-pointer"
+                                  className="w-5 h-5 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-900 rounded text-[13.5px] font-bold transition-all cursor-pointer"
                                 >
                                   -
                                 </button>
-                                <span className="w-6 text-center text-xs font-bold text-white">{item.qty}</span>
+                                <span className="w-6 text-center text-[13.5px] font-bold text-white">{item.qty}</span>
                                 <button 
                                   onClick={() => updatePartQty(item.id, 1)}
-                                  className="w-5 h-5 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-900 rounded text-xs font-bold transition-all cursor-pointer"
+                                  className="w-5 h-5 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-900 rounded text-[13.5px] font-bold transition-all cursor-pointer"
                                 >
                                   +
                                 </button>
@@ -1844,7 +1844,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                       className="phone-btn-primary flex-1"
                     >
                       <span>Describe Defect</span>
-                      <ChevronRight className="w-4 h-4" />
+                      <ChevronRight className="w-4.5 h-4" />
                     </button>
                   </div>
                 </div>
@@ -1853,11 +1853,11 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
               {/* STEP 3: DESCRIBE & CONTEXT (FIELDS WITH COUNTER AND AUTOCOMPLETE) */}
               {incStep === 3 && (
                 <div className="flex flex-col gap-3">
-                  <span className="text-[10px] text-[#22D3EE] font-bold uppercase tracking-wider">Step 3: Suspect Material Metadata</span>
+                  <span className="text-[11.5px] text-[#22D3EE] font-bold uppercase tracking-wider">Step 3: Suspect Material Metadata</span>
 
                   {/* Area Found */}
                   <div className="flex flex-col gap-1">
-                    <label className="text-[9px] font-bold text-slate-500 uppercase pl-1">Area of Factory Floor</label>
+                    <label className="text-[10.5px] font-bold text-slate-500 uppercase pl-1">Area of Factory Floor</label>
                     <select 
                       value={selectedArea}
                       onChange={(e) => setSelectedArea(e.target.value)}
@@ -1873,7 +1873,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
 
                   {/* Defect Type Suggestions */}
                   <div className="flex flex-col gap-1">
-                    <label className="text-[9px] font-bold text-slate-500 uppercase pl-1">Suspect Material Category</label>
+                    <label className="text-[10.5px] font-bold text-slate-500 uppercase pl-1">Suspect Material Category</label>
                     <select 
                       value={defectType}
                       onChange={(e) => {
@@ -1895,8 +1895,8 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                   {/* Custom Description Text with Word Count guidance (50 - 300 words recommended) */}
                   <div className="flex flex-col gap-1">
                     <div className="flex justify-between items-center pl-1">
-                      <label className="text-[9px] font-bold text-slate-500 uppercase">Suspect Material Narrative</label>
-                      <span className={`text-[8px] font-bold ${description.split(/\s+/).filter(Boolean).length < 20 ? 'text-amber-400' : 'text-slate-500'}`}>
+                      <label className="text-[10.5px] font-bold text-slate-500 uppercase">Suspect Material Narrative</label>
+                      <span className={`text-[12.5px] font-bold ${description.split(/\s+/).filter(Boolean).length < 20 ? 'text-amber-400' : 'text-slate-500'}`}>
                         {description.split(/\s+/).filter(Boolean).length} words
                       </span>
                     </div>
@@ -1911,7 +1911,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
 
                   {/* Action Taken */}
                   <div className="flex flex-col gap-1">
-                    <label className="text-[9px] font-bold text-slate-500 uppercase pl-1">Action Taken immediately</label>
+                    <label className="text-[10.5px] font-bold text-slate-500 uppercase pl-1">Action Taken immediately</label>
                     <input 
                       type="text" 
                       value={actionTaken}
@@ -1923,7 +1923,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
 
                   {/* Supplier Contact */}
                   <div className="flex flex-col gap-1">
-                    <label className="text-[9px] font-bold text-slate-500 uppercase pl-1">Contact Person at Supplier</label>
+                    <label className="text-[10.5px] font-bold text-slate-500 uppercase pl-1">Contact Person at Supplier</label>
                     <input 
                       type="text" 
                       value={supplierContact}
@@ -1935,8 +1935,8 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
 
                   {/* Magna AutoSystems Specific Fields (NoCOVID screening fields, PRR class only) */}
                   <div className="bg-slate-900/50 p-3 rounded-2xl border border-slate-850 flex flex-col gap-3 mt-2">
-                    <span className="text-[9px] text-[#22D3EE] font-extrabold uppercase tracking-wider block border-b border-slate-850 pb-1.5">Magna Specifications</span>
-                    <div className="flex flex-col gap-2.5 text-[10px]">
+                    <span className="text-[10.5px] text-[#22D3EE] font-extrabold uppercase tracking-wider block border-b border-slate-850 pb-1.5">Magna Specifications</span>
+                    <div className="flex flex-col gap-2.5 text-[11.5px]">
                       
                       {/* Returned */}
                       <div className="flex justify-between items-center bg-slate-950/60 p-2 rounded-xl border border-slate-850/60">
@@ -2058,7 +2058,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                       className="phone-btn-primary flex-1"
                     >
                       <span>Review & Send</span>
-                      <ChevronRight className="w-4 h-4" />
+                      <ChevronRight className="w-4.5 h-4" />
                     </button>
                   </div>
                 </div>
@@ -2072,12 +2072,12 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                   </div>
                   
                   <div className="text-center">
-                    <h3 className="text-xs font-bold text-white uppercase tracking-wider text-amber-400">AI Duplicate Warning</h3>
-                    <p className="text-[10px] text-slate-400 mt-1">A highly similar report was filed in the last 24 hours.</p>
+                    <h3 className="text-[13.5px] font-bold text-white uppercase tracking-wider text-amber-400">AI Duplicate Warning</h3>
+                    <p className="text-[11.5px] text-slate-400 mt-1">A highly similar report was filed in the last 24 hours.</p>
                   </div>
 
                   <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-850 text-center flex flex-col gap-1">
-                    <div className="flex justify-between items-center text-[9px] text-slate-500">
+                    <div className="flex justify-between items-center text-[10.5px] text-slate-500">
                       <span>Jaccard Word Similarity</span>
                       <span className="text-[#22D3EE] font-bold">{(duplicateIncident.similarity * 100).toFixed(0)}% Match</span>
                     </div>
@@ -2089,19 +2089,19 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                     </div>
                   </div>
 
-                  <div className="bg-slate-900 p-3 rounded-xl border border-slate-800 text-[11px] flex flex-col gap-2">
+                  <div className="bg-slate-900 p-3 rounded-xl border border-slate-800 text-[12.5px] flex flex-col gap-2">
                     <div className="flex justify-between items-center border-b border-slate-800 pb-1.5 font-mono">
-                      <span className="text-[9px] text-[#22D3EE]">{duplicateIncident.incident.id}</span>
-                      <span className="text-[9px] text-slate-500">{new Date(duplicateIncident.incident.created_at || duplicateIncident.incident.sent_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                      <span className="text-[10.5px] text-[#22D3EE]">{duplicateIncident.incident.id}</span>
+                      <span className="text-[10.5px] text-slate-500">{new Date(duplicateIncident.incident.created_at || duplicateIncident.incident.sent_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
                     </div>
                     <p className="text-slate-300 italic">"{duplicateIncident.incident.description}"</p>
-                    <div className="flex justify-between items-center text-[9px] text-slate-500 pt-1.5 border-t border-slate-800/60 font-medium">
+                    <div className="flex justify-between items-center text-[10.5px] text-slate-500 pt-1.5 border-t border-slate-800/60 font-medium">
                       <span>Rep: Clarence Kuiken</span>
                       <span>Area: {duplicateIncident.incident.area}</span>
                     </div>
                   </div>
 
-                  <div className="text-[10px] text-slate-400 bg-amber-500/5 border border-amber-500/10 p-2.5 rounded-xl leading-relaxed">
+                  <div className="text-[11.5px] text-slate-400 bg-amber-500/5 border border-amber-500/10 p-2.5 rounded-xl leading-relaxed">
                     🌟 <strong>Merge Observations</strong> will increment the quantity on the existing incident and append your new notes, avoiding double-reporting to the client.
                   </div>
 
@@ -2115,13 +2115,13 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                     <div className="flex gap-2">
                       <button 
                         onClick={() => setIncStep(3)} 
-                        className="phone-btn-secondary flex-1 py-2 text-[10px]"
+                        className="phone-btn-secondary flex-1 py-2 text-[11.5px]"
                       >
                         Back / Edit
                       </button>
                       <button 
                         onClick={() => setIncStep(4)} 
-                        className="phone-btn-secondary flex-1 py-2 text-[10px] border-[#EF4444]/20 text-rose-400 hover:bg-rose-500/5 hover:text-white"
+                        className="phone-btn-secondary flex-1 py-2 text-[11.5px] border-[#EF4444]/20 text-rose-400 hover:bg-rose-500/5 hover:text-white"
                       >
                         Continue Separate
                       </button>
@@ -2133,13 +2133,13 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
               {/* STEP 4: REVIEW & SEND (EMAIL SUBJECT & CC PREVIEW) */}
               {incStep === 4 && (
                 <div className="flex flex-col gap-4">
-                  <span className="text-[10px] text-[#22D3EE] font-bold uppercase tracking-wider">Step 4: Audit & Release</span>
+                  <span className="text-[11.5px] text-[#22D3EE] font-bold uppercase tracking-wider">Step 4: Audit & Release</span>
 
                   {/* Summary Card */}
-                  <div className="bg-slate-900 rounded-xl p-3 border border-slate-800 flex flex-col gap-2 text-xs">
-                    <div className="flex justify-between items-center text-[10px]"><span className="text-slate-500">Report Status:</span><span className="text-amber-400 font-bold uppercase">Ready to Release</span></div>
-                    <div className="flex justify-between items-center text-[10px]"><span className="text-slate-500">Part Number:</span><span className="text-white font-semibold">{scannedPN}</span></div>
-                    <div className="flex justify-between items-center text-[10px]"><span className="text-slate-500">Plant / Area:</span><span className="text-white font-semibold">{plants.find(p => p.id === selectedPlant)?.name} | {selectedArea}</span></div>
+                  <div className="bg-slate-900 rounded-xl p-3 border border-slate-800 flex flex-col gap-2 text-[13.5px]">
+                    <div className="flex justify-between items-center text-[11.5px]"><span className="text-slate-500">Report Status:</span><span className="text-amber-400 font-bold uppercase">Ready to Release</span></div>
+                    <div className="flex justify-between items-center text-[11.5px]"><span className="text-slate-500">Part Number:</span><span className="text-white font-semibold">{scannedPN}</span></div>
+                    <div className="flex justify-between items-center text-[11.5px]"><span className="text-slate-500">Plant / Area:</span><span className="text-white font-semibold">{plants.find(p => p.id === selectedPlant)?.name} | {selectedArea}</span></div>
                   </div>
 
                   {/* Email Preview Accordion */}
@@ -2147,17 +2147,17 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                     <button 
                       type="button"
                       onClick={() => setShowEmailPreview(!showEmailPreview)}
-                      className="w-full px-3.5 py-3 bg-slate-900 hover:bg-slate-850 flex items-center justify-between text-xs font-bold text-slate-300 transition-colors"
+                      className="w-full px-3.5 py-3 bg-slate-900 hover:bg-slate-850 flex items-center justify-between text-[13.5px] font-bold text-slate-300 transition-colors"
                     >
                       <div className="flex items-center gap-2">
-                        <Mail className="w-4 h-4 text-[#0EA5E9]" />
+                        <Mail className="w-4.5 h-4.5 text-[#0EA5E9]" />
                         <span>Inspect Outgoing Email Preview</span>
                       </div>
-                      <span className="text-[10px] text-slate-500">{showEmailPreview ? 'Collapse' : 'Expand'}</span>
+                      <span className="text-[11.5px] text-slate-500">{showEmailPreview ? 'Collapse' : 'Expand'}</span>
                     </button>
 
                     {showEmailPreview && (
-                      <div className="p-3 border-t border-slate-800 text-[9px] font-mono flex flex-col gap-2 bg-slate-950 text-slate-300 max-h-[180px] overflow-y-auto">
+                      <div className="p-3 border-t border-slate-800 text-[10.5px] font-mono flex flex-col gap-2 bg-slate-950 text-slate-300 max-h-[180px] overflow-y-auto">
                         <div>
                           <span className="text-[#22D3EE] font-bold">To:</span> martin.s@magna.com, shahroz.m@magna.com
                         </div>
@@ -2172,7 +2172,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                           <p className="mt-1 leading-relaxed font-sans">{description}</p>
                           <p className="mt-2 font-sans"><strong>Action Taken:</strong> {actionTaken}</p>
                           <p className="mt-1 font-sans"><strong>Traceability Info:</strong> Returned: {isReturningDefect} | Sort: {isSortRequired} | RMA: {isRmaRequired} | Class: {concernClassification}</p>
-                          <p className="mt-2 font-sans text-[8px] text-slate-500">Regards,<br/>{currentUser.name} | IDS Rep</p>
+                          <p className="mt-2 font-sans text-[12.5px] text-slate-500">Regards,<br/>{currentUser.name} | IDS Rep</p>
                         </div>
                       </div>
                     )}
@@ -2200,7 +2200,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
         {showDrawingCanvas && capturedPhotos[drawingTarget] && (
           <div className="absolute inset-0 bg-slate-950 z-50 flex flex-col justify-between p-4">
             <div className="flex items-center justify-between border-b border-slate-850 pb-2">
-              <span className="text-xs font-bold text-white uppercase tracking-wider">
+              <span className="text-[13.5px] font-bold text-white uppercase tracking-wider">
                 Annotate {drawingTarget === 'wide' ? 'Wide Shot' : drawingTarget === 'medium' ? 'Medium View' : 'Close-Up'}
               </span>
               <button 
@@ -2245,7 +2245,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
         {scanningType && (
           <div className="absolute inset-0 bg-slate-950 z-50 flex flex-col justify-between p-4">
             <div className="flex items-center justify-between border-b border-slate-850 pb-2">
-              <span className="text-xs font-bold text-white uppercase tracking-wider">Camera Label Scanner</span>
+              <span className="text-[13.5px] font-bold text-white uppercase tracking-wider">Camera Label Scanner</span>
               <button onClick={() => setScanningType(null)} className="text-slate-400"><X className="w-5 h-5" /></button>
             </div>
 
@@ -2254,8 +2254,8 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
               <div className="absolute inset-x-0 h-0.5 bg-red-500 shadow-lg shadow-red-500 pulsing-indicator top-1/2 z-20 pointer-events-none"></div>
               
               <div className="absolute top-3 text-center px-4 z-20 bg-slate-950/85 py-1 rounded-lg border border-slate-800">
-                <p className="text-[10px] text-white font-semibold">⚠️ Multiple Codes Detected</p>
-                <p className="text-[8px] text-[#22D3EE] font-medium">Tap the green box for Part Number / Bin</p>
+                <p className="text-[11.5px] text-white font-semibold">⚠️ Multiple Codes Detected</p>
+                <p className="text-[12.5px] text-[#22D3EE] font-medium">Tap the green box for Part Number / Bin</p>
               </div>
 
               {/* Selection Options represented as a physical label mock in the viewfinder */}
@@ -2263,7 +2263,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                 {scanningType === 'barcode' ? (
                   /* PHYSICAL LABEL MOCK FOR BARCODES */
                   <div className="bg-white text-slate-950 p-2.5 rounded-lg border-2 border-slate-300 shadow-2xl w-full max-w-[260px] flex flex-col gap-1.5 animate-in zoom-in duration-200">
-                    <div className="flex justify-between items-center border-b border-slate-200 pb-1 text-[8px] text-slate-500 font-bold uppercase tracking-wider">
+                    <div className="flex justify-between items-center border-b border-slate-200 pb-1 text-[12.5px] text-slate-500 font-bold uppercase tracking-wider">
                       <span>Magna Belleville Systems</span>
                       <span>LOT: 902A5</span>
                     </div>
@@ -2274,7 +2274,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                         <div className="flex h-3.5 w-full bg-slate-900 justify-center items-center rounded-xs opacity-80">
                           <span className="text-[5px] text-slate-400 font-mono tracking-widest">SERIAL BARCODE</span>
                         </div>
-                        <span className="text-[7px] font-bold font-mono text-slate-550 mt-0.5">S/N: 901485291</span>
+                        <span className="text-[11.5px] font-bold font-mono text-slate-550 mt-0.5">S/N: 901485291</span>
 
                         {/* Wrong tag warning overlay */}
                         <button 
@@ -2285,7 +2285,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                           }}
                           className="absolute inset-0 bg-red-500/10 border border-red-500/40 rounded flex items-center justify-center cursor-pointer hover:bg-red-500/20"
                         >
-                          <span className="bg-red-600 text-white font-extrabold px-1 py-0.5 rounded-[3px] text-[6px] uppercase tracking-wide">Serial Code</span>
+                          <span className="bg-red-600 text-white font-extrabold px-1 py-1 rounded-[3px] text-[6px] uppercase tracking-wide">Serial Code</span>
                         </button>
                       </div>
 
@@ -2294,7 +2294,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                         <div className="flex h-3.5 w-full bg-slate-900 justify-center items-center rounded-xs">
                           <span className="text-[5px] text-emerald-400 font-mono tracking-widest">PART NUMBER BARCODE</span>
                         </div>
-                        <span className="text-[7px] font-extrabold font-mono text-slate-900 mt-0.5">PN: 86286761 (Tail Light)</span>
+                        <span className="text-[11.5px] font-extrabold font-mono text-slate-900 mt-0.5">PN: 86286761 (Tail Light)</span>
 
                         {/* Correct clickable scan overlay */}
                         <button 
@@ -2302,7 +2302,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                           onClick={() => selectScanOption('86286761')}
                           className="absolute inset-0 bg-emerald-500/15 border-2 border-emerald-500 rounded flex items-center justify-center cursor-pointer hover:bg-emerald-500/30 transition-colors"
                         >
-                          <span className="bg-emerald-500 text-white font-extrabold px-1.5 py-0.5 rounded-[4px] text-[7px] uppercase tracking-wider animate-bounce">Tap to Scan PN 86286761</span>
+                          <span className="bg-emerald-500 text-white font-extrabold px-2 py-1 rounded-[4px] text-[11.5px] uppercase tracking-wider animate-bounce">Tap to Scan PN 86286761</span>
                         </button>
                       </div>
 
@@ -2311,7 +2311,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                         <div className="flex h-3.5 w-full bg-slate-900 justify-center items-center rounded-xs">
                           <span className="text-[5px] text-emerald-400 font-mono tracking-widest">PART NUMBER BARCODE</span>
                         </div>
-                        <span className="text-[7px] font-extrabold font-mono text-slate-900 mt-0.5">PN: 86291945 (Headlight)</span>
+                        <span className="text-[11.5px] font-extrabold font-mono text-slate-900 mt-0.5">PN: 86291945 (Headlight)</span>
 
                         {/* Correct clickable scan overlay */}
                         <button 
@@ -2319,7 +2319,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                           onClick={() => selectScanOption('86291945')}
                           className="absolute inset-0 bg-emerald-500/15 border-2 border-emerald-500 rounded flex items-center justify-center cursor-pointer hover:bg-emerald-500/30 transition-colors"
                         >
-                          <span className="bg-emerald-500 text-white font-extrabold px-1.5 py-0.5 rounded-[4px] text-[7px] uppercase tracking-wider">Tap to Scan PN 86291945</span>
+                          <span className="bg-emerald-500 text-white font-extrabold px-2 py-1 rounded-[4px] text-[11.5px] uppercase tracking-wider">Tap to Scan PN 86291945</span>
                         </button>
                       </div>
                     </div>
@@ -2327,7 +2327,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                 ) : (
                   /* PHYSICAL LABEL MOCK FOR QR BIN SCANS */
                   <div className="bg-white text-slate-950 p-3 rounded-lg border-2 border-slate-300 shadow-2xl w-full max-w-[260px] flex flex-col gap-2 animate-in zoom-in duration-200">
-                    <div className="flex justify-between items-center border-b border-slate-200 pb-1 text-[8px] text-slate-500 font-bold uppercase">
+                    <div className="flex justify-between items-center border-b border-slate-200 pb-1 text-[12.5px] text-slate-500 font-bold uppercase">
                       <span>Magna Bin Storage</span>
                       <span>SECTION: B4</span>
                     </div>
@@ -2338,7 +2338,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                         <div className="w-10 h-10 bg-slate-900 rounded flex items-center justify-center">
                           <span className="text-[5px] text-slate-400 uppercase tracking-widest font-mono">QR</span>
                         </div>
-                        <span className="text-[7px] font-bold text-slate-550 mt-1">BATCH CODE</span>
+                        <span className="text-[11.5px] font-bold text-slate-550 mt-1">BATCH CODE</span>
 
                         <button 
                           type="button"
@@ -2348,7 +2348,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                           }}
                           className="absolute inset-0 bg-red-500/10 border border-red-500/40 rounded flex items-center justify-center cursor-pointer hover:bg-red-500/20"
                         >
-                          <span className="bg-red-600 text-white font-extrabold px-1 py-0.5 rounded-[3px] text-[6px] uppercase tracking-wide">Batch QR</span>
+                          <span className="bg-red-600 text-white font-extrabold px-1 py-1 rounded-[3px] text-[6px] uppercase tracking-wide">Batch QR</span>
                         </button>
                       </div>
 
@@ -2357,14 +2357,14 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                         <div className="w-10 h-10 bg-slate-900 rounded flex items-center justify-center">
                           <span className="text-[5px] text-emerald-400 uppercase tracking-widest font-mono">QR</span>
                         </div>
-                        <span className="text-[7px] font-extrabold text-slate-900 mt-1">BIN: BIN-MAG-6761</span>
+                        <span className="text-[11.5px] font-extrabold text-slate-900 mt-1">BIN: BIN-MAG-6761</span>
 
                         <button 
                           type="button"
                           onClick={() => selectScanOption('86286761')}
                           className="absolute inset-0 bg-emerald-500/15 border-2 border-emerald-500 rounded flex items-center justify-center cursor-pointer hover:bg-emerald-500/30 transition-colors animate-pulse"
                         >
-                          <span className="bg-emerald-500 text-white font-extrabold px-1 py-0.5 rounded-[3px] text-[6px] uppercase tracking-wider text-center">Tap Bin QR</span>
+                          <span className="bg-emerald-500 text-white font-extrabold px-1 py-1 rounded-[3px] text-[6px] uppercase tracking-wider text-center">Tap Bin QR</span>
                         </button>
                       </div>
                     </div>
@@ -2387,10 +2387,10 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                 <CheckCircle className="w-8 h-8 text-emerald-400" />
               </div>
               <h2 className="text-base font-bold text-white mb-2">Incident Released</h2>
-              <p className="text-xs text-slate-400 leading-relaxed max-w-[240px]">
+              <p className="text-[13.5px] text-slate-400 leading-relaxed max-w-[240px]">
                 Defect report has been successfully sent out.
               </p>
-              <div className="bg-slate-900/50 rounded-xl p-3 border border-slate-850 w-full max-w-[260px] text-[10px] text-slate-400 mt-4 flex flex-col gap-1.5 text-left">
+              <div className="bg-slate-900/50 rounded-xl p-3 border border-slate-850 w-full max-w-[260px] text-[11.5px] text-slate-400 mt-4 flex flex-col gap-1.5 text-left">
                 <div><span className="text-slate-500 font-bold uppercase">Sent At:</span> <span className="text-slate-300 font-medium">18:22 PM Today</span></div>
                 <div><span className="text-slate-500 font-bold uppercase">Recipient:</span> <span className="text-slate-300 font-medium">martin.s@magna.com</span></div>
                 <div><span className="text-slate-500 font-bold uppercase">Notification:</span> <span className="text-[#22D3EE] font-bold">Donna Cabral CC'd</span></div>
@@ -2410,15 +2410,15 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
         {activeScreen === 'summary' && isLoggedIn && currentUser && (
           <div className="flex-1 flex flex-col bg-slate-950 overflow-hidden">
             <div className="flex items-center justify-between p-4 border-b border-slate-850 bg-slate-900">
-              <button onClick={() => setActiveScreen('home')} className="text-slate-400 hover:text-white flex items-center gap-1 text-xs"><ArrowLeft className="w-4 h-4" /><span>Home</span></button>
-              <h2 className="text-xs font-bold text-white uppercase tracking-wider">Shift Summary Log</h2>
+              <button onClick={() => setActiveScreen('home')} className="text-slate-400 hover:text-white flex items-center gap-1 text-[13.5px]"><ArrowLeft className="w-4.5 h-4" /><span>Home</span></button>
+              <h2 className="text-[13.5px] font-bold text-white uppercase tracking-wider">Shift Summary Log</h2>
               <div className="w-10"></div>
             </div>
 
             <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-4 text-left">
               <div className="flex flex-col gap-1">
-                <h3 className="text-xs font-bold text-white">Daily Area Walks</h3>
-                <p className="text-[10px] text-slate-500">Tap statuses to confirm walks or add floor notes.</p>
+                <h3 className="text-[13.5px] font-bold text-white">Daily Area Walks</h3>
+                <p className="text-[11.5px] text-slate-500">Tap statuses to confirm walks or add floor notes.</p>
               </div>
 
               {/* Area Cards list */}
@@ -2426,7 +2426,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                 {areasWalked.map(area => (
                   <div key={area.id} className="bg-slate-900 border border-slate-800 rounded-xl p-3 flex flex-col gap-2">
                     <div className="flex justify-between items-center">
-                      <span className="text-xs font-bold text-white">{area.name}</span>
+                      <span className="text-[13.5px] font-bold text-white">{area.name}</span>
                       <div className="phone-toggle-group w-32">
                         <button 
                           onClick={() => toggleAreaStatus(area.id, 'no_issues')} 
@@ -2447,7 +2447,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                       value={area.notes}
                       onChange={(e) => updateAreaNotes(area.id, e.target.value)}
                       placeholder="Spoke with Martin, no parts on scrap tables..."
-                      className="phone-input h-9 px-3 text-[10px]"
+                      className="phone-input h-9 px-3 text-[11.5px]"
                     />
                   </div>
                 ))}
@@ -2455,12 +2455,12 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
 
               {/* Bonus tasks card */}
               <div className="flex flex-col gap-2 pt-2 border-t border-slate-850">
-                <span className="text-[10px] text-[#22D3EE] font-bold uppercase tracking-wider">Requested Sorts & Audits</span>
+                <span className="text-[11.5px] text-[#22D3EE] font-bold uppercase tracking-wider">Requested Sorts & Audits</span>
                 {bonusTasks.map(task => (
                   <div key={task.id} className="bg-slate-900/60 border border-slate-800/80 rounded-xl p-3 flex justify-between items-center">
                     <div>
-                      <p className="text-[10px] font-bold text-white">{task.task}</p>
-                      <p className="text-[8px] text-slate-500 mt-0.5">Matt request</p>
+                      <p className="text-[11.5px] font-bold text-white">{task.task}</p>
+                      <p className="text-[12.5px] text-slate-500 mt-0.5">Matt request</p>
                     </div>
                     <button 
                       onClick={() => {
@@ -2470,7 +2470,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                           return next;
                         });
                       }}
-                      className={`h-8 px-2.5 rounded-lg text-[9px] font-bold border transition-colors cursor-pointer ${
+                      className={`h-8 px-2.5 rounded-lg text-[10.5px] font-bold border transition-colors cursor-pointer ${
                         task.status === 'completed' 
                           ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' 
                           : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
@@ -2498,14 +2498,14 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
         {activeScreen === 'rework' && isLoggedIn && currentUser && (
           <div className="flex-1 flex flex-col bg-slate-950 overflow-hidden">
             <div className="flex items-center justify-between p-4 border-b border-slate-850 bg-slate-900">
-              <button onClick={() => setActiveScreen('home')} className="text-slate-400 hover:text-white flex items-center gap-1 text-xs"><ArrowLeft className="w-4 h-4" /><span>Home</span></button>
-              <h2 className="text-xs font-bold text-white uppercase tracking-wider">Log Billable Rework</h2>
+              <button onClick={() => setActiveScreen('home')} className="text-slate-400 hover:text-white flex items-center gap-1 text-[13.5px]"><ArrowLeft className="w-4.5 h-4" /><span>Home</span></button>
+              <h2 className="text-[13.5px] font-bold text-white uppercase tracking-wider">Log Billable Rework</h2>
               <div className="w-10"></div>
             </div>
 
             <form onSubmit={handleReworkSubmit} className="flex-1 overflow-y-auto p-4 flex flex-col gap-4 text-left">
               <div className="flex flex-col gap-1.5">
-                <label className="text-[9px] font-bold text-slate-500 uppercase">Part Number Reworked</label>
+                <label className="text-[10.5px] font-bold text-slate-500 uppercase">Part Number Reworked</label>
                 <select 
                   value={reworkPN}
                   onChange={(e) => setReworkPN(e.target.value)}
@@ -2517,7 +2517,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label className="text-[9px] font-bold text-slate-500 uppercase">Rework Qty (Pieces)</label>
+                <label className="text-[10.5px] font-bold text-slate-500 uppercase">Rework Qty (Pieces)</label>
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
@@ -2543,7 +2543,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label className="text-[9px] font-bold text-slate-500 uppercase">Time Spent (Hours)</label>
+                <label className="text-[10.5px] font-bold text-slate-500 uppercase">Time Spent (Hours)</label>
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
@@ -2570,7 +2570,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label className="text-[9px] font-bold text-slate-500 uppercase">Rework Description / Remarks</label>
+                <label className="text-[10.5px] font-bold text-slate-500 uppercase">Rework Description / Remarks</label>
                 <textarea 
                   value={reworkNotes}
                   onChange={(e) => setReworkNotes(e.target.value)}
@@ -2583,7 +2583,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                 type="submit"
                 className="phone-btn-primary mt-4"
               >
-                <CheckCircle className="w-4 h-4" />
+                <CheckCircle className="w-4.5 h-4" />
                 <span>Save Rework Record</span>
               </button>
             </form>
@@ -2595,26 +2595,26 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
           <div className="flex-1 flex flex-col bg-slate-950 overflow-hidden">
             <div className="flex flex-col border-b border-slate-850 bg-slate-900 pt-4">
               <div className="flex items-center justify-between px-4 pb-2">
-                <button onClick={() => setActiveScreen('home')} className="text-slate-400 hover:text-white flex items-center gap-1 text-xs"><ArrowLeft className="w-4 h-4" /><span>Home</span></button>
-                <h2 className="text-xs font-bold text-white uppercase tracking-wider">Time & Expense</h2>
+                <button onClick={() => setActiveScreen('home')} className="text-slate-400 hover:text-white flex items-center gap-1 text-[13.5px]"><ArrowLeft className="w-4.5 h-4" /><span>Home</span></button>
+                <h2 className="text-[13.5px] font-bold text-white uppercase tracking-wider">Time & Expense</h2>
                 <div className="w-10"></div>
               </div>
               <div className="flex w-full px-2 mt-2 border-t border-slate-800">
                 <button 
                   onClick={() => setTimeExpenseTab('expense')}
-                  className={`flex-1 py-3 text-[10px] font-bold uppercase transition-colors ${timeExpenseTab === 'expense' ? 'text-[#0EA5E9] border-b-2 border-[#0EA5E9]' : 'text-slate-500 hover:text-slate-300'}`}
+                  className={`flex-1 py-3 text-[11.5px] font-bold uppercase transition-colors ${timeExpenseTab === 'expense' ? 'text-[#0EA5E9] border-b-2 border-[#0EA5E9]' : 'text-slate-500 hover:text-slate-300'}`}
                 >
                   Expenses
                 </button>
                 <button 
                   onClick={() => setTimeExpenseTab('overtime')}
-                  className={`flex-1 py-3 text-[10px] font-bold uppercase transition-colors ${timeExpenseTab === 'overtime' ? 'text-[#0EA5E9] border-b-2 border-[#0EA5E9]' : 'text-slate-500 hover:text-slate-300'}`}
+                  className={`flex-1 py-3 text-[11.5px] font-bold uppercase transition-colors ${timeExpenseTab === 'overtime' ? 'text-[#0EA5E9] border-b-2 border-[#0EA5E9]' : 'text-slate-500 hover:text-slate-300'}`}
                 >
                   Overtime
                 </button>
                 <button 
                   onClick={() => setTimeExpenseTab('manual')}
-                  className={`flex-1 py-3 text-[10px] font-bold uppercase transition-colors ${timeExpenseTab === 'manual' ? 'text-[#0EA5E9] border-b-2 border-[#0EA5E9]' : 'text-slate-500 hover:text-slate-300'}`}
+                  className={`flex-1 py-3 text-[11.5px] font-bold uppercase transition-colors ${timeExpenseTab === 'manual' ? 'text-[#0EA5E9] border-b-2 border-[#0EA5E9]' : 'text-slate-500 hover:text-slate-300'}`}
                 >
                   Manual Log
                 </button>
@@ -2625,7 +2625,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
               {timeExpenseTab === 'expense' && (
                 <form onSubmit={handleExpenseSubmit} className="flex flex-col gap-4">
               <div className="flex flex-col gap-1.5">
-                <label className="text-[9px] font-bold text-slate-500 uppercase">Expense Category</label>
+                <label className="text-[10.5px] font-bold text-slate-500 uppercase">Expense Category</label>
                 <select 
                   value={expenseCategory}
                   onChange={(e) => setExpenseCategory(e.target.value)}
@@ -2639,7 +2639,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label className="text-[9px] font-bold text-slate-500 uppercase">Amount ($ USD/CAD)</label>
+                <label className="text-[10.5px] font-bold text-slate-500 uppercase">Amount ($ USD/CAD)</label>
                 <input 
                   type="number"
                   step="0.01"
@@ -2653,7 +2653,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label className="text-[9px] font-bold text-slate-500 uppercase">Receipt Photo Verification</label>
+                <label className="text-[10.5px] font-bold text-slate-500 uppercase">Receipt Photo Verification</label>
                 {expenseReceiptPhoto ? (
                   <div className="relative rounded-xl overflow-hidden border border-slate-800 bg-slate-900 aspect-video flex items-center justify-center">
                     <img 
@@ -2665,17 +2665,17 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                       <button 
                         type="button" 
                         onClick={captureMockReceipt}
-                        className="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-lg font-bold text-[10px] uppercase flex items-center gap-1 cursor-pointer"
+                        className="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-lg font-bold text-[11.5px] uppercase flex items-center gap-1 cursor-pointer"
                       >
-                        <Camera className="w-3 h-3" />
+                        <Camera className="w-3.5 h-3" />
                         <span>Retake Photo</span>
                       </button>
                       <button 
                         type="button" 
                         onClick={() => setExpenseReceiptPhoto(null)}
-                        className="px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white rounded-lg font-bold text-[10px] uppercase flex items-center gap-1 cursor-pointer"
+                        className="px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white rounded-lg font-bold text-[11.5px] uppercase flex items-center gap-1 cursor-pointer"
                       >
-                        <Trash2 className="w-3 h-3" />
+                        <Trash2 className="w-3.5 h-3" />
                         <span>Remove Photo</span>
                       </button>
                     </div>
@@ -2689,14 +2689,14 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                     <div className="w-10 h-10 rounded-full bg-slate-950 flex items-center justify-center border border-slate-800 group-hover:scale-105 transition-transform">
                       <Camera className="w-5 h-5 text-slate-400" />
                     </div>
-                    <span className="text-xs font-semibold">Simulate Receipt Capture</span>
-                    <span className="text-[8px] text-slate-500">Tap to capture mock receipt photo</span>
+                    <span className="text-[13.5px] font-semibold">Simulate Receipt Capture</span>
+                    <span className="text-[12.5px] text-slate-500">Tap to capture mock receipt photo</span>
                   </button>
                 )}
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label className="text-[9px] font-bold text-slate-500 uppercase">Expense Notes / Remarks</label>
+                <label className="text-[10.5px] font-bold text-slate-500 uppercase">Expense Notes / Remarks</label>
                 <textarea 
                   value={expenseNotes}
                   onChange={(e) => setExpenseNotes(e.target.value)}
@@ -2708,9 +2708,9 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
 
               <button 
                 type="submit"
-                className="stitch-btn py-3 mt-4 flex items-center justify-center gap-2 w-full font-bold text-xs"
+                className="stitch-btn py-3 mt-4 flex items-center justify-center gap-2 w-full font-bold text-[13.5px]"
               >
-                <CheckCircle className="w-4 h-4" />
+                <CheckCircle className="w-4.5 h-4" />
                 <span>Submit Expense to Customer</span>
               </button>
             </form>
@@ -2732,12 +2732,12 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
               setOvertimeHours(''); setOvertimeReason(''); setActiveScreen('home');
             }} className="flex flex-col gap-4">
               <div className="p-3 bg-sky-900/20 border border-sky-800/40 rounded-xl">
-                <p className="text-[10px] text-sky-400 leading-relaxed">
+                <p className="text-[11.5px] text-sky-400 leading-relaxed">
                   Overtime requests must be pre-approved by the assigned customer before they are processed by the payroll admin.
                 </p>
               </div>
               <div className="flex flex-col gap-1.5">
-                <label className="text-[9px] font-bold text-slate-500 uppercase">Requested Extra Hours</label>
+                <label className="text-[10.5px] font-bold text-slate-500 uppercase">Requested Extra Hours</label>
                 <input 
                   type="number" step="0.5" min="0.5" placeholder="e.g. 2.0"
                   value={overtimeHours} onChange={(e) => setOvertimeHours(e.target.value)}
@@ -2745,15 +2745,15 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                 />
               </div>
               <div className="flex flex-col gap-1.5">
-                <label className="text-[9px] font-bold text-slate-500 uppercase">Reason for Overtime</label>
+                <label className="text-[10.5px] font-bold text-slate-500 uppercase">Reason for Overtime</label>
                 <textarea 
                   value={overtimeReason} onChange={(e) => setOvertimeReason(e.target.value)}
                   placeholder="Customer requested extra sorting..."
                   rows={3} className="phone-textarea" required
                 />
               </div>
-              <button type="submit" className="stitch-btn py-3 mt-4 flex items-center justify-center gap-2 w-full font-bold text-xs">
-                <Clock className="w-4 h-4" />
+              <button type="submit" className="stitch-btn py-3 mt-4 flex items-center justify-center gap-2 w-full font-bold text-[13.5px]">
+                <Clock className="w-4.5 h-4" />
                 <span>Submit Request for Approval</span>
               </button>
             </form>
@@ -2766,14 +2766,14 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
               setManualShiftDate(''); setManualShiftHours(''); setActiveScreen('home');
             }} className="flex flex-col gap-4">
               <div className="flex flex-col gap-1.5">
-                <label className="text-[9px] font-bold text-slate-500 uppercase">Shift Date</label>
+                <label className="text-[10.5px] font-bold text-slate-500 uppercase">Shift Date</label>
                 <input 
                   type="date" value={manualShiftDate} onChange={(e) => setManualShiftDate(e.target.value)}
                   className="phone-input h-11" required
                 />
               </div>
               <div className="flex flex-col gap-1.5">
-                <label className="text-[9px] font-bold text-slate-500 uppercase">Total Shift Hours</label>
+                <label className="text-[10.5px] font-bold text-slate-500 uppercase">Total Shift Hours</label>
                 <input 
                   type="number" step="0.5" min="0.5" placeholder="8.0"
                   value={manualShiftHours} onChange={(e) => setManualShiftHours(e.target.value)}
@@ -2781,7 +2781,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                 />
               </div>
               <button type="submit" className="phone-btn-primary mt-4">
-                <CheckCircle className="w-4 h-4 text-emerald-450" />
+                <CheckCircle className="w-4.5 h-4.5 text-emerald-450" />
                 <span>Submit Manual Timesheet</span>
               </button>
             </form>
@@ -2793,15 +2793,15 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
         {activeScreen === 'history' && isLoggedIn && currentUser && (
           <div className="flex-1 flex flex-col gap-4 text-left p-1 overflow-y-auto scrollbar-thin">
             <div className="flex items-center gap-2 border-b border-slate-850 pb-2">
-              <button onClick={() => setActiveScreen('home')} className="p-1 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white"><X className="w-4 h-4" /></button>
-              <h2 className="text-xs font-black uppercase text-white tracking-wider flex items-center gap-1.5">
-                <FileText className="w-4 h-4 text-[#0EA5E9]" /> Suspect Material Logs
+              <button onClick={() => setActiveScreen('home')} className="p-1 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white"><X className="w-4.5 h-4" /></button>
+              <h2 className="text-[13.5px] font-black uppercase text-white tracking-wider flex items-center gap-1.5">
+                <FileText className="w-4.5 h-4.5 text-[#0EA5E9]" /> Suspect Material Logs
               </h2>
             </div>
             
             <div className="flex flex-col gap-2">
               {getEntities('incidents')?.filter(inc => inc.rep_id === currentUser.id).length === 0 ? (
-                <div className="text-[10px] text-slate-500 italic text-center py-6">No suspect materials logged yet.</div>
+                <div className="text-[11.5px] text-slate-500 italic text-center py-6">No suspect materials logged yet.</div>
               ) : (
                 getEntities('incidents')
                   ?.filter(inc => inc.rep_id === currentUser.id)
@@ -2809,30 +2809,30 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                     const hasRevision = inc.revision_request;
                     return (
                       <div key={inc.id} className="p-3 bg-slate-950 rounded-xl border border-slate-850 flex flex-col gap-2">
-                        <div className="flex justify-between items-center text-[10px]">
+                        <div className="flex justify-between items-center text-[11.5px]">
                           <span className="font-extrabold text-[#22D3EE]">{inc.id.toUpperCase()}</span>
                           <span className="text-slate-400 font-mono">{new Date(inc.sent_at).toLocaleDateString()}</span>
                         </div>
-                        <div className="text-[10px] text-slate-300">
+                        <div className="text-[11.5px] text-slate-300">
                           <strong>Area Found:</strong> {inc.area}
                         </div>
-                        <div className="text-[10px] text-slate-300 leading-relaxed">
+                        <div className="text-[11.5px] text-slate-300 leading-relaxed">
                           <strong>Description:</strong> {inc.description}
                         </div>
                         
                         {hasRevision ? (
-                          <div className="bg-slate-900 border border-slate-800 p-2 rounded-lg text-[9px] text-amber-400">
+                          <div className="bg-slate-900 border border-slate-800 p-2 rounded-lg text-[10.5px] text-amber-400">
                             <strong>Revision Requested:</strong> "{inc.revision_request}"
                           </div>
                         ) : (
                           <div className="flex flex-col gap-1.5 mt-1 border-t border-slate-900 pt-2">
-                            <span className="text-[9px] font-bold text-slate-500 uppercase">Request Correction</span>
+                            <span className="text-[10.5px] font-bold text-slate-500 uppercase">Request Correction</span>
                             <div className="flex gap-1.5">
                               <input 
                                 id={`rev_input_${inc.id}`}
                                 type="text" 
                                 placeholder="Explain correction needed..." 
-                                className="bg-slate-900 border border-slate-800 text-[10px] px-2 py-1 rounded flex-1 text-white placeholder-slate-650 focus:outline-none"
+                                className="bg-slate-900 border border-slate-800 text-[11.5px] px-2 py-1 rounded flex-1 text-white placeholder-slate-650 focus:outline-none"
                               />
                               <button 
                                 onClick={() => {
@@ -2847,7 +2847,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                                     alert("Revision request successfully logged and sent to quality lead!");
                                   }
                                 }} 
-                                className="px-2 py-1 bg-[#0EA5E9] hover:bg-[#0EA5E9]/80 text-white font-bold text-[9px] rounded uppercase cursor-pointer"
+                                className="px-2 py-1 bg-[#0EA5E9] hover:bg-[#0EA5E9]/80 text-white font-bold text-[10.5px] rounded uppercase cursor-pointer"
                               >
                                 Submit
                               </button>

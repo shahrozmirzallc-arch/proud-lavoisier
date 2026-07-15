@@ -97,6 +97,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   const [selectedInvoiceSupplier, setSelectedInvoiceSupplier] = useState('autokabel');
   const [selectedInvoiceCurrency, setSelectedInvoiceCurrency] = useState('all');
   const [invoicePONumber, setInvoicePONumber] = useState('');
+  const [excludedInvoiceEntryIds, setExcludedInvoiceEntryIds] = useState([]);
+  const [excludedInvoiceExpenseIds, setExcludedInvoiceExpenseIds] = useState([]);
   // Extra Hours Requests State
   const [extraHoursRequests, setExtraHoursRequests] = useState([]);
   const [extraHoursQty, setExtraHoursQty] = useState('8.0');
@@ -5683,15 +5685,18 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     const clientEntries = timeEntries.filter(t => t && t.supplier_id === (client?.id || selectedInvoiceSupplier) && !t.invoiced && (selectedInvoiceCurrency === 'all' || getRepSupplierRates(t.rep_id, t.supplier_id, t.plant_id).currency === selectedInvoiceCurrency));
                     const clientExpenses = expenseEntries.filter(e => e && e.supplier_id === (client?.id || selectedInvoiceSupplier) && !e.invoiced && (selectedInvoiceCurrency === 'all' || getExpenseCurrency(e) === selectedInvoiceCurrency));
 
-                    const cadEntries = clientEntries.filter(t => getRepSupplierRates(t.rep_id, t.supplier_id, t.plant_id).currency === 'CAD');
-                    const cadExpenses = clientExpenses.filter(e => getExpenseCurrency(e) === 'CAD');
+                    const includedEntries = clientEntries.filter(t => !excludedInvoiceEntryIds.includes(t.id));
+                    const includedExpenses = clientExpenses.filter(e => !excludedInvoiceExpenseIds.includes(e.id));
+
+                    const cadEntries = includedEntries.filter(t => getRepSupplierRates(t.rep_id, t.supplier_id, t.plant_id).currency === 'CAD');
+                    const cadExpenses = includedExpenses.filter(e => getExpenseCurrency(e) === 'CAD');
                     const cadHourly = cadEntries.reduce((acc, curr) => acc + ((curr.hours || 0) * getRepSupplierRates(curr.rep_id, curr.supplier_id, curr.plant_id).billing_rate), 0);
                     const cadMileage = cadEntries.reduce((acc, curr) => acc + ((curr.mileage_km || 0) * 0.73), 0);
                     const cadExpense = cadExpenses.reduce((acc, curr) => acc + parseFloat(curr.amount || 0), 0);
                     const cadTotal = cadHourly + cadMileage + cadExpense;
 
-                    const usdEntries = clientEntries.filter(t => getRepSupplierRates(t.rep_id, t.supplier_id, t.plant_id).currency === 'USD');
-                    const usdExpenses = clientExpenses.filter(e => getExpenseCurrency(e) === 'USD');
+                    const usdEntries = includedEntries.filter(t => getRepSupplierRates(t.rep_id, t.supplier_id, t.plant_id).currency === 'USD');
+                    const usdExpenses = includedExpenses.filter(e => getExpenseCurrency(e) === 'USD');
                     const usdHourly = usdEntries.reduce((acc, curr) => acc + ((curr.hours || 0) * getRepSupplierRates(curr.rep_id, curr.supplier_id, curr.plant_id).billing_rate), 0);
                     const usdMileage = usdEntries.reduce((acc, curr) => acc + ((curr.mileage_km || 0) * 0.73), 0);
                     const usdExpense = usdExpenses.reduce((acc, curr) => acc + parseFloat(curr.amount || 0), 0);
@@ -5708,7 +5713,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     const grandTotalDisplay = selectedInvoiceCurrency === 'all' ? `C$ ${cadTotal.toFixed(2)} & US$ ${usdTotal.toFixed(2)}` : (selectedInvoiceCurrency === 'CAD' ? `C$ ${cadTotal.toFixed(2)}` : `US$ ${usdTotal.toFixed(2)}`);
                     const invoiceCurrencySymbol = selectedInvoiceCurrency === 'all' ? '' : (selectedInvoiceCurrency === 'CAD' ? 'C$' : 'US$');
 
-                    const dates = clientEntries.filter(e => e && e.date).map(e => e.date).sort();
+                    const dates = includedEntries.filter(e => e && e.date).map(e => e.date).sort();
                     const dateRangeStr = dates.length > 0 ? `From ${dates[0]} to ${dates[dates.length - 1]}` : 'No pending periods';
 
                     return (
@@ -5806,16 +5811,16 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                             </div>
                           </div>
                           <div className="flex gap-2">
-                            <button onClick={() => handleGenerateClientInvoicePDF(client, dateRangeStr, clientEntries, clientExpenses)} disabled={clientEntries.length === 0 && clientExpenses.length === 0} className="flex items-center gap-1.5 bg-[#0EA5E9] disabled:opacity-40 hover:bg-[#0EA5E9]/90 text-white font-bold py-2 px-4 rounded-xl text-[13.5px] transition-colors cursor-pointer"><Printer className="w-4.5 h-4" /> PDF Invoice</button>
-                            <button onClick={() => handleExportClientQuickBooks(clientEntries)} disabled={clientEntries.length === 0} className="flex items-center gap-1.5 bg-[#10B981] disabled:opacity-40 hover:bg-[#10B981]/90 text-white font-bold py-2 px-4 rounded-xl text-[13.5px] transition-colors cursor-pointer"><FileSpreadsheet className="w-4.5 h-4" /> QuickBooks CSV</button>
-                            <button onClick={() => handleMarkAsInvoiced(clientEntries, clientExpenses)} disabled={clientEntries.length === 0 && clientExpenses.length === 0} className="flex items-center gap-1.5 bg-slate-950 border border-slate-850 disabled:opacity-40 text-slate-300 font-bold py-2 px-4 rounded-xl text-[13.5px] cursor-pointer"><CheckCircle2 className="w-4.5 h-4" /> Mark Invoiced</button>
+                            <button onClick={() => handleGenerateClientInvoicePDF(client, dateRangeStr, includedEntries, includedExpenses)} disabled={includedEntries.length === 0 && includedExpenses.length === 0} className="flex items-center gap-1.5 bg-[#0EA5E9] disabled:opacity-40 hover:bg-[#0EA5E9]/90 text-white font-bold py-2 px-4 rounded-xl text-[13.5px] transition-colors cursor-pointer"><Printer className="w-4.5 h-4" /> PDF Invoice</button>
+                            <button onClick={() => handleExportClientQuickBooks(includedEntries)} disabled={includedEntries.length === 0} className="flex items-center gap-1.5 bg-[#10B981] disabled:opacity-40 hover:bg-[#10B981]/90 text-white font-bold py-2 px-4 rounded-xl text-[13.5px] transition-colors cursor-pointer"><FileSpreadsheet className="w-4.5 h-4" /> QuickBooks CSV</button>
+                            <button onClick={() => handleMarkAsInvoiced(includedEntries, includedExpenses)} disabled={includedEntries.length === 0 && includedExpenses.length === 0} className="flex items-center gap-1.5 bg-slate-950 border border-slate-850 disabled:opacity-40 text-slate-300 font-bold py-2 px-4 rounded-xl text-[13.5px] cursor-pointer"><CheckCircle2 className="w-4.5 h-4" /> Mark Invoiced</button>
                           </div>
                         </div>
 
                         {/* Consolidated Totals */}
                         <div className="grid grid-cols-4 gap-3 bg-slate-900 border border-slate-800 p-4 rounded-2xl">
-                          <div className="flex flex-col"><span className="text-[10.5px] text-slate-500 font-bold uppercase">Hours Billing</span><span className="text-lg font-bold text-white mt-0.5">{clientEntries.reduce((acc, curr) => acc + (curr.hours || 0), 0)} hrs</span><span className="text-[11.5px] text-slate-400 mt-1">Sub: {hoursSubDisplay}</span></div>
-                          <div className="flex flex-col"><span className="text-[10.5px] text-slate-500 font-bold uppercase">Mileage</span><span className="text-lg font-bold text-white mt-0.5">{clientEntries.reduce((acc, curr) => acc + (curr.mileage_km || 0), 0)} km</span><span className="text-[11.5px] text-slate-400 mt-1">Sub: {mileageSubDisplay}</span></div>
+                          <div className="flex flex-col"><span className="text-[10.5px] text-slate-500 font-bold uppercase">Hours Billing</span><span className="text-lg font-bold text-white mt-0.5">{includedEntries.reduce((acc, curr) => acc + (curr.hours || 0), 0)} hrs</span><span className="text-[11.5px] text-slate-400 mt-1">Sub: {hoursSubDisplay}</span></div>
+                          <div className="flex flex-col"><span className="text-[10.5px] text-slate-500 font-bold uppercase">Mileage</span><span className="text-lg font-bold text-white mt-0.5">{includedEntries.reduce((acc, curr) => acc + (curr.mileage_km || 0), 0)} km</span><span className="text-[11.5px] text-slate-400 mt-1">Sub: {mileageSubDisplay}</span></div>
                           <div className="flex flex-col"><span className="text-[10.5px] text-slate-500 font-bold uppercase">Expenses</span><span className="text-lg font-bold text-emerald-450 mt-0.5">{expenseSubDisplay}</span><span className="text-[11.5px] text-slate-400 mt-1">Reimbursable claims</span></div>
                           <div className="flex flex-col"><span className="text-[10.5px] text-slate-500 font-bold uppercase">Invoice Total</span><span className="text-lg font-bold text-[#22D3EE] mt-0.5">{grandTotalDisplay}</span><span className="text-[10.5px] text-slate-400 mt-1">{dateRangeStr}</span></div>
                         </div>
@@ -5828,14 +5833,26 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                               {clientEntries.length > 0 && (
                                 <table className="w-full text-[13.5px] text-left">
                                   <thead>
-                                    <tr className="border-b border-slate-800 text-slate-500 font-bold uppercase text-[10.5px]"><th className="py-2">Rep</th><th className="py-2">Date</th><th className="py-2 text-right">Hours</th><th className="py-2 text-right">Rate</th><th className="py-2 text-right">Hours Billing</th><th className="py-2 text-right">Mileage</th><th className="py-2 text-right">Mileage Billing</th></tr>
+                                    <tr className="border-b border-slate-800 text-slate-500 font-bold uppercase text-[10.5px]"><th className="py-2 w-8 text-center">Inc</th><th className="py-2">Rep</th><th className="py-2">Date</th><th className="py-2 text-right">Hours</th><th className="py-2 text-right">Rate</th><th className="py-2 text-right">Hours Billing</th><th className="py-2 text-right">Mileage</th><th className="py-2 text-right">Mileage Billing</th></tr>
                                   </thead>
                                   <tbody className="divide-y divide-slate-850 text-slate-300">
                                     {clientEntries.map(entry => {
                                       const { billing_rate, currency } = getRepSupplierRates(entry.rep_id, entry.supplier_id, entry.plant_id);
                                       const rowSymbol = currency === 'CAD' ? 'C$' : 'US$';
+                                      const isExcluded = excludedInvoiceEntryIds.includes(entry.id);
                                       return (
-                                        <tr key={entry.id} className="hover:bg-slate-950/40">
+                                        <tr key={entry.id} className={`hover:bg-slate-950/40 ${isExcluded ? 'opacity-40' : ''}`}>
+                                          <td className="py-2 text-center">
+                                            <input 
+                                              type="checkbox" 
+                                              checked={!isExcluded}
+                                              onChange={() => {
+                                                if (isExcluded) setExcludedInvoiceEntryIds(prev => prev.filter(id => id !== entry.id));
+                                                else setExcludedInvoiceEntryIds(prev => [...prev, entry.id]);
+                                              }}
+                                              className="accent-[#0EA5E9] w-3.5 h-3.5 cursor-pointer"
+                                            />
+                                          </td>
                                           <td className="py-2 text-white font-semibold">{users.find(u => u && u.id === entry.rep_id)?.name || 'Rep'}</td>
                                           <td className="py-2 font-mono">{entry.date || ''}</td>
                                           <td className="py-2 text-right">{entry.hours || 0} hrs</td>
@@ -5855,14 +5872,26 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                   <h5 className="text-[11.5px] font-bold text-slate-400 uppercase tracking-wider mb-2">Pending Reimbursements</h5>
                                   <table className="w-full text-[13.5px] text-left">
                                     <thead>
-                                      <tr className="border-b border-slate-800 text-slate-500 font-bold uppercase text-[10.5px]"><th className="py-2">Rep</th><th className="py-2">Date</th><th className="py-2">Category</th><th className="py-2">Notes</th><th className="py-2 text-right">Amount</th></tr>
+                                      <tr className="border-b border-slate-800 text-slate-500 font-bold uppercase text-[10.5px]"><th className="py-2 w-8 text-center">Inc</th><th className="py-2">Rep</th><th className="py-2">Date</th><th className="py-2">Category</th><th className="py-2">Notes</th><th className="py-2 text-right">Amount</th></tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-850 text-slate-300">
                                       {clientExpenses.map(exp => {
                                         const expCurr = getExpenseCurrency(exp);
                                         const expSymbol = expCurr === 'CAD' ? 'C$' : 'US$';
+                                        const isExcluded = excludedInvoiceExpenseIds.includes(exp.id);
                                         return (
-                                          <tr key={exp.id} className="hover:bg-slate-950/40">
+                                          <tr key={exp.id} className={`hover:bg-slate-950/40 ${isExcluded ? 'opacity-40' : ''}`}>
+                                            <td className="py-2 text-center">
+                                              <input 
+                                                type="checkbox" 
+                                                checked={!isExcluded}
+                                                onChange={() => {
+                                                  if (isExcluded) setExcludedInvoiceExpenseIds(prev => prev.filter(id => id !== exp.id));
+                                                  else setExcludedInvoiceExpenseIds(prev => [...prev, exp.id]);
+                                                }}
+                                                className="accent-emerald-400 w-3.5 h-3.5 cursor-pointer"
+                                              />
+                                            </td>
                                             <td className="py-2 text-white font-semibold">{users.find(u => u && u.id === exp.rep_id)?.name || 'Rep'}</td>
                                             <td className="py-2 font-mono">{exp.date || ''}</td>
                                             <td className="py-2"><span className="px-2 py-1 rounded bg-emerald-500/10 text-emerald-400 text-[12.5px] font-bold uppercase">{exp.category}</span></td>

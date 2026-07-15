@@ -3270,7 +3270,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     } else if (lowerText.includes('hello') || lowerText.includes('hi') || lowerText.includes('hey')) {
       if (userRole === 'shahroz') {
         responseText = "Hello Shahroz Mirza! I am online and ready to audit. Let me know if you want me to audit timesheets, verify defect metrics, or export documents.";
-      } else if (userRole === 'admin') {
+      } else if (userRole === 'admin' || userRole === 'owner') {
         responseText = "Hello Greg Phillippe! I am online and ready to audit. Let me know if you want me to audit timesheets or export documents.";
       } else if (userRole === 'accountant') {
         responseText = "Hello Colleen Boyd! I am online and ready to audit timesheets or export payroll spreadsheets.";
@@ -4017,7 +4017,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
                 {/* Quick Prompts Chips Section */}
                 <div className="flex flex-wrap gap-1.5 mb-3 flex-shrink-0">
-                  {(userRole === 'shahroz' || userRole === 'admin') && (
+                  {(userRole === 'shahroz' || userRole === 'admin' || userRole === 'owner') && (
                     <>
                       <button 
                         type="button"

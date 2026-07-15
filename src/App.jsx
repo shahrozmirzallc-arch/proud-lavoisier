@@ -299,6 +299,10 @@ function App() {
                 setIsUnlocked(true);
                 if (loginType === 'admin') {
                   const adminName = targetUser;
+                  // Force Light Mode for Accountant to fix readability of data tables
+                  if (adminName === 'colleen') {
+                    setDayNight('night');
+                  }
                   const reactRole = (adminName === 'shahroz' || adminName === 'idspulse') ? 'shahroz' : 
                                     (adminName === 'colleen' ? 'accountant' : 
                                     (adminName === 'donna' ? 'lead' : 'owner'));

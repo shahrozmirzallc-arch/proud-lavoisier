@@ -5580,7 +5580,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         accountingSubTab === 'bulk-entry' ? 'bg-[#0EA5E9] text-white' : 'text-slate-400 hover:text-slate-200'
                       }`}
                     >
-                      Bulk Hours Entry
+                      Manual Timesheet Entry
                     </button>
                   </div>
                 </div>
@@ -5913,7 +5913,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   {accountingSubTab === 'bulk-entry' && (
                     <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex flex-col gap-4 text-left">
                       <h4 className="text-xs font-bold text-white uppercase tracking-wider pb-2 border-b border-slate-850 flex items-center gap-1.5">
-                        <Users className="w-4 h-4 text-[#22D3EE]" /> Weekly Manager Bulk Entry Portal
+                        <Users className="w-4 h-4 text-[#22D3EE]" /> Manual Payroll Adjustments
                       </h4>
                       <p className="text-[10px] text-slate-400 max-w-[500px]">
                         Log or backdate hours and mileage for multiple supplier locations in a single form at the end of the week.

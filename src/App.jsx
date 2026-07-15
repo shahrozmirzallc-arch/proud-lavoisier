@@ -96,7 +96,7 @@ function App() {
   const [dayNight, setDayNight] = useState(() => {
     const saved = localStorage.getItem('ids_pulse_daynight');
     if (saved) return saved;
-    return 'night'; // Default is Light Theme
+    return 'day'; // Default is Dark Theme
   });
 
   // Password Lock State

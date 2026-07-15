@@ -3405,13 +3405,33 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
           {/* User Profile Widget */}
           <div className="flex items-center gap-2 px-2.5 h-9 bg-slate-900/60 border border-slate-800 rounded-xl">
-            <div className="w-6 h-6 rounded-full bg-[#1E3A5F] flex items-center justify-center font-bold text-[9px] text-[#22D3EE] border border-[#22D3EE]/25">
-              DC
-            </div>
-            <div className="hidden lg:flex flex-col text-left justify-center">
-              <span className="text-[9px] font-extrabold text-white leading-none">Donna Cabral</span>
-              <span className="text-[7px] text-[#22D3EE] font-bold mt-0.5 leading-none">QA Supervisor</span>
-            </div>
+            {(() => {
+              const uRole = sessionStorage.getItem('ids_pulse_role') || 'admin';
+              const uUser = sessionStorage.getItem('ids_pulse_admin_user') || 'donna';
+              let initials = 'DC';
+              let fullName = 'Donna Cabral';
+              let title = 'QA Supervisor';
+              
+              if (uRole === 'accountant' || uUser === 'colleen') { initials = 'CB'; fullName = 'Colleen B.'; title = 'Accountant'; }
+              else if (uRole === 'shahroz' || uUser === 'shahroz') { initials = 'SM'; fullName = 'Shahroz Mirza'; title = 'Super Admin'; }
+              else if (uUser === 'greg') { initials = 'GP'; fullName = 'Greg Phillippe'; title = 'Director of Quality'; }
+              else if (uUser === 'monica') { initials = 'MV'; fullName = 'Monica Vargas'; title = 'Executive Assistant'; }
+              else if (uUser === 'diana') { initials = 'DP'; fullName = 'Diana Pulse'; title = 'Executive Admin'; }
+              else if (uUser === 'iris') { initials = 'IR'; fullName = 'Iris R.'; title = 'QA Admin'; }
+              else if (uUser === 'miriam') { initials = 'MB'; fullName = 'Miriam B.'; title = 'QA Coordinator'; }
+              
+              return (
+                <>
+                  <div className="w-6 h-6 rounded-full bg-[#1E3A5F] flex items-center justify-center font-bold text-[9px] text-[#22D3EE] border border-[#22D3EE]/25">
+                    {initials}
+                  </div>
+                  <div className="hidden lg:flex flex-col text-left justify-center">
+                    <span className="text-[9px] font-extrabold text-white leading-none">{fullName}</span>
+                    <span className="text-[7px] text-[#22D3EE] font-bold mt-0.5 leading-none">{title}</span>
+                  </div>
+                </>
+              );
+            })()}
           </div>
 
           <button 
@@ -3745,6 +3765,9 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   <span className="text-[7.5px] bg-[#22D3EE]/10 border border-[#22D3EE]/30 text-[#22D3EE] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider scale-90">Beta</span>
                 </button>
 
+                {/* Hide these tabs from accountant */}
+                {userRole !== 'accountant' && (
+                  <>
                  <button
                     onClick={() => setActiveTab('incidents')}
                     className={`w-full h-10 px-3.5 rounded-xl font-bold text-xs transition-all cursor-pointer flex items-center justify-between border ${
@@ -3819,6 +3842,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     </div>
                     {activeTab === 'suppliers' && <div className="w-1.5 h-1.5 rounded-full bg-[#0EA5E9]"></div>}
                   </button>
+                  </>
+                )}
 
                   <button 
                     onClick={() => setActiveTab('time-tracking')}
@@ -3835,6 +3860,9 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     {activeTab === 'time-tracking' && <div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>}
                   </button>
 
+                {/* Hide these from accountant */}
+                {userRole !== 'accountant' && (
+                  <>
                   <button 
                     onClick={() => setActiveTab('rework-logs')}
                     className={`w-full h-10 px-3.5 rounded-xl font-bold text-xs transition-all cursor-pointer flex items-center justify-between border ${
@@ -3864,6 +3892,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     </div>
                     {activeTab === 'emails' && <div className="w-1.5 h-1.5 rounded-full bg-purple-400"></div>}
                   </button>
+                  </>
+                )}
 
                   <button 
                     onClick={() => setActiveTab('users')}

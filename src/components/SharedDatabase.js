@@ -696,8 +696,8 @@ export function initializeDB() {
   const data = JSON.parse(existing);
   let updated = false;
 
-  // Safe check & migration for missing collections
-  const collections = ['users', 'rates', 'plants', 'suppliers', 'parts', 'incidents', 'reworkLogs', 'timeEntries', 'expenseEntries', 'extraHoursRequests', 'systemLogs', 'projects'];
+  // Fix migration missing collections
+  const collections = ['users', 'rates', 'plants', 'suppliers', 'parts', 'incidents', 'reworkLogs', 'timeEntries', 'expenseEntries', 'extraHoursRequests', 'systemLogs', 'projects', 'dailyTasks', 'shiftReports', 'emailLogs'];
   collections.forEach(col => {
     if (!data[col]) {
       data[col] = SEED_DATA[col] || [];
@@ -864,7 +864,8 @@ export function getEntities(type) {
           return entities.filter(e => e.supplier_id === customerId);
         }
         if (type === 'shiftReports') {
-          return entities.filter(r => r.supplier_id === customerId && r.status === 'published');
+          const validPlants = (db.plants || []).filter(p => (p.supplier_ids || []).includes(customerId)).map(p => p.id);
+          return entities.filter(r => validPlants.includes(r.plant_id) && r.status === 'published');
         }
         if (type === 'plants') {
           const supplier = (db.suppliers || []).find(s => s.id === customerId);
@@ -929,17 +930,17 @@ export function saveEntity(type, entity) {
 
 // Add user
 export function addUser(user) {
-  const newUser = { id: `usr_${Date.now()}`, ...user, created_at: new Date().toISOString() };
+  const newUser = { ...user, id: user.id || `usr_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`, created_at: new Date().toISOString() };
   return saveEntity('users', newUser);
 }
 
 // Add incident
 export function addIncident(incident) {
   const newIncident = {
-    id: `inc_${Date.now()}`,
-    status: 'Open',
-    created_at: new Date().toISOString(),
-    ...incident
+    ...incident,
+    id: incident.id || `inc_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+    status: incident.status || 'Open',
+    created_at: new Date().toISOString()
   };
   return saveEntity('incidents', newIncident);
 }
@@ -947,10 +948,10 @@ export function addIncident(incident) {
 // Add shift report
 export function addShiftReport(report) {
   const newReport = {
-    id: `sr_${Date.now()}`,
-    status: 'Draft',
-    created_at: new Date().toISOString(),
-    ...report
+    ...report,
+    id: report.id || `sr_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+    status: report.status || 'Draft',
+    created_at: new Date().toISOString()
   };
   return saveEntity('shiftReports', newReport);
 }
@@ -958,9 +959,9 @@ export function addShiftReport(report) {
 // Add rework log
 export function addReworkLog(log) {
   const newLog = {
-    id: `rw_${Date.now()}`,
-    created_at: new Date().toISOString(),
-    ...log
+    ...log,
+    id: log.id || `rw_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+    created_at: new Date().toISOString()
   };
   return saveEntity('reworkLogs', newLog);
 }
@@ -968,9 +969,9 @@ export function addReworkLog(log) {
 // Add time entry
 export function addTimeEntry(entry) {
   const newEntry = {
-    id: `te_${Date.now()}`,
-    created_at: new Date().toISOString(),
-    ...entry
+    ...entry,
+    id: entry.id || `te_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+    created_at: new Date().toISOString()
   };
   return saveEntity('timeEntries', newEntry);
 }
@@ -978,10 +979,10 @@ export function addTimeEntry(entry) {
 // Add email log
 export function addEmailLog(log) {
   const newLog = {
-    id: `el_${Date.now()}`,
+    ...log,
+    id: log.id || `el_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
     sent_at: new Date().toISOString(),
-    delivery_status: 'delivered',
-    ...log
+    delivery_status: log.delivery_status || 'delivered'
   };
   return saveEntity('emailLogs', newLog);
 }
@@ -996,9 +997,9 @@ export function resetDB() {
 // Add a daily task
 export function addDailyTask(task) {
   const newTask = {
-    id: `dt_${Date.now()}`,
-    status: 'pending',
-    ...task
+    ...task,
+    id: task.id || `dt_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+    status: task.status || 'pending'
   };
   return saveEntity('dailyTasks', newTask);
 }
@@ -1006,15 +1007,19 @@ export function addDailyTask(task) {
 // Add expense entry
 export function addExpenseEntry(entry) {
   const newEntry = {
-    id: `exp_${Date.now()}`,
-    created_at: new Date().toISOString(),
-    ...entry
+    ...entry,
+    id: entry.id || `exp_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+    created_at: new Date().toISOString()
   };
   return saveEntity('expenseEntries', newEntry);
 }
 
 // Get all rates
 export function getRates() {
+  const role = sessionStorage.getItem('ids_pulse_role');
+  if (!['admin', 'accountant', 'lead', 'shahroz'].includes(role)) {
+    return [];
+  }
   const db = getDB();
   return db.rates || [];
 }
@@ -1024,13 +1029,16 @@ export function saveRate(rate) {
   const db = getDB();
   if (!db.rates) db.rates = [];
   
-  const index = db.rates.findIndex(r => r.id === rate.id || (r.rep_id === rate.rep_id && r.supplier_id === rate.supplier_id));
+  let index = db.rates.findIndex(r => r.id === rate.id);
+  if (index === -1) {
+    index = db.rates.findIndex(r => r.rep_id === rate.rep_id && r.supplier_id === rate.supplier_id && r.plant_id === rate.plant_id);
+  }
   let finalRate = rate;
   if (index >= 0) {
     db.rates[index] = { ...db.rates[index], ...rate };
     finalRate = db.rates[index];
   } else {
-    const newRate = { id: `rate_${Date.now()}`, ...rate };
+    const newRate = { id: `rate_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`, ...rate };
     db.rates.push(newRate);
     finalRate = newRate;
   }
@@ -1073,11 +1081,11 @@ export function saveExtraHoursRequest(req) {
 
 export function addExtraHoursRequest(req) {
   const newReq = {
-    id: `ehr_${Date.now()}`,
-    status: 'pending_customer',
+    ...req,
+    id: req.id || `ehr_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+    status: req.status || 'pending_customer',
     created_at: new Date().toISOString(),
-    history: [{ status: 'pending_customer', user: req.userName || 'Rep', timestamp: new Date().toISOString(), comment: 'Request submitted' }],
-    ...req
+    history: req.history || [{ status: 'pending_customer', user: req.userName || 'Rep', timestamp: new Date().toISOString(), comment: 'Request submitted' }]
   };
   return saveEntity('extraHoursRequests', newReq);
 }

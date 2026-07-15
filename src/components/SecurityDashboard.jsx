@@ -89,9 +89,7 @@ export default function SecurityDashboard() {
   };
 
   useEffect(() => {
-    checkAgent().then((connected) => {
-      if (connected) loadData();
-    });
+    checkAgent();
 
     const statusInterval = setInterval(checkAgent, 3000);
     return () => clearInterval(statusInterval);
@@ -147,6 +145,7 @@ export default function SecurityDashboard() {
       if (res.ok) loadData();
     } catch (e) {
       console.error(e);
+      alert("Action failed. Agent might be unreachable.");
     } finally {
       setIsActionLoading(false);
     }
@@ -163,6 +162,7 @@ export default function SecurityDashboard() {
       if (res.ok) loadData();
     } catch (e) {
       console.error(e);
+      alert("Action failed. Agent might be unreachable.");
     } finally {
       setIsActionLoading(false);
     }
@@ -176,6 +176,7 @@ export default function SecurityDashboard() {
       if (res.ok) loadData();
     } catch (e) {
       console.error(e);
+      alert("Action failed. Agent might be unreachable.");
     } finally {
       setIsActionLoading(false);
     }

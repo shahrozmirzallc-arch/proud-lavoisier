@@ -2748,10 +2748,28 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
           totalBilling.toFixed(2)
         ].join(",");
       });
+
+      const overtimeRows = expenseEntries.filter(e => e.category === 'Overtime Request' && (e.status === 'approved_customer' || e.status === 'approved_admin')).map(entry => {
+        const rep = users.find(u => u && u.id === entry.rep_id);
+        const repName = rep ? rep.name : 'Unknown Rep';
+        const totalBilling = (entry.amount || 0) * 28.00;
+        return [
+          `"${repName.replace(/"/g, '""')}"`,
+          `"${entry.date || ''}"`,
+          `"Overtime Approved"`,
+          entry.amount || 0,
+          0,
+          "0.00",
+          totalBilling.toFixed(2)
+        ].join(",");
+      });
+
       csvLines.push(...rows);
+      csvLines.push(...overtimeRows);
       
       // Calculate sums for the spreadsheet summary footer block
-      const totalHours = (timeEntries || []).filter(Boolean).reduce((acc, curr) => acc + (curr.hours || 0), 0);
+      const totalHours = (timeEntries || []).filter(Boolean).reduce((acc, curr) => acc + (curr.hours || 0), 0) + 
+                         expenseEntries.filter(e => e.category === 'Overtime Request' && (e.status === 'approved_customer' || e.status === 'approved_admin')).reduce((acc, curr) => acc + (curr.amount || 0), 0);
       const totalMileage = (timeEntries || []).filter(Boolean).reduce((acc, curr) => acc + (curr.mileage_km || 0), 0);
       const totalMileageCost = totalMileage * 0.73;
       const totalInvoicedEst = totalHours * 28.00 + totalMileageCost;
@@ -2759,7 +2777,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       csvLines.push(``); // blank separator
       csvLines.push(`====================================================================================================`);
       csvLines.push(`REPORT SUMMARY & STATISTICS`);
-      csvLines.push(`Total Payroll Records:,${timeEntries.length}`);
+      csvLines.push(`Total Payroll Records:,${timeEntries.length + overtimeRows.length}`);
       csvLines.push(`Total Billing Hours Worked:,${totalHours.toFixed(2)} hrs`);
       csvLines.push(`Total Mileage Claimed:,${totalMileage.toFixed(2)} km`);
       csvLines.push(`Total Mileage Reimbursement:,${totalMileageCost.toFixed(2)} USD`);
@@ -3661,30 +3679,49 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   onClick={() => setActiveTab('customer-portal')}
                   className={`w-full h-10 px-3.5 rounded-xl font-bold text-xs transition-all cursor-pointer flex items-center justify-between border ${
                     activeTab === 'customer-portal' 
-                      ? 'bg-[#1E3A5F] text-white border-[#22D3EE]/30 shadow-md shadow-[#22D3EE]/5' 
+                      ? 'bg-sky-500/10 text-white border-sky-400/30 shadow-md shadow-sky-400/5' 
                       : 'bg-slate-900/40 text-slate-400 hover:bg-slate-900/90 hover:text-slate-200 border-slate-850 hover:border-slate-800'
                   }`}
                 >
                   <div className="flex items-center gap-2.5">
-                    <Shield className="w-4 h-4 text-[#22D3EE]" />
+                    <Shield className="w-4 h-4 text-sky-400" />
                     <span>Customer Dashboard</span>
                   </div>
-                  {activeTab === 'customer-portal' && <div className="w-1.5 h-1.5 rounded-full bg-[#22D3EE]"></div>}
+                  {activeTab === 'customer-portal' && <div className="w-1.5 h-1.5 rounded-full bg-sky-400"></div>}
                 </button>
 
                 <button 
                   onClick={() => setActiveTab('shift-logs')}
                   className={`w-full h-10 px-3.5 rounded-xl font-bold text-xs transition-all cursor-pointer flex items-center justify-between border ${
                     activeTab === 'shift-logs' 
-                      ? 'bg-[#1E3A5F] text-white border-[#22D3EE]/30 shadow-md shadow-[#22D3EE]/5' 
+                      ? 'bg-sky-500/10 text-white border-sky-400/30 shadow-md shadow-sky-400/5' 
                       : 'bg-slate-900/40 text-slate-400 hover:bg-slate-900/90 hover:text-slate-200 border-slate-850 hover:border-slate-800'
                   }`}
                 >
                   <div className="flex items-center gap-2.5">
-                    <Calendar className="w-4 h-4 text-[#0EA5E9]" />
+                    <Calendar className="w-4 h-4 text-sky-400" />
                     <span>Published Reports</span>
                   </div>
-                  {activeTab === 'shift-logs' && <div className="w-1.5 h-1.5 rounded-full bg-[#0EA5E9]"></div>}
+                  {activeTab === 'shift-logs' && <div className="w-1.5 h-1.5 rounded-full bg-sky-400"></div>}
+                </button>
+
+                <button 
+                  onClick={() => setActiveTab('approvals')}
+                  className={`w-full h-10 px-3.5 rounded-xl font-bold text-xs transition-all cursor-pointer flex items-center justify-between border ${
+                    activeTab === 'approvals' 
+                      ? 'bg-amber-500/10 text-white border-amber-400/30 shadow-md shadow-amber-400/5' 
+                      : 'bg-slate-900/40 text-slate-400 hover:bg-slate-900/90 hover:text-slate-200 border-slate-850 hover:border-slate-800'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Clock className="w-4 h-4 text-amber-400" />
+                    <span>Time & Approvals</span>
+                  </div>
+                  {expenseEntries.filter(e => e.status === 'pending_customer').length > 0 && (
+                    <span className="bg-amber-500 text-white text-[9px] px-1.5 py-0.5 rounded-full font-bold">
+                      {expenseEntries.filter(e => e.status === 'pending_customer').length}
+                    </span>
+                  )}
                 </button>
               </>
             )}
@@ -4939,6 +4976,112 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   </div>
                 </div>
 
+              </div>
+            </div>
+          )}
+
+          {/* TAB: CUSTOMER APPROVALS (OVERTIME) */}
+          {activeTab === 'approvals' && userRole === 'customer' && (
+            <div className="flex-1 flex flex-col gap-4 min-h-0">
+              <div className="flex justify-between items-center pb-2 border-b border-slate-800 flex-shrink-0">
+                <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                  <Clock className="w-5 h-5 text-amber-400" />
+                  Time & Expense Approvals
+                </h3>
+                <span className="text-[10px] text-slate-500 font-medium">Review QRE Overtime & Expenses</span>
+              </div>
+              
+              <div className="flex-1 overflow-y-auto scrollbar-thin pr-1 flex flex-col gap-4">
+                {(() => {
+                  const customerPlants = suppliers.find(s => s.id === currentUserCustomerId)?.plants_served || [];
+                  // Find expenses for reps assigned to this customer's plants
+                  const pendingApprovals = expenseEntries.filter(e => e.status === 'pending_customer');
+                  
+                  if (pendingApprovals.length === 0) {
+                    return (
+                      <div className="flex flex-col items-center justify-center p-10 bg-slate-900/20 border border-slate-800/50 rounded-2xl">
+                        <CheckCircle2 className="w-10 h-10 text-emerald-500/50 mb-3" />
+                        <h4 className="text-white font-bold">All caught up!</h4>
+                        <p className="text-xs text-slate-400">No pending overtime or expense requests require your approval.</p>
+                      </div>
+                    );
+                  }
+
+                  return pendingApprovals.map(req => {
+                    const rep = users.find(u => u.id === req.rep_id);
+                    // Determine cost impact: amount is hours for overtime, rep rate is 28 (or from rates)
+                    const costImpact = (req.amount * 28).toFixed(2);
+                    
+                    return (
+                      <div key={req.id} className="stitch-panel p-4 flex flex-col gap-3">
+                        <div className="flex justify-between items-start border-b border-slate-800/50 pb-3">
+                          <div>
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="px-2 py-0.5 bg-amber-500/20 border border-amber-500/30 text-amber-400 text-[9px] font-bold uppercase rounded">
+                                {req.category}
+                              </span>
+                              <span className="text-[10px] text-slate-500 font-mono">{req.date}</span>
+                            </div>
+                            <h4 className="text-sm font-bold text-white flex items-center gap-1.5">
+                              <User className="w-4 h-4 text-sky-400" />
+                              {rep?.name || 'Unknown Rep'}
+                            </h4>
+                          </div>
+                          <div className="flex flex-col items-end text-right">
+                            <span className="text-[10px] text-slate-500 font-bold uppercase">Requested Amount</span>
+                            <span className="text-lg font-black text-white">{req.amount} {req.category.includes('Overtime') ? 'Hours' : 'USD'}</span>
+                          </div>
+                        </div>
+                        
+                        <div className="flex flex-col gap-1.5">
+                          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Reason for Request</span>
+                          <p className="text-xs text-slate-300 leading-relaxed bg-slate-900/50 p-3 rounded-lg border border-slate-800">
+                            {req.notes}
+                          </p>
+                        </div>
+                        
+                        <div className="flex items-center justify-between mt-2 pt-3 border-t border-slate-800/50">
+                          <div className="flex items-center gap-2 px-3 py-1.5 bg-sky-950/30 border border-sky-900/50 rounded-lg">
+                            <DollarSign className="w-4 h-4 text-sky-400" />
+                            <div className="flex flex-col">
+                              <span className="text-[8px] font-bold text-sky-500 uppercase">Estimated Cost Impact</span>
+                              <span className="text-xs font-bold text-sky-300">${costImpact} USD</span>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center gap-2">
+                            <button 
+                              onClick={() => {
+                                const confirmReject = window.confirm('Are you sure you want to reject this request?');
+                                if (confirmReject) {
+                                  const updated = { ...req, status: 'rejected' };
+                                  saveEntity('expenseEntries', updated);
+                                  logSystemEvent('payroll', 'expense_reject', `Customer rejected overtime request ${req.id} for ${rep?.name}.`);
+                                  window.dispatchEvent(new Event('ids_pulse_db_update'));
+                                }
+                              }}
+                              className="px-4 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 hover:text-rose-300 border border-rose-500/20 font-bold text-xs rounded-lg transition-colors flex items-center gap-1.5"
+                            >
+                              <X className="w-4 h-4" /> Reject
+                            </button>
+                            <button 
+                              onClick={() => {
+                                const updated = { ...req, status: 'approved_customer' };
+                                saveEntity('expenseEntries', updated);
+                                logSystemEvent('payroll', 'expense_approve', `Customer approved overtime request ${req.id} for ${rep?.name}.`);
+                                window.dispatchEvent(new Event('ids_pulse_db_update'));
+                                alert('Request approved! It has been forwarded to the IDS Accountant.');
+                              }}
+                              className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs rounded-lg transition-colors flex items-center gap-1.5 shadow-[0_0_15px_rgba(16,185,129,0.3)]"
+                            >
+                              <CheckCircle2 className="w-4 h-4" /> Approve
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  });
+                })()}
               </div>
             </div>
           )}
@@ -7472,7 +7615,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       {/* OVERLAY PANEL 3: DAILY SHIFT WALKTHROUGH DETAILS (Donna's Review Panel) */}
       {selectedShiftReport && (
         <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-6 z-50 animate-in fade-in duration-200">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-xl overflow-hidden shadow-2xl flex flex-col max-h-[600px] text-left">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-3xl overflow-hidden shadow-2xl flex flex-col max-h-[700px] text-left">
             <div className="bg-slate-950 px-5 py-4 border-b border-slate-850 flex items-center justify-between">
               <div>
                 <h3 className="text-xs font-bold text-white uppercase tracking-wider">Shift Summary Walkthrough Details</h3>
@@ -7484,7 +7627,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
             <div className="p-4 bg-slate-950/50 border-b border-slate-850 flex flex-col gap-1 text-xs text-slate-300">
               <div>Rep: <span className="font-bold text-white">{users.find(u => u.id === selectedShiftReport.rep_id)?.name}</span></div>
               <div>Plant Location: <span className="font-bold text-white">GM Oshawa Plant</span></div>
-              <div>Time Compiled: <span className="font-mono text-[10px] text-slate-400">{new Date(selectedShiftReport.sent_at).toLocaleString()}</span></div>
+              <div>Time Compiled: <span className="font-mono text-[10px] text-slate-400">{new Date(selectedShiftReport.sent_at || selectedShiftReport.created_at || new Date()).toLocaleString()}</span></div>
             </div>
 
             {/* Displaying checked areas in detail cards */}

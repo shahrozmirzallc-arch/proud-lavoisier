@@ -46,17 +46,55 @@ body {
 /* Premium card glassmorphism styles */
 .glass-panel {
   background: var(--panel-bg) !important;
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.4);
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  border-radius: 16px;
 }
 
 .glass-card-hover:hover {
-  border-color: rgba(34, 211, 238, 0.25);
-  box-shadow: 0 8px 32px 0 rgba(34, 211, 238, 0.05);
-  transform: translateY(-2px);
+  border-color: rgba(34, 211, 238, 0.4);
+  box-shadow: 0 12px 48px -12px rgba(34, 211, 238, 0.15);
+  transform: translateY(-4px);
 }
+
+/* Google Stitch specific premium UI classes */
+.stitch-btn {
+  background: linear-gradient(135deg, #0EA5E9 0%, #3B82F6 100%);
+  border: none;
+  border-radius: 9999px;
+  color: white;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 14px 0 rgba(14, 165, 233, 0.39);
+}
+.stitch-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(14, 165, 233, 0.5);
+}
+
+.stitch-panel {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  backdrop-filter: blur(20px);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+}
+
+.stitch-input {
+  background: rgba(15, 23, 42, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  color: #fff;
+  transition: all 0.2s ease;
+}
+.stitch-input:focus {
+  border-color: #0EA5E9;
+  box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.25);
+  outline: none;
+}
+
 
 /* Metric Glow classes */
 .glow-pulse-blue {

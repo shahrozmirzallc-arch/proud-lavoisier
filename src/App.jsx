@@ -107,7 +107,6 @@ function App() {
   const [systemUsername, setSystemUsername] = useState('');
   const [systemPassword, setSystemPassword] = useState('');
   const [authError, setAuthError] = useState(false);
-  const [revokedError, setRevokedError] = useState(false);
 
   useEffect(() => {
     document.body.classList.remove('theme-royal-blue', 'theme-neon-violet', 'theme-emerald-green', 'theme-ruby-red');
@@ -141,7 +140,7 @@ function App() {
   }, []);
 
   if (!isUnlocked) {
-    const isLight = dayNight === 'day';
+    const isLight = dayNight === 'night';
     return (
       <div 
         className="min-h-screen flex items-center justify-center p-6 relative overflow-hidden font-sans transition-colors duration-300" 
@@ -224,11 +223,36 @@ function App() {
                 cleanHashHex === '3dc913cc6d99a4f6fa13c07c646c8efa8b9410d323c484dfc1fef45322782131'
               );
 
-              // Diana's Password Hash (DianaPulse2026!)
-              const isDianaPw = (
-                hashHex === 'fbb9c06c0bb8db5f7eef5fd346791577e8abe77c668167fb3f0035b34a759d9b' ||
-                cleanHashHex === 'fbb9c06c0bb8db5f7eef5fd346791577e8abe77c668167fb3f0035b34a759d9b'
-              );
+              // Admin Specific Password Hashes
+              const adminHashes = {
+                greg: 'e6e0bc2e0084fd9a105a96352b19bc17e1133c305d71b95ea8ee34d4ab02b5ee', // Greg2026!
+                colleen: 'ccd752abe030dc31bc9ae49e24a4dd23372253615a5ec6a390fe47ba6878abc3', // Colleen2026!
+                monica: '9556d2e682b19a2e62f4b4ba8638b17bbd128a9d8da20f567a49d6fce6e42e9b', // Monica2026!
+                iris: '224277d14561475a8bc9aba23aaeb0cbf89c6238640419be87feb4d35d653ca6', // Iris2026!
+                donna: '30e94cd242d100d9f98f7455f3729a261e8adbef1be6068d56f2ca8906f02ddf', // Donna2026!
+                miriam: '8570ccf94f2ed3e87fe169f26abfed781fcfd0a78bed27aab58d9de07fc0467c', // Miriam2026!
+                idspulse: '9a92a6d1cf6ec2949a7ee59160e25dbc16948a10c5d8d805456c1b788da3ac51', // Pulse2026!
+                diana: 'fbb9c06c0bb8db5f7eef5fd346791577e8abe77c668167fb3f0035b34a759d9b', // DianaPulse2026!
+                shahroz: '3dc913cc6d99a4f6fa13c07c646c8efa8b9410d323c484dfc1fef45322782131' // Shahroz123$
+              };
+
+              const repHashes = {
+                hugo: 'c64af887d9674ca8412b190b24d2f6832f26bd793741b8950ee0fdef607ecf29', // Hugo2026!
+                nabil: 'fa7bd90019d53e79275df8cfbdb2c1aa0452cd5014a61bc33a00762c0a1c6758', // Nabil2026!
+                rogelio: 'e61e93bbc830f459760753dc939561ff6f7803265ab3558b528fee3cae768666', // Rogelio2026!
+                clarence: 'f53f71f14ab8ec71d37880f364626c078b44ebb0c2ab0bfd725f0d82f93d00c0' // Clarence2026!
+              };
+
+              const customerHashes = {
+                autokabel: '6f43cfa01465d7148ff27a7937b1a0c423c270d0021bc96c13077cc97fc7e59a', // Autokabel2026!
+                magna: '012a4330d67f32ea9a514c8941cb068d2fcdb1600e6bc7699790e606fbe96559', // Magna2026!
+                hutchinson: 'aeb399a87fbb23ee6a65017fd465aa284dc6ee406334b9d5544d6ecf0d125677', // Hutchinson2026!
+                brose: '314ac53360d6111f3be1678d7a96aa6d3886921327a04bc488d0ead1eb930373' // Brose2026!
+              };
+
+              const isValidSpecificAdmin = adminHashes[inputUser] && (hashHex === adminHashes[inputUser] || cleanHashHex === adminHashes[inputUser]);
+              const isValidSpecificRep = repHashes[inputUser] && (hashHex === repHashes[inputUser] || cleanHashHex === repHashes[inputUser]);
+              const isValidSpecificCustomer = customerHashes[inputUser] && (hashHex === customerHashes[inputUser] || cleanHashHex === customerHashes[inputUser]);
 
               // Setup login target
               let targetUser = inputUser;
@@ -237,7 +261,7 @@ function App() {
 
               // If username is blank, check if the password is one of the key hashes
               if (!targetUser) {
-                if (isDianaPw) {
+                if (adminHashes['diana'] === hashHex) {
                   targetUser = 'diana';
                   isAuthorized = true;
                   loginType = 'admin';
@@ -248,29 +272,23 @@ function App() {
                 }
               } else {
                 // If username is specified, verify matching password
-                if (targetUser === 'diana') {
-                  if (isDianaPw) {
-                    isAuthorized = true;
-                    loginType = 'admin';
-                  }
-                } else if (targetUser === 'shahroz') {
-                  if (isShahrozPw) {
-                    isAuthorized = true;
-                    loginType = 'admin';
-                  }
-                } else {
-                  // For all other users, check if they are admins/reps/customers and password matches master password
-                  const admins = ['greg', 'colleen', 'monica', 'iris', 'donna', 'miriam', 'idspulse'];
-                  const reps = ['hugo', 'nabil', 'rogelio', 'clarence'];
-                  const customers = ['autokabel', 'magna', 'hutchinson', 'brose'];
+                const admins = Object.keys(adminHashes);
+                const reps = Object.keys(repHashes);
+                const customers = Object.keys(customerHashes);
 
-                  if (admins.includes(targetUser) && isShahrozPw) {
+                if (admins.includes(targetUser)) {
+                  // Admin logs in with either their specific password OR the master fallback (Shahroz123$)
+                  if (isValidSpecificAdmin || isShahrozPw) {
                     isAuthorized = true;
                     loginType = 'admin';
-                  } else if (reps.includes(targetUser) && isShahrozPw) {
+                  }
+                } else if (reps.includes(targetUser)) {
+                  if (isValidSpecificRep || isShahrozPw) {
                     isAuthorized = true;
                     loginType = 'rep';
-                  } else if (customers.includes(targetUser) && isShahrozPw) {
+                  }
+                } else if (customers.includes(targetUser)) {
+                  if (isValidSpecificCustomer || isShahrozPw) {
                     isAuthorized = true;
                     loginType = 'customer';
                   }
@@ -287,17 +305,18 @@ function App() {
                   setUserRole(reactRole);
                   setLayoutMode('dashboard-only');
                   sessionStorage.setItem('ids_pulse_unlocked', 'true');
-                  sessionStorage.setItem('ids_pulse_role', 'admin');
+                  sessionStorage.setItem('ids_pulse_role', reactRole);
                   sessionStorage.setItem('ids_pulse_admin_user', adminName);
                   setAuthError(false);
                 } else if (loginType === 'rep') {
-                  setUserRole('qre');
+                  setUserRole('rep');
                   const repId = targetUser === 'clarence' ? '1' : `rep_${targetUser}`;
                   setCurrentUserRepId(repId);
                   setLayoutMode('dashboard-only');
                   sessionStorage.setItem('ids_pulse_unlocked', 'true');
                   sessionStorage.setItem('ids_pulse_role', 'rep');
                   sessionStorage.setItem('ids_pulse_rep_id', repId);
+                  sessionStorage.removeItem('ids_pulse_admin_user');
                   setAuthError(false);
                 } else if (loginType === 'customer') {
                   setUserRole('customer');
@@ -306,6 +325,7 @@ function App() {
                   sessionStorage.setItem('ids_pulse_unlocked', 'true');
                   sessionStorage.setItem('ids_pulse_role', 'customer');
                   sessionStorage.setItem('ids_pulse_customer_id', targetUser);
+                  sessionStorage.removeItem('ids_pulse_admin_user');
                   setAuthError(false);
                 }
               } else {
@@ -594,7 +614,7 @@ function App() {
                 {userRole === 'accountant' ? "Colleen's Dashboard (Web CRM Portal)" :
                  userRole === 'lead' ? "Donna's Dashboard (Web CRM Portal)" :
                  userRole === 'shahroz' ? "Shahroz's Admin Dashboard (Web CRM Portal)" :
-                 userRole === 'qre' ? "QRE Representative Portal" :
+                 userRole === 'rep' ? "QRE Representative Portal" :
                  userRole === 'customer' ? "Customer Quality Portal" :
                  "Greg's Admin Dashboard (Web CRM Portal)"}
               </span>

@@ -156,18 +156,18 @@ function App() {
             className={`flex items-center gap-2 px-4 py-2 rounded-full border transition-all font-mono text-[10px] font-bold select-none cursor-pointer uppercase tracking-wider ${
               isLight 
                 ? 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50' 
-                : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:text-white hover:bg-slate-900'
+                : 'bg-surface-elevated border-border-subtle text-text-secondary hover:text-text-primary hover:bg-surface-elevated'
             }`}
           >
             {isLight ? (
               <>
                 <Moon className="w-3.5 h-3.5 text-indigo-500" />
-                <span>Night Mode (Dark)</span>
+                <span>Switch to Dark Mode</span>
               </>
             ) : (
               <>
                 <Sun className="w-3.5 h-3.5 text-amber-500" />
-                <span>Day Mode (Light)</span>
+                <span>Switch to Light Mode</span>
               </>
             )}
           </button>
@@ -177,20 +177,20 @@ function App() {
         <div className={`w-full max-w-[460px] border p-12 flex flex-col gap-10 relative z-10 transition-all rounded-none ${
           isLight 
             ? 'bg-white border-slate-200 shadow-sm text-slate-900' 
-            : 'bg-slate-900 border-slate-800 shadow-lg text-white'
+            : 'bg-surface-elevated border-border-subtle shadow-lg text-text-primary'
         }`}>
           {/* Header Section */}
           <div className="flex flex-col items-center text-center gap-5">
             <div className="w-14 h-14 flex items-center justify-center relative">
               <Shield className={`w-12 h-12 ${isLight ? 'text-blue-600' : 'text-blue-500'}`} style={{ strokeWidth: 1.5 }} />
               <Lock className={`w-4 h-4 absolute bottom-0.5 right-0.5 p-0.5 rounded-full ${
-                isLight ? 'text-blue-600 bg-white' : 'text-blue-500 bg-slate-900'
+                isLight ? 'text-blue-600 bg-white' : 'text-blue-500 bg-surface-elevated'
               }`} />
             </div>
             <div>
               <h1 className="text-lg font-black uppercase tracking-tighter mb-2">IDS PULSE SECURITY GATEWAY</h1>
               <p className={`text-xs leading-relaxed max-w-[320px] mx-auto ${
-                isLight ? 'text-slate-500' : 'text-slate-400'
+                isLight ? 'text-text-secondary' : 'text-text-secondary'
               }`}>
                 This terminal is encrypted. Please authenticate to initialize dashboard and simulator session.
               </p>
@@ -343,7 +343,7 @@ function App() {
             {/* Username Input Group */}
             <div className="flex flex-col gap-2">
               <label className={`text-[10px] uppercase font-bold tracking-widest ${
-                isLight ? 'text-slate-400' : 'text-slate-500'
+                isLight ? 'text-text-secondary' : 'text-text-secondary'
               }`}>USER IDENTITY / EMAIL</label>
               <div className="relative">
                 <input 
@@ -354,7 +354,7 @@ function App() {
                   className={`w-full h-14 px-5 border text-base rounded-none focus:outline-none transition-all ${
                     isLight 
                       ? 'bg-slate-50 border-slate-200 text-slate-900 focus:border-blue-600 focus:ring-1 focus:ring-blue-600' 
-                      : 'bg-slate-950 border-slate-800 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500'
+                      : 'bg-surface border-border-subtle text-text-primary focus:border-blue-500 focus:ring-1 focus:ring-blue-500'
                   }`}
                   autoFocus
                 />
@@ -364,7 +364,7 @@ function App() {
             {/* Password Input Group */}
             <div className="flex flex-col gap-2">
               <label className={`text-[10px] uppercase font-bold tracking-widest ${
-                isLight ? 'text-slate-400' : 'text-slate-500'
+                isLight ? 'text-text-secondary' : 'text-text-secondary'
               }`}>ACCESS PASSWORD</label>
               <div className="relative">
                 <input 
@@ -377,7 +377,7 @@ function App() {
                       ? 'border-red-500/80 focus:border-red-500' 
                       : isLight 
                         ? 'bg-slate-50 border-slate-200 text-slate-900 focus:border-blue-600 focus:ring-1 focus:ring-blue-600' 
-                        : 'bg-slate-950 border-slate-800 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500'
+                        : 'bg-surface border-border-subtle text-text-primary focus:border-blue-500 focus:ring-1 focus:ring-blue-500'
                   }`}
                 />
               </div>
@@ -387,7 +387,7 @@ function App() {
               type="submit"
               className={`w-full h-14 font-bold text-xs uppercase tracking-widest rounded-none transition-all active:scale-[0.98] cursor-pointer border ${
                 isLight 
-                  ? 'bg-slate-950 hover:bg-slate-800 text-white border-transparent' 
+                  ? 'bg-surface hover:bg-surface-elevated text-text-primary border-transparent' 
                   : 'bg-white hover:bg-slate-100 text-slate-950 border-transparent'
               }`}
             >
@@ -404,7 +404,7 @@ function App() {
 
           {/* Footer Section */}
           <div className={`flex justify-between items-center pt-6 border-t text-[10px] font-bold uppercase tracking-widest ${
-            isLight ? 'border-slate-100 text-slate-400' : 'border-slate-850 text-slate-500'
+            isLight ? 'border-slate-100 text-text-secondary' : 'border-border-subtle text-text-secondary'
           }`}>
             <div className="flex items-center gap-1.5">
               <div className={`w-1.5 h-1.5 rounded-full ${isLight ? 'bg-blue-600 animate-pulse' : 'bg-blue-500 animate-pulse'}`}></div>
@@ -418,10 +418,10 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen text-slate-100 flex flex-col font-sans" style={{ backgroundColor: 'var(--bg-color)' }}>
+    <div className="min-h-screen text-text-primary flex flex-col font-sans" style={{ backgroundColor: 'var(--bg-color)' }}>
       
       {/* Top Navigation Bar */}
-      <header className="bg-slate-950/80 border-b border-slate-900 px-6 py-3 flex flex-col sm:flex-row items-center justify-between sticky top-0 z-50 backdrop-blur-md gap-4">
+      <header className="bg-surface border-b border-border-subtle px-6 py-3 flex flex-col sm:flex-row items-center justify-between sticky top-0 z-50 backdrop-blur-md gap-4">
         <div className="flex items-center gap-3 w-full sm:w-auto">
           <div className="w-8 h-8 bg-[#1E3A5F] rounded-lg flex items-center justify-center border border-[#22D3EE]/20 relative">
             <Shield className="w-5 h-5 text-[#22D3EE] fill-[#1E3A5F]" />
@@ -429,11 +429,11 @@ function App() {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-extrabold text-sm text-white tracking-tight">IDS Pulse Operations Suite</span>
+              <span className="font-extrabold text-sm text-text-primary tracking-tight">IDS Pulse Operations Suite</span>
               <span className="text-[9px] bg-[#0EA5E9]/15 text-[#22D3EE] border border-[#0EA5E9]/20 px-2 py-0.5 rounded-full font-bold uppercase">Active</span>
               {sessionStorage.getItem('ids_pulse_role') === 'admin' && (
-                <div className="flex items-center gap-1.5 bg-slate-900/80 border border-slate-800 rounded-lg px-2 py-0.5 ml-1 flex-shrink-0">
-                  <span className="text-[8px] text-slate-500 font-black uppercase">Admin Profile:</span>
+                <div className="flex items-center gap-1.5 bg-surface-elevated border border-border-subtle rounded-lg px-2 py-0.5 ml-1 flex-shrink-0">
+                  <span className="text-[8px] text-text-secondary font-black uppercase">Admin Profile:</span>
                   <select
                     value={userRole}
                     onChange={(e) => {
@@ -447,71 +447,71 @@ function App() {
                     }}
                     className="bg-transparent border-none text-[9.5px] font-bold text-[#22D3EE] focus:outline-none cursor-pointer p-0.5"
                   >
-                    <option value="owner" className="bg-slate-950 text-white">Greg (Owner)</option>
-                    <option value="accountant" className="bg-slate-950 text-white">Colleen (Finance)</option>
-                    <option value="lead" className="bg-slate-950 text-white">Donna (Shift Lead)</option>
+                    <option value="owner" className="bg-surface text-text-primary">Greg (Owner)</option>
+                    <option value="accountant" className="bg-surface text-text-primary">Colleen (Finance)</option>
+                    <option value="lead" className="bg-surface text-text-primary">Donna (Shift Lead)</option>
                     {(sessionStorage.getItem('ids_pulse_admin_user') === 'shahroz' || sessionStorage.getItem('ids_pulse_admin_user') === 'idspulse') && (
-                      <option value="shahroz" className="bg-slate-950 text-white">Shahroz (Super Admin)</option>
+                      <option value="shahroz" className="bg-surface text-text-primary">Shahroz (Super Admin)</option>
                     )}
                   </select>
                 </div>
               )}
             </div>
-            <p className="text-[10px] text-slate-400">Enterprise quality tracking, audit metrics, and field dispatch operations.</p>
+            <p className="text-[10px] text-text-secondary">Enterprise quality tracking, audit metrics, and field dispatch operations.</p>
           </div>
         </div>
 
         {/* View Mode Controls */}
         <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end">
           {/* Dynamic Theme Switcher */}
-          <div className="flex items-center gap-1.5 bg-slate-900/60 p-1.5 rounded-lg border border-slate-800">
-            <span className="text-[8px] text-slate-500 font-black uppercase px-1">Theme:</span>
+          <div className="flex items-center gap-1.5 bg-surface-elevated p-1.5 rounded-lg border border-border-subtle">
+            <span className="text-[8px] text-text-secondary font-black uppercase px-1">Theme:</span>
             <button 
               type="button"
               onClick={() => setTheme('royal-blue')}
-              className={`w-3.5 h-3.5 rounded-full bg-blue-600 border ${theme === 'royal-blue' ? 'border-white scale-110 shadow-md shadow-blue-500/50' : 'border-slate-850'} transition-all cursor-pointer`}
+              className={`w-3.5 h-3.5 rounded-full bg-blue-600 border ${theme === 'royal-blue' ? 'border-white scale-110 shadow-md shadow-blue-500/50' : 'border-border-subtle'} transition-all cursor-pointer`}
               title="Royal Blue & Amber"
             />
             <button 
               type="button"
               onClick={() => setTheme('neon-violet')}
-              className={`w-3.5 h-3.5 rounded-full bg-violet-600 border ${theme === 'neon-violet' ? 'border-white scale-110 shadow-md shadow-violet-500/50' : 'border-slate-850'} transition-all cursor-pointer`}
+              className={`w-3.5 h-3.5 rounded-full bg-violet-600 border ${theme === 'neon-violet' ? 'border-white scale-110 shadow-md shadow-violet-500/50' : 'border-border-subtle'} transition-all cursor-pointer`}
               title="Neon Violet & Turquoise"
             />
             <button 
               type="button"
               onClick={() => setTheme('emerald-green')}
-              className={`w-3.5 h-3.5 rounded-full bg-emerald-600 border ${theme === 'emerald-green' ? 'border-white scale-110 shadow-md shadow-emerald-500/50' : 'border-slate-850'} transition-all cursor-pointer`}
+              className={`w-3.5 h-3.5 rounded-full bg-emerald-600 border ${theme === 'emerald-green' ? 'border-white scale-110 shadow-md shadow-emerald-500/50' : 'border-border-subtle'} transition-all cursor-pointer`}
               title="Emerald & Slate"
             />
             <button 
               type="button"
               onClick={() => setTheme('ruby-red')}
-              className={`w-3.5 h-3.5 rounded-full bg-rose-600 border ${theme === 'ruby-red' ? 'border-white scale-110 shadow-md shadow-rose-500/50' : 'border-slate-850'} transition-all cursor-pointer`}
+              className={`w-3.5 h-3.5 rounded-full bg-rose-600 border ${theme === 'ruby-red' ? 'border-white scale-110 shadow-md shadow-rose-500/50' : 'border-border-subtle'} transition-all cursor-pointer`}
               title="Charcoal & Ruby"
             />
           </div>
 
-          {/* Day / Night Toggle Button (Day = Dark, Night = Light Mode) */}
+          {/* Day / Night Toggle Button */}
           <button 
             type="button"
             onClick={() => setDayNight(prev => prev === 'day' ? 'night' : 'day')}
-            className={`flex items-center gap-2 text-[10px] font-extrabold px-3 py-1.5 rounded-lg border transition-all cursor-pointer select-none ${
+            title={dayNight === 'day' ? "Switch to Light Mode" : "Switch to Dark Mode"}
+            className={`w-[220px] px-3 py-1.5 rounded-xl font-bold flex items-center justify-between transition-all cursor-pointer ${
               dayNight === 'day' 
-                ? 'bg-slate-900/60 border-slate-800 text-amber-400 hover:bg-slate-900 hover:text-amber-300 shadow-sm shadow-black/25' 
-                : 'bg-white border-slate-200 text-indigo-600 hover:bg-slate-50 hover:text-indigo-700 shadow-sm'
+                ? 'bg-surface-elevated border-border-subtle text-amber-400 hover:bg-surface hover:text-amber-300 shadow-sm shadow-black/25' 
+                : 'bg-surface-elevated border-border-subtle text-indigo-600 hover:bg-surface hover:text-indigo-700 shadow-sm'
             }`}
-            title={dayNight === 'day' ? "Switch to Night Mode (Light Theme)" : "Switch to Day Mode (Dark Theme)"}
           >
             {dayNight === 'day' ? (
               <>
-                <Sun className="w-3.5 h-3.5 text-amber-500" />
-                <span>Day Mode (Dark)</span>
+                <Sun className="w-4 h-4 text-amber-400" />
+                <span>Switch to Light Mode</span>
               </>
             ) : (
               <>
                 <Moon className="w-3.5 h-3.5 text-indigo-500" />
-                <span>Night Mode (Light)</span>
+                <span>Switch to Dark Mode</span>
               </>
             )}
           </button>
@@ -519,11 +519,11 @@ function App() {
           {/* Contextual Options */}
           <div className="flex items-center gap-3">
             {/* Segmented Layout Selector */}
-            <div className="flex items-center bg-slate-900/60 p-1 rounded-lg border border-slate-800">
+            <div className="flex items-center bg-surface-elevated p-1 rounded-lg border border-border-subtle">
               <button 
                 type="button"
                 onClick={() => setLayoutMode('phone-only')}
-                className={`flex items-center gap-1.5 text-[10px] font-bold py-1.5 px-3 rounded-md transition-all cursor-pointer ${layoutMode === 'phone-only' ? 'bg-[#1e3a5f] text-[#22d3ee] border border-[#22d3ee]/20' : 'text-slate-400 hover:text-white'}`}
+                className={`flex items-center gap-1.5 text-[10px] font-bold py-1.5 px-3 rounded-md transition-all cursor-pointer ${layoutMode === 'phone-only' ? 'bg-[#1e3a5f] text-[#22d3ee] border border-[#22d3ee]/20' : 'text-text-secondary hover:text-text-primary'}`}
                 title="Show Mobile App Only"
               >
                 <Smartphone className="w-3.5 h-3.5" />
@@ -532,7 +532,7 @@ function App() {
               <button 
                 type="button"
                 onClick={() => setLayoutMode('dashboard-only')}
-                className={`flex items-center gap-1.5 text-[10px] font-bold py-1.5 px-3 rounded-md transition-all cursor-pointer ${layoutMode === 'dashboard-only' ? 'bg-[#1e3a5f] text-[#22d3ee] border border-[#22d3ee]/20' : 'text-slate-400 hover:text-white'}`}
+                className={`flex items-center gap-1.5 text-[10px] font-bold py-1.5 px-3 rounded-md transition-all cursor-pointer ${layoutMode === 'dashboard-only' ? 'bg-[#1e3a5f] text-[#22d3ee] border border-[#22d3ee]/20' : 'text-text-secondary hover:text-text-primary'}`}
                 title="Show Dashboard Only"
               >
                 <Monitor className="w-3.5 h-3.5" />
@@ -542,7 +542,7 @@ function App() {
                 <button 
                   type="button"
                   onClick={() => setLayoutMode('roadmap-only')}
-                  className={`flex items-center gap-1.5 text-[10px] font-bold py-1.5 px-3 rounded-md transition-all cursor-pointer ${layoutMode === 'roadmap-only' ? 'bg-[#1e3a5f] text-[#22d3ee] border border-[#22d3ee]/20' : 'text-slate-400 hover:text-white'}`}
+                  className={`flex items-center gap-1.5 text-[10px] font-bold py-1.5 px-3 rounded-md transition-all cursor-pointer ${layoutMode === 'roadmap-only' ? 'bg-[#1e3a5f] text-[#22d3ee] border border-[#22d3ee]/20' : 'text-text-secondary hover:text-text-primary'}`}
                   title="Show Launch Roadmap Only"
                 >
                   <Milestone className="w-3.5 h-3.5" />
@@ -552,7 +552,7 @@ function App() {
               <button 
                 type="button"
                 onClick={() => setLayoutMode('side-by-side')}
-                className={`flex items-center gap-1.5 text-[10px] font-bold py-1.5 px-3 rounded-md transition-all cursor-pointer ${layoutMode === 'side-by-side' ? 'bg-[#1e3a5f] text-[#22d3ee] border border-[#22d3ee]/20' : 'text-slate-400 hover:text-white'}`}
+                className={`flex items-center gap-1.5 text-[10px] font-bold py-1.5 px-3 rounded-md transition-all cursor-pointer ${layoutMode === 'side-by-side' ? 'bg-[#1e3a5f] text-[#22d3ee] border border-[#22d3ee]/20' : 'text-text-secondary hover:text-text-primary'}`}
                 title="Show Side-by-Side Layout"
               >
                 <Laptop className="w-3.5 h-3.5" />
@@ -567,7 +567,7 @@ function App() {
                 initializeDB();
                 window.dispatchEvent(new Event('ids_pulse_db_update'));
               }}
-              className="flex items-center gap-1.5 text-slate-400 hover:text-white bg-slate-900 border border-slate-800 py-1.5 px-2.5 rounded-lg text-xs cursor-pointer transition-colors"
+              className="flex items-center gap-1.5 text-text-secondary hover:text-text-primary bg-surface-elevated border border-border-subtle py-1.5 px-2.5 rounded-lg text-xs cursor-pointer transition-colors"
               title="Clear and reset local database"
             >
               <RefreshCw className="w-3.5 h-3.5" />
@@ -581,7 +581,7 @@ function App() {
                 sessionStorage.removeItem('ids_pulse_customer_id');
                 window.location.reload();
               }}
-              className="flex items-center gap-1.5 text-slate-400 hover:text-red-400 bg-slate-900 border border-slate-850 py-1.5 px-2.5 rounded-lg text-xs cursor-pointer transition-colors"
+              className="flex items-center gap-1.5 text-text-secondary hover:text-red-400 bg-surface-elevated border border-border-subtle py-1.5 px-2.5 rounded-lg text-xs cursor-pointer transition-colors"
               title="Lock Application Session"
             >
               <Lock className="w-3.5 h-3.5 text-red-400/85" />
@@ -599,7 +599,7 @@ function App() {
           {(layoutMode === 'side-by-side' || layoutMode === 'phone-only') && (
             <div className="flex-shrink-0 flex items-center justify-center py-4 mx-auto lg:mx-0">
               <div className="flex flex-col items-center">
-                <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-2">Clarence's Phone (Mobile App)</span>
+                <span className="text-[10px] text-text-secondary font-bold uppercase tracking-wider mb-2">Clarence's Phone (Mobile App)</span>
                 <ErrorBoundary>
                   <PhoneSimulator 
                     isOffline={isOffline} 
@@ -614,7 +614,7 @@ function App() {
           {/* Web Dashboard Column */}
           {(layoutMode === 'side-by-side' || layoutMode === 'dashboard-only') && (
             <div className="flex-1 w-full flex flex-col min-h-0">
-              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-2 pl-2">
+              <span className="text-[10px] text-text-secondary font-bold uppercase tracking-wider mb-2 pl-2">
                 {userRole === 'accountant' ? "Colleen's Dashboard (Web CRM Portal)" :
                  userRole === 'lead' ? "Donna's Dashboard (Web CRM Portal)" :
                  userRole === 'shahroz' ? "Shahroz's Admin Dashboard (Web CRM Portal)" :
@@ -629,7 +629,7 @@ function App() {
           {/* Launch Roadmap Column */}
           {layoutMode === 'roadmap-only' && userRole === 'shahroz' && (
             <div className="flex-1 w-full flex flex-col min-h-0">
-              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-2 pl-2">IDS Pulse Project Launch Roadmap & Timeline</span>
+              <span className="text-[10px] text-text-secondary font-bold uppercase tracking-wider mb-2 pl-2">IDS Pulse Project Launch Roadmap & Timeline</span>
               <ErrorBoundary><WebDashboard dbUpdateTrigger={dbUpdateTrigger} forceRoadmapOnly={true} userRole={userRole} layoutMode={layoutMode} /></ErrorBoundary>
             </div>
           )}

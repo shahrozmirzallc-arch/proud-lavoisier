@@ -1198,71 +1198,79 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
             {/* Quick Actions */}
             <div className="flex flex-col gap-2 mt-auto">
               <p className="text-[10.5px] text-slate-500 font-bold uppercase tracking-wider pl-1">Actions Feed</p>
-              <div className="grid grid-cols-2 gap-2">
+              
+              <button 
+                onClick={() => {
+                  setActiveScreen('incident');
+                  setIncStep(1);
+                }}
+                className="w-full bg-slate-900/80 hover:bg-slate-800 border border-slate-800/60 rounded-xl p-3 flex items-center gap-3 transition-colors cursor-pointer group shadow-sm"
+              >
+                <div className="w-9 h-9 rounded-xl bg-red-500/10 flex items-center justify-center shrink-0 border border-red-500/20 group-hover:bg-red-500/20 transition-colors">
+                  <AlertTriangle className="w-4.5 h-4.5 text-red-400 drop-shadow-[0_0_5px_rgba(248,113,113,0.4)]" />
+                </div>
+                <div className="text-left flex-1">
+                  <span className="text-[13.5px] font-bold block text-white group-hover:text-red-400 transition-colors tracking-wide">New Suspect Material</span>
+                  <span className="text-[11.5px] text-slate-500 block leading-tight mt-0.5">Log suspect materials on floor</span>
+                </div>
+                <ChevronRight className="w-4.5 h-4.5 text-slate-600 group-hover:text-red-400 transition-colors" />
+              </button>
+
+              <button 
+                disabled={!shiftActive}
+                onClick={() => setActiveScreen('rework')}
+                className="w-full bg-slate-900/80 hover:bg-slate-800 disabled:opacity-50 disabled:bg-slate-900/40 border border-slate-800/60 rounded-xl p-3 flex items-center gap-3 transition-colors cursor-pointer group disabled:cursor-not-allowed shadow-sm"
+              >
+                <div className="w-9 h-9 rounded-xl bg-[#0EA5E9]/10 flex items-center justify-center shrink-0 border border-[#0EA5E9]/20 group-hover:bg-[#0EA5E9]/20 transition-colors">
+                  <Clock className="w-4.5 h-4.5 text-[#0EA5E9] drop-shadow-[0_0_5px_rgba(14,165,233,0.4)]" />
+                </div>
+                <div className="text-left flex-1">
+                  <span className="text-[13.5px] font-bold block text-white group-hover:text-[#0EA5E9] transition-colors tracking-wide">Log Rework Hours</span>
+                  <span className="text-[11.5px] text-slate-500 block leading-tight mt-0.5">Track billable pcs and sorting time</span>
+                </div>
+                <ChevronRight className="w-4.5 h-4.5 text-slate-600 group-hover:text-[#0EA5E9] transition-colors" />
+              </button>
+
+              <button 
+                disabled={!shiftActive}
+                onClick={() => setActiveScreen('expenses')}
+                className="w-full bg-slate-900/80 hover:bg-slate-800 disabled:opacity-50 disabled:bg-slate-900/40 border border-slate-800/60 rounded-xl p-3 flex items-center gap-3 transition-colors cursor-pointer group disabled:cursor-not-allowed shadow-sm"
+              >
+                <div className="w-9 h-9 rounded-xl bg-emerald-500/10 flex items-center justify-center shrink-0 border border-emerald-500/20 group-hover:bg-emerald-500/20 transition-colors">
+                  <Receipt className="w-4.5 h-4.5 text-emerald-400 drop-shadow-[0_0_5px_rgba(52,211,153,0.4)]" />
+                </div>
+                <div className="text-left flex-1">
+                  <span className="text-[13.5px] font-bold block text-white group-hover:text-emerald-400 transition-colors tracking-wide">Log Expenses</span>
+                  <span className="text-[11.5px] text-slate-500 block leading-tight mt-0.5">Track fuel, parking, tolls, or meals</span>
+                </div>
+                <ChevronRight className="w-4.5 h-4.5 text-slate-600 group-hover:text-emerald-400 transition-colors" />
+              </button>
+
+              <div className="grid grid-cols-2 gap-2 mt-1">
                 <button 
-                  onClick={() => {
-                    setActiveScreen('incident');
-                    setIncStep(1);
-                  }}
-                  className="bg-slate-900 hover:bg-slate-800 border border-slate-800/60 rounded-xl p-3 text-left transition-colors cursor-pointer group"
+                  onClick={() => setActiveScreen('summary')}
+                  className="w-full h-11 bg-slate-900/60 hover:bg-slate-800 border border-slate-800/60 rounded-xl px-3 flex items-center justify-between transition-colors group cursor-pointer"
                 >
-                  <div className="w-6 h-6 rounded-lg bg-red-500/10 flex items-center justify-center mb-1.5 border border-red-500/10">
-                    <AlertTriangle className="w-3.5 h-3.5 text-red-400" />
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-[#22D3EE] group-hover:scale-110 transition-transform" />
+                    <span className="text-[12px] font-semibold text-slate-350 group-hover:text-white transition-colors tracking-wide">Shift Logs</span>
                   </div>
-                  <span className="text-[13.5px] font-bold block text-white group-hover:text-[#0EA5E9] transition-colors">New Suspect Material</span>
-                  <span className="text-[12.5px] text-slate-500 block leading-tight mt-0.5">Log suspect materials on floor</span>
+                  <span className="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full font-bold group-hover:bg-slate-700 transition-colors">1</span>
                 </button>
 
                 <button 
-                  disabled={!shiftActive}
-                  onClick={() => setActiveScreen('rework')}
-                  className="bg-slate-900 hover:bg-slate-800 disabled:opacity-40 border border-slate-800/60 rounded-xl p-3 text-left transition-colors cursor-pointer group disabled:cursor-not-allowed"
+                  onClick={() => setActiveScreen('history')}
+                  className="w-full h-11 bg-slate-900/60 hover:bg-slate-800 border border-slate-800/60 rounded-xl px-3 flex items-center justify-between transition-colors group cursor-pointer"
                 >
-                  <div className="w-6 h-6 rounded-lg bg-[#0EA5E9]/10 flex items-center justify-center mb-1.5 border border-[#0EA5E9]/10">
-                    <Clock className="w-3.5 h-3.5 text-[#0EA5E9]" />
+                  <div className="flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-[#0EA5E9] group-hover:scale-110 transition-transform" />
+                    <span className="text-[12px] font-semibold text-slate-350 group-hover:text-white transition-colors tracking-wide">Suspects</span>
                   </div>
-                  <span className="text-[13.5px] font-bold block text-white group-hover:text-[#0EA5E9] transition-colors">Log Rework</span>
-                  <span className="text-[12.5px] text-slate-500 block leading-tight mt-0.5">Track billable pcs</span>
-                </button>
-
-                <button 
-                  disabled={!shiftActive}
-                  onClick={() => setActiveScreen('expenses')}
-                  className="col-span-2 bg-slate-900 hover:bg-slate-800 disabled:opacity-40 border border-slate-800/60 rounded-xl p-3 flex items-center gap-3 transition-colors cursor-pointer group disabled:cursor-not-allowed"
-                >
-                  <div className="w-6 h-6 rounded-lg bg-emerald-500/10 flex items-center justify-center border border-emerald-500/10 shrink-0">
-                    <Receipt className="w-3.5 h-3.5 text-emerald-400" />
-                  </div>
-                  <div className="text-left">
-                    <span className="text-[13.5px] font-bold block text-white group-hover:text-emerald-400 transition-colors">Log Expenses & Receipts</span>
-                    <span className="text-[12.5px] text-slate-500 block leading-tight mt-0.5">Track fuel, parking, tolls, or meals</span>
-                  </div>
+                  <span className="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full font-bold group-hover:bg-slate-700 transition-colors">
+                    {getEntities('incidents')?.filter(inc => inc.rep_id === (currentUser?.id || '1')).length || 0}
+                  </span>
                 </button>
               </div>
-
-              <button 
-                onClick={() => setActiveScreen('summary')}
-                className="w-full h-11 bg-slate-900/60 hover:bg-slate-900 border border-slate-800/60 rounded-xl px-3.5 flex items-center justify-between text-[13.5px] font-semibold text-slate-350 hover:text-white cursor-pointer transition-colors"
-              >
-                <div className="flex items-center gap-2">
-                  <Calendar className="w-4.5 h-4.5 text-[#22D3EE]" />
-                  <span>Shift Logs & Summary</span>
-                </div>
-                <span className="text-[10.5px] bg-slate-800 text-slate-400 px-2 py-1 rounded-full font-bold">1</span>
-              </button>
-
-              <button 
-                onClick={() => setActiveScreen('history')}
-                className="w-full h-11 bg-slate-900/60 hover:bg-slate-900 border border-slate-800/60 rounded-xl px-3.5 flex items-center justify-between text-[13.5px] font-semibold text-slate-350 hover:text-white cursor-pointer transition-colors mt-2"
-              >
-                <div className="flex items-center gap-2">
-                  <FileText className="w-4.5 h-4.5 text-[#0EA5E9]" />
-                  <span>Suspect Material Logs</span>
-                </div>
-                <span className="text-[10.5px] bg-slate-800 text-slate-400 px-2 py-1 rounded-full font-bold">
-                  {getEntities('incidents')?.filter(inc => inc.rep_id === (currentUser?.id || '1')).length || 0}
-                </span>
-              </button>
             </div>
 
             {/* END SHIFT CONFIRMATION MODAL */}

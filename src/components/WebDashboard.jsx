@@ -3,7 +3,7 @@ import {
   Shield, Activity, Server, FileText, Users, Mail, DollarSign, Database, 
   Search, Filter, ChevronRight, X, Clock, CheckCircle2, UserCheck, AlertCircle, 
   FileSpreadsheet, Calendar, ArrowRight, UserPlus, MapPin, Printer, Download, Eye, Sparkles,
-  Milestone, TrendingUp, FolderKanban, PlusCircle
+  Milestone, TrendingUp, FolderKanban, PlusCircle, ArrowLeft
 } from 'lucide-react';
 import { getEntities, saveEntity, resetDB, logSystemEvent, addProject, deleteRate } from './SharedDatabase';
 import { jsPDF } from 'jspdf';
@@ -7485,7 +7485,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                           <h4 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider mb-4 border-b border-border-subtle pb-2">Quick Actions</h4>
                           <div className="flex flex-col gap-3">
                             <button 
-                              onClick={() => { setActiveTab('time-tracking'); setTimeTrackingSubTab('time-logs'); }}
+                              onClick={() => { setActiveTab('time-tracking'); }}
                               className="w-full bg-[#0EA5E9]/10 text-[#0EA5E9] hover:bg-[#0EA5E9] hover:text-text-primary transition-colors font-bold py-3 rounded-lg text-[12.5px] uppercase tracking-wider cursor-pointer flex items-center justify-center gap-2"
                             >
                               Log Additional Hours

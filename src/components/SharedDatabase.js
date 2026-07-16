@@ -748,6 +748,11 @@ export function initializeDB() {
     window.dispatchEvent(new Event('ids_pulse_db_update'));
   }
 
+  // Set up Offline Sync Listener
+  if (typeof window !== 'undefined') {
+    window.addEventListener('online', flushOfflineQueue);
+  }
+
   // Trigger Supabase background sync asynchronously
   setTimeout(() => syncWithSupabase(), 100);
 
@@ -808,6 +813,34 @@ export async function syncWithSupabase() {
     saveDB(db);
   } else {
     console.log("[Supabase Sync Checked] Cache matches cloud.");
+  }
+}
+
+// Flush Offline Queue
+export async function flushOfflineQueue() {
+  if (typeof navigator !== 'undefined' && !navigator.onLine) return;
+  const queue = JSON.parse(localStorage.getItem('ids_pulse_offline_queue') || '[]');
+  if (queue.length === 0) return;
+  
+  console.log(`[Online Recovery] Flushing ${queue.length} items from offline queue...`);
+  const failed = [];
+  
+  for (const item of queue) {
+    try {
+      const { error } = await supabase.from(item.type).upsert(item.entity);
+      if (error) {
+        console.error(`[Recovery Error] ${item.type}:`, error.message);
+        failed.push(item);
+      }
+    } catch (err) {
+       console.error(`[Recovery Exception] ${item.type}:`, err);
+       failed.push(item);
+    }
+  }
+  
+  localStorage.setItem('ids_pulse_offline_queue', JSON.stringify(failed));
+  if (failed.length === 0) {
+    console.log('[Online Recovery] Complete. Offline queue empty.');
   }
 }
 
@@ -916,14 +949,27 @@ export function saveEntity(type, entity) {
   
   saveDB(db);
 
-  // Sync to Supabase in background
-  supabase.from(type).upsert(entity)
-    .then(({ error }) => {
-      if (error) {
-        console.error(`[Supabase Push Error] table "${type}":`, error.message);
-      }
-    })
-    .catch(err => console.error(`[Supabase Push Exception] table "${type}":`, err));
+  if (typeof navigator !== 'undefined' && !navigator.onLine) {
+    // Save to offline queue
+    const queue = JSON.parse(localStorage.getItem('ids_pulse_offline_queue') || '[]');
+    queue.push({ type, entity, timestamp: new Date().toISOString() });
+    localStorage.setItem('ids_pulse_offline_queue', JSON.stringify(queue));
+    console.log(`[Offline] Saved ${type} to offline queue.`);
+  } else {
+    // Sync to Supabase in background
+    supabase.from(type).upsert(entity)
+      .then(({ error }) => {
+        if (error) {
+          console.error(`[Supabase Push Error] table "${type}":`, error.message);
+        }
+      })
+      .catch(err => {
+        console.error(`[Supabase Push Exception] table "${type}":`, err);
+        const queue = JSON.parse(localStorage.getItem('ids_pulse_offline_queue') || '[]');
+        queue.push({ type, entity, timestamp: new Date().toISOString() });
+        localStorage.setItem('ids_pulse_offline_queue', JSON.stringify(queue));
+      });
+  }
 
   return entity;
 }
@@ -1088,6 +1134,30 @@ export function addExtraHoursRequest(req) {
     history: req.history || [{ status: 'pending_customer', user: req.userName || 'Rep', timestamp: new Date().toISOString(), comment: 'Request submitted' }]
   };
   return saveEntity('extraHoursRequests', newReq);
+}
+
+export function updateExtraHoursRequestStatus(reqId, status, user, comment) {
+  const reqs = getExtraHoursRequests();
+  const req = reqs.find(r => r.id === reqId);
+  if (req) {
+    req.status = status;
+    const historyEntry = { status, user, timestamp: new Date().toISOString(), comment };
+    if (!req.history) req.history = [];
+    req.history.push(historyEntry);
+    
+    if (status === 'approved' || status === 'rejected' || status === 'pending_admin') {
+      const actionText = status === 'approved' ? 'Approved' : (status === 'rejected' ? 'Rejected' : 'Reviewed');
+      addEmailLog({
+        incident_id: reqId,
+        to_emails: 'greg.p@integritydriven.com',
+        cc_emails: 'rep_assigned@integritydriven.com', // Would look up Rep's email in real system
+        subject: `[OVERTIME ${actionText.toUpperCase()}] Request ${reqId} by Customer`,
+        body: `<h3>OVERTIME REQUEST ${actionText.toUpperCase()}</h3><p>Customer user <strong>${user}</strong> has ${actionText.toLowerCase()} the overtime request.</p><p><strong>Comment:</strong> ${comment}</p>`
+      });
+    }
+    return saveExtraHoursRequest(req);
+  }
+  return null;
 }
 
 // Log a system event

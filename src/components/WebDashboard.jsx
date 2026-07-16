@@ -6017,17 +6017,17 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                       <div className="flex justify-between items-end pb-2 border-b border-border-subtle">
                         <div>
                           <h4 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider flex items-center gap-1.5">
-                            <Users className="w-4.5 h-4.5 text-[#22D3EE]" /> Weekly Matrix Data Entry
+                            <Users className="w-4.5 h-4.5 text-[#22D3EE]" /> Spreadsheet-Style Matrix (Bulk Hours)
                           </h4>
                           <p className="text-[11.5px] text-text-secondary mt-1 max-w-[600px]">
-                            Quickly transcribe physical weekly timesheets. Select the Rep and Week Start (Monday), then fill out the grid to instantly generate all daily logs across multiple clients.
+                            Select a Job/Project and a Week Start. Tab through the grid to rapidly punch in hours for all QREs at once.
                           </p>
                         </div>
                         <div className="flex gap-4">
                           <div className="flex flex-col gap-1">
-                            <label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Representative</label>
+                            <label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Project / Job</label>
                             <select value={matrixRepId} onChange={(e) => setMatrixRepId(e.target.value)} className="bg-surface border border-border-subtle rounded-xl px-3 py-1.5 text-[13.5px] text-text-primary font-bold">
-                              {users.filter(u => u.role === 'rep' || u.role === 'qre' || u.id === '1' || u.id === 'rep_hugo' || u.id === 'rep_nabil' || u.id === 'rep_rogelio').map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                              {suppliers.map(sup => <option key={sup.id} value={sup.id}>{sup.name}</option>)}
                             </select>
                           </div>
                           <div className="flex flex-col gap-1">
@@ -6041,7 +6041,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         <table className="w-full text-left text-[13.5px]">
                           <thead>
                             <tr className="border-b border-border-subtle text-text-secondary font-bold uppercase text-[10.5px]">
-                              <th className="py-2 w-[220px]">Client / Plant</th>
+                              <th className="py-2 w-[220px]">Representative (QRE)</th>
                               <th className="py-2 text-center w-16">Mon</th>
                               <th className="py-2 text-center w-16">Tue</th>
                               <th className="py-2 text-center w-16">Wed</th>
@@ -6053,8 +6053,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-850">
-                            {suppliers.map(sup => {
-                              const rowData = matrixData[sup.id] || {};
+                            {users.filter(u => u.role === 'rep' || u.role === 'qre' || u.id === '1' || u.id === 'rep_hugo' || u.id === 'rep_nabil' || u.id === 'rep_rogelio').map(u => {
+                              const rowData = matrixData[u.id] || {};
                               const mon = parseFloat(rowData.mon || 0);
                               const tue = parseFloat(rowData.tue || 0);
                               const wed = parseFloat(rowData.wed || 0);
@@ -6067,15 +6067,15 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                               const updateCell = (day, val) => {
                                 setMatrixData(prev => ({
                                   ...prev,
-                                  [sup.id]: { ...(prev[sup.id] || {}), [day]: val }
+                                  [u.id]: { ...(prev[u.id] || {}), [day]: val }
                                 }));
                               };
 
                               return (
-                                <tr key={sup.id} className="hover:bg-surface">
+                                <tr key={u.id} className="hover:bg-surface">
                                   <td className="py-2">
-                                    <div className="font-bold text-text-primary">{sup.name}</div>
-                                    <div className="text-[10.5px] text-text-secondary">{plants.find(p => p.id === sup.plants_served?.[0])?.name || 'Multiple'}</div>
+                                    <div className="font-bold text-text-primary">{u.name}</div>
+                                    <div className="text-[10.5px] text-text-secondary">{u.company_affiliation || 'IDS'}</div>
                                   </td>
                                   {['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'].map(day => (
                                     <td key={day} className="py-1 px-1">
@@ -6084,21 +6084,22 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                         step="0.5"
                                         min="0"
                                         max="24"
+                                        tabIndex="0"
                                         value={rowData[day] || ''} 
                                         onChange={(e) => updateCell(day, e.target.value)}
-                                        className="w-14 bg-surface border border-border-subtle rounded-lg px-2 py-1.5 text-center text-text-primary focus:border-[#0EA5E9] focus:outline-none focus:ring-1 focus:ring-[#0EA5E9]"
+                                        className="w-14 bg-surface border border-border-subtle rounded-lg px-2 py-1.5 text-center text-text-primary focus:border-[#0EA5E9] focus:outline-none focus:ring-1 focus:ring-[#0EA5E9] font-mono shadow-inner"
                                       />
                                     </td>
                                   ))}
-                                  <td className="py-2 text-right font-bold text-[#22D3EE]">{total > 0 ? total : ''}</td>
+                                  <td className="py-2 text-right font-bold text-[#22D3EE] font-mono">{total > 0 ? total : ''}</td>
                                 </tr>
                               );
                             })}
                           </tbody>
                         </table>
 
-                        <div className="flex justify-end mt-4">
-                          <button type="submit" className="bg-[#10B981] hover:bg-[#10B981]/90 text-text-primary font-extrabold py-3 px-8 rounded-xl text-[13.5px] uppercase tracking-wider transition-colors cursor-pointer flex items-center gap-2">
+                        <div className="flex justify-end mt-4 pt-4 border-t border-border-subtle">
+                          <button type="submit" className="bg-[#10B981] hover:bg-[#10B981]/90 text-text-primary font-extrabold py-3 px-8 rounded-xl text-[13.5px] uppercase tracking-wider transition-colors cursor-pointer flex items-center gap-2 shadow-lg shadow-[#10B981]/20 hover:-translate-y-0.5">
                             <CheckCircle2 className="w-5 h-5" /> Submit Full Weekly Sheet
                           </button>
                         </div>

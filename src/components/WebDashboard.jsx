@@ -91,6 +91,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   const [configSupplierId, setConfigSupplierId] = useState('autokabel');
   const [configPayRate, setConfigPayRate] = useState('25');
   const [configBillingRate, setConfigBillingRate] = useState('35');
+  const [configCurrency, setConfigCurrency] = useState('USD');
   const [rates, setRates] = useState([]);
 
   // Invoicing States
@@ -164,7 +165,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       return {
         billing_rate: isNaN(bRate) ? 28.00 : bRate,
         pay_rate: isNaN(pRate) ? 20.00 : pRate,
-        currency: 'USD'
+        currency: match.currency || 'USD'
       };
     }
     return { billing_rate: 28.00, pay_rate: 20.00, currency: 'USD' };
@@ -250,12 +251,13 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       rep_id: configRepId,
       supplier_id: configSupplierId,
       billing_rate: parseFloat(configBillingRate),
-      pay_rate: parseFloat(configPayRate)
+      pay_rate: parseFloat(configPayRate),
+      currency: configCurrency
     };
     saveEntity('rates', newRate);
     setRates(getEntities('rates'));
     const user = sessionStorage.getItem('ids_pulse_admin_user') || 'Admin';
-    logSystemEvent('system', 'save_rate', `${user} configured custom rate for Rep ${configRepId} serving client ${configSupplierId} (Bill: $${configBillingRate}, Pay: $${configPayRate}).`);
+    logSystemEvent('system', 'save_rate', `${user} configured custom rate for Rep ${configRepId} serving client ${configSupplierId} (Bill: $${configBillingRate} ${configCurrency}, Pay: $${configPayRate}).`);
     alert("Custom rate override saved successfully!");
   };
 
@@ -6251,6 +6253,12 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                             <div className="flex flex-col gap-1"><label className="text-[10.5px] font-bold text-slate-500 uppercase tracking-wider">Bill Rate ($/hr)</label>
                               <input type="number" step="0.5" value={configBillingRate} onChange={(e) => setConfigBillingRate(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-[13.5px] text-white" />
                             </div>
+                            <div className="flex flex-col gap-1"><label className="text-[10.5px] font-bold text-slate-500 uppercase tracking-wider">Billing Currency</label>
+                              <select value={configCurrency} onChange={(e) => setConfigCurrency(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-[13.5px] text-white">
+                                <option value="USD">USD (US$)</option>
+                                <option value="CAD">CAD (C$)</option>
+                              </select>
+                            </div>
                             <button type="submit" className="bg-[#0EA5E9] text-white font-bold py-2 rounded-xl text-[13.5px] mt-2">Save Rate Override</button>
                           </form>
                           
@@ -6263,8 +6271,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                 </thead>
                                 <tbody className="divide-y divide-slate-850 text-slate-300">
                                   {(rates || []).filter(Boolean).map(r => {
-                                    const projMatch = (projects || []).find(p => p && p.rep_id === r.rep_id && p.client_id === r.supplier_id);
-                                    const billSymbol = projMatch && projMatch.currency === 'CAD' ? 'C$' : 'US$';
+                                    const billCurrency = r.currency || 'USD';
+                                    const billSymbol = billCurrency === 'CAD' ? 'C$' : 'US$';
                                     const repPayCurrency = getRepPayCurrency(r.rep_id);
                                     const paySymbol = repPayCurrency === 'CAD' ? 'C$' : 'US$';
                                     return (

@@ -1087,20 +1087,19 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                 </div>
               )}
 
-              {/* Plant Location & Shift Actions */}
+              {/* Shift Actions & Status Panel */}
               <div className="mt-3 bg-slate-900 border border-slate-800 rounded-2xl p-3 flex flex-col gap-3 shadow-md">
                 <div className="flex items-center justify-between pb-2 border-b border-slate-800/60">
                   <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-full bg-[#1E3A5F] flex items-center justify-center font-bold text-[13.5px] text-[#22D3EE] border border-[#0EA5E9]/30">
+                    <div className="w-8 h-8 rounded-full bg-[#1E3A5F] flex items-center justify-center font-bold text-[14px] text-[#22D3EE] border border-[#0EA5E9]/30">
                       {currentUser.avatar}
                     </div>
                     <div>
-                      <p className="text-[11.5px] font-bold text-white leading-tight">{currentUser.name}</p>
-                      <p className="text-[10.5px] text-[#0EA5E9] font-medium leading-none">Field Specialist</p>
+                      <p className="text-[12.5px] font-bold text-white leading-tight">{currentUser.name}</p>
+                      <p className="text-[11px] text-slate-400 font-medium leading-none">{plants.find(p => p.id === selectedPlant)?.name || 'Select Location'}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <span className="text-[10.5px] text-slate-500 font-medium">Status:</span>
                     <span className={`px-2 py-1 rounded text-[10.5px] font-bold tracking-wider uppercase ${
                       shiftActive ? 'bg-emerald-500/15 text-emerald-400' : 'bg-amber-500/15 text-amber-400'
                     }`}>
@@ -1109,121 +1108,89 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                   </div>
                 </div>
 
-                <div className="flex flex-col gap-1">
-                  <label className="text-[10.5px] font-bold text-slate-500 uppercase tracking-wide">Current Plant Location</label>
-                  <div className="relative">
-                    <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-slate-500 z-10" />
-                    <select 
-                      value={selectedPlant}
-                      onChange={(e) => setSelectedPlant(e.target.value)}
-                      disabled={shiftActive}
-                      className="phone-select"
-                      style={{ paddingLeft: '38px' }}
-                    >
-                      {plants.map(p => (
-                        <option key={p.id} value={p.id}>{p.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                <div className="mt-1">
-                  {shiftActive ? (
-                    <button 
-                      onClick={triggerEndShiftFlow}
-                      className="phone-btn-primary bg-rose-650 hover:bg-rose-700 active:bg-rose-800 shadow-rose-900/20"
-                    >
-                      <Square className="w-3.5 h-3.5 fill-white" />
-                      <span>Clock Out (End Job)</span>
-                    </button>
-                  ) : (
+                {!shiftActive ? (
+                  <>
+                    <div className="flex flex-col gap-1 mt-1">
+                      <label className="text-[10.5px] font-bold text-slate-500 uppercase tracking-wide">Plant Location</label>
+                      <div className="relative">
+                        <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-slate-500 z-10" />
+                        <select 
+                          value={selectedPlant}
+                          onChange={(e) => setSelectedPlant(e.target.value)}
+                          className="phone-select"
+                          style={{ paddingLeft: '38px' }}
+                        >
+                          {plants.map(p => (
+                            <option key={p.id} value={p.id}>{p.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
                     <button 
                       onClick={handleStartShift}
-                      className="phone-btn-primary h-14"
+                      className="phone-btn-primary h-12 mt-1"
                     >
                       <Play className="w-4 h-4 fill-white" />
-                      <span className="text-[14px]">CLOCK IN (START JOB)</span>
+                      <span className="text-[13.5px]">CLOCK IN (START JOB)</span>
                     </button>
-                  )}
-                </div>
-              </div>
-            </div>
-
-             {/* Middle Main Content */}
-            <div className="my-auto flex flex-col items-center justify-center text-center py-4 px-2">
-              {shiftActive ? (
-                <div className="w-full stitch-panel p-5 flex flex-col items-center">
-                  <div className="w-12 h-12 rounded-full bg-emerald-500/10 flex items-center justify-center border border-emerald-500/30 mb-3 relative">
-                    <div className="absolute inset-0 rounded-full border border-emerald-500/40 animate-ping opacity-20"></div>
-                    <Activity className="w-6 h-6 text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.5)]" />
-                  </div>
-                  <h3 className="text-[13.5px] font-bold text-white mb-1">Active: {plants.find(p => p.id === selectedPlant)?.name}</h3>
-                  <p className="text-[11.5px] text-slate-400">Recording reports & timesheet hours.</p>
-                  
-                  {(() => {
-                    const activeSupplier = getEntities('suppliers')?.find(s => s.plants_served.includes(selectedPlant));
-                    const allotted = activeSupplier ? activeSupplier.allotted_hours : 0;
-                    return (
-                      <div className="mt-3 px-3 py-1.5 bg-slate-900/60 border border-slate-700/50 rounded-lg flex items-center gap-2">
-                        <span className="text-[10.5px] font-bold text-slate-400 uppercase tracking-wider">Allotted Weekly Hrs:</span>
-                        <span className="text-[12.5px] font-black text-white">{allotted} Hrs</span>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex items-center justify-between mt-1 px-1">
+                      <div className="flex flex-col">
+                        <span className="text-[10.5px] font-bold text-slate-500 uppercase tracking-wider">Started At</span>
+                        <span className="text-[14px] font-bold text-slate-200">{shiftStartTime}</span>
                       </div>
-                    );
-                  })()}
+                      <div className="flex flex-col text-right">
+                        <span className="text-[10.5px] font-bold text-slate-500 uppercase tracking-wider">Incidents</span>
+                        <span className="text-[14px] font-extrabold text-[#0EA5E9]">
+                          {getEntities('incidents').filter(inc => inc.created_at.startsWith(new Date().toISOString().substring(0, 10))).length} logged
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <button 
+                      onClick={triggerEndShiftFlow}
+                      className="phone-btn-primary bg-rose-650 hover:bg-rose-700 active:bg-rose-800 shadow-rose-900/20 h-12 mt-1"
+                    >
+                      <Square className="w-3.5 h-3.5 fill-white" />
+                      <span className="text-[13.5px]">CLOCK OUT (END JOB)</span>
+                    </button>
+                  </>
+                )}
+              </div>
 
-                  <div className="grid grid-cols-2 gap-3 w-full mt-4 pt-3 border-t border-slate-700/50">
-                    <div className="flex flex-col items-center">
-                      <span className="text-[10.5px] font-bold text-slate-400 uppercase tracking-wider">Started At</span>
-                      <span className="text-[13.5px] font-bold text-slate-200 mt-1">{shiftStartTime}</span>
-                    </div>
-                    <div className="flex flex-col items-center">
-                      <span className="text-[10.5px] font-bold text-slate-400 uppercase tracking-wider">Incidents</span>
-                      <span className="text-[13.5px] font-extrabold text-[#0EA5E9] mt-1 drop-shadow-[0_0_5px_rgba(14,165,233,0.3)]">
-                        {getEntities('incidents').filter(inc => inc.created_at.startsWith(new Date().toISOString().substring(0, 10))).length}
-                      </span>
-                    </div>
+              {/* Tasks List */}
+              {shiftActive && (
+                <div className="mt-3 bg-slate-900 border border-slate-800 rounded-2xl p-3 flex flex-col gap-2 shadow-md">
+                  <span className="text-[10.5px] font-extrabold text-slate-500 uppercase tracking-wider flex items-center gap-1.5 pb-2 border-b border-slate-800/60">
+                    <CheckCircle className="w-3.5 h-3.5 text-[#22D3EE]" />
+                    <span>Today's Assigned Tasks</span>
+                  </span>
+                  
+                  <div className="flex flex-col gap-1.5 max-h-[140px] overflow-y-auto pr-1">
+                    {dailyTasks.length > 0 ? (
+                      dailyTasks.map(t => (
+                        <div 
+                          key={t.id} 
+                          onClick={() => handleToggleTask(t)}
+                          className="bg-slate-950/80 border border-slate-850 p-2 rounded-xl flex items-center gap-2.5 cursor-pointer hover:border-slate-800 transition-colors"
+                        >
+                          <input 
+                            type="checkbox" 
+                            checked={t.status === 'completed'}
+                            onChange={() => {}} 
+                            className="rounded border-slate-800 text-[#0EA5E9] focus:ring-0 focus:ring-offset-0 w-4.5 h-4.5 cursor-pointer flex-shrink-0"
+                          />
+                          <span className={`text-[11.5px] leading-tight select-none ${t.status === 'completed' ? 'line-through text-slate-500 font-medium' : 'text-slate-300 font-bold'}`}>
+                            {t.task}
+                          </span>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-[10.5px] text-slate-600 italic">No tasks assigned for today.</p>
+                    )}
                   </div>
-
-                  {/* Synced tasks checklist for easy glove tapping */}
-                  <div className="w-full mt-4 flex flex-col text-left">
-                    <span className="text-[10.5px] font-extrabold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-1 border-t border-slate-800/60 pt-3">
-                      <CheckCircle className="w-3.5 h-3.5 text-[#22D3EE]" />
-                      <span>Today's Assigned Tasks</span>
-                    </span>
-                    <div className="flex flex-col gap-1.5 max-h-[110px] overflow-y-auto pr-1">
-                      {dailyTasks.length > 0 ? (
-                        dailyTasks.map(t => (
-                          <div 
-                            key={t.id} 
-                            onClick={() => handleToggleTask(t)}
-                            className="bg-slate-950/80 border border-slate-850 p-2 rounded-xl flex items-center gap-2.5 cursor-pointer hover:border-slate-800 transition-colors"
-                          >
-                            <input 
-                              type="checkbox" 
-                              checked={t.status === 'completed'}
-                              onChange={() => {}} // handled by onClick on parent for ease of glove tap
-                              className="rounded border-slate-800 text-[#0EA5E9] focus:ring-0 focus:ring-offset-0 w-4.5 h-4.5 cursor-pointer flex-shrink-0"
-                            />
-                            <span className={`text-[11.5px] leading-tight select-none ${t.status === 'completed' ? 'line-through text-slate-500 font-medium' : 'text-slate-300 font-bold'}`}>
-                              {t.task}
-                            </span>
-                          </div>
-                        ))
-                      ) : (
-                        <p className="text-[10.5px] text-slate-600 italic">No tasks assigned for today.</p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center max-w-[260px]">
-                  <div className="w-12 h-12 rounded-full bg-[#1E3A5F]/20 flex items-center justify-center border border-[#1E3A5F]/40 mb-3">
-                    <Clock className="w-5 h-5 text-[#64748B]" />
-                  </div>
-                  <h3 className="text-[13.5px] font-bold text-slate-300 mb-1">Shift Inactive</h3>
-                  <p className="text-[11.5px] text-slate-500 leading-relaxed">
-                    Select your plant location in the panel above and tap **"Start Work Shift"** to begin reporting defects and logging rework.
-                  </p>
                 </div>
               )}
             </div>

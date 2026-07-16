@@ -141,8 +141,12 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
   const [newRepName, setNewRepName] = useState('');
   const [newRepEmail, setNewRepEmail] = useState('');
+  const [newRepEmail, setNewRepEmail] = useState('');
   const [newRepPhone, setNewRepPhone] = useState('');
   const [newRepPayCurrency, setNewRepPayCurrency] = useState('CAD');
+
+  // Drill-down project state
+  const [selectedProjectId, setSelectedProjectId] = useState(null);
 
   // Load rates and extra hours requests from database on mount and update
   useEffect(() => {
@@ -7094,279 +7098,419 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
               })()}
 
               {/* Main Workspace Layout */}
-              <div className="flex-1 grid grid-cols-1 xl:grid-cols-3 gap-6 min-h-0">
-                {/* Left Column: Projects Registry Table (Span 2) */}
-                <div className="xl:col-span-2 bg-slate-900/40 border border-slate-850 rounded-2xl flex flex-col min-h-0">
-                  <div className="px-6 py-4 border-b border-slate-850 flex justify-between items-center bg-slate-950/20">
-                    <div>
-                      <h3 className="text-[15px] font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                        <FolderKanban className="w-4.5 h-4.5 text-cyan-400" />
-                        <span>Active Projects Registry</span>
-                      </h3>
-                      <span className="text-[11.5px] text-slate-500 font-medium">Registry of representatives actively working at supplier locations</span>
+              {!selectedProjectId ? (
+                <div className="flex-1 grid grid-cols-1 xl:grid-cols-3 gap-6 min-h-0">
+                  {/* Left Column: Projects Registry Table (Span 2) */}
+                  <div className="xl:col-span-2 bg-slate-900/40 border border-slate-850 rounded-2xl flex flex-col min-h-0">
+                    <div className="px-6 py-4 border-b border-slate-850 flex justify-between items-center bg-slate-950/20">
+                      <div>
+                        <h3 className="text-[15px] font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                          <FolderKanban className="w-4.5 h-4.5 text-cyan-400" />
+                          <span>Active Projects Registry</span>
+                        </h3>
+                        <span className="text-[11.5px] text-slate-500 font-medium">Registry of representatives actively working at supplier locations</span>
+                      </div>
+                      {/* Currency filter toggle */}
+                      <div className="flex bg-slate-950 p-1 rounded-xl border border-slate-850 text-[11.5px]">
+                        <button 
+                          onClick={() => setSelectedCurrencyFilter('all')}
+                          className={`px-3 py-1 rounded-lg font-bold cursor-pointer transition-all ${
+                            selectedCurrencyFilter === 'all' ? 'bg-[#1E3A5F] text-white' : 'text-slate-400 hover:text-slate-200'
+                          }`}
+                        >
+                          ALL
+                        </button>
+                        <button 
+                          onClick={() => setSelectedCurrencyFilter('USD')}
+                          className={`px-3 py-1 rounded-lg font-bold cursor-pointer transition-all ${
+                            selectedCurrencyFilter === 'USD' ? 'bg-[#1E3A5F] text-white' : 'text-slate-400 hover:text-slate-200'
+                          }`}
+                        >
+                          USD
+                        </button>
+                        <button 
+                          onClick={() => setSelectedCurrencyFilter('CAD')}
+                          className={`px-3 py-1 rounded-lg font-bold cursor-pointer transition-all ${
+                            selectedCurrencyFilter === 'CAD' ? 'bg-[#1E3A5F] text-white' : 'text-slate-400 hover:text-slate-200'
+                          }`}
+                        >
+                          CAD
+                        </button>
+                      </div>
                     </div>
-                    {/* Currency filter toggle */}
-                    <div className="flex bg-slate-950 p-1 rounded-xl border border-slate-850 text-[11.5px]">
-                      <button 
-                        onClick={() => setSelectedCurrencyFilter('all')}
-                        className={`px-3 py-1 rounded-lg font-bold cursor-pointer transition-all ${
-                          selectedCurrencyFilter === 'all' ? 'bg-[#1E3A5F] text-white' : 'text-slate-400 hover:text-slate-200'
-                        }`}
-                      >
-                        ALL
-                      </button>
-                      <button 
-                        onClick={() => setSelectedCurrencyFilter('USD')}
-                        className={`px-3 py-1 rounded-lg font-bold cursor-pointer transition-all ${
-                          selectedCurrencyFilter === 'USD' ? 'bg-[#1E3A5F] text-white' : 'text-slate-400 hover:text-slate-200'
-                        }`}
-                      >
-                        USD
-                      </button>
-                      <button 
-                        onClick={() => setSelectedCurrencyFilter('CAD')}
-                        className={`px-3 py-1 rounded-lg font-bold cursor-pointer transition-all ${
-                          selectedCurrencyFilter === 'CAD' ? 'bg-[#1E3A5F] text-white' : 'text-slate-400 hover:text-slate-200'
-                        }`}
-                      >
-                        CAD
-                      </button>
+
+                    <div className="flex-1 overflow-auto scrollbar-thin">
+                      <table className="w-full text-left border-collapse text-[13.5px]">
+                        <thead className="bg-slate-950/50 sticky top-0 z-10 border-b border-slate-850">
+                          <tr className="font-bold text-slate-400 uppercase tracking-wider">
+                            <th className="py-3.5 px-6">Client/Supplier</th>
+                            <th className="py-3.5 px-6">Project #</th>
+                            <th className="py-3.5 px-6">Description</th>
+                            <th className="py-3.5 px-6">Location</th>
+                            <th className="py-3.5 px-6">Representative</th>
+                            <th className="py-3.5 px-6">Start Date</th>
+                            <th className="py-3.5 px-6 text-right">Billing Rate</th>
+                            <th className="py-3.5 px-6 text-right">Pay Rate</th>
+                            <th className="py-3.5 px-4 text-right">Action</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-850/40 text-slate-300">
+                          {(() => {
+                            const filtered = projects.filter(p => {
+                              if (selectedCurrencyFilter !== 'all' && p.currency !== selectedCurrencyFilter) return false;
+                              return true;
+                            });
+                            if (filtered.length === 0) {
+                              return (
+                                <tr>
+                                  <td colSpan="9" className="py-8 text-center text-slate-500 italic">No projects found matching the criteria.</td>
+                                </tr>
+                              );
+                            }
+                            return filtered.map(p => {
+                              const clientName = suppliers.find(s => s.id === p.client_id)?.name || p.client_id;
+                              const plantName = plants.find(pl => pl.id === p.plant_id)?.name || p.plant_id;
+                              const repName = users.find(u => u.id === p.rep_id)?.name || p.rep_id;
+                              return (
+                                <tr 
+                                  key={p.id} 
+                                  onClick={() => setSelectedProjectId(p.id)}
+                                  className="hover:bg-slate-950/40 transition-colors cursor-pointer group"
+                                >
+                                  <td className="py-3 px-6 font-semibold text-white capitalize group-hover:text-[#0EA5E9] transition-colors">{clientName}</td>
+                                  <td className="py-3 px-6 font-mono text-[#22D3EE] font-bold">{p.project_number}</td>
+                                  <td className="py-3 px-6 text-slate-400">{p.description}</td>
+                                  <td className="py-3 px-6 text-slate-300">{plantName}</td>
+                                  <td className="py-3 px-6 font-medium text-slate-200">{repName}</td>
+                                  <td className="py-3 px-6 text-slate-400">{p.start_date}</td>
+                                  <td className="py-3 px-6 text-right font-bold text-emerald-400">{p.currency === 'CAD' ? 'C$' : 'US$'} {parseFloat(p.billing_rate).toFixed(2)}/hr</td>
+                                  <td className="py-3 px-6 text-right text-slate-400">{p.currency === 'CAD' ? 'C$' : 'US$'} {parseFloat(p.pay_rate).toFixed(2)}/hr</td>
+                                  <td className="py-3 px-4 text-right">
+                                    <button className="text-[10.5px] uppercase font-bold text-[#0EA5E9] bg-[#0EA5E9]/10 px-2.5 py-1 rounded-lg group-hover:bg-[#0EA5E9] group-hover:text-white transition-all whitespace-nowrap">View</button>
+                                  </td>
+                                </tr>
+                              );
+                            });
+                          })()}
+                        </tbody>
+                      </table>
                     </div>
                   </div>
 
-                  <div className="flex-1 overflow-auto scrollbar-thin">
-                    <table className="w-full text-left border-collapse text-[13.5px]">
-                      <thead className="bg-slate-950/50 sticky top-0 z-10 border-b border-slate-850">
-                        <tr className="font-bold text-slate-400 uppercase tracking-wider">
-                          <th className="py-3.5 px-6">Client/Supplier</th>
-                          <th className="py-3.5 px-6">Project #</th>
-                          <th className="py-3.5 px-6">Description</th>
-                          <th className="py-3.5 px-6">Location</th>
-                          <th className="py-3.5 px-6">Representative</th>
-                          <th className="py-3.5 px-6">Start Date</th>
-                          <th className="py-3.5 px-6 text-right">Billing Rate</th>
-                          <th className="py-3.5 px-6 text-right">Pay Rate</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-850/40 text-slate-300">
-                        {(() => {
-                          const filtered = projects.filter(p => {
-                            if (selectedCurrencyFilter !== 'all' && p.currency !== selectedCurrencyFilter) return false;
-                            return true;
-                          });
-                          if (filtered.length === 0) {
-                            return (
-                              <tr>
-                                <td colSpan="8" className="py-8 text-center text-slate-500 italic">No projects found matching the criteria.</td>
-                              </tr>
-                            );
-                          }
-                          return filtered.map(p => {
-                            const clientName = suppliers.find(s => s.id === p.client_id)?.name || p.client_id;
-                            const plantName = plants.find(pl => pl.id === p.plant_id)?.name || p.plant_id;
-                            const repName = users.find(u => u.id === p.rep_id)?.name || p.rep_id;
-                            return (
-                              <tr key={p.id} className="hover:bg-slate-950/40 transition-colors">
-                                <td className="py-3 px-6 font-semibold text-white capitalize">{clientName}</td>
-                                <td className="py-3 px-6 font-mono text-[#22D3EE] font-bold">{p.project_number}</td>
-                                <td className="py-3 px-6 text-slate-400">{p.description}</td>
-                                <td className="py-3 px-6 text-slate-300">{plantName}</td>
-                                <td className="py-3 px-6 font-medium text-slate-200">{repName}</td>
-                                <td className="py-3 px-6 text-slate-400">{p.start_date}</td>
-                                <td className="py-3 px-6 text-right font-bold text-emerald-400">{p.currency === 'CAD' ? 'C$' : 'US$'} {parseFloat(p.billing_rate).toFixed(2)}/hr</td>
-                                <td className="py-3 px-6 text-right text-slate-400">{p.currency === 'CAD' ? 'C$' : 'US$'} {parseFloat(p.pay_rate).toFixed(2)}/hr</td>
-                              </tr>
-                            );
-                          });
-                        })()}
-                      </tbody>
-                    </table>
+                  {/* Right Column: Create / Edit Project Form Panel (Span 1) */}
+                  <div className="xl:col-span-1 bg-slate-900/40 border border-slate-850 rounded-2xl p-6 flex flex-col min-h-0">
+                    <h3 className="text-[15px] font-bold text-white uppercase tracking-wider mb-6 pb-2 border-b border-slate-850">
+                      Register New Project
+                    </h3>
+                    <form 
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        if (!newProjRep || !newProjClient || !newProjPlant || !newProjBilling || !newProjPay) {
+                          alert("Please fill in all required fields.");
+                          return;
+                        }
+                        const repDetails = users.find(u => u.id === newProjRep);
+                        const newProjectItem = {
+                          project_number: `PRJ-${newProjClient.substring(0, 3).toUpperCase()}-${Math.floor(100 + Math.random() * 900)}`,
+                          client_id: newProjClient,
+                          description: `Rep ${repDetails ? repDetails.name.split(' ')[1] || repDetails.name : 'Staff'} ${newProjDesc || 'Inspection'}`,
+                          plant_id: newProjPlant,
+                          rep_id: newProjRep,
+                          start_date: newProjStartDate || new Date().toISOString().split('T')[0],
+                          currency: newProjCurrency,
+                          billing_rate: parseFloat(newProjBilling),
+                          pay_rate: parseFloat(newProjPay),
+                          status: 'Active'
+                        };
+                        addProject(newProjectItem);
+                        logSystemEvent('system', 'create_project', `Registered new project ${newProjectItem.project_number} for client ${newProjClient} at location ${newProjPlant}.`);
+                        alert("Project registered successfully!");
+                        // Reset fields
+                        setNewProjDesc('');
+                        setNewProjBilling('');
+                        setNewProjPay('');
+                        window.dispatchEvent(new Event('ids_pulse_db_update'));
+                      }}
+                      className="flex flex-col gap-4 flex-1 overflow-y-auto pr-1 scrollbar-thin"
+                    >
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[11.5px] font-bold text-slate-500 uppercase tracking-wider">Assign Representative</label>
+                        <select 
+                          value={newProjRep} 
+                          onChange={(e) => {
+                            if (e.target.value === 'ADD_NEW') {
+                              setShowQuickAddRep(true);
+                            } else {
+                              setNewProjRep(e.target.value);
+                            }
+                          }}
+                          className="bg-slate-950 border border-slate-850 rounded-xl px-3 py-2.5 text-[13.5px] text-white focus:outline-none focus:border-cyan-500 transition-colors"
+                        >
+                          <option value="">Select Rep...</option>
+                          {users.filter(u => u.role === 'rep' || u.role === 'qre' || u.id === '1' || u.id === 'rep_hugo' || u.id === 'rep_nabil' || u.id === 'rep_rogelio').map(u => (
+                            <option key={u.id} value={u.id}>{u.name}</option>
+                          ))}
+                          <option value="ADD_NEW" className="text-cyan-400 font-bold">+ Add New Rep...</option>
+                        </select>
+                      </div>
+
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[11.5px] font-bold text-slate-500 uppercase tracking-wider">Client / Supplier</label>
+                        <select 
+                          value={newProjClient} 
+                          onChange={(e) => {
+                            if (e.target.value === 'ADD_NEW') {
+                              setShowQuickAddClient(true);
+                            } else {
+                              setNewProjClient(e.target.value);
+                            }
+                          }}
+                          className="bg-slate-950 border border-slate-850 rounded-xl px-3 py-2.5 text-[13.5px] text-white focus:outline-none focus:border-cyan-500 transition-colors"
+                        >
+                          <option value="">Select Client...</option>
+                          {suppliers.map(s => (
+                            <option key={s.id} value={s.id}>{s.name}</option>
+                          ))}
+                          <option value="ADD_NEW" className="text-cyan-400 font-bold">+ Add New Client...</option>
+                        </select>
+                      </div>
+
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[11.5px] font-bold text-slate-500 uppercase tracking-wider">Plant Location</label>
+                        <select 
+                          value={newProjPlant} 
+                          onChange={(e) => {
+                            if (e.target.value === 'ADD_NEW') {
+                              setShowQuickAddPlant(true);
+                            } else {
+                              setNewProjPlant(e.target.value);
+                            }
+                          }}
+                          className="bg-slate-950 border border-slate-850 rounded-xl px-3 py-2.5 text-[13.5px] text-white focus:outline-none focus:border-cyan-500 transition-colors"
+                        >
+                          <option value="">Select Plant...</option>
+                          {plants.map(p => (
+                            <option key={p.id} value={p.id}>{p.name}</option>
+                          ))}
+                          <option value="ADD_NEW" className="text-cyan-400 font-bold">+ Add New Plant...</option>
+                        </select>
+                      </div>
+
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[11.5px] font-bold text-slate-500 uppercase tracking-wider">Description / Scope</label>
+                        <input 
+                          type="text" 
+                          value={newProjDesc} 
+                          onChange={(e) => setNewProjDesc(e.target.value)}
+                          placeholder="e.g. Line Quality Audit" 
+                          className="bg-slate-950 border border-slate-850 rounded-xl px-3 py-2.5 text-[13.5px] text-white placeholder-slate-650 focus:outline-none focus:border-cyan-500 transition-colors"
+                        />
+                      </div>
+
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[11.5px] font-bold text-slate-500 uppercase tracking-wider">Start Date</label>
+                        <input 
+                          type="date" 
+                          value={newProjStartDate} 
+                          onChange={(e) => setNewProjStartDate(e.target.value)}
+                          className="bg-slate-950 border border-slate-850 rounded-xl px-3 py-2.5 text-[13.5px] text-white focus:outline-none focus:border-cyan-500 transition-colors"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[11.5px] font-bold text-slate-500 uppercase tracking-wider">Billing Rate / Hr</label>
+                          <div className="relative">
+                            <span className="absolute left-3.5 top-3.5 text-slate-500 text-[11.5px] font-mono">$</span>
+                            <input 
+                              type="number" 
+                              step="0.01" 
+                              value={newProjBilling} 
+                              onChange={(e) => setNewProjBilling(e.target.value)}
+                              placeholder="0.00" 
+                              className="w-full bg-slate-950 border border-slate-850 rounded-xl pl-6 pr-3 py-2.5 text-[13.5px] text-white placeholder-slate-650 focus:outline-none focus:border-cyan-500 transition-colors"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[11.5px] font-bold text-slate-500 uppercase tracking-wider">Pay Rate / Hr</label>
+                          <div className="relative">
+                            <span className="absolute left-3.5 top-3.5 text-slate-500 text-[11.5px] font-mono">$</span>
+                            <input 
+                              type="number" 
+                              step="0.01" 
+                              value={newProjPay} 
+                              onChange={(e) => setNewProjPay(e.target.value)}
+                              placeholder="0.00" 
+                              className="w-full bg-slate-950 border border-slate-850 rounded-xl pl-6 pr-3 py-2.5 text-[13.5px] text-white placeholder-slate-650 focus:outline-none focus:border-cyan-500 transition-colors"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col gap-2 mt-1 text-left">
+                        <label className="text-[11.5px] font-bold text-slate-500 uppercase tracking-wider">Billing Currency</label>
+                        <div className="flex gap-4">
+                          <label className="flex items-center gap-2 cursor-pointer text-[13.5px] text-slate-300">
+                            <input 
+                              type="radio" 
+                              name="newProjCurrency" 
+                              checked={newProjCurrency === 'USD'}
+                              onChange={() => setNewProjCurrency('USD')}
+                              className="text-[#22D3EE] focus:ring-[#22D3EE] bg-slate-950 border-slate-850"
+                            />
+                            USD (US$)
+                          </label>
+                          <label className="flex items-center gap-2 cursor-pointer text-[13.5px] text-slate-300">
+                            <input 
+                              type="radio" 
+                              name="newProjCurrency" 
+                              checked={newProjCurrency === 'CAD'}
+                              onChange={() => setNewProjCurrency('CAD')}
+                              className="text-[#22D3EE] focus:ring-[#22D3EE] bg-slate-950 border-slate-850"
+                            />
+                            CAD (C$)
+                          </label>
+                        </div>
+                      </div>
+
+                      <button 
+                        type="submit"
+                        className="mt-4 w-full bg-cyan-500/10 hover:bg-cyan-500/20 text-[#22D3EE] border border-cyan-500/20 font-bold py-2.5 rounded-xl text-[13.5px] cursor-pointer flex justify-center items-center gap-2"
+                      >
+                        <PlusCircle className="w-4.5 h-4" />
+                        <span>Register Project Assignment</span>
+                      </button>
+                    </form>
                   </div>
                 </div>
+              ) : (() => {
+                // Drill Down Project View
+                const proj = projects.find(p => p.id === selectedProjectId);
+                if (!proj) return null;
+                
+                const clientName = suppliers.find(s => s.id === proj.client_id)?.name || proj.client_id;
+                const plantName = plants.find(pl => pl.id === proj.plant_id)?.name || proj.plant_id;
+                const repName = users.find(u => u.id === proj.rep_id)?.name || proj.rep_id;
+                const sym = proj.currency === 'CAD' ? 'C$' : 'US$';
 
-                {/* Right Column: Create / Edit Project Form Panel (Span 1) */}
-                <div className="xl:col-span-1 bg-slate-900/40 border border-slate-850 rounded-2xl p-6 flex flex-col min-h-0">
-                  <h3 className="text-[15px] font-bold text-white uppercase tracking-wider mb-6 pb-2 border-b border-slate-850">
-                    Register New Project
-                  </h3>
-                  <form 
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      if (!newProjRep || !newProjClient || !newProjPlant || !newProjBilling || !newProjPay) {
-                        alert("Please fill in all required fields.");
-                        return;
-                      }
-                      const repDetails = users.find(u => u.id === newProjRep);
-                      const newProjectItem = {
-                        project_number: `PRJ-${newProjClient.substring(0, 3).toUpperCase()}-${Math.floor(100 + Math.random() * 900)}`,
-                        client_id: newProjClient,
-                        description: `Rep ${repDetails ? repDetails.name.split(' ')[1] || repDetails.name : 'Staff'} ${newProjDesc || 'Inspection'}`,
-                        plant_id: newProjPlant,
-                        rep_id: newProjRep,
-                        start_date: newProjStartDate || new Date().toISOString().split('T')[0],
-                        currency: newProjCurrency,
-                        billing_rate: parseFloat(newProjBilling),
-                        pay_rate: parseFloat(newProjPay),
-                        status: 'Active'
-                      };
-                      addProject(newProjectItem);
-                      logSystemEvent('system', 'create_project', `Registered new project ${newProjectItem.project_number} for client ${newProjClient} at location ${newProjPlant}.`);
-                      alert("Project registered successfully!");
-                      // Reset fields
-                      setNewProjDesc('');
-                      setNewProjBilling('');
-                      setNewProjPay('');
-                      window.dispatchEvent(new Event('ids_pulse_db_update'));
-                    }}
-                    className="flex flex-col gap-4 flex-1 overflow-y-auto pr-1 scrollbar-thin"
-                  >
-                    <div className="flex flex-col gap-1">
-                      <label className="text-[11.5px] font-bold text-slate-500 uppercase tracking-wider">Assign Representative</label>
-                      <select 
-                        value={newProjRep} 
-                        onChange={(e) => {
-                          if (e.target.value === 'ADD_NEW') {
-                            setShowQuickAddRep(true);
-                          } else {
-                            setNewProjRep(e.target.value);
-                          }
-                        }}
-                        className="bg-slate-950 border border-slate-850 rounded-xl px-3 py-2.5 text-[13.5px] text-white focus:outline-none focus:border-cyan-500 transition-colors"
-                      >
-                        <option value="">Select Rep...</option>
-                        {users.filter(u => u.role === 'rep' || u.role === 'qre' || u.id === '1' || u.id === 'rep_hugo' || u.id === 'rep_nabil' || u.id === 'rep_rogelio').map(u => (
-                          <option key={u.id} value={u.id}>{u.name}</option>
-                        ))}
-                        <option value="ADD_NEW" className="text-cyan-400 font-bold">+ Add New Rep...</option>
-                      </select>
-                    </div>
-
-                    <div className="flex flex-col gap-1">
-                      <label className="text-[11.5px] font-bold text-slate-500 uppercase tracking-wider">Client / Supplier</label>
-                      <select 
-                        value={newProjClient} 
-                        onChange={(e) => {
-                          if (e.target.value === 'ADD_NEW') {
-                            setShowQuickAddClient(true);
-                          } else {
-                            setNewProjClient(e.target.value);
-                          }
-                        }}
-                        className="bg-slate-950 border border-slate-850 rounded-xl px-3 py-2.5 text-[13.5px] text-white focus:outline-none focus:border-cyan-500 transition-colors"
-                      >
-                        <option value="">Select Client...</option>
-                        {suppliers.map(s => (
-                          <option key={s.id} value={s.id}>{s.name}</option>
-                        ))}
-                        <option value="ADD_NEW" className="text-cyan-400 font-bold">+ Add New Client...</option>
-                      </select>
-                    </div>
-
-                    <div className="flex flex-col gap-1">
-                      <label className="text-[11.5px] font-bold text-slate-500 uppercase tracking-wider">Plant Location</label>
-                      <select 
-                        value={newProjPlant} 
-                        onChange={(e) => {
-                          if (e.target.value === 'ADD_NEW') {
-                            setShowQuickAddPlant(true);
-                          } else {
-                            setNewProjPlant(e.target.value);
-                          }
-                        }}
-                        className="bg-slate-950 border border-slate-850 rounded-xl px-3 py-2.5 text-[13.5px] text-white focus:outline-none focus:border-cyan-500 transition-colors"
-                      >
-                        <option value="">Select Plant...</option>
-                        {plants.map(p => (
-                          <option key={p.id} value={p.id}>{p.name}</option>
-                        ))}
-                        <option value="ADD_NEW" className="text-cyan-400 font-bold">+ Add New Plant...</option>
-                      </select>
-                    </div>
-
-                    <div className="flex flex-col gap-1">
-                      <label className="text-[11.5px] font-bold text-slate-500 uppercase tracking-wider">Description / Scope</label>
-                      <input 
-                        type="text" 
-                        value={newProjDesc} 
-                        onChange={(e) => setNewProjDesc(e.target.value)}
-                        placeholder="e.g. Line Quality Audit" 
-                        className="bg-slate-950 border border-slate-850 rounded-xl px-3 py-2.5 text-[13.5px] text-white placeholder-slate-650 focus:outline-none focus:border-cyan-500 transition-colors"
-                      />
-                    </div>
-
-                    <div className="flex flex-col gap-1">
-                      <label className="text-[11.5px] font-bold text-slate-500 uppercase tracking-wider">Start Date</label>
-                      <input 
-                        type="date" 
-                        value={newProjStartDate} 
-                        onChange={(e) => setNewProjStartDate(e.target.value)}
-                        className="bg-slate-950 border border-slate-850 rounded-xl px-3 py-2.5 text-[13.5px] text-white focus:outline-none focus:border-cyan-500 transition-colors"
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="flex flex-col gap-1">
-                        <label className="text-[11.5px] font-bold text-slate-500 uppercase tracking-wider">Billing Rate / Hr</label>
-                        <div className="relative">
-                          <span className="absolute left-3.5 top-3.5 text-slate-500 text-[11.5px] font-mono">$</span>
-                          <input 
-                            type="number" 
-                            step="0.01" 
-                            value={newProjBilling} 
-                            onChange={(e) => setNewProjBilling(e.target.value)}
-                            placeholder="0.00" 
-                            className="w-full bg-slate-950 border border-slate-850 rounded-xl pl-6 pr-3 py-2.5 text-[13.5px] text-white placeholder-slate-650 focus:outline-none focus:border-cyan-500 transition-colors"
-                          />
+                // Aggregate hours logged against this project
+                const dbTime = getEntities('timeEntries') || [];
+                const projLogs = dbTime.filter(t => t.rep_id === proj.rep_id && t.supplier_id === proj.client_id && t.plant_id === proj.plant_id);
+                const totalHours = projLogs.reduce((sum, t) => sum + parseFloat(t.hours || 0), 0);
+                const invoicedHours = projLogs.filter(t => t.invoiced).reduce((sum, t) => sum + parseFloat(t.hours || 0), 0);
+                const uninvoicedHours = totalHours - invoicedHours;
+                const revenueToDate = invoicedHours * parseFloat(proj.billing_rate);
+                
+                return (
+                  <div className="flex-1 bg-slate-900/40 border border-slate-850 rounded-2xl flex flex-col min-h-0">
+                    <div className="px-8 py-6 border-b border-slate-850 flex justify-between items-center bg-slate-950/20">
+                      <div>
+                        <div className="flex items-center gap-3">
+                          <button 
+                            onClick={() => setSelectedProjectId(null)}
+                            className="bg-slate-800 hover:bg-slate-700 text-white p-1.5 rounded-lg cursor-pointer transition-colors"
+                          >
+                            <ArrowLeft className="w-4.5 h-4.5" />
+                          </button>
+                          <h3 className="text-xl font-bold text-white uppercase tracking-wider flex items-center gap-3">
+                            <FolderKanban className="w-6 h-6 text-cyan-400" />
+                            <span>Project {proj.project_number}</span>
+                          </h3>
                         </div>
+                        <div className="text-[13.5px] text-slate-400 font-medium ml-12 mt-1">{proj.description}</div>
                       </div>
-
-                      <div className="flex flex-col gap-1">
-                        <label className="text-[11.5px] font-bold text-slate-500 uppercase tracking-wider">Pay Rate / Hr</label>
-                        <div className="relative">
-                          <span className="absolute left-3.5 top-3.5 text-slate-500 text-[11.5px] font-mono">$</span>
-                          <input 
-                            type="number" 
-                            step="0.01" 
-                            value={newProjPay} 
-                            onChange={(e) => setNewProjPay(e.target.value)}
-                            placeholder="0.00" 
-                            className="w-full bg-slate-950 border border-slate-850 rounded-xl pl-6 pr-3 py-2.5 text-[13.5px] text-white placeholder-slate-650 focus:outline-none focus:border-cyan-500 transition-colors"
-                          />
+                      <div className="flex items-center gap-4">
+                        <div className={`px-4 py-1.5 rounded-full text-[11.5px] font-black uppercase tracking-wider border ${proj.status === 'Active' ? 'bg-emerald-400/10 text-emerald-400 border-emerald-400/20' : 'bg-slate-800 text-slate-400 border-slate-700'}`}>
+                          {proj.status}
                         </div>
                       </div>
                     </div>
-
-                    <div className="flex flex-col gap-2 mt-1 text-left">
-                      <label className="text-[11.5px] font-bold text-slate-500 uppercase tracking-wider">Billing Currency</label>
-                      <div className="flex gap-4">
-                        <label className="flex items-center gap-2 cursor-pointer text-[13.5px] text-slate-300">
-                          <input 
-                            type="radio" 
-                            name="newProjCurrency" 
-                            checked={newProjCurrency === 'USD'}
-                            onChange={() => setNewProjCurrency('USD')}
-                            className="text-[#22D3EE] focus:ring-[#22D3EE] bg-slate-950 border-slate-850"
-                          />
-                          USD (US$)
-                        </label>
-                        <label className="flex items-center gap-2 cursor-pointer text-[13.5px] text-slate-300">
-                          <input 
-                            type="radio" 
-                            name="newProjCurrency" 
-                            checked={newProjCurrency === 'CAD'}
-                            onChange={() => setNewProjCurrency('CAD')}
-                            className="text-[#22D3EE] focus:ring-[#22D3EE] bg-slate-950 border-slate-850"
-                          />
-                          CAD (C$)
-                        </label>
+                    
+                    <div className="p-8 flex-1 overflow-y-auto">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                        <div className="bg-slate-950 border border-slate-800 rounded-xl p-5 flex flex-col">
+                          <span className="text-[11.5px] font-bold text-slate-500 uppercase tracking-wider">Client</span>
+                          <span className="text-lg font-black text-white mt-1 capitalize">{clientName}</span>
+                          <span className="text-[12.5px] text-slate-400 mt-0.5">{plantName}</span>
+                        </div>
+                        
+                        <div className="bg-slate-950 border border-slate-800 rounded-xl p-5 flex flex-col">
+                          <span className="text-[11.5px] font-bold text-slate-500 uppercase tracking-wider">Assigned Rep</span>
+                          <span className="text-lg font-black text-white mt-1">{repName}</span>
+                          <span className="text-[12.5px] text-slate-400 mt-0.5">Started: {proj.start_date}</span>
+                        </div>
+                        
+                        <div className="bg-slate-950 border border-slate-800 rounded-xl p-5 flex flex-col">
+                          <span className="text-[11.5px] font-bold text-slate-500 uppercase tracking-wider">Financials</span>
+                          <span className="text-lg font-black text-emerald-400 mt-1">Bill: {sym} {parseFloat(proj.billing_rate).toFixed(2)}/hr</span>
+                          <span className="text-[12.5px] text-slate-400 mt-0.5">Pay: {sym} {parseFloat(proj.pay_rate).toFixed(2)}/hr</span>
+                        </div>
+                        
+                        <div className="bg-slate-950 border border-slate-800 rounded-xl p-5 flex flex-col">
+                          <span className="text-[11.5px] font-bold text-slate-500 uppercase tracking-wider">Revenue To Date</span>
+                          <span className="text-2xl font-black text-[#22D3EE] mt-1">{sym} {revenueToDate.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
+                          <span className="text-[12.5px] text-slate-400 mt-0.5">Invoiced: {invoicedHours} hrs</span>
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div className="lg:col-span-2 bg-slate-950 border border-slate-800 rounded-xl p-6">
+                          <h4 className="text-[13.5px] font-bold text-white uppercase tracking-wider mb-4 border-b border-slate-850 pb-2">Time Tracking Summary</h4>
+                          
+                          <div className="flex items-end gap-12 mt-6">
+                            <div className="flex flex-col gap-2">
+                              <span className="text-4xl font-black text-white">{totalHours.toFixed(1)}</span>
+                              <span className="text-[11.5px] font-bold text-slate-500 uppercase tracking-wider">Total Hrs Logged</span>
+                            </div>
+                            
+                            <div className="flex flex-col gap-2">
+                              <span className="text-4xl font-black text-emerald-400">{invoicedHours.toFixed(1)}</span>
+                              <span className="text-[11.5px] font-bold text-slate-500 uppercase tracking-wider">Hrs Invoiced</span>
+                            </div>
+                            
+                            <div className="flex flex-col gap-2">
+                              <span className="text-4xl font-black text-amber-400">{uninvoicedHours.toFixed(1)}</span>
+                              <span className="text-[11.5px] font-bold text-slate-500 uppercase tracking-wider">Uninvoiced Queue</span>
+                            </div>
+                          </div>
+                          
+                          <div className="w-full bg-slate-800 h-2 mt-8 rounded-full overflow-hidden flex">
+                            <div className="bg-emerald-400 h-full transition-all duration-1000" style={{ width: `${totalHours > 0 ? (invoicedHours/totalHours)*100 : 0}%` }}></div>
+                            <div className="bg-amber-400 h-full transition-all duration-1000" style={{ width: `${totalHours > 0 ? (uninvoicedHours/totalHours)*100 : 0}%` }}></div>
+                          </div>
+                        </div>
+                        
+                        <div className="bg-slate-950 border border-slate-800 rounded-xl p-6">
+                          <h4 className="text-[13.5px] font-bold text-white uppercase tracking-wider mb-4 border-b border-slate-850 pb-2">Quick Actions</h4>
+                          <div className="flex flex-col gap-3">
+                            <button 
+                              onClick={() => { setActiveTab('time-tracking'); setTimeTrackingSubTab('time-logs'); }}
+                              className="w-full bg-[#0EA5E9]/10 text-[#0EA5E9] hover:bg-[#0EA5E9] hover:text-white transition-colors font-bold py-3 rounded-lg text-[12.5px] uppercase tracking-wider cursor-pointer flex items-center justify-center gap-2"
+                            >
+                              Log Additional Hours
+                            </button>
+                            <button 
+                              onClick={() => {
+                                const active = proj.status === 'Active';
+                                proj.status = active ? 'Completed' : 'Active';
+                                saveEntity('projects', proj);
+                                window.dispatchEvent(new Event('ids_pulse_db_update'));
+                              }}
+                              className={`w-full font-bold py-3 rounded-lg text-[12.5px] uppercase tracking-wider cursor-pointer flex items-center justify-center gap-2 transition-colors ${proj.status === 'Active' ? 'bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700' : 'bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white'}`}
+                            >
+                              {proj.status === 'Active' ? 'Mark Project Complete' : 'Re-open Project'}
+                            </button>
+                          </div>
+                        </div>
                       </div>
                     </div>
-
-                    <button 
-                      type="submit"
-                      className="mt-4 w-full bg-cyan-500/10 hover:bg-cyan-500/20 text-[#22D3EE] border border-cyan-500/20 font-bold py-2.5 rounded-xl text-[13.5px] cursor-pointer flex justify-center items-center gap-2"
-                    >
-                      <PlusCircle className="w-4.5 h-4" />
+                  </div>
+                );
+              })}
+            </div>
+          )}     <PlusCircle className="w-4.5 h-4" />
                       <span>Register Project Assignment</span>
                     </button>
                   </form>

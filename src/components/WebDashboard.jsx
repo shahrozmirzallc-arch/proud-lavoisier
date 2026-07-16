@@ -109,6 +109,16 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   const [extraHoursPlantId, setExtraHoursPlantId] = useState('mercedes_tuscaloosa');
   const [selectedEditingRequestId, setSelectedEditingRequestId] = useState(null);
   
+  // Matrix Entry State
+  const [matrixRepId, setMatrixRepId] = useState('rep_hugo');
+  const [matrixWeekStart, setMatrixWeekStart] = useState(() => {
+    const d = new Date();
+    const day = d.getDay();
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+    return new Date(d.setDate(diff)).toISOString().substring(0, 10);
+  });
+  const [matrixData, setMatrixData] = useState({});
+
   // Comments for Approval workflows
   const [customerApprovalComment, setCustomerApprovalComment] = useState('');
   const [adminApprovalComment, setAdminApprovalComment] = useState('');
@@ -266,6 +276,51 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     setRates(getEntities('rates') || []);
     const user = sessionStorage.getItem('ids_pulse_admin_user') || 'Admin';
     logSystemEvent('system', 'delete_rate', `${user} deleted custom rate override configuration ID ${rateId}.`);
+  };
+
+  const handleSubmitMatrix = (e) => {
+    e.preventDefault();
+    const dbTime = getEntities('timeEntries') || [];
+    let addedCount = 0;
+    
+    // Parse week start to get dates for Mon-Sun
+    const start = new Date(matrixWeekStart + 'T00:00:00'); // Ensure local date parsing
+    const daysOffset = [0, 1, 2, 3, 4, 5, 6];
+    const dayKeys = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+    
+    Object.keys(matrixData).forEach(supId => {
+      dayKeys.forEach((day, index) => {
+        const hours = parseFloat(matrixData[supId][day] || 0);
+        if (hours > 0) {
+          const entryDate = new Date(start);
+          entryDate.setDate(entryDate.getDate() + daysOffset[index]);
+          const dateStr = entryDate.toISOString().substring(0, 10);
+          
+          const newEntry = {
+            id: `time_matrix_${Date.now()}_${Math.floor(Math.random()*1000)}`,
+            rep_id: matrixRepId,
+            supplier_id: supId,
+            plant_id: suppliers.find(s => s.id === supId)?.plants_served?.[0] || 'unknown',
+            date: dateStr,
+            hours: hours,
+            mileage_km: 0,
+            invoiced: false,
+            sent_to_payroll: false
+          };
+          dbTime.push(newEntry);
+          saveEntity('timeEntries', newEntry);
+          addedCount++;
+        }
+      });
+    });
+    
+    if (addedCount > 0) {
+      window.dispatchEvent(new Event('ids_pulse_db_update'));
+      alert(`Successfully generated ${addedCount} daily timesheets for the week!`);
+      setMatrixData({}); // Clear grid
+    } else {
+      alert("No hours were entered in the matrix.");
+    }
   };
 
   const handleMarkAsInvoiced = (clientEntries, clientExpenses) => {
@@ -5955,105 +6010,95 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   )}
 
                   {accountingSubTab === 'bulk-entry' && (
-                    <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex flex-col gap-4 text-left">
-                      <h4 className="text-[13.5px] font-bold text-white uppercase tracking-wider pb-2 border-b border-slate-850 flex items-center gap-1.5">
-                        <Users className="w-4.5 h-4.5 text-[#22D3EE]" /> Manual Payroll Adjustments
-                      </h4>
-                      <p className="text-[11.5px] text-slate-400 max-w-[500px]">
-                        Log or backdate hours and mileage for multiple supplier locations in a single form at the end of the week.
-                      </p>
-                      
-                      <form 
-                        onSubmit={(e) => {
-                          e.preventDefault();
-                          const date = document.getElementById('bulk_date').value;
-                          const repId = document.getElementById('bulk_rep').value;
-                          const supId = document.getElementById('bulk_sup').value;
-                          const plantId = document.getElementById('bulk_plant').value;
-                          const hours = parseFloat(document.getElementById('bulk_hours').value || 0);
-                          const mileage = parseFloat(document.getElementById('bulk_mileage').value || 0);
-                          
-                          if (hours <= 0 && mileage <= 0) {
-                            return alert("Please enter valid hours or mileage!");
-                          }
-                          
-                          const dbTime = getEntities('timeEntries') || [];
-                          const newEntry = {
-                            id: 'time_' + Date.now(),
-                            rep_id: repId,
-                            supplier_id: supId,
-                            plant_id: plantId,
-                            date: date,
-                            hours: hours,
-                            mileage_km: mileage,
-                            invoiced: false,
-                            sent_to_payroll: false
-                          };
-                          
-                          dbTime.push(newEntry);
-                          saveEntity('timeEntries', newEntry);
-                          window.dispatchEvent(new Event('ids_pulse_db_update'));
-                          alert("Bulk log entry successfully added to Colleen's billing overview!");
-                          document.getElementById('bulk_hours').value = '';
-                          document.getElementById('bulk_mileage').value = '';
-                        }}
-                        className="flex flex-col gap-4 max-w-[450px] mt-2"
-                      >
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="flex flex-col gap-1">
-                            <label className="text-[10.5px] font-bold text-slate-500 uppercase tracking-wider">Date</label>
-                            <input type="date" id="bulk_date" defaultValue={new Date().toISOString().substring(0, 10)} required className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-[13.5px] text-white" />
-                          </div>
-                          
+                    <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex flex-col gap-4 text-left overflow-x-auto">
+                      <div className="flex justify-between items-end pb-2 border-b border-slate-850">
+                        <div>
+                          <h4 className="text-[13.5px] font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
+                            <Users className="w-4.5 h-4.5 text-[#22D3EE]" /> Weekly Matrix Data Entry
+                          </h4>
+                          <p className="text-[11.5px] text-slate-400 mt-1 max-w-[600px]">
+                            Quickly transcribe physical weekly timesheets. Select the Rep and Week Start (Monday), then fill out the grid to instantly generate all daily logs across multiple clients.
+                          </p>
+                        </div>
+                        <div className="flex gap-4">
                           <div className="flex flex-col gap-1">
                             <label className="text-[10.5px] font-bold text-slate-500 uppercase tracking-wider">Representative</label>
-                            <select id="bulk_rep" className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-[13.5px] text-white">
-                              {users.filter(u => u.role === 'rep').map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                            <select value={matrixRepId} onChange={(e) => setMatrixRepId(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-[13.5px] text-white font-bold">
+                              {users.filter(u => u.role === 'rep' || u.role === 'qre' || u.id === '1' || u.id === 'rep_hugo' || u.id === 'rep_nabil' || u.id === 'rep_rogelio').map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
                             </select>
                           </div>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
                           <div className="flex flex-col gap-1">
-                            <label className="text-[10.5px] font-bold text-slate-500 uppercase tracking-wider">Client Supplier</label>
-                            <select id="bulk_sup" defaultValue="autokabel" onChange={(ev) => {
-                              const sId = ev.target.value;
-                              const plantSel = document.getElementById('bulk_plant');
-                              if (plantSel) {
-                                const supObj = suppliers.find(s => s.id === sId);
-                                const plantsList = supObj?.plants_served || [];
-                                plantSel.innerHTML = plantsList.map(pId => `<option value="${pId}">${plants.find(p => p.id === pId)?.name || pId}</option>`).join('');
-                              }
-                            }} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-[13.5px] text-white">
-                              {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                            </select>
-                          </div>
-
-                          <div className="flex flex-col gap-1">
-                            <label className="text-[10.5px] font-bold text-slate-500 uppercase tracking-wider">Location / Plant</label>
-                            <select id="bulk_plant" className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-[13.5px] text-white">
-                              {(suppliers.find(s => s.id === 'autokabel')?.plants_served || []).map(pId => (
-                                <option key={pId} value={pId}>{plants.find(p => p.id === pId)?.name || pId}</option>
-                              ))}
-                            </select>
+                            <label className="text-[10.5px] font-bold text-slate-500 uppercase tracking-wider">Week Start (Monday)</label>
+                            <input type="date" value={matrixWeekStart} onChange={(e) => setMatrixWeekStart(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-[13.5px] text-white font-mono" />
                           </div>
                         </div>
+                      </div>
+                      
+                      <form onSubmit={handleSubmitMatrix} className="flex flex-col gap-4 mt-2">
+                        <table className="w-full text-left text-[13.5px]">
+                          <thead>
+                            <tr className="border-b border-slate-800 text-slate-500 font-bold uppercase text-[10.5px]">
+                              <th className="py-2 w-[220px]">Client / Plant</th>
+                              <th className="py-2 text-center w-16">Mon</th>
+                              <th className="py-2 text-center w-16">Tue</th>
+                              <th className="py-2 text-center w-16">Wed</th>
+                              <th className="py-2 text-center w-16">Thu</th>
+                              <th className="py-2 text-center w-16">Fri</th>
+                              <th className="py-2 text-center w-16 text-sky-400/70">Sat</th>
+                              <th className="py-2 text-center w-16 text-sky-400/70">Sun</th>
+                              <th className="py-2 text-right">Total</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-850">
+                            {suppliers.map(sup => {
+                              const rowData = matrixData[sup.id] || {};
+                              const mon = parseFloat(rowData.mon || 0);
+                              const tue = parseFloat(rowData.tue || 0);
+                              const wed = parseFloat(rowData.wed || 0);
+                              const thu = parseFloat(rowData.thu || 0);
+                              const fri = parseFloat(rowData.fri || 0);
+                              const sat = parseFloat(rowData.sat || 0);
+                              const sun = parseFloat(rowData.sun || 0);
+                              const total = mon + tue + wed + thu + fri + sat + sun;
+                              
+                              const updateCell = (day, val) => {
+                                setMatrixData(prev => ({
+                                  ...prev,
+                                  [sup.id]: { ...(prev[sup.id] || {}), [day]: val }
+                                }));
+                              };
 
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="flex flex-col gap-1">
-                            <label className="text-[10.5px] font-bold text-slate-500 uppercase tracking-wider">Hours Worked</label>
-                            <input type="number" step="0.5" id="bulk_hours" placeholder="e.g. 10.0" className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-[13.5px] text-white" />
-                          </div>
+                              return (
+                                <tr key={sup.id} className="hover:bg-slate-950/40">
+                                  <td className="py-2">
+                                    <div className="font-bold text-white">{sup.name}</div>
+                                    <div className="text-[10.5px] text-slate-500">{plants.find(p => p.id === sup.plants_served?.[0])?.name || 'Multiple'}</div>
+                                  </td>
+                                  {['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'].map(day => (
+                                    <td key={day} className="py-1 px-1">
+                                      <input 
+                                        type="number" 
+                                        step="0.5"
+                                        min="0"
+                                        max="24"
+                                        value={rowData[day] || ''} 
+                                        onChange={(e) => updateCell(day, e.target.value)}
+                                        className="w-14 bg-slate-950 border border-slate-800 rounded-lg px-2 py-1.5 text-center text-white focus:border-[#0EA5E9] focus:outline-none focus:ring-1 focus:ring-[#0EA5E9]"
+                                      />
+                                    </td>
+                                  ))}
+                                  <td className="py-2 text-right font-bold text-[#22D3EE]">{total > 0 ? total : ''}</td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
 
-                          <div className="flex flex-col gap-1">
-                            <label className="text-[10.5px] font-bold text-slate-500 uppercase tracking-wider">Mileage (km)</label>
-                            <input type="number" step="1" id="bulk_mileage" placeholder="e.g. 45" className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-[13.5px] text-white" />
-                          </div>
+                        <div className="flex justify-end mt-4">
+                          <button type="submit" className="bg-[#10B981] hover:bg-[#10B981]/90 text-white font-extrabold py-3 px-8 rounded-xl text-[13.5px] uppercase tracking-wider transition-colors cursor-pointer flex items-center gap-2">
+                            <CheckCircle2 className="w-5 h-5" /> Submit Full Weekly Sheet
+                          </button>
                         </div>
-
-                        <button type="submit" className="bg-[#0EA5E9] hover:bg-[#0EA5E9]/90 text-white font-extrabold py-2.5 rounded-xl text-[13.5px] uppercase tracking-wider transition-colors mt-2 cursor-pointer">
-                          Add Bulk Log Entry
-                        </button>
                       </form>
                     </div>
                   )}

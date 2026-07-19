@@ -26,7 +26,9 @@ const SEED_DATA = {
     { id: 'rate_2', rep_id: '1', supplier_id: 'hutchinson', billing_rate: 30.00, pay_rate: 22.00 },
     { id: 'rate_hugo', rep_id: 'rep_hugo', supplier_id: 'autokabel', plant_id: 'mercedes_tuscaloosa', billing_rate: 35.00, pay_rate: 25.00 },
     { id: 'rate_nabil', rep_id: 'rep_nabil', supplier_id: 'autokabel', plant_id: 'ford_dearborn', billing_rate: 35.00, pay_rate: 26.00 },
-    { id: 'rate_rogelio', rep_id: 'rep_rogelio', supplier_id: 'autokabel', plant_id: 'gm_slp', billing_rate: 28.00, pay_rate: 18.56 }
+    { id: 'rate_rogelio', rep_id: 'rep_rogelio', supplier_id: 'autokabel', plant_id: 'gm_slp', billing_rate: 28.00, pay_rate: 18.56 },
+    { id: 'rate_rogelio_brose', rep_id: 'rep_rogelio', supplier_id: 'brose', plant_id: 'gm_slp', billing_rate: 32.00, pay_rate: 20.00 },
+    { id: 'rate_rogelio_borg', rep_id: 'rep_rogelio', supplier_id: 'borgwarner', plant_id: 'gm_slp', billing_rate: 38.00, pay_rate: 22.00 }
   ],
   plants: [
     { id: 'gm_oshawa', name: 'GM Oshawa Plant', address: '900 Park Rd S, Oshawa, ON', oem_brand: 'GM' },
@@ -38,651 +40,80 @@ const SEED_DATA = {
   ],
   suppliers: [
     { 
-      id: 'magna', 
-      name: 'Magna AutoSystems', 
-      invoice_schedule: 'weekly',
-      allotted_hours: 45,
-      contacts: [
-        { name: 'Shahroz Mirza', email: 'shahroz.m@magna.com', role: 'Quality Manager' },
-        { name: 'Martin', email: 'martin.s@magna.com', role: 'Sequence Supervisor' }
-      ],
+      id: 'magna', name: 'Magna AutoSystems', invoice_schedule: 'weekly', allotted_hours: 45,
+      contacts: [{ name: 'Shahroz Mirza', email: 'shahroz.m@magna.com', role: 'Quality Manager' }, { name: 'Martin', email: 'martin.s@magna.com', role: 'Sequence Supervisor' }],
       plants_served: ['gm_oshawa'] 
     },
     { 
-      id: 'hutchinson', 
-      name: 'Hutchinson Rubber', 
-      invoice_schedule: 'monthly',
-      allotted_hours: 30,
-      contacts: [
-        { name: 'Sarah Jenkins', email: 'sjenkins@hutchinson.ca', role: 'Supplier Quality Engineer' }
-      ],
+      id: 'hutchinson', name: 'Hutchinson Rubber', invoice_schedule: 'monthly', allotted_hours: 30,
+      contacts: [{ name: 'Sarah Jenkins', email: 'sjenkins@hutchinson.ca', role: 'Supplier Quality Engineer' }],
       plants_served: ['gm_oshawa'] 
     },
     {
-      id: 'autokabel',
-      name: 'Auto Kabel de Mexico S.A. de C.V',
-      invoice_schedule: 'weekly',
-      allotted_hours: 50,
-      contacts: [
-        { name: 'Juan Carlos', email: 'jc@autokabel.mx', role: 'Plant Quality Manager' }
-      ],
+      id: 'autokabel', name: 'Auto Kabel de Mexico S.A. de C.V', invoice_schedule: 'weekly', allotted_hours: 50,
+      contacts: [{ name: 'Juan Carlos', email: 'jc@autokabel.mx', role: 'Plant Quality Manager' }],
       plants_served: ['mercedes_tuscaloosa', 'ford_dearborn', 'gm_slp']
     },
     {
-      id: 'brose',
-      name: 'Brose México S.A. de C.V.',
-      invoice_schedule: 'weekly',
-      allotted_hours: 40,
-      contacts: [
-        { name: 'Maria Gomez', email: 'mg@brose.mx', role: 'Supplier Quality Manager' }
-      ],
+      id: 'brose', name: 'Brose México S.A. de C.V.', invoice_schedule: 'weekly', allotted_hours: 40,
+      contacts: [{ name: 'Maria Gomez', email: 'mg@brose.mx', role: 'Supplier Quality Manager' }],
       plants_served: ['gm_slp']
     },
     {
-      id: 'borgwarner',
-      name: 'BorgWarner PDS Irapuato',
-      invoice_schedule: 'monthly',
-      allotted_hours: 35,
-      contacts: [
-        { name: 'Alejandro', email: 'al@borgwarner.com', role: 'Supplier Quality Engineer' }
-      ],
+      id: 'borgwarner', name: 'BorgWarner PDS Irapuato', invoice_schedule: 'monthly', allotted_hours: 35,
+      contacts: [{ name: 'Alejandro', email: 'al@borgwarner.com', role: 'Supplier Quality Engineer' }],
       plants_served: ['gm_slp']
     }
   ],
   parts: [
     { id: '86286761', part_number: '86286761', supplier_id: 'magna', description: 'Tail Light Assembly' },
-    { id: '86291945', part_number: '86291945', supplier_id: 'magna', description: 'Headlight Housing (Matt\'s Bin Sort)' },
-    { id: '86201945', part_number: '86201945', supplier_id: 'magna', description: 'Headlight Housing - Alt' }
+    { id: '86291945', part_number: '86291945', supplier_id: 'magna', description: 'Headlight Housing' },
+    { id: 'AK-BAT-001', part_number: 'AK-BAT-001', supplier_id: 'autokabel', description: 'Primary Battery Cable Sheath' },
+    { id: 'AK-HAR-294', part_number: 'AK-HAR-294', supplier_id: 'autokabel', description: 'Headlight Wiring Harness' },
+    { id: 'BR-REG-502', part_number: 'BR-REG-502', supplier_id: 'brose', description: 'Door Regulator Bracket' },
+    { id: 'BW-SOL-119', part_number: 'BW-SOL-119', supplier_id: 'borgwarner', description: 'Transmission Solenoid Valve' }
   ],
   incidents: [
-    {
-      id: 'inc_1',
-      rep_id: '1',
-      plant_id: 'gm_oshawa',
-      supplier_id: 'magna',
-      part_id: '86286761',
-      area: 'Scrap table at Sequence Area',
-      description: 'Light on scrap table at sequence area for rattle. Spare bulb in housing again. Removed bulb and returned light to sequence area. Bulb was removed before scrap tag was written up. Please ensure all base lights do not have spare bulbs in housing causing rattling sound.',
-      action_taken: 'Removed bulb, returned light to sequence area',
-      supplier_contact: 'Martin',
-      photos: [
-        { id: 'ph_1', url: 'https://images.unsplash.com/photo-1506015391300-4802dc74de2e?auto=format&fit=crop&w=800&q=80', type: 'Wide shot (box label visible)', annotations: [] },
-        { id: 'ph_2', url: 'https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?auto=format&fit=crop&w=800&q=80', type: 'Close-up of defect', annotations: [{ type: 'arrow', x: 240, y: 180, label: 'Loose bulb causing rattle' }] }
-      ],
-      videos: [],
-      audio_url: '',
-      status: 'Closed',
-      created_at: '2026-05-28T08:30:00Z',
-      sent_at: '2026-05-28T08:35:00Z',
-      concern_classification: 'PRR',
-      defect_returned: 'N',
-      sort_required: 'N',
-      rma_required: 'N',
-      defect_location_x: 0.30,
-      defect_location_y: 0.50,
-      part_view: 'top',
-      parts_list: [
-        {
-          id: 'sp_seed_1',
-          part_number: '86286761',
-          description: 'Tail Light Assembly',
-          supplier_id: 'magna',
-          bin: 'BIN-MAG-6761',
-          qty: 1
-        }
-      ]
-    },
-    {
-      id: 'inc_2',
-      rep_id: '1',
-      plant_id: 'gm_oshawa',
-      supplier_id: 'magna',
-      part_id: '86286761',
-      area: 'Scrap table at Sequence Area',
-      description: 'Loose spare bulb rattling inside bulb housing left side.',
-      action_taken: 'Removed bulb, returned to sequence',
-      supplier_contact: 'Martin',
-      photos: [],
-      videos: [],
-      audio_url: '',
-      status: 'Closed',
-      created_at: '2026-05-28T09:12:00Z',
-      sent_at: '2026-05-28T09:15:00Z',
-      concern_classification: 'PRR',
-      defect_returned: 'N',
-      sort_required: 'N',
-      rma_required: 'N',
-      defect_location_x: 0.31,
-      defect_location_y: 0.52,
-      part_view: 'top',
-      parts_list: [
-        { id: 'sp_seed_2', part_number: '86286761', description: 'Tail Light Assembly', supplier_id: 'magna', bin: 'BIN-MAG-6761', qty: 1 }
-      ]
-    },
-    {
-      id: 'inc_3',
-      rep_id: '1',
-      plant_id: 'gm_oshawa',
-      supplier_id: 'magna',
-      part_id: '86286761',
-      area: 'Online assembly',
-      description: 'Gasket seal misaligned, creating outer gap on right edge.',
-      action_taken: 'Realigned gasket',
-      supplier_contact: 'Martin',
-      photos: [],
-      videos: [],
-      audio_url: '',
-      status: 'Open',
-      created_at: '2026-05-28T14:40:00Z',
-      sent_at: '2026-05-28T14:45:00Z',
-      concern_classification: 'PRR',
-      defect_returned: 'N',
-      sort_required: 'N',
-      rma_required: 'N',
-      defect_location_x: 0.50,
-      defect_location_y: 0.74,
-      part_view: 'top',
-      parts_list: [
-        { id: 'sp_seed_3', part_number: '86286761', description: 'Tail Light Assembly', supplier_id: 'magna', bin: 'BIN-MAG-6761', qty: 1 }
-      ]
-    },
-    {
-      id: 'inc_4',
-      rep_id: '1',
-      plant_id: 'gm_oshawa',
-      supplier_id: 'magna',
-      part_id: '86286761',
-      area: 'Scrap table',
-      description: 'Tail light left side bulb housing rattling. Spare bulb loose inside.',
-      action_taken: 'Cleared bulb',
-      supplier_contact: 'Martin',
-      photos: [],
-      videos: [],
-      audio_url: '',
-      status: 'Closed',
-      created_at: '2026-06-01T10:05:00Z',
-      sent_at: '2026-06-01T10:10:00Z',
-      concern_classification: 'PRR',
-      defect_returned: 'N',
-      sort_required: 'N',
-      rma_required: 'N',
-      defect_location_x: 0.29,
-      defect_location_y: 0.49,
-      part_view: 'top',
-      parts_list: [
-        { id: 'sp_seed_4', part_number: '86286761', description: 'Tail Light Assembly', supplier_id: 'magna', bin: 'BIN-MAG-6761', qty: 1 }
-      ]
-    },
-    {
-      id: 'inc_5',
-      rep_id: '1',
-      plant_id: 'gm_oshawa',
-      supplier_id: 'magna',
-      part_id: '86286761',
-      area: 'Heavy repair',
-      description: 'Outer lens gasket loose causing moisture leakage risk.',
-      action_taken: 'Realigned gasket',
-      supplier_contact: 'Martin',
-      photos: [],
-      videos: [],
-      audio_url: '',
-      status: 'Open',
-      created_at: '2026-06-01T11:30:00Z',
-      sent_at: '2026-06-01T11:35:00Z',
-      concern_classification: 'PRR',
-      defect_returned: 'N',
-      sort_required: 'N',
-      rma_required: 'N',
-      defect_location_x: 0.52,
-      defect_location_y: 0.73,
-      part_view: 'top',
-      parts_list: [
-        { id: 'sp_seed_5', part_number: '86286761', description: 'Tail Light Assembly', supplier_id: 'magna', bin: 'BIN-MAG-6761', qty: 1 }
-      ]
-    },
-    {
-      id: 'inc_6',
-      rep_id: '1',
-      plant_id: 'gm_oshawa',
-      supplier_id: 'magna',
-      part_id: '86291945',
-      area: 'Sequence Area',
-      description: 'Low beam bulb housing loose in reflector casing.',
-      action_taken: 'Adjusted reflector clips',
-      supplier_contact: 'Martin',
-      photos: [],
-      videos: [],
-      audio_url: '',
-      status: 'Closed',
-      created_at: '2026-06-01T13:40:00Z',
-      sent_at: '2026-06-01T13:45:00Z',
-      concern_classification: 'QR',
-      defect_returned: 'Y',
-      sort_required: 'Y',
-      rma_required: 'Y',
-      defect_location_x: 0.65,
-      defect_location_y: 0.50,
-      part_view: 'top',
-      parts_list: [
-        { id: 'sp_seed_6', part_number: '86291945', description: 'Headlight Housing (Matt\'s Bin Sort)', supplier_id: 'magna', bin: 'BIN-MAG-9145', qty: 1 }
-      ]
-    },
-    {
-      id: 'inc_7',
-      rep_id: '1',
-      plant_id: 'gm_oshawa',
-      supplier_id: 'magna',
-      part_id: '86291945',
-      area: 'Online assembly',
-      description: 'Bulb connector pins bent preventing headlight harness snap.',
-      action_taken: 'Returned to supplier',
-      supplier_contact: 'Martin',
-      photos: [],
-      videos: [],
-      audio_url: '',
-      status: 'Open',
-      created_at: '2026-06-01T14:15:00Z',
-      sent_at: '2026-06-01T14:20:00Z',
-      concern_classification: 'PRR',
-      defect_returned: 'Y',
-      sort_required: 'N',
-      rma_required: 'N',
-      defect_location_x: 0.64,
-      defect_location_y: 0.48,
-      part_view: 'top',
-      parts_list: [
-        { id: 'sp_seed_7', part_number: '86291945', description: 'Headlight Housing (Matt\'s Bin Sort)', supplier_id: 'magna', bin: 'BIN-MAG-9145', qty: 1 }
-      ]
-    },
-    {
-      id: 'inc_8',
-      rep_id: 'rep_hugo',
-      plant_id: 'mercedes_tuscaloosa',
-      supplier_id: 'autokabel',
-      part_id: '86286761',
-      area: 'Mercedes Assembly Line 4',
-      description: 'Insulation gap discovered on primary battery cable sheath. Standard gauge wire exposed.',
-      action_taken: 'Placed parts in containment bin, flagged Mercedes quality auditor, notified Auto Kabel supervisor.',
-      supplier_contact: 'Juan Carlos',
-      photos: [],
-      videos: [],
-      audio_url: '',
-      status: 'Open',
-      created_at: '2026-07-01T09:30:00Z',
-      sent_at: '2026-07-01T09:35:00Z',
-      concern_classification: 'PRR',
-      defect_returned: 'N',
-      sort_required: 'Y',
-      rma_required: 'N',
-      defect_location_x: 0.45,
-      defect_location_y: 0.60,
-      part_view: 'top',
-      parts_list: [
-        { id: 'sp_seed_8', part_number: '86286761', description: 'Tail Light Assembly', supplier_id: 'autokabel', bin: 'BIN-AK-6761', qty: 1 }
-      ]
-    },
-    {
-      id: 'inc_9',
-      rep_id: 'rep_nabil',
-      plant_id: 'ford_dearborn',
-      supplier_id: 'autokabel',
-      part_id: '86291945',
-      area: 'Harness Sequencing Bay',
-      description: 'Bent electrical connector pins on wiring harnesses preventing positive locking.',
-      action_taken: 'Initiated 100% sort of containment rack. Rejected 6 bad harnesses.',
-      supplier_contact: 'Juan Carlos',
-      photos: [],
-      videos: [],
-      audio_url: '',
-      status: 'Closed',
-      created_at: '2026-07-02T11:15:00Z',
-      sent_at: '2026-07-02T11:20:00Z',
-      concern_classification: 'QR',
-      defect_returned: 'Y',
-      sort_required: 'Y',
-      rma_required: 'Y',
-      defect_location_x: 0.55,
-      defect_location_y: 0.40,
-      part_view: 'top',
-      parts_list: [
-        { id: 'sp_seed_9', part_number: '86291945', description: 'Headlight Housing (Matt\'s Bin Sort)', supplier_id: 'autokabel', bin: 'BIN-AK-9145', qty: 6 }
-      ]
-    }
+    { id: 'inc_1', rep_id: '1', plant_id: 'gm_oshawa', supplier_id: 'magna', part_id: '86286761', area: 'Sequence Area', description: 'Spare bulb rattling inside housing.', action_taken: 'Removed bulb', supplier_contact: 'Martin', status: 'Closed', concern_classification: 'PRR', defect_location_x: 0.30, defect_location_y: 0.50, parts_list: [{ id: 'sp_1', part_number: '86286761', description: 'Tail Light', supplier_id: 'magna', qty: 1 }], photos: [] },
+    { id: 'inc_8', rep_id: 'rep_hugo', plant_id: 'mercedes_tuscaloosa', supplier_id: 'autokabel', part_id: 'AK-BAT-001', area: 'Assembly Line 4', description: 'Insulation gap on primary battery cable sheath. Standard gauge wire exposed.', action_taken: 'Placed parts in containment bin, flagged Mercedes quality auditor.', supplier_contact: 'Juan Carlos', status: 'Open', concern_classification: 'PRR', defect_location_x: 0.45, defect_location_y: 0.60, parts_list: [{ id: 'sp_8', part_number: 'AK-BAT-001', description: 'Battery Cable', supplier_id: 'autokabel', qty: 1 }], photos: [] },
+    { id: 'inc_9', rep_id: 'rep_nabil', plant_id: 'ford_dearborn', supplier_id: 'autokabel', part_id: 'AK-HAR-294', area: 'Harness Sequencing', description: 'Bent electrical connector pins on wiring harnesses preventing positive locking.', action_taken: 'Rejected 6 bad harnesses.', supplier_contact: 'Juan Carlos', status: 'Closed', concern_classification: 'QR', defect_location_x: 0.55, defect_location_y: 0.40, parts_list: [{ id: 'sp_9', part_number: 'AK-HAR-294', description: 'Wiring Harness', supplier_id: 'autokabel', qty: 6 }], photos: [] },
+    { id: 'inc_10', rep_id: 'rep_rogelio', plant_id: 'gm_slp', supplier_id: 'brose', part_id: 'BR-REG-502', area: 'Body Shop Line 2', description: 'Mounting hole tolerance on door regulator bracket exceeded specification (+0.5mm).', action_taken: 'Contained 120 parts. Initiated 100% sort.', supplier_contact: 'Maria Gomez', status: 'Open', concern_classification: 'PRR', defect_location_x: 0.20, defect_location_y: 0.80, parts_list: [{ id: 'sp_10', part_number: 'BR-REG-502', description: 'Door Bracket', supplier_id: 'brose', qty: 14 }], photos: [] },
+    { id: 'inc_11', rep_id: 'rep_rogelio', plant_id: 'gm_slp', supplier_id: 'borgwarner', part_id: 'BW-SOL-119', area: 'Powertrain Assembly', description: 'Solenoid valve failing air leak test during transmission mating process.', action_taken: 'Quarantined pallet. Replaced with certified stock.', supplier_contact: 'Alejandro', status: 'Open', concern_classification: 'PRR', defect_location_x: 0.70, defect_location_y: 0.30, parts_list: [{ id: 'sp_11', part_number: 'BW-SOL-119', description: 'Solenoid Valve', supplier_id: 'borgwarner', qty: 3 }], photos: [] }
   ],
   shiftReports: [
-    {
-      id: 'sr_1',
-      rep_id: '1',
-      plant_id: 'gm_oshawa',
-      date: '2026-05-28',
-      areas_walked: [
-        { name: 'Online assembly', status: 'no_issues', contact: 'T/L and installers', notes: 'Checked with team leader and installers on line.' },
-        { name: 'Sequence area', status: 'issues', contact: 'Martin', notes: 'Found rattling tail light. See incident inc_1.' },
-        { name: 'Heavy repair', status: 'no_issues', contact: 'Martin', notes: 'Checked all heavy repair bays.' },
-        { name: 'Review Scrap Table', status: 'issues', contact: 'Martin', notes: 'Reworked tail light on scrap table.' }
-      ],
-      incidents_count: 1,
-      bonus_tasks: [
-        { task: 'Matt\'s bin check audit on PN 86291945', status: 'completed', notes: 'Checked bin audit request. No issues found.' }
-      ],
-      status: 'Sent',
-      sent_at: '2026-05-28T17:30:00Z'
-    },
-    {
-      id: 'sr_2',
-      rep_id: 'rep_hugo',
-      plant_id: 'mercedes_tuscaloosa',
-      date: '2026-07-01',
-      areas_walked: [
-        { name: 'Mercedes Assembly Line 4', status: 'issues', contact: 'Juan Carlos', notes: 'Found battery cable insulation gap. See incident inc_8.' },
-        { name: 'Parts sequencing area', status: 'no_issues', contact: 'Juan Carlos', notes: 'Checked wire racks. All tagged correctly.' }
-      ],
-      incidents_count: 1,
-      bonus_tasks: [
-        { task: 'Verify line stock tags', status: 'completed', notes: 'All tags current.' }
-      ],
-      status: 'Sent',
-      sent_at: '2026-07-01T17:45:00Z'
-    },
-    {
-      id: 'sr_3',
-      rep_id: 'rep_nabil',
-      plant_id: 'ford_dearborn',
-      date: '2026-07-02',
-      areas_walked: [
-        { name: 'Harness Sequencing Bay', status: 'issues', contact: 'Juan Carlos', notes: 'Bent electrical connector pins. See incident inc_9.' },
-        { name: 'Scrap table', status: 'no_issues', contact: 'Juan Carlos', notes: 'Scrap table verified clear.' }
-      ],
-      incidents_count: 1,
-      bonus_tasks: [
-        { task: 'Audit containment rack logs', status: 'completed', notes: 'Containment rack logs verified and matches DB counts.' }
-      ],
-      status: 'Sent',
-      sent_at: '2026-07-02T16:50:00Z'
-    },
-    {
-      id: 'sr_4',
-      rep_id: 'rep_rogelio',
-      plant_id: 'gm_slp',
-      date: '2026-07-02',
-      areas_walked: [
-        { name: 'Engine Room Line', status: 'issues', contact: 'Juan Carlos', notes: 'Assisted in wiring harness sort. High density sorting completed.' },
-        { name: 'Scrap table', status: 'no_issues', contact: 'Juan Carlos', notes: 'Scrap table verified.' }
-      ],
-      incidents_count: 0,
-      bonus_tasks: [
-        { task: 'Pre-check next shift parts', status: 'completed', notes: 'Next shift parts pre-checked.' }
-      ],
-      status: 'Sent',
-      sent_at: '2026-07-02T18:15:00Z'
-    }
+    { id: 'sr_1', rep_id: '1', plant_id: 'gm_oshawa', date: '2026-07-06', areas_walked: [{ name: 'Sequence area', status: 'issues' }], incidents_count: 1, status: 'Sent' },
+    { id: 'sr_2', rep_id: 'rep_hugo', plant_id: 'mercedes_tuscaloosa', date: '2026-07-06', areas_walked: [{ name: 'Assembly Line 4', status: 'issues' }], incidents_count: 1, status: 'Sent' },
+    { id: 'sr_3', rep_id: 'rep_rogelio', plant_id: 'gm_slp', date: '2026-07-06', areas_walked: [{ name: 'Body Shop', status: 'issues' }, { name: 'Powertrain', status: 'issues' }], incidents_count: 2, status: 'Sent' }
   ],
   reworkLogs: [
-    {
-      id: 'rw_1',
-      rep_id: '1',
-      plant_id: 'gm_oshawa',
-      supplier_id: 'magna',
-      part_id: '86286761',
-      qty: 1,
-      time_spent_minutes: 5,
-      notes: 'Removed loose bulb from tail light housing to eliminate rattle.',
-      created_at: '2026-05-28T08:31:00Z'
-    },
-    {
-      id: 'rw_2',
-      rep_id: '1',
-      plant_id: 'gm_oshawa',
-      supplier_id: 'magna',
-      part_id: '86286761',
-      qty: 12,
-      time_spent_minutes: 60,
-      notes: 'Sorted 12 light housings, verified gasket seal alignment.',
-      created_at: '2026-07-02T10:00:00Z'
-    },
-    {
-      id: 'rw_3',
-      rep_id: 'rep_hugo',
-      plant_id: 'mercedes_tuscaloosa',
-      supplier_id: 'autokabel',
-      part_id: '86286761',
-      qty: 45,
-      time_spent_minutes: 180,
-      notes: 'Reworked copper connectors on 45 Auto Kabel harnesses to Mercedes specifications.',
-      created_at: '2026-07-01T15:30:00Z'
-    },
-    {
-      id: 'rw_4',
-      rep_id: 'rep_rogelio',
-      plant_id: 'gm_slp',
-      supplier_id: 'brose',
-      part_id: '86291945',
-      qty: 90,
-      time_spent_minutes: 240,
-      notes: 'Full sort of Brose door regulator brackets. Identified 4 loose brackets.',
-      created_at: '2026-07-02T14:00:00Z'
-    }
+    { id: 'rw_1', rep_id: 'rep_hugo', plant_id: 'mercedes_tuscaloosa', supplier_id: 'autokabel', part_id: 'AK-BAT-001', qty: 45, time_spent_minutes: 180, notes: 'Reworked copper connectors.' },
+    { id: 'rw_2', rep_id: 'rep_rogelio', plant_id: 'gm_slp', supplier_id: 'brose', part_id: 'BR-REG-502', qty: 120, time_spent_minutes: 240, notes: 'Full sort of door brackets.' },
+    { id: 'rw_3', rep_id: 'rep_rogelio', plant_id: 'gm_slp', supplier_id: 'borgwarner', part_id: 'BW-SOL-119', qty: 50, time_spent_minutes: 120, notes: 'Air leak testing on quarantined pallet.' }
   ],
   timeEntries: [
-    {
-      id: 'te_1',
-      rep_id: '1',
-      plant_id: 'gm_oshawa',
-      supplier_id: 'magna',
-      date: '2026-05-28',
-      hours: 9,
-      mileage_km: 45,
-      notes: 'Standard day shift. Conducted area walks, sorted Matt\'s bin request, reworked one tail light.',
-      invoiced: false,
-      sent_to_payroll: false
-    },
-    {
-      id: 'te_2',
-      rep_id: '1',
-      plant_id: 'gm_oshawa',
-      supplier_id: 'magna',
-      date: '2026-07-02',
-      hours: 8.5,
-      mileage_km: 45,
-      notes: 'Regular audit on sequence racks. Checked bulb rattle issue.',
-      invoiced: false,
-      sent_to_payroll: false
-    },
-    {
-      id: 'te_3',
-      rep_id: 'rep_hugo',
-      plant_id: 'mercedes_tuscaloosa',
-      supplier_id: 'autokabel',
-      date: '2026-07-01',
-      hours: 10.0,
-      mileage_km: 85,
-      notes: 'Containment line sort for SWG insulation gaps. Required overtime support.',
-      invoiced: false,
-      sent_to_payroll: false
-    },
-    {
-      id: 'te_4',
-      rep_id: 'rep_hugo',
-      plant_id: 'mercedes_tuscaloosa',
-      supplier_id: 'autokabel',
-      date: '2026-07-02',
-      hours: 8.0,
-      mileage_km: 85,
-      notes: 'Inspected wire rack components at Mercedes assembly Line 4.',
-      invoiced: false,
-      sent_to_payroll: false
-    },
-    {
-      id: 'te_5',
-      rep_id: 'rep_nabil',
-      plant_id: 'ford_dearborn',
-      supplier_id: 'autokabel',
-      date: '2026-07-02',
-      hours: 8.0,
-      mileage_km: 32,
-      notes: 'Quality walk at Ford Dearborn plant. Verified tag compliance.',
-      invoiced: false,
-      sent_to_payroll: false
-    },
-    {
-      id: 'te_6',
-      rep_id: 'rep_nabil',
-      plant_id: 'ford_dearborn',
-      supplier_id: 'autokabel',
-      date: '2026-07-03',
-      hours: 9.5,
-      mileage_km: 32,
-      notes: 'Assisted in rework containment of tail light harness assemblies.',
-      invoiced: false,
-      sent_to_payroll: false
-    },
-    {
-      id: 'te_7',
-      rep_id: 'rep_rogelio',
-      plant_id: 'gm_slp',
-      supplier_id: 'autokabel',
-      date: '2026-07-02',
-      hours: 11.0,
-      mileage_km: 60,
-      notes: 'Supported GM SLP engine room wiring harness sort. High urgency shift.',
-      invoiced: false,
-      sent_to_payroll: false
-    }
-  ],
-  emailLogs: [
-    {
-      id: 'el_1',
-      incident_id: 'inc_1',
-      to_emails: 'martin.s@magna.com, shahroz.m@magna.com',
-      cc_emails: 'donna.c@integritydriven.com, greg.p@integritydriven.com',
-      subject: '[INCIDENT] PN 86286761 | Scrap table at Sequence Area | GM Oshawa Plant | 2026-05-28',
-      body: `<h3>INCIDENT REPORT — IDS PULSE</h3>
-<p><strong>Date:</strong> 2026-05-28<br>
-<strong>Plant:</strong> GM Oshawa Plant<br>
-<strong>Rep:</strong> Clarence Kuiken</p>
-<hr/>
-<p><strong>Part Number Affected:</strong> 86286761 (Tail Light Assembly)<br>
-<strong>Supplier:</strong> Magna AutoSystems<br>
-<strong>Area Found:</strong> Scrap table at Sequence Area</p>
-<hr/>
-<p><strong>Defect Description:</strong> Light on scrap table at sequence area for rattle. Spare bulb in housing again. Removed bulb and returned light to sequence area. Bulb was removed before scrap tag was written up. Please ensure all base lights do not have spare bulbs in housing causing rattling sound.</p>
-<p><strong>Action Taken:</strong> Removed bulb, returned light to sequence area<br>
-<strong>Supplier Contact:</strong> Martin</p>
-<hr/>
-<p><strong>Traceability / Magna Spec:</strong><br>
-- Defect Returned to Supplier: N<br>
-- Sort Required: N<br>
-- RMA Required: N<br>
-- Classification: PRR</p>
-<p><strong>Photos Sent:</strong> 2 photos attached. Drawing annotations present on close-up shot.</p>`,
-      sent_at: '2026-05-28T08:35:00Z',
-      delivery_status: 'delivered'
-    }
-  ],
-  dailyTasks: [
-    { id: 'dt_1', rep_id: '1', date: '2026-05-28', task: 'Verify Magna tail light rattles on sequence line', status: 'completed' },
-    { id: 'dt_2', rep_id: '1', date: '2026-05-28', task: "Conduct Matt's bin sorting audit request on PN 86291945", status: 'completed' },
-    { id: 'dt_3', rep_id: '1', date: '2026-06-01', task: 'Verify sequence area scrap bins are empty and tagged', status: 'pending' },
-    { id: 'dt_4', rep_id: '1', date: '2026-06-01', task: 'Review Scrap Table for bulb rattles', status: 'pending' },
-    { id: 'dt_5', rep_id: '1', date: '2026-06-01', task: 'Submit end-of-shift walkthrough checklist', status: 'pending' }
+    { id: 'te_1', rep_id: '1', plant_id: 'gm_oshawa', supplier_id: 'magna', date: '2026-07-06', hours: 8.5, mileage_km: 45, invoiced: false, sent_to_payroll: false },
+    { id: 'te_2', rep_id: 'rep_hugo', plant_id: 'mercedes_tuscaloosa', supplier_id: 'autokabel', date: '2026-07-06', hours: 10.0, mileage_km: 85, invoiced: false, sent_to_payroll: false },
+    { id: 'te_3', rep_id: 'rep_nabil', plant_id: 'ford_dearborn', supplier_id: 'autokabel', date: '2026-07-06', hours: 8.0, mileage_km: 32, invoiced: false, sent_to_payroll: false },
+    { id: 'te_4', rep_id: 'rep_rogelio', plant_id: 'gm_slp', supplier_id: 'brose', date: '2026-07-06', hours: 6.0, mileage_km: 20, invoiced: false, sent_to_payroll: false },
+    { id: 'te_5', rep_id: 'rep_rogelio', plant_id: 'gm_slp', supplier_id: 'borgwarner', date: '2026-07-06', hours: 4.5, mileage_km: 20, invoiced: false, sent_to_payroll: false },
+    { id: 'te_6', rep_id: 'rep_rogelio', plant_id: 'gm_slp', supplier_id: 'brose', date: '2026-07-07', hours: 8.0, mileage_km: 40, invoiced: false, sent_to_payroll: false }
   ],
   expenseEntries: [
-    {
-      id: 'exp_1',
-      rep_id: '1',
-      supplier_id: 'magna',
-      date: '2026-06-03',
-      category: 'Fuel',
-      amount: 45.50,
-      receipt_photo: 'https://images.unsplash.com/photo-1554415707-6e8cfc93fe23?auto=format&fit=crop&w=800&q=80',
-      notes: 'Fuel fill-up for GM Oshawa site travel.',
-      invoiced: false,
-      sent_to_payroll: false,
-      status: 'approved'
-    },
-    {
-      id: 'exp_2',
-      rep_id: 'rep_hugo',
-      supplier_id: 'autokabel',
-      date: '2026-07-02',
-      category: 'Tolls',
-      amount: 15.00,
-      receipt_photo: 'https://images.unsplash.com/photo-1554415707-6e8cfc93fe23?auto=format&fit=crop&w=800&q=80',
-      notes: 'Highway toll receipts for Tuscaloosa quality walk.',
-      invoiced: false,
-      sent_to_payroll: false,
-      status: 'approved'
-    },
-    {
-      id: 'exp_3',
-      rep_id: 'rep_nabil',
-      supplier_id: 'autokabel',
-      date: '2026-07-03',
-      category: 'Meals',
-      amount: 28.50,
-      receipt_photo: 'https://images.unsplash.com/photo-1554415707-6e8cfc93fe23?auto=format&fit=crop&w=800&q=80',
-      notes: 'Overtime dinner support during containment sort.',
-      invoiced: false,
-      sent_to_payroll: false,
-      status: 'pending'
-    },
-    {
-      id: 'exp_4',
-      rep_id: 'rep_rogelio',
-      supplier_id: 'autokabel',
-      date: '2026-07-02',
-      category: 'Safety Gear',
-      amount: 75.00,
-      receipt_photo: 'https://images.unsplash.com/photo-1554415707-6e8cfc93fe23?auto=format&fit=crop&w=800&q=80',
-      notes: 'Replacement steel-toe safety shoes for SLP floor audit.',
-      invoiced: false,
-      sent_to_payroll: false,
-      status: 'approved'
-    }
+    { id: 'exp_1', rep_id: 'rep_rogelio', supplier_id: 'brose', date: '2026-07-06', category: 'Safety Gear', amount: 75.00, receipt_photo: 'https://images.unsplash.com/photo-1554415707-6e8cfc93fe23', status: 'approved' },
+    { id: 'exp_2', rep_id: 'rep_hugo', supplier_id: 'autokabel', date: '2026-07-06', category: 'Meals', amount: 28.50, receipt_photo: 'https://images.unsplash.com/photo-1554415707-6e8cfc93fe23', status: 'pending' }
+  ],
+  emailLogs: [],
+  dailyTasks: [
+    { id: 'dt_1', rep_id: 'rep_rogelio', date: '2026-07-07', task: 'Follow up on BorgWarner solenoid leak testing', status: 'pending' },
+    { id: 'dt_2', rep_id: 'rep_rogelio', date: '2026-07-07', task: 'Complete Brose door bracket 100% sort', status: 'pending' }
   ],
   projects: [
-    { id: 'proj_1', project_number: 'PRJ-MAG-101', client_id: 'magna', description: 'Line Quality Audit', plant_id: 'gm_oshawa', rep_id: '1', start_date: '2023-10-12', currency: 'CAD', billing_rate: 85.00, pay_rate: 55.00, status: 'Active' },
-    { id: 'proj_2', project_number: 'PRJ-TES-204', client_id: 'brose', description: 'Robotics Calibration', plant_id: 'gm_slp', rep_id: 'rep_rogelio', start_date: '2023-11-01', currency: 'USD', billing_rate: 120.00, pay_rate: 80.00, status: 'Active' },
-    { id: 'proj_3', project_number: 'PRJ-FOR-092', client_id: 'autokabel', description: 'Safety Inspector', plant_id: 'ford_dearborn', rep_id: 'rep_nabil', start_date: '2023-09-28', currency: 'USD', billing_rate: 95.00, pay_rate: 65.00, status: 'Active' }
+    { id: 'proj_1', project_number: 'PRJ-MAG-101', client_id: 'magna', rep_id: '1', plant_id: 'gm_oshawa', status: 'Active', currency: 'CAD' },
+    { id: 'proj_2', project_number: 'PRJ-BRO-204', client_id: 'brose', rep_id: 'rep_rogelio', plant_id: 'gm_slp', status: 'Active', currency: 'USD' },
+    { id: 'proj_3', project_number: 'PRJ-BOR-092', client_id: 'borgwarner', rep_id: 'rep_rogelio', plant_id: 'gm_slp', status: 'Active', currency: 'USD' }
   ],
-  systemLogs: [
-    { id: 'log_seed_1', timestamp: new Date().toISOString(), category: 'system', action: 'initialize', details: 'Demo database initialized with integrity seeds.' }
-  ],
-  extraHoursRequests: [
-    {
-      id: 'ehr_1',
-      rep_id: 'rep_hugo',
-      supplier_id: 'autokabel',
-      plant_id: 'mercedes_tuscaloosa',
-      date: '2026-07-01',
-      hours: 4.0,
-      reason: 'Urgent sorting of tail light assemblies due to supplier defect leak',
-      status: 'pending_customer',
-      customer_comment: '',
-      admin_comment: '',
-      created_at: '2026-07-01T10:00:00Z',
-      history: [
-        { status: 'pending_customer', user: 'Hugo Picon', timestamp: '2026-07-01T10:00:00Z', comment: 'Initiated extra hours request.' }
-      ]
-    },
-    {
-      id: 'ehr_2',
-      rep_id: 'rep_rogelio',
-      supplier_id: 'autokabel',
-      plant_id: 'gm_slp',
-      date: '2026-06-30',
-      hours: 2.5,
-      reason: 'Line stoppage support at engine assembly area',
-      status: 'pending_admin',
-      customer_comment: 'Approved for production continuity.',
-      admin_comment: '',
-      created_at: '2026-06-30T14:30:00Z',
-      history: [
-        { status: 'pending_customer', user: 'Rogelio Velasco', timestamp: '2026-06-30T14:30:00Z', comment: 'Line stop support requested.' },
-        { status: 'pending_admin', user: 'Juan Carlos (Auto Kabel)', timestamp: '2026-06-30T16:00:00Z', comment: 'Approved for production continuity.' }
-      ]
-    }
-  ]
+  systemLogs: [],
+  extraHoursRequests: []
 };
 
 // Initialize database in localStorage

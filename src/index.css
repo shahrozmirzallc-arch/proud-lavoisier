@@ -24,7 +24,7 @@
   --accent: #0EA5E9;
   --highlight: #22D3EE;
   --text-secondary: #64748B;
-  --radius: 12px;
+  --radius: 24px;
 }
 
 body {
@@ -462,7 +462,7 @@ body:not([class*="theme-"]):not(.mode-light) {
   --surface: rgba(30, 41, 59, 0.45);
   --surface-elevated: rgba(15, 23, 42, 0.6);
   --text: #f1f5f9;
-  --muted-text: #94a3b8;
+  --muted-text: #cbd5e1;
   --border: rgba(255, 255, 255, 0.08);
   --primary: #1E3A5F;
   --accent: #22D3EE;
@@ -473,17 +473,17 @@ body:not([class*="theme-"]):not(.mode-light) {
 
 body.theme-royal-blue.mode-light,
 body:not([class*="theme-"]).mode-light {
-  --bg: #f8fafc;
+  --bg: #F4F7FE;
   --surface: #ffffff;
-  --surface-elevated: #f1f5f9;
+  --surface-elevated: #ffffff;
   --text: #0f172a;
   --muted-text: #475569;
-  --border: rgba(15, 23, 42, 0.09);
-  --primary: #1E3A5F;
+  --border: #E2E8F0;
+  --primary: #3B82F6;
   --accent: #0284c7;
   --on-primary: #ffffff;
-  --success: #047857;
-  --danger: #b91c1c;
+  --success: #10B981;
+  --danger: #EF4444;
 }
 
 /* 2. NEON VIOLET */
@@ -553,7 +553,7 @@ body.theme-ruby-red:not(.mode-light) {
   --surface: rgba(80, 15, 30, 0.35);
   --surface-elevated: rgba(45, 8, 18, 0.5);
   --text: #f1f5f9;
-  --muted-text: #fda4af;
+  --muted-text: #fecdd3;
   --border: rgba(255, 255, 255, 0.08);
   --primary: #4c0519;
   --accent: #E11D48;
@@ -567,7 +567,7 @@ body.theme-ruby-red.mode-light {
   --surface: #ffffff;
   --surface-elevated: #ffe4e6;
   --text: #4c0519;
-  --muted-text: #9f1239;
+  --muted-text: #881337;
   --border: rgba(76, 5, 25, 0.09);
   --primary: #9f1239;
   --accent: #e11d48;

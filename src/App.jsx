@@ -189,7 +189,7 @@ function App() {
             </div>
             <div>
               <h1 className="text-lg font-black uppercase tracking-tighter mb-2">IDS PULSE SECURITY GATEWAY</h1>
-              <p className={`text-xs leading-relaxed max-w-[320px] mx-auto ${
+              <p className={`text-sm leading-relaxed max-w-[320px] mx-auto ${
                 isLight ? 'text-text-secondary' : 'text-text-secondary'
               }`}>
                 This terminal is encrypted. Please authenticate to initialize dashboard and simulator session.
@@ -217,11 +217,9 @@ function App() {
               const cleanHashBuffer = await crypto.subtle.digest('SHA-256', cleanBuffer);
               const cleanHashHex = Array.from(new Uint8Array(cleanHashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
               
-              // Shahroz's Password Hash (Shahroz123$)
-              const isShahrozPw = (
-                hashHex === '3dc913cc6d99a4f6fa13c07c646c8efa8b9410d323c484dfc1fef45322782131' ||
-                cleanHashHex === '3dc913cc6d99a4f6fa13c07c646c8efa8b9410d323c484dfc1fef45322782131'
-              );
+              // Shahroz's Password Hash (Shahroz123$) - used ONLY for specific admin login now
+              const isShahrozPw = false; // Disabled master password bypass for security
+              // original logic was: hashHex === '...' || cleanHashHex === '...'
 
               // Admin Specific Password Hashes
               const adminHashes = {
@@ -385,7 +383,7 @@ function App() {
 
             <button 
               type="submit"
-              className={`w-full h-14 font-bold text-xs uppercase tracking-widest rounded-none transition-all active:scale-[0.98] cursor-pointer border ${
+              className={`w-full h-14 font-bold text-sm uppercase tracking-widest rounded-none transition-all active:scale-[0.98] cursor-pointer border ${
                 isLight 
                   ? 'bg-surface hover:bg-surface-elevated text-text-primary border-transparent' 
                   : 'bg-white hover:bg-slate-100 text-slate-950 border-transparent'
@@ -397,7 +395,7 @@ function App() {
 
           {/* Validation Notice */}
           {authError && (
-            <span className="text-xs text-red-500 font-bold block animate-pulse text-center -mt-3">
+            <span className="text-sm text-red-500 font-bold block animate-pulse text-center -mt-3">
               ⚠️ Invalid password. Authentication rejected.
             </span>
           )}
@@ -429,7 +427,7 @@ function App() {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-extrabold text-sm text-text-primary tracking-tight">IDS Pulse Operations Suite</span>
+              <span className="font-extrabold text-base text-text-primary tracking-tight">IDS Pulse Operations Suite</span>
               <span className="text-[9px] bg-[#0EA5E9]/15 text-[#22D3EE] border border-[#0EA5E9]/20 px-2 py-0.5 rounded-full font-bold uppercase">Active</span>
               {sessionStorage.getItem('ids_pulse_role') === 'admin' && (
                 <div className="flex items-center gap-1.5 bg-surface-elevated border border-border-subtle rounded-lg px-2 py-0.5 ml-1 flex-shrink-0">
@@ -567,7 +565,7 @@ function App() {
                 initializeDB();
                 window.dispatchEvent(new Event('ids_pulse_db_update'));
               }}
-              className="flex items-center gap-1.5 text-text-secondary hover:text-text-primary bg-surface-elevated border border-border-subtle py-1.5 px-2.5 rounded-lg text-xs cursor-pointer transition-colors"
+              className="flex items-center gap-1.5 text-text-secondary hover:text-text-primary bg-surface-elevated border border-border-subtle py-1.5 px-2.5 rounded-lg text-sm cursor-pointer transition-colors"
               title="Clear and reset local database"
             >
               <RefreshCw className="w-3.5 h-3.5" />
@@ -581,7 +579,7 @@ function App() {
                 sessionStorage.removeItem('ids_pulse_customer_id');
                 window.location.reload();
               }}
-              className="flex items-center gap-1.5 text-text-secondary hover:text-red-400 bg-surface-elevated border border-border-subtle py-1.5 px-2.5 rounded-lg text-xs cursor-pointer transition-colors"
+              className="flex items-center gap-1.5 text-text-secondary hover:text-red-400 bg-surface-elevated border border-border-subtle py-1.5 px-2.5 rounded-lg text-sm cursor-pointer transition-colors"
               title="Lock Application Session"
             >
               <Lock className="w-3.5 h-3.5 text-red-400/85" />

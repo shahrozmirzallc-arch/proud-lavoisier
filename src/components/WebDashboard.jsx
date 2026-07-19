@@ -1343,7 +1343,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
           date: rw.created_at.substring(0, 10),
           title: 'Rework Logged',
           desc: `${rw.qty} pcs reworked (${rw.time_spent_minutes}m spent) | Rep: ${repName}`,
-          color: 'border-sky-500',
+          color: 'border-amber-500',
           timestamp: rw.created_at
         });
       }
@@ -1552,12 +1552,12 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
           <style>
             body { font-family: sans-serif; padding: 40px; color: #1e293b; line-height: 1.6; background: #f8fafc; position: relative; }
             .card { background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 30px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); position: relative; z-index: 1; }
-            .header-container { display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #1E3A5F; padding-bottom: 15px; margin-bottom: 24px; }
+            .header-container { display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #3B82F6; padding-bottom: 15px; margin-bottom: 24px; }
             .logo-section { display: flex; align-items: center; gap: 12px; }
-            .shield-icon { width: 34px; height: 34px; background: #1E3A5F; clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%); display: flex; align-items: center; justify-content: center; }
-            .pulse-wave { width: 18px; height: 18px; border-bottom: 2.5px solid #22D3EE; border-top: 2.5px solid #22D3EE; transform: rotate(15deg); }
+            .shield-icon { width: 34px; height: 34px; background: #3B82F6; clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%); display: flex; align-items: center; justify-content: center; }
+            .pulse-wave { width: 18px; height: 18px; border-bottom: 2.5px solid #3B82F6; border-top: 2.5px solid #3B82F6; transform: rotate(15deg); }
             .company-details { display: flex; flex-direction: column; }
-            .company-title { color: #1E3A5F; font-size: 18px; font-weight: 800; margin: 0; line-height: 1.1; letter-spacing: -0.02em; }
+            .company-title { color: #3B82F6; font-size: 18px; font-weight: 800; margin: 0; line-height: 1.1; letter-spacing: -0.02em; }
             .company-subtitle { font-size: 8px; color: #64748b; margin-top: 2px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
             .confidentiality-tag { border: 1.5px solid ${conf.color}; background: ${conf.bgHex}; color: ${conf.color}; font-size: 9px; font-weight: 800; padding: 4px 10px; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.05em; text-align: center; }
             .confidentiality-sub { font-size: 7px; display: block; margin-top: 2px; font-weight: bold; color: ${conf.color}; opacity: 0.8; text-transform: uppercase; }
@@ -1567,7 +1567,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
             .label { font-size: 9px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 4px; }
             .val { font-size: 13px; font-weight: 600; color: #0f172a; }
             .desc { border-top: 1px solid #e2e8f0; padding-top: 20px; margin-top: 20px; }
-            .desc h3 { color: #1E3A5F; font-size: 15px; margin-top: 0; margin-bottom: 8px; font-weight: 700; }
+            .desc h3 { color: #3B82F6; font-size: 15px; margin-top: 0; margin-bottom: 8px; font-weight: 700; }
             .desc p { font-size: 13px; color: #334155; margin: 0; white-space: pre-wrap; }
             .footer { border-top: 1px solid #e2e8f0; padding-top: 12px; margin-top: 40px; font-size: 9px; color: #94a3b8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; display: flex; justify-content: space-between; }
           </style>
@@ -1918,7 +1918,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
           <style>
             body { font-family: sans-serif; padding: 40px; color: #1e293b; line-height: 1.6; background: #f8fafc; position: relative; }
             .card { background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 30px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); position: relative; z-index: 1; }
-            .header-container { display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #1E3A5F; padding-bottom: 15px; margin-bottom: 24px; }
+            .header-container { display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #3B82F6; padding-bottom: 15px; margin-bottom: 24px; }
             .logo-section { display: flex; align-items: center; background: #1e3a5f; padding: 6px 14px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
             .confidentiality-tag { border: 1.5px solid ${conf.color}; background: ${conf.bgHex}; color: ${conf.color}; font-size: 9px; font-weight: 800; padding: 4px 10px; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.05em; text-align: center; }
             .confidentiality-sub { font-size: 7px; display: block; margin-top: 2px; font-weight: bold; color: ${conf.color}; opacity: 0.8; text-transform: uppercase; }
@@ -1927,7 +1927,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
             .field { background: #f8fafc; padding: 10px 14px; border-radius: 10px; border: 1px solid #f1f5f9; }
             .label { font-size: 9px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 4px; }
             .val { font-size: 13px; font-weight: 600; color: #0f172a; }
-            .section-title { color: #1E3A5F; font-size: 15px; margin-top: 20px; margin-bottom: 12px; font-weight: 700; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; }
+            .section-title { color: #3B82F6; font-size: 15px; margin-top: 20px; margin-bottom: 12px; font-weight: 700; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; }
             
             .table-styled { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 12px; }
             .table-styled th { background: #f1f5f9; padding: 8px; border: 1px solid #e2e8f0; text-align: left; font-weight: 800; color: #475569; text-transform: uppercase; font-size: 9px; }
@@ -2124,14 +2124,14 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
           <style>
             body { font-family: sans-serif; padding: 40px; color: #1e293b; line-height: 1.6; background: #f8fafc; position: relative; }
             .card { background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 30px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); position: relative; z-index: 1; }
-            .header-container { display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #1E3A5F; padding-bottom: 15px; margin-bottom: 24px; }
+            .header-container { display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #3B82F6; padding-bottom: 15px; margin-bottom: 24px; }
             .logo-section { display: flex; align-items: center; background: #1e3a5f; padding: 6px 14px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
             .confidentiality-tag { border: 1.5px solid ${conf.color}; background: ${conf.bgHex}; color: ${conf.color}; font-size: 9px; font-weight: 800; padding: 4px 10px; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.05em; text-align: center; }
             .confidentiality-sub { font-size: 7px; display: block; margin-top: 2px; font-weight: bold; color: ${conf.color}; opacity: 0.8; text-transform: uppercase; }
             .watermark { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-45deg); font-size: 50px; font-weight: 900; color: rgba(226, 232, 240, 0.25); pointer-events: none; z-index: 0; white-space: nowrap; text-transform: uppercase; font-family: sans-serif; }
             
             .supplier-card { border: 1px solid #e2e8f0; background: #f8fafc; border-radius: 12px; padding: 20px; margin-bottom: 20px; }
-            .supplier-name { color: #1E3A5F; font-size: 16px; font-weight: 800; display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+            .supplier-name { color: #3B82F6; font-size: 16px; font-weight: 800; display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
             .badge-active { background: #dcfce7; color: #10b981; border: 1px solid #86efac; padding: 2px 8px; border-radius: 99px; font-size: 9px; font-weight: bold; }
             
             .contact-row { display: flex; justify-content: space-between; background: white; border: 1px solid #f1f5f9; padding: 8px 12px; border-radius: 8px; font-size: 11px; margin-bottom: 6px; }
@@ -2154,7 +2154,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
               </div>
             </div>
 
-            <h2 style="color: #1E3A5F; font-size: 18px; font-weight: 850; margin-top: 0; margin-bottom: 20px; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px;">Supplier Partnership Directory</h2>
+            <h2 style="color: #3B82F6; font-size: 18px; font-weight: 850; margin-top: 0; margin-bottom: 20px; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px;">Supplier Partnership Directory</h2>
 
             ${suppliers.map(sup => `
               <div class="supplier-card">
@@ -2169,7 +2169,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                       <div class="contact-info">${c.name}</div>
                       <div class="contact-role">${c.role}</div>
                     </div>
-                    <div style="font-family: monospace; align-self: center;"><a href="mailto:${c.email}" style="color: #0EA5E9; text-decoration: none;">${c.email}</a></div>
+                    <div style="font-family: monospace; align-self: center;"><a href="mailto:${c.email}" style="color: #3B82F6; text-decoration: none;">${c.email}</a></div>
                   </div>
                 `).join('')}
               </div>
@@ -2321,7 +2321,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
           <style>
             body { font-family: sans-serif; padding: 40px; color: #1e293b; line-height: 1.6; background: #f8fafc; position: relative; }
             .card { background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 30px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); position: relative; z-index: 1; }
-            .header-container { display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #1E3A5F; padding-bottom: 15px; margin-bottom: 24px; }
+            .header-container { display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #3B82F6; padding-bottom: 15px; margin-bottom: 24px; }
             .logo-section { display: flex; align-items: center; background: #1e3a5f; padding: 6px 14px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
             .confidentiality-tag { border: 1.5px solid ${conf.color}; background: ${conf.bgHex}; color: ${conf.color}; font-size: 9px; font-weight: 800; padding: 4px 10px; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.05em; text-align: center; }
             .confidentiality-sub { font-size: 7px; display: block; margin-top: 2px; font-weight: bold; color: ${conf.color}; opacity: 0.8; text-transform: uppercase; }
@@ -2352,7 +2352,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
               </div>
             </div>
 
-            <h2 style="color: #1E3A5F; font-size: 18px; font-weight: 850; margin-top: 0; margin-bottom: 20px; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px;">Timesheet Payroll Summary Audit Report</h2>
+            <h2 style="color: #3B82F6; font-size: 18px; font-weight: 850; margin-top: 0; margin-bottom: 20px; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px;">Timesheet Payroll Summary Audit Report</h2>
 
             <div class="summary-box">
               <div class="summary-item">
@@ -2530,7 +2530,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
           <style>
             body { font-family: sans-serif; padding: 40px; color: #1e293b; line-height: 1.6; background: #f8fafc; position: relative; }
             .card { background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 30px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); position: relative; z-index: 1; }
-            .header-container { display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #1E3A5F; padding-bottom: 15px; margin-bottom: 24px; }
+            .header-container { display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #3B82F6; padding-bottom: 15px; margin-bottom: 24px; }
             .logo-section { display: flex; align-items: center; background: #1e3a5f; padding: 6px 14px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
             .confidentiality-tag { border: 1.5px solid ${conf.color}; background: ${conf.bgHex}; color: ${conf.color}; font-size: 9px; font-weight: 800; padding: 4px 10px; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.05em; text-align: center; }
             .confidentiality-sub { font-size: 7px; display: block; margin-top: 2px; font-weight: bold; color: ${conf.color}; opacity: 0.8; text-transform: uppercase; }
@@ -2556,7 +2556,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
               </div>
             </div>
 
-            <h2 style="color: #1E3A5F; font-size: 18px; font-weight: 850; margin-top: 0; margin-bottom: 20px; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px;">Defect Rework Logs Feed Report</h2>
+            <h2 style="color: #3B82F6; font-size: 18px; font-weight: 850; margin-top: 0; margin-bottom: 20px; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px;">Defect Rework Logs Feed Report</h2>
 
             <table class="table-styled">
               <thead>
@@ -2576,7 +2576,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   return `
                     <tr>
                       <td>${new Date(rw.created_at).toLocaleDateString()}</td>
-                      <td style="font-weight: bold; color: #0EA5E9;">${rep}</td>
+                      <td style="font-weight: bold; color: #3B82F6;">${rep}</td>
                       <td style="font-weight: bold;">PN ${rw.part_id}</td>
                       <td style="text-transform: uppercase; font-size: 10px; font-weight: bold; color: #64748b;">${rw.supplier_id}</td>
                       <td style="font-weight: bold; color: #10b981;">${rw.qty} pcs</td>
@@ -2717,7 +2717,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
           <style>
             body { font-family: sans-serif; padding: 40px; color: #1e293b; line-height: 1.6; background: #f8fafc; position: relative; }
             .card { background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 30px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); position: relative; z-index: 1; }
-            .header-container { display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #1E3A5F; padding-bottom: 15px; margin-bottom: 24px; }
+            .header-container { display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #3B82F6; padding-bottom: 15px; margin-bottom: 24px; }
             .logo-section { display: flex; align-items: center; background: #1e3a5f; padding: 6px 14px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
             .confidentiality-tag { border: 1.5px solid ${conf.color}; background: ${conf.bgHex}; color: ${conf.color}; font-size: 9px; font-weight: 800; padding: 4px 10px; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.05em; text-align: center; }
             .confidentiality-sub { font-size: 7px; display: block; margin-top: 2px; font-weight: bold; color: ${conf.color}; opacity: 0.8; text-transform: uppercase; }
@@ -2728,7 +2728,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
             .label { font-size: 9px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 4px; }
             .val { font-size: 13px; font-weight: 600; color: #0f172a; }
             .desc { border-top: 1px solid #e2e8f0; padding-top: 20px; margin-top: 20px; }
-            .desc h3 { color: #1E3A5F; font-size: 15px; margin-top: 0; margin-bottom: 8px; font-weight: 700; }
+            .desc h3 { color: #3B82F6; font-size: 15px; margin-top: 0; margin-bottom: 8px; font-weight: 700; }
             .desc p { font-size: 13px; color: #334155; margin: 0; white-space: pre-wrap; }
             .footer { border-top: 1px solid #e2e8f0; padding-top: 12px; margin-top: 40px; font-size: 9px; color: #94a3b8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; display: flex; justify-content: space-between; }
           </style>
@@ -3436,7 +3436,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   };
 
   return (
-    <div className={`web-dashboard-frame flex-1 bg-[#080d1a] border border-border-subtle rounded-3xl p-6 shadow-2xl flex flex-col ${layoutMode === 'dashboard-only' || layoutMode === 'roadmap-only' ? 'min-h-[calc(100vh-140px)]' : 'h-[780px]'} overflow-hidden text-left relative`}>
+    <div className={`web-dashboard-frame flex-1 bg-[#080d1a] border border-border-subtle rounded-3xl p-3 shadow-2xl flex flex-col ${layoutMode === 'dashboard-only' || layoutMode === 'roadmap-only' ? 'min-h-[calc(100vh-140px)]' : 'h-[780px]'} overflow-hidden text-left relative`}>
       
       {/* Dashboard Top Header */}
       <div className="flex items-center justify-between pb-5 border-b border-border-subtle flex-shrink-0">
@@ -3444,10 +3444,10 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
           <img src="/logo.png" alt="IDS Logo" className="h-10 w-auto object-contain flex-shrink-0" />
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-base font-extrabold text-text-primary leading-none m-0 tracking-tight">
+              <h1 className="text-[13.5px] font-extrabold text-text-primary leading-none m-0 tracking-tight">
                 {forceRoadmapOnly ? 'IDS Pulse Production Launch Roadmap' : 'IDS Pulse Portal'}
               </h1>
-              <span className="text-[10.5px] bg-[#1E3A5F]/60 border border-[#22D3EE]/25 text-[#22D3EE] px-2 py-1 rounded font-bold uppercase tracking-wider">
+              <span className="text-[10.5px] bg-[#3B82F6]/60 border border-[#3B82F6]/25 text-[#3B82F6] px-2 py-1 rounded font-bold uppercase tracking-wider">
                 {forceRoadmapOnly ? 'Roadmap' : 'Web CRM'}
               </span>
             </div>
@@ -3460,7 +3460,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
         </div>
 
         {/* Right Header Panel: Clock + User Profile + Help Guide + Reset DB */}
-        <div className="flex items-center gap-2.5 flex-shrink-0">
+        <div className="flex items-center gap-3 flex-shrink-0">
           <div className="text-right hidden md:flex flex-col text-[11.5px] font-medium text-text-secondary pr-1.5 h-9 justify-center">
             <span className="text-text-primary font-bold font-mono leading-none">
               {currentTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })} EST
@@ -3469,7 +3469,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
           </div>
 
           {/* User Profile Widget */}
-          <div className="flex items-center gap-2 px-2.5 h-9 bg-surface-elevated border border-border-subtle rounded-xl">
+          <div className="flex items-center gap-2 px-2.5 h-9 bg-surface-elevated border border-slate-100 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
             {(() => {
               const uRole = sessionStorage.getItem('ids_pulse_role') || 'admin';
               const uUser = sessionStorage.getItem('ids_pulse_admin_user') || 'donna';
@@ -3487,12 +3487,12 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
               
               return (
                 <>
-                  <div className="w-6 h-6 rounded-full bg-[#1E3A5F] flex items-center justify-center font-bold text-[10.5px] text-[#22D3EE] border border-[#22D3EE]/25">
+                  <div className="w-6 h-6 rounded-full bg-[#3B82F6] flex items-center justify-center font-bold text-[10.5px] text-[#3B82F6] border border-[#3B82F6]/25">
                     {initials}
                   </div>
                   <div className="hidden lg:flex flex-col text-left justify-center">
                     <span className="text-[10.5px] font-extrabold text-text-primary leading-none">{fullName}</span>
-                    <span className="text-[11.5px] text-[#22D3EE] font-bold mt-0.5 leading-none">{title}</span>
+                    <span className="text-[11.5px] text-[#3B82F6] font-bold mt-0.5 leading-none">{title}</span>
                   </div>
                 </>
               );
@@ -3501,7 +3501,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
           <button 
             onClick={() => setShowHelpDrawer(true)}
-            className="h-9 flex items-center gap-1 bg-[#1E3A5F]/60 hover:bg-[#1E3A5F] text-[#22D3EE] border border-[#22D3EE]/25 px-3 rounded-xl text-[13.5px] font-bold cursor-pointer transition-all hover:scale-102"
+            className="h-9 flex items-center gap-1 bg-[#3B82F6]/60 hover:bg-[#3B82F6] text-[#3B82F6] border border-[#3B82F6]/25 px-3 rounded-xl text-[13.5px] font-bold cursor-pointer transition-all hover:scale-102"
             title="Open Interactive Guide"
           >
             <span>❓ How to use this Portal</span>
@@ -3520,7 +3520,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
       {/* DAILY CALENDAR DATE NAVIGATION & FLOOR HEALTH STATUS STRIP */}
       {!forceRoadmapOnly && (
-        <div className="flex flex-col mt-4 flex-shrink-0 bg-surface-elevated border border-border-subtle p-3.5 rounded-2xl gap-3" onClick={(e) => e.stopPropagation()}>
+        <div className="flex flex-col mt-4 flex-shrink-0 bg-surface-elevated border border-border-subtle p-3 rounded-2xl gap-3" onClick={(e) => e.stopPropagation()}>
           
           {/* Top Row: Active selected date display and quick toggle options */}
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border-subtle pb-3">
@@ -3535,7 +3535,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   setCalendarYear(isNaN(dObj.getTime()) ? 2026 : dObj.getFullYear());
                   setShowCalendarModal(true);
                 }}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-[#1E3A5F] hover:bg-[#1E3A5F]/80 text-[#22D3EE] hover:text-text-primary rounded-xl border border-[#22D3EE]/30 cursor-pointer transition-all shadow-sm text-[13.5px] font-bold animate-pulse-subtle"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-[#3B82F6] hover:bg-[#3B82F6]/80 text-white rounded-xl border border-[#3B82F6]/30 cursor-pointer transition-all shadow-sm text-[13.5px] font-bold animate-pulse-subtle"
                 aria-label="Active date selection, click to choose a date from calendar"
               >
                 <Calendar className="w-3.5 h-3.5" />
@@ -3553,7 +3553,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 onClick={() => setShowAllDates(!showAllDates)}
                 className={`px-3 py-1.5 rounded-xl text-[13.5px] font-bold transition-all cursor-pointer border ${
                   showAllDates
-                    ? 'bg-indigo-650/30 text-indigo-300 border-indigo-500/40 shadow-md'
+                    ? 'bg-indigo-650/30 text-indigo-600 border-indigo-500/40 shadow-md'
                     : 'bg-surface border-border-subtle text-text-secondary hover:bg-surface-elevated'
                 }`}
                 aria-label={showAllDates ? "Switch to daily filtered view" : "Show all historical records"}
@@ -3581,7 +3581,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     setCalendarYear(isNaN(dObj.getTime()) ? 2026 : dObj.getFullYear());
                     setShowCalendarModal(true);
                   }}
-                  className="h-8 w-8 bg-[#0EA5E9] hover:bg-[#0284c7] text-text-primary rounded-lg flex-shrink-0 flex items-center justify-center shadow-md cursor-pointer transition-all hover:scale-105"
+                  className="h-8 w-8 bg-[#3B82F6] hover:bg-[#0284c7] text-text-primary rounded-lg flex-shrink-0 flex items-center justify-center shadow-md cursor-pointer transition-all hover:scale-105"
                   title="Choose Custom Date"
                   aria-label="Open date picker calendar modal"
                 >
@@ -3605,12 +3605,12 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                       }}
                       className={`h-8 px-2.5 rounded-lg flex-shrink-0 flex items-center gap-1.5 border transition-all cursor-pointer hover:scale-102 ${
                         isSelected
-                          ? 'bg-[#1E3A5F] border-[#22D3EE]/30 text-text-primary shadow-sm'
+                          ? 'bg-[#3B82F6] border-[#3B82F6]/30 text-white shadow-sm'
                           : 'bg-surface border-border-subtle hover:bg-surface-elevated text-text-secondary hover:text-text-primary'
                       }`}
                       aria-label={`Select date ${formatReadableDate(dateStr)}`}
                     >
-                      <span className="text-[12.5px] font-bold uppercase tracking-wider text-slate-505">
+                      <span className={`text-[12.5px] font-bold uppercase tracking-wider ${isSelected ? 'text-blue-100' : 'text-slate-505'}`}>
                         {isToday ? 'TODAY' : dateObj.toLocaleDateString('en-US', { weekday: 'short' })}
                       </span>
                       <span className="text-[13.5px] font-extrabold">
@@ -3621,7 +3621,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                       <div className="flex gap-0.5 ml-0.5">
                         {activity.hasIncidents && <span className="w-1.5 h-1.5 bg-red-500 rounded-full" title="Incident Logged"></span>}
                         {activity.hasShifts && <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full" title="Shift Completed"></span>}
-                        {activity.hasRework && <span className="w-1.5 h-1.5 bg-sky-500 rounded-full" title="Rework Registered"></span>}
+                        {activity.hasRework && <span className="w-1.5 h-1.5 bg-amber-500 rounded-full" title="Rework Registered"></span>}
                       </div>
                     </button>
                   );
@@ -3632,8 +3632,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
               showAllDates 
                 ? 'bg-surface-elevated border-border-subtle text-text-secondary' 
                 : totalOpenIncidents > 0
-                ? 'bg-red-500/10 border-red-500/20 text-red-400' 
-                : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+                ? 'bg-red-50 border-transparent text-red-600' 
+                : 'bg-emerald-50 border-transparent text-emerald-600'
             }`}>
               <div className={`w-1.5 h-1.5 rounded-full ${
                 showAllDates 
@@ -3657,39 +3657,39 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
       {/* Metrics Cards row with Helper Explanations */}
       {!forceRoadmapOnly && (
-        <div className="grid grid-cols-4 gap-4 mt-5 flex-shrink-0">
-        <div className="glass-panel hover:border-border-subtle glow-pulse-red rounded-2xl p-4 flex flex-col justify-between h-28 border-red-500/10 hover:border-red-500/30 transition-all">
+        <div className="grid grid-cols-4 gap-3 mt-5 flex-shrink-0">
+        <div className="glass-panel hover:border-border-subtle glow-pulse-red rounded-2xl p-3 flex flex-col justify-between h-28 border-red-500/10 hover:border-red-300 transition-all">
           <div>
             <span className="text-[10.5px] font-extrabold text-text-secondary uppercase tracking-wider block">Active Suspect Materials</span>
             <span className="text-2xl font-extrabold text-text-primary mt-0.5 block leading-none">{totalOpenIncidents}</span>
           </div>
-          <span className="text-[10.5px] text-[#22D3EE] bg-[#22D3EE]/10 border border-[#22D3EE]/20 px-2 py-1 rounded font-bold w-fit">
+          <span className="text-[10.5px] text-[#3B82F6] bg-[#3B82F6]/10 border border-[#3B82F6]/20 px-2 py-1 rounded font-bold w-fit">
             Awaiting Supplier Actions
           </span>
         </div>
         
-        <div className="glass-panel hover:border-border-subtle glow-pulse-emerald rounded-2xl p-4 flex flex-col justify-between h-28 border-emerald-500/10 hover:border-emerald-500/30 transition-all">
+        <div className="glass-panel hover:border-border-subtle glow-pulse-emerald rounded-2xl p-3 flex flex-col justify-between h-28 border-emerald-500/10 hover:border-emerald-300 transition-all">
           <div>
             <span className="text-[10.5px] font-extrabold text-text-secondary uppercase tracking-wider block">Parts Reworked</span>
             <span className="text-2xl font-extrabold text-text-primary mt-0.5 block leading-none">{totalReworkPcs} pcs</span>
           </div>
-          <span className="text-[10.5px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-1 rounded font-bold w-fit">
+          <span className="text-[10.5px] text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-1 rounded font-bold w-fit">
             Rework Logs Synced
           </span>
         </div>
         
-        <div className="glass-panel hover:border-border-subtle glow-pulse-blue rounded-2xl p-4 flex flex-col justify-between h-28 border-sky-500/10 hover:border-sky-500/30 transition-all">
+        <div className="glass-panel hover:border-border-subtle glow-pulse-blue rounded-2xl p-3 flex flex-col justify-between h-28 border-amber-500/10 hover:border-amber-300 transition-all">
           <div>
             <span className="text-[10.5px] font-extrabold text-text-secondary uppercase tracking-wider block">Active Rep Dispatches</span>
             <span className="text-2xl font-extrabold text-text-primary mt-0.5 block leading-none">{activeRepsCount} reps</span>
           </div>
-          <span className="text-[10.5px] text-sky-400 bg-sky-500/10 border border-sky-500/20 px-2 py-1 rounded font-bold w-fit">
+          <span className="text-[10.5px] text-amber-600 bg-amber-50 border border-amber-200 px-2 py-1 rounded font-bold w-fit">
             Auditing Plant Floors
           </span>
         </div>
         
         {['admin', 'owner', 'accountant', 'lead', 'shahroz'].includes(userRole) ? (
-          <div className="glass-panel hover:border-border-subtle glow-pulse-purple rounded-2xl p-4 flex flex-col justify-between h-28 border-purple-500/10 hover:border-purple-500/30 transition-all">
+          <div className="glass-panel hover:border-border-subtle glow-pulse-purple rounded-2xl p-3 flex flex-col justify-between h-28 border-purple-500/10 hover:border-purple-300 transition-all">
             <div>
               <span className="text-[10.5px] font-extrabold text-text-secondary uppercase tracking-wider block">Supplier Invoice Billable</span>
               <span className="text-2xl font-extrabold text-text-primary mt-0.5 block leading-none">
@@ -3698,17 +3698,17 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                  `C$ ${cadInvoicedTotal.toFixed(2)} / US$ ${usdInvoicedTotal.toFixed(2)}`}
               </span>
             </div>
-            <span className="text-[10.5px] text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-2 py-1 rounded font-bold w-fit">
+            <span className="text-[10.5px] text-indigo-600 bg-indigo-50 border border-indigo-200 px-2 py-1 rounded font-bold w-fit">
               Rate: $0.73/km standard
             </span>
           </div>
         ) : (
-          <div className="glass-panel hover:border-border-subtle glow-pulse-purple rounded-2xl p-4 flex flex-col justify-between h-28 border-purple-500/10 hover:border-purple-500/30 transition-all">
+          <div className="glass-panel hover:border-border-subtle glow-pulse-purple rounded-2xl p-3 flex flex-col justify-between h-28 border-purple-500/10 hover:border-purple-300 transition-all">
             <div>
               <span className="text-[10.5px] font-extrabold text-text-secondary uppercase tracking-wider block">Total Audited Hours</span>
               <span className="text-2xl font-extrabold text-text-primary mt-0.5 block leading-none">{totalHours.toFixed(1)} hrs</span>
             </div>
-            <span className="text-[10.5px] text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-2 py-1 rounded font-bold w-fit">
+            <span className="text-[10.5px] text-indigo-600 bg-indigo-50 border border-indigo-200 px-2 py-1 rounded font-bold w-fit">
               Audited Floor Hours Logged
             </span>
           </div>
@@ -3717,7 +3717,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       )}
 
       {/* Main Panel Content Area */}
-      <div className="flex-1 flex gap-5 mt-5 min-h-0">
+      <div className="flex-1 flex gap-6 sm:p-8 mt-5 min-h-0">
         
         {/* Navigation Sidebar */}
         {!forceRoadmapOnly && (
@@ -3727,29 +3727,29 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
               <>
                 <button 
                   onClick={() => setActiveTab('pulse-ai')}
-                  className={`w-full h-10 px-3.5 rounded-xl font-bold text-[13.5px] transition-all cursor-pointer flex items-center justify-between border relative overflow-hidden group ${
+                  className={`w-full h-12 px-4 rounded-xl font-bold text-[13.5px] transition-all cursor-pointer flex items-center justify-between border relative overflow-hidden group ${
                     activeTab === 'pulse-ai' 
-                      ? 'bg-[#1E3A5F] text-text-primary border-[#22D3EE]/50 shadow-md shadow-[#22D3EE]/10' 
+                      ? 'bg-[#3B82F6] text-white border-[#3B82F6]/50 shadow-md shadow-[#3B82F6]/10' 
                       : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle hover:border-border-subtle'
                   }`}
                 >
-                  <div className="absolute inset-y-0 left-0 w-[3px] bg-[#22D3EE] shadow-[0_0_8px_#22D3EE]"></div>
-                  <div className="flex items-center gap-2.5">
-                    <Sparkles className="w-4.5 h-4.5 text-[#22D3EE]" />
+                  <div className="absolute inset-y-0 left-0 w-[3px] bg-[#3B82F6] shadow-[0_0_8px_#3B82F6]"></div>
+                  <div className="flex items-center gap-3">
+                    <Sparkles className="w-4.5 h-4.5 text-[#3B82F6]" />
                     <span>Pulse AI Help</span>
                   </div>
                 </button>
 
                 <button 
                   onClick={() => setActiveTab('time-tracking')}
-                  className={`w-full h-10 px-3.5 rounded-xl font-bold text-[13.5px] transition-all cursor-pointer flex items-center justify-between border ${
+                  className={`w-full h-12 px-4 rounded-xl font-bold text-[13.5px] transition-all cursor-pointer flex items-center justify-between border ${
                     activeTab === 'time-tracking' 
-                      ? 'bg-[#1E3A5F] text-text-primary border-[#22D3EE]/30 shadow-md shadow-[#22D3EE]/5' 
+                      ? 'bg-blue-50 text-blue-700 border-blue-200 shadow-sm' 
                       : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle hover:border-border-subtle'
                   }`}
                 >
-                  <div className="flex items-center gap-2.5">
-                    <Clock className="w-4.5 h-4.5 text-emerald-400" />
+                  <div className="flex items-center gap-3">
+                    <Clock className="w-4.5 h-4.5 text-emerald-600" />
                     <span>My Hours & Expenses</span>
                   </div>
                   {activeTab === 'time-tracking' && <div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>}
@@ -3762,44 +3762,44 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
               <>
                 <button 
                   onClick={() => setActiveTab('customer-portal')}
-                  className={`w-full h-10 px-3.5 rounded-xl font-bold text-[13.5px] transition-all cursor-pointer flex items-center justify-between border ${
+                  className={`w-full h-12 px-4 rounded-xl font-bold text-[13.5px] transition-all cursor-pointer flex items-center justify-between border ${
                     activeTab === 'customer-portal' 
-                      ? 'bg-sky-500/10 text-text-primary border-sky-400/30 shadow-md shadow-sky-400/5' 
+                      ? 'bg-amber-50 text-text-primary border-amber-300 shadow-md shadow-sky-400/5' 
                       : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle hover:border-border-subtle'
                   }`}
                 >
-                  <div className="flex items-center gap-2.5">
-                    <Shield className="w-4.5 h-4.5 text-sky-400" />
+                  <div className="flex items-center gap-3">
+                    <Shield className="w-4.5 h-4.5 text-amber-600" />
                     <span>Customer Dashboard</span>
                   </div>
-                  {activeTab === 'customer-portal' && <div className="w-1.5 h-1.5 rounded-full bg-sky-400"></div>}
+                  {activeTab === 'customer-portal' && <div className="w-1.5 h-1.5 rounded-full bg-amber-400"></div>}
                 </button>
 
                 <button 
                   onClick={() => setActiveTab('shift-logs')}
-                  className={`w-full h-10 px-3.5 rounded-xl font-bold text-[13.5px] transition-all cursor-pointer flex items-center justify-between border ${
+                  className={`w-full h-12 px-4 rounded-xl font-bold text-[13.5px] transition-all cursor-pointer flex items-center justify-between border ${
                     activeTab === 'shift-logs' 
-                      ? 'bg-sky-500/10 text-text-primary border-sky-400/30 shadow-md shadow-sky-400/5' 
+                      ? 'bg-amber-50 text-text-primary border-amber-300 shadow-md shadow-sky-400/5' 
                       : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle hover:border-border-subtle'
                   }`}
                 >
-                  <div className="flex items-center gap-2.5">
-                    <Calendar className="w-4.5 h-4.5 text-sky-400" />
+                  <div className="flex items-center gap-3">
+                    <Calendar className="w-4.5 h-4.5 text-amber-600" />
                     <span>Published Reports</span>
                   </div>
-                  {activeTab === 'shift-logs' && <div className="w-1.5 h-1.5 rounded-full bg-sky-400"></div>}
+                  {activeTab === 'shift-logs' && <div className="w-1.5 h-1.5 rounded-full bg-amber-400"></div>}
                 </button>
 
                 <button 
                   onClick={() => setActiveTab('approvals')}
-                  className={`w-full h-10 px-3.5 rounded-xl font-bold text-[13.5px] transition-all cursor-pointer flex items-center justify-between border ${
+                  className={`w-full h-12 px-4 rounded-xl font-bold text-[13.5px] transition-all cursor-pointer flex items-center justify-between border ${
                     activeTab === 'approvals' 
-                      ? 'bg-amber-500/10 text-text-primary border-amber-400/30 shadow-md shadow-amber-400/5' 
+                      ? 'bg-amber-50 text-text-primary border-amber-300 shadow-md shadow-amber-400/5' 
                       : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle hover:border-border-subtle'
                   }`}
                 >
-                  <div className="flex items-center gap-2.5">
-                    <Clock className="w-4.5 h-4.5 text-amber-400" />
+                  <div className="flex items-center gap-3">
+                    <Clock className="w-4.5 h-4.5 text-amber-600" />
                     <span>Time & Approvals</span>
                   </div>
                   {expenseEntries.filter(e => e.status === 'pending_customer').length > 0 && (
@@ -3816,18 +3816,18 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
               <>
                 <button 
                   onClick={() => setActiveTab('pulse-ai')}
-                  className={`w-full h-10 px-3.5 rounded-xl font-bold text-[13.5px] transition-all cursor-pointer flex items-center justify-between border relative overflow-hidden group ${
+                  className={`w-full h-12 px-4 rounded-xl font-bold text-[13.5px] transition-all cursor-pointer flex items-center justify-between border relative overflow-hidden group ${
                     activeTab === 'pulse-ai' 
-                      ? 'bg-[#1E3A5F] text-text-primary border-[#22D3EE]/50 shadow-md shadow-[#22D3EE]/10' 
+                      ? 'bg-[#3B82F6] text-white border-[#3B82F6]/50 shadow-md shadow-[#3B82F6]/10' 
                       : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle hover:border-border-subtle'
                   }`}
                 >
-                  <div className="absolute inset-y-0 left-0 w-[3px] bg-[#22D3EE] shadow-[0_0_8px_#22D3EE]"></div>
-                  <div className="flex items-center gap-2.5">
-                    <Sparkles className="w-4.5 h-4.5 text-[#22D3EE] animate-pulse" />
-                    <span className="text-[#22D3EE] font-extrabold tracking-wide">Pulse AI</span>
+                  <div className="absolute inset-y-0 left-0 w-[3px] bg-[#3B82F6] shadow-[0_0_8px_#3B82F6]"></div>
+                  <div className="flex items-center gap-3">
+                    <Sparkles className="w-4.5 h-4.5 text-[#3B82F6] animate-pulse" />
+                    <span className="text-[#3B82F6] font-extrabold tracking-wide">Pulse AI</span>
                   </div>
-                  <span className="text-[10.5px] bg-[#22D3EE]/10 border border-[#22D3EE]/30 text-[#22D3EE] px-2 py-1 rounded font-bold uppercase tracking-wider scale-90">Beta</span>
+                  <span className="text-[10.5px] bg-[#3B82F6]/10 border border-[#3B82F6]/30 text-[#3B82F6] px-2 py-1 rounded font-bold uppercase tracking-wider scale-90">Beta</span>
                 </button>
 
                 {/* Hide these tabs from accountant */}
@@ -3835,91 +3835,91 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   <>
                  <button
                     onClick={() => setActiveTab('incidents')}
-                    className={`w-full h-10 px-3.5 rounded-xl font-bold text-[13.5px] transition-all cursor-pointer flex items-center justify-between border ${
+                    className={`w-full h-12 px-4 rounded-xl font-bold text-[13.5px] transition-all cursor-pointer flex items-center justify-between border ${
                       activeTab === 'incidents' 
-                        ? 'bg-[#1E3A5F] text-text-primary border-[#22D3EE]/30 shadow-md shadow-[#22D3EE]/5' 
+                        ? 'bg-blue-50 text-blue-700 border-blue-200 shadow-sm' 
                         : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle hover:border-border-subtle'
                     }`}
                   >
-                    <div className="flex items-center gap-2.5">
-                      <FileText className="w-4.5 h-4.5 text-[#22D3EE]" />
+                    <div className="flex items-center gap-3">
+                      <FileText className="w-4.5 h-4.5 text-[#3B82F6]" />
                       <span>Incident Defects Feed</span>
                     </div>
-                    {activeTab === 'incidents' && <div className="w-1.5 h-1.5 rounded-full bg-[#22D3EE]"></div>}
+                    {activeTab === 'incidents' && <div className="w-1.5 h-1.5 rounded-full bg-[#3B82F6]"></div>}
                   </button>
 
                   <button 
                     onClick={() => setActiveTab('heatmap')}
-                    className={`w-full h-10 px-3.5 rounded-xl font-bold text-[13.5px] transition-all cursor-pointer flex items-center justify-between border ${
+                    className={`w-full h-12 px-4 rounded-xl font-bold text-[13.5px] transition-all cursor-pointer flex items-center justify-between border ${
                       activeTab === 'heatmap' 
-                        ? 'bg-[#1E3A5F] text-text-primary border-[#22D3EE]/30 shadow-md shadow-[#22D3EE]/5' 
+                        ? 'bg-blue-50 text-blue-700 border-blue-200 shadow-sm' 
                         : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle hover:border-border-subtle'
                     }`}
                   >
-                    <div className="flex items-center gap-2.5">
-                      <MapPin className="w-4.5 h-4.5 text-[#22D3EE]" />
+                    <div className="flex items-center gap-3">
+                      <MapPin className="w-4.5 h-4.5 text-[#3B82F6]" />
                       <span>Visual Defect Matrix</span>
                     </div>
-                    {activeTab === 'heatmap' && <div className="w-1.5 h-1.5 rounded-full bg-[#22D3EE]"></div>}
+                    {activeTab === 'heatmap' && <div className="w-1.5 h-1.5 rounded-full bg-[#3B82F6]"></div>}
                   </button>
 
                   <button 
                     onClick={() => setActiveTab('daily-planner')}
-                    className={`w-full h-10 px-3.5 rounded-xl font-bold text-[13.5px] transition-all cursor-pointer flex items-center justify-between border ${
+                    className={`w-full h-12 px-4 rounded-xl font-bold text-[13.5px] transition-all cursor-pointer flex items-center justify-between border ${
                       activeTab === 'daily-planner' 
-                        ? 'bg-[#1E3A5F] text-text-primary border-[#22D3EE]/30 shadow-md shadow-[#22D3EE]/5' 
+                        ? 'bg-blue-50 text-blue-700 border-blue-200 shadow-sm' 
                         : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle hover:border-border-subtle'
                     }`}
                   >
-                    <div className="flex items-center gap-2.5">
-                      <CheckCircle2 className="w-4.5 h-4.5 text-[#22D3EE]" />
+                    <div className="flex items-center gap-3">
+                      <CheckCircle2 className="w-4.5 h-4.5 text-[#3B82F6]" />
                       <span>Daily Tasks Planner</span>
                     </div>
-                    {activeTab === 'daily-planner' && <div className="w-1.5 h-1.5 rounded-full bg-[#22D3EE]"></div>}
+                    {activeTab === 'daily-planner' && <div className="w-1.5 h-1.5 rounded-full bg-[#3B82F6]"></div>}
                   </button>
 
                   <button 
                     onClick={() => setActiveTab('shift-logs')}
-                    className={`w-full h-10 px-3.5 rounded-xl font-bold text-[13.5px] transition-all cursor-pointer flex items-center justify-between border ${
+                    className={`w-full h-12 px-4 rounded-xl font-bold text-[13.5px] transition-all cursor-pointer flex items-center justify-between border ${
                       activeTab === 'shift-logs' 
-                        ? 'bg-[#1E3A5F] text-text-primary border-[#22D3EE]/30 shadow-md shadow-[#22D3EE]/5' 
+                        ? 'bg-blue-50 text-blue-700 border-blue-200 shadow-sm' 
                         : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle hover:border-border-subtle'
                     }`}
                   >
-                    <div className="flex items-center gap-2.5">
-                      <Calendar className="w-4.5 h-4.5 text-[#0EA5E9]" />
+                    <div className="flex items-center gap-3">
+                      <Calendar className="w-4.5 h-4.5 text-[#3B82F6]" />
                       <span>Shift Summaries Log</span>
                     </div>
-                    {activeTab === 'shift-logs' && <div className="w-1.5 h-1.5 rounded-full bg-[#0EA5E9]"></div>}
+                    {activeTab === 'shift-logs' && <div className="w-1.5 h-1.5 rounded-full bg-[#3B82F6]"></div>}
                   </button>
 
                   <button 
                     onClick={() => setActiveTab('suppliers')}
-                    className={`w-full h-10 px-3.5 rounded-xl font-bold text-[13.5px] transition-all cursor-pointer flex items-center justify-between border ${
+                    className={`w-full h-12 px-4 rounded-xl font-bold text-[13.5px] transition-all cursor-pointer flex items-center justify-between border ${
                       activeTab === 'suppliers' 
-                        ? 'bg-[#1E3A5F] text-text-primary border-[#22D3EE]/30 shadow-md shadow-[#22D3EE]/5' 
+                        ? 'bg-blue-50 text-blue-700 border-blue-200 shadow-sm' 
                         : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle hover:border-border-subtle'
                     }`}
                   >
-                    <div className="flex items-center gap-2.5">
-                      <Server className="w-4.5 h-4.5 text-[#0EA5E9]" />
+                    <div className="flex items-center gap-3">
+                      <Server className="w-4.5 h-4.5 text-[#3B82F6]" />
                       <span>Suppliers Directory</span>
                     </div>
-                    {activeTab === 'suppliers' && <div className="w-1.5 h-1.5 rounded-full bg-[#0EA5E9]"></div>}
+                    {activeTab === 'suppliers' && <div className="w-1.5 h-1.5 rounded-full bg-[#3B82F6]"></div>}
                   </button>
                   </>
                 )}
 
                   <button 
                     onClick={() => setActiveTab('time-tracking')}
-                    className={`w-full h-10 px-3.5 rounded-xl font-bold text-[13.5px] transition-all cursor-pointer flex items-center justify-between border ${
+                    className={`w-full h-12 px-4 rounded-xl font-bold text-[13.5px] transition-all cursor-pointer flex items-center justify-between border ${
                       activeTab === 'time-tracking' 
-                        ? 'bg-[#1E3A5F] text-text-primary border-[#22D3EE]/30 shadow-md shadow-[#22D3EE]/5' 
+                        ? 'bg-blue-50 text-blue-700 border-blue-200 shadow-sm' 
                         : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle hover:border-border-subtle'
                     }`}
                   >
-                    <div className="flex items-center gap-2.5">
-                      <DollarSign className="w-4.5 h-4.5 text-emerald-400" />
+                    <div className="flex items-center gap-3">
+                      <DollarSign className="w-4.5 h-4.5 text-emerald-600" />
                       <span>Timesheets & Mileage</span>
                     </div>
                     {activeTab === 'time-tracking' && <div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>}
@@ -3930,29 +3930,29 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   <>
                   <button 
                     onClick={() => setActiveTab('rework-logs')}
-                    className={`w-full h-10 px-3.5 rounded-xl font-bold text-[13.5px] transition-all cursor-pointer flex items-center justify-between border ${
+                    className={`w-full h-12 px-4 rounded-xl font-bold text-[13.5px] transition-all cursor-pointer flex items-center justify-between border ${
                       activeTab === 'rework-logs' 
-                        ? 'bg-[#1E3A5F] text-text-primary border-[#22D3EE]/30 shadow-md shadow-[#22D3EE]/5' 
+                        ? 'bg-blue-50 text-blue-700 border-blue-200 shadow-sm' 
                         : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle hover:border-border-subtle'
                     }`}
                   >
-                    <div className="flex items-center gap-2.5">
-                      <Activity className="w-4.5 h-4.5 text-[#22D3EE]" />
+                    <div className="flex items-center gap-3">
+                      <Activity className="w-4.5 h-4.5 text-[#3B82F6]" />
                       <span>Rework Logs Feed</span>
                     </div>
-                    {activeTab === 'rework-logs' && <div className="w-1.5 h-1.5 rounded-full bg-[#22D3EE]"></div>}
+                    {activeTab === 'rework-logs' && <div className="w-1.5 h-1.5 rounded-full bg-[#3B82F6]"></div>}
                   </button>
 
                   <button 
                     onClick={() => setActiveTab('emails')}
-                    className={`w-full h-10 px-3.5 rounded-xl font-bold text-[13.5px] transition-all cursor-pointer flex items-center justify-between border ${
+                    className={`w-full h-12 px-4 rounded-xl font-bold text-[13.5px] transition-all cursor-pointer flex items-center justify-between border ${
                       activeTab === 'emails' 
-                        ? 'bg-[#1E3A5F] text-text-primary border-[#22D3EE]/30 shadow-md shadow-[#22D3EE]/5' 
+                        ? 'bg-blue-50 text-blue-700 border-blue-200 shadow-sm' 
                         : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle hover:border-border-subtle'
                     }`}
                   >
-                    <div className="flex items-center gap-2.5">
-                      <Mail className="w-4.5 h-4.5 text-purple-400" />
+                    <div className="flex items-center gap-3">
+                      <Mail className="w-4.5 h-4.5 text-purple-600" />
                       <span>Email Logs</span>
                     </div>
                     {activeTab === 'emails' && <div className="w-1.5 h-1.5 rounded-full bg-purple-400"></div>}
@@ -3962,14 +3962,14 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
                   <button 
                     onClick={() => setActiveTab('users')}
-                    className={`w-full h-10 px-3.5 rounded-xl font-bold text-[13.5px] transition-all cursor-pointer flex items-center justify-between border ${
+                    className={`w-full h-12 px-4 rounded-xl font-bold text-[13.5px] transition-all cursor-pointer flex items-center justify-between border ${
                       activeTab === 'users' 
-                        ? 'bg-[#1E3A5F] text-text-primary border-[#22D3EE]/30 shadow-md shadow-[#22D3EE]/5' 
+                        ? 'bg-blue-50 text-blue-700 border-blue-200 shadow-sm' 
                         : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle hover:border-border-subtle'
                     }`}
                   >
-                    <div className="flex items-center gap-2.5">
-                      <Users className="w-4.5 h-4.5 text-indigo-400" />
+                    <div className="flex items-center gap-3">
+                      <Users className="w-4.5 h-4.5 text-indigo-600" />
                       <span>User Directory</span>
                     </div>
                     {activeTab === 'users' && <div className="w-1.5 h-1.5 rounded-full bg-indigo-400"></div>}
@@ -3978,14 +3978,14 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   {userRole === 'shahroz' && (
                     <button 
                       onClick={() => setActiveTab('roadmap')}
-                      className={`w-full h-10 px-3.5 rounded-xl font-bold text-[13.5px] transition-all cursor-pointer flex items-center justify-between border ${
+                      className={`w-full h-12 px-4 rounded-xl font-bold text-[13.5px] transition-all cursor-pointer flex items-center justify-between border ${
                         activeTab === 'roadmap' 
-                          ? 'bg-[#1E3A5F] text-text-primary border-[#22D3EE]/30 shadow-md shadow-[#22D3EE]/5' 
+                          ? 'bg-blue-50 text-blue-700 border-blue-200 shadow-sm' 
                           : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle hover:border-border-subtle'
                       }`}
                     >
-                      <div className="flex items-center gap-2.5">
-                        <Milestone className="w-4.5 h-4.5 text-amber-400" />
+                      <div className="flex items-center gap-3">
+                        <Milestone className="w-4.5 h-4.5 text-amber-600" />
                         <span>Launch Roadmap</span>
                       </div>
                       {activeTab === 'roadmap' && <div className="w-1.5 h-1.5 rounded-full bg-amber-400"></div>}
@@ -3994,14 +3994,14 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
                   <button 
                     onClick={() => setActiveTab('projects')}
-                    className={`w-full h-10 px-3.5 rounded-xl font-bold text-[13.5px] transition-all cursor-pointer flex items-center justify-between border ${
+                    className={`w-full h-12 px-4 rounded-xl font-bold text-[13.5px] transition-all cursor-pointer flex items-center justify-between border ${
                       activeTab === 'projects' 
-                        ? 'bg-[#1E3A5F] text-text-primary border-[#22D3EE]/30 shadow-md shadow-[#22D3EE]/5' 
+                        ? 'bg-blue-50 text-blue-700 border-blue-200 shadow-sm' 
                         : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle hover:border-border-subtle'
                     }`}
                   >
-                    <div className="flex items-center gap-2.5">
-                      <FolderKanban className="w-4.5 h-4.5 text-cyan-400" />
+                    <div className="flex items-center gap-3">
+                      <FolderKanban className="w-4.5 h-4.5 text-cyan-600" />
                       <span>Projects Registry</span>
                     </div>
                     {activeTab === 'projects' && <div className="w-1.5 h-1.5 rounded-full bg-cyan-400"></div>}
@@ -4010,13 +4010,13 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   {userRole === 'shahroz' && (
                     <button 
                       onClick={() => setActiveTab('system-logs')}
-                      className={`w-full h-10 px-3.5 rounded-xl font-bold text-[13.5px] transition-all cursor-pointer flex items-center justify-between border ${
+                      className={`w-full h-12 px-4 rounded-xl font-bold text-[13.5px] transition-all cursor-pointer flex items-center justify-between border ${
                         activeTab === 'system-logs' 
-                          ? 'bg-[#1E3A5F] text-text-primary border-[#22D3EE]/30 shadow-md shadow-[#22D3EE]/5' 
+                          ? 'bg-blue-50 text-blue-700 border-blue-200 shadow-sm' 
                           : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle hover:border-border-subtle'
                       }`}
                     >
-                      <div className="flex items-center gap-2.5">
+                      <div className="flex items-center gap-3">
                         <Server className="w-4.5 h-4.5 text-emerald-450" />
                         <span>System Events Logs</span>
                       </div>
@@ -4028,32 +4028,32 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
             </div>
         )}
 
-        <div className="flex-1 bg-surface-elevated border border-border-subtle rounded-2xl p-5 flex flex-col min-h-0">
+        <div className="flex-1 bg-surface-elevated border border-border-subtle rounded-2xl p-6 sm:p-8 flex flex-col min-h-0">
 {/* TAB 0: PULSE AI (Conversational Database Auditor & Copilot) */}
           {activeTab === 'pulse-ai' && (
-            <div className="flex-1 flex gap-5 min-h-0">
+            <div className="flex-1 flex gap-6 sm:p-8 min-h-0">
               {/* Left Side: Chat Console */}
-              <div className="flex-1 flex flex-col min-h-0 bg-surface border border-border-subtle p-4 rounded-2xl">
+              <div className="flex-1 flex flex-col min-h-0 bg-surface border border-border-subtle p-3 rounded-2xl">
                 <div className="flex items-center justify-between pb-3 border-b border-border-subtle flex-shrink-0">
                   <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-xl bg-[#1E3A5F]/60 border border-[#22D3EE]/25 flex items-center justify-center">
-                      <Sparkles className="w-4.5 h-4.5 text-[#22D3EE] animate-pulse" />
+                    <div className="w-8 h-8 rounded-xl bg-[#3B82F6]/60 border border-[#3B82F6]/25 flex items-center justify-center">
+                      <Sparkles className="w-4.5 h-4.5 text-[#3B82F6] animate-pulse" />
                     </div>
                     <div className="text-left">
                       <h3 className="text-[13.5px] font-extrabold text-text-primary uppercase tracking-wider">Pulse AI</h3>
-                      <p className="text-[10.5px] text-[#22D3EE] font-bold">Online & Synchronized with database</p>
+                      <p className="text-[10.5px] text-[#3B82F6] font-bold">Online & Synchronized with database</p>
                     </div>
                   </div>
                   
                   {/* Status Indicator */}
-                  <div className="flex items-center gap-1.5 px-2.5 py-1 bg-[#1E3A5F]/60 border border-[#22D3EE]/25 text-[#22D3EE] rounded-lg text-[11.5px] font-bold uppercase tracking-wider">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#22D3EE] animate-ping"></span>
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 bg-[#3B82F6]/60 border border-[#3B82F6]/25 text-[#3B82F6] rounded-lg text-[11.5px] font-bold uppercase tracking-wider">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#3B82F6] animate-ping"></span>
                     <span>System Ready</span>
                   </div>
                 </div>
 
                 {/* Chat Messages Body */}
-                <div className="flex-1 overflow-y-auto scrollbar-thin my-3 pr-1 flex flex-col gap-3.5 text-left">
+                <div className="flex-1 overflow-y-auto scrollbar-thin my-3 pr-1 flex flex-col gap-3 text-left">
                   {pulseAiChat.map((msg) => (
                     <div 
                       key={msg.id} 
@@ -4070,11 +4070,21 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                       <div 
                         className={`p-3 rounded-2xl text-[12.5px] leading-relaxed whitespace-pre-wrap ${
                           msg.sender === 'user'
-                            ? 'bg-[#1E3A5F] text-text-primary rounded-tr-none border border-[#22D3EE]/20'
+                            ? 'bg-[#3B82F6] text-white rounded-tr-none border border-[#3B82F6]/20'
                             : 'bg-surface-elevated text-slate-250 rounded-tl-none border border-border-subtle'
                         }`}
                       >
-                        {msg.text}
+                        
+                        {msg.text.split('\n').map((line, i) => (
+                          <span key={i} className="block min-h-[1.2em]">
+                            {line.split(/(\*\*.*?\*\*)/g).map((part, j) => 
+                              part.startsWith('**') && part.endsWith('**') 
+                                ? <strong key={j} className="font-extrabold text-[#22D3EE]">{part.slice(2, -2)}</strong> 
+                                : part
+                            )}
+                          </span>
+                        ))}
+
                       </div>
                     </div>
                   ))}
@@ -4173,11 +4183,11 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     value={pulseAiInput}
                     onChange={(e) => setPulseAiInput(e.target.value)}
                     placeholder="Ask Pulse AI to audit timesheets or export files..."
-                    className="flex-1 h-10 px-3.5 bg-surface-elevated border border-border-subtle focus:border-border-subtle rounded-xl text-[13.5px] text-text-primary placeholder-text-secondary outline-none transition-colors"
+                    className="flex-1 h-12 px-4 bg-surface-elevated border border-border-subtle focus:border-border-subtle rounded-xl text-[13.5px] text-text-primary placeholder-text-secondary outline-none transition-colors"
                   />
                   <button 
                     type="submit"
-                    className="w-10 h-10 bg-[#1E3A5F] hover:bg-[#1E3A5F]/90 text-text-primary rounded-xl border border-[#22D3EE]/20 flex items-center justify-center cursor-pointer transition-colors"
+                    className="w-10 h-10 bg-[#3B82F6] hover:bg-[#3B82F6]/90 text-text-primary rounded-xl border border-[#3B82F6]/20 flex items-center justify-center cursor-pointer transition-colors"
                   >
                     <ArrowRight className="w-4.5 h-4" />
                   </button>
@@ -4185,7 +4195,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
               </div>
 
               {/* Right Side: Audit & Security Center */}
-              <div className="w-80 flex flex-col min-h-0 bg-surface border border-border-subtle p-4 rounded-2xl">
+              <div className="w-80 flex flex-col min-h-0 bg-surface border border-border-subtle p-3 rounded-2xl">
                 <div className="flex items-center justify-between pb-3 border-b border-border-subtle flex-shrink-0 text-left">
                   <div>
                     <h3 className="text-[13.5px] font-extrabold text-text-primary uppercase tracking-wider">Audit & Security Center</h3>
@@ -4203,7 +4213,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 {/* Audit center content body */}
                 <div className="flex-1 overflow-y-auto scrollbar-thin my-3 pr-1 flex flex-col gap-3 text-left">
                   {!hasRunAudit ? (
-                    <div className="flex-1 flex flex-col items-center justify-center text-center p-6 text-text-secondary gap-2">
+                    <div className="flex-1 flex flex-col items-center justify-center text-center p-3 text-text-secondary gap-2">
                       <Shield className="w-10 h-10 text-slate-600 animate-pulse" />
                       <span className="text-[11.5px] font-bold uppercase tracking-wider text-text-secondary">Database Scanner Idle</span>
                       <span className="text-[10.5px]">Click "Run Scan" or ask Pulse AI in the chat to audit live data for issues.</span>
@@ -4216,13 +4226,13 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         <div className="grid grid-cols-2 gap-2 text-[11.5px]">
                           <div className="flex flex-col">
                             <span className="text-slate-450 font-medium">Flagged Items:</span>
-                            <span className={`font-bold mt-0.5 ${auditLogs.length > 0 ? 'text-red-400' : 'text-emerald-400'}`}>
+                            <span className={`font-bold mt-0.5 ${auditLogs.length > 0 ? 'text-red-600' : 'text-emerald-600'}`}>
                               {auditLogs.length} warnings
                             </span>
                           </div>
                           <div className="flex flex-col">
                             <span className="text-slate-450 font-medium">Database Status:</span>
-                            <span className={`font-bold mt-0.5 ${auditLogs.length > 0 ? 'text-red-400' : 'text-emerald-400'}`}>
+                            <span className={`font-bold mt-0.5 ${auditLogs.length > 0 ? 'text-red-600' : 'text-emerald-600'}`}>
                               {auditLogs.length > 0 ? 'Action Required' : 'Secure / Correct'}
                             </span>
                           </div>
@@ -4234,7 +4244,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         <span className="text-[11.5px] text-text-secondary font-extrabold uppercase mb-1">Scan Warnings ({auditLogs.length})</span>
                         
                         {auditLogs.length === 0 ? (
-                          <div className="p-4 bg-emerald-950/10 border border-emerald-500/20 text-emerald-400 rounded-xl text-center text-[11.5px] font-bold">
+                          <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl text-center text-[11.5px] font-bold">
                             🟢 All calculations verified! 100% accurate data.
                           </div>
                         ) : (
@@ -4243,19 +4253,19 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                               key={index}
                               className={`p-3 border rounded-xl flex flex-col gap-1.5 ${
                                 log.type === 'error'
-                                  ? 'bg-red-950/10 border-red-500/20 text-red-200'
-                                  : 'bg-amber-950/10 border-amber-500/20 text-amber-200'
+                                  ? 'bg-red-50 border-transparent text-red-800'
+                                  : 'bg-amber-50 border-amber-200 text-amber-800'
                               }`}
                             >
                               <div className="flex items-center justify-between">
                                 <span className={`text-[11.5px] px-2 py-1 rounded font-extrabold uppercase tracking-wide ${
-                                  log.type === 'error' ? 'bg-red-500/20 text-red-300' : 'bg-amber-500/20 text-amber-300'
+                                  log.type === 'error' ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800'
                                 }`}>
                                   {log.category}
                                 </span>
-                                <span className="text-[11.5px] font-bold text-text-secondary font-mono">#{index + 1}</span>
+                                <span className={`text-[11.5px] font-bold font-mono ${log.type === 'error' ? 'text-red-600' : 'text-amber-600'}`}>#{index + 1}</span>
                               </div>
-                              <span className="text-[11.5px] leading-relaxed font-semibold">{log.message}</span>
+                              <span className="text-[12.5px] leading-relaxed font-semibold">{log.message}</span>
                             </div>
                           ))
                         )}
@@ -4280,15 +4290,15 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
           )}
 
               {activeTab === 'daily-planner' && (
-            <div className="flex-1 flex gap-4 min-h-0">
+            <div className="flex-1 flex gap-3 min-h-0">
               
               <div className="flex-1 flex flex-col min-h-0 border-r border-border-subtle pr-4">
                 <div className="flex justify-between items-center pb-2.5 border-b border-border-subtle mb-3 flex-shrink-0">
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-3">
                     <div>
-                      <h3 className="text-[15px] font-bold text-text-primary uppercase tracking-wider">Today's Audit Tasks</h3>
+                      <h3 className="text-[14.5px] font-bold text-text-primary uppercase tracking-wider">Today's Audit Tasks</h3>
                       <p className="text-[11.5px] text-text-secondary mt-0.5">
-                        Assign and check off floor tasks for <span className="text-[#22D3EE] font-bold">{new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                        Assign and check off floor tasks for <span className="text-[#3B82F6] font-bold">{new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
                       </p>
                     </div>
 
@@ -4303,13 +4313,13 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                             setSelectedTaskRepId(e.target.value);
                           }
                         }}
-                        className="bg-surface border border-border-subtle rounded-xl px-2.5 py-1 text-[13.5px] text-text-primary focus:outline-none focus:border-[#0EA5E9]"
+                        className="bg-surface border border-border-subtle rounded-xl px-2.5 py-1 text-[13.5px] text-text-primary focus:outline-none focus:border-[#3B82F6]"
                       >
                         <option value="all">All Representatives</option>
                         {users.filter(u => u.role === 'rep' || u.role === 'qre' || u.id === '1' || u.id === 'rep_hugo' || u.id === 'rep_nabil' || u.id === 'rep_rogelio').map(u => (
                           <option key={u.id} value={u.id}>{u.name}</option>
                         ))}
-                        <option value="ADD_NEW" className="text-cyan-400 font-bold">+ Add New Rep...</option>
+                        <option value="ADD_NEW" className="text-cyan-600 font-bold">+ Add New Rep...</option>
                       </select>
                     </div>
                   </div>
@@ -4325,9 +4335,9 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         <span className="text-[11.5px] text-text-secondary font-medium">Progress:</span>
                         <span className={`px-2 py-1 rounded text-[11.5px] font-extrabold border ${
                           pct === 100 
-                            ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' 
+                            ? 'bg-emerald-50 border-transparent text-emerald-600' 
                             : total > 0 
-                            ? 'bg-amber-500/10 border-amber-500/20 text-amber-400' 
+                            ? 'bg-amber-50 border-amber-200 text-amber-600' 
                             : 'bg-surface-elevated border-border-subtle text-text-secondary'
                         }`}>
                           {completed}/{total} Completed ({pct}%)
@@ -4338,7 +4348,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 </div>
 
                 {/* Tasks List */}
-                <div className="flex-1 overflow-y-auto min-h-0 flex flex-col gap-2.5 pr-1">
+                <div className="flex-1 overflow-y-auto min-h-0 flex flex-col gap-3 pr-1">
                   {dailyTasks.filter(t => t.date === selectedDate && (selectedTaskRepId === 'all' || t.rep_id === selectedTaskRepId)).length > 0 ? (
                     dailyTasks.filter(t => t.date === selectedDate && (selectedTaskRepId === 'all' || t.rep_id === selectedTaskRepId)).map(t => (
                       <div 
@@ -4351,21 +4361,21 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                             type="checkbox" 
                             checked={t.status === 'completed'}
                             onChange={() => {}} // handled by onClick on parent card for glove/easy tap
-                            className="rounded border-border-subtle text-[#0EA5E9] focus:ring-0 focus:ring-offset-0 w-4.5 h-4.5 cursor-pointer"
+                            className="rounded border-border-subtle text-[#3B82F6] focus:ring-0 focus:ring-offset-0 w-4.5 h-4.5 cursor-pointer"
                           />
                           <div className="flex flex-col gap-0.5 text-left">
                             <span className={`text-[13.5px] ${t.status === 'completed' ? 'line-through text-text-secondary' : 'text-text-primary font-semibold'}`}>
                               {t.task}
                             </span>
-                            <span className="text-[10.5px] text-[#22D3EE]/80 font-bold uppercase tracking-wider">
+                            <span className="text-[10.5px] text-[#3B82F6]/80 font-bold uppercase tracking-wider">
                               Assigned to: {users.find(u => u.id === t.rep_id)?.name || 'Clarence Kuiken'}
                             </span>
                           </div>
                         </div>
                         <span className={`text-[10.5px] font-bold px-2 py-1 rounded-full ${
                           t.status === 'completed' 
-                            ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' 
-                            : 'bg-amber-500/10 border-amber-500/20 text-amber-400'
+                            ? 'bg-emerald-50 border-transparent text-emerald-600' 
+                            : 'bg-amber-50 border-amber-200 text-amber-600'
                         }`}>
                           {t.status === 'completed' ? '🟢 Done' : '⏳ Pending'}
                         </span>
@@ -4398,12 +4408,12 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                           setSelectedDispatchRepId(e.target.value);
                         }
                       }}
-                      className="bg-surface border border-border-subtle rounded-xl px-3 py-1.5 text-[13.5px] text-text-primary focus:outline-none focus:border-[#0EA5E9]"
+                      className="bg-surface border border-border-subtle rounded-xl px-3 py-1.5 text-[13.5px] text-text-primary focus:outline-none focus:border-[#3B82F6]"
                     >
                       {users.filter(u => u.role === 'rep' || u.role === 'qre' || u.id === '1' || u.id === 'rep_hugo' || u.id === 'rep_nabil' || u.id === 'rep_rogelio').map(u => (
                         <option key={u.id} value={u.id}>{u.name}</option>
                       ))}
-                      <option value="ADD_NEW" className="text-cyan-400 font-bold">+ Add New Rep...</option>
+                      <option value="ADD_NEW" className="text-cyan-600 font-bold">+ Add New Rep...</option>
                     </select>
                   </div>
 
@@ -4441,11 +4451,11 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                       value={newTaskText}
                       onChange={(e) => setNewTaskText(e.target.value)}
                       placeholder="Type custom task to dispatch..."
-                      className="flex-1 bg-surface border border-border-subtle rounded-xl py-2 px-3 text-[13.5px] text-text-primary placeholder-text-secondary focus:outline-none focus:border-[#0EA5E9]"
+                      className="flex-1 bg-surface border border-border-subtle rounded-xl py-2 px-3 text-[13.5px] text-text-primary placeholder-text-secondary focus:outline-none focus:border-[#3B82F6]"
                     />
                     <button 
                       type="submit"
-                      className="bg-[#0EA5E9] hover:bg-[#0EA5E9]/90 text-text-primary font-bold px-4 py-2 rounded-xl text-[13.5px] cursor-pointer transition-colors"
+                      className="bg-[#3B82F6] hover:bg-[#3B82F6]/90 text-text-primary font-bold px-4 py-2 rounded-xl text-[13.5px] cursor-pointer transition-colors"
                     >
                       + Dispatch Task
                     </button>
@@ -4455,7 +4465,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
               </div>
 
               {/* Right Column: Sync Center */}
-              <div className="w-64 flex flex-col gap-3.5 flex-shrink-0">
+              <div className="w-64 flex flex-col gap-3 flex-shrink-0">
                 <span className="text-[11.5px] text-text-secondary font-extrabold uppercase tracking-wider block">Floor Sync Center</span>
                 
                 {/* Active check-in status card */}
@@ -4466,15 +4476,15 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   const qtyReworked = reworkToday.reduce((acc, curr) => acc + curr.qty, 0);
                   
                   return (
-                    <div className="bg-surface-elevated border border-border-subtle p-3.5 rounded-2xl flex flex-col gap-3">
+                    <div className="bg-surface-elevated border border-border-subtle p-3 rounded-2xl flex flex-col gap-3">
                       <div>
-                        <span className="text-[10.5px] text-[#22D3EE] font-bold uppercase tracking-wider block mb-1.5">Rep Check-In Status</span>
+                        <span className="text-[10.5px] text-[#3B82F6] font-bold uppercase tracking-wider block mb-1.5">Rep Check-In Status</span>
                         {dayEntries.length > 0 ? (
-                          <div className="flex flex-col gap-2.5 max-h-[150px] overflow-y-auto pr-1">
+                          <div className="flex flex-col gap-3 max-h-[150px] overflow-y-auto pr-1">
                             {dayEntries.map(entry => {
                               const repUser = users.find(u => u.id === entry.rep_id);
                               return (
-                                <div key={entry.id} className="flex items-start gap-2.5 border-b border-border-subtle pb-2 last:border-b-0 last:pb-0">
+                                <div key={entry.id} className="flex items-start gap-3 border-b border-border-subtle pb-2 last:border-b-0 last:pb-0">
                                   <div className="w-2 h-2 rounded-full bg-emerald-500 mt-1 animate-pulse"></div>
                                   <div className="text-left">
                                     <p className="text-[13.5px] font-bold text-text-primary">{repUser?.name || 'Representative'}</p>
@@ -4490,14 +4500,14 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                       </div>
 
                       <div className="border-t border-border-subtle pt-2.5">
-                        <span className="text-[10.5px] text-[#22D3EE] font-bold uppercase tracking-wider block text-left">Rework & Defect Metrics</span>
+                        <span className="text-[10.5px] text-[#3B82F6] font-bold uppercase tracking-wider block text-left">Rework & Defect Metrics</span>
                         <div className="mt-1.5 grid grid-cols-2 gap-2 text-center text-[13.5px]">
                           <div className="bg-surface p-2 rounded-xl border border-border-subtle">
                             <span className="text-[18px] font-extrabold text-text-primary block leading-none">{qtyReworked}</span>
                             <span className="text-[12.5px] text-text-secondary uppercase tracking-wide block mt-1">Pcs Reworked</span>
                           </div>
                           <div className="bg-surface p-2 rounded-xl border border-border-subtle">
-                            <span className="text-[18px] font-extrabold text-red-400 block leading-none">
+                            <span className="text-[18px] font-extrabold text-red-600 block leading-none">
                               {incidents.filter(inc => inc.created_at.startsWith(selectedDate) && (selectedTaskRepId === 'all' || inc.rep_id === selectedTaskRepId)).length}
                             </span>
                             <span className="text-[12.5px] text-text-secondary uppercase tracking-wide block mt-1">Incidents</span>
@@ -4506,11 +4516,11 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                       </div>
 
                       <div className="border-t border-border-subtle pt-2.5">
-                        <span className="text-[10.5px] text-[#22D3EE] font-bold uppercase tracking-wider block text-left">Shift Walkthrough checklist</span>
+                        <span className="text-[10.5px] text-[#3B82F6] font-bold uppercase tracking-wider block text-left">Shift Walkthrough checklist</span>
                         {report ? (
                           <div className="mt-1.5 flex flex-col gap-1 text-[11.5px] text-left">
-                            <p className="font-bold text-emerald-400 flex items-center gap-1">
-                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                            <p className="font-bold text-emerald-600 flex items-center gap-1">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                               <span>Checklist Submitted</span>
                             </p>
                             <p className="text-[10.5px] text-text-secondary leading-relaxed mt-0.5">
@@ -4519,7 +4529,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                             <button 
                               type="button"
                               onClick={() => setSelectedShiftReport(report)}
-                              className="text-[#0EA5E9] hover:underline text-left font-bold mt-1 cursor-pointer"
+                              className="text-[#3B82F6] hover:underline text-left font-bold mt-1 cursor-pointer"
                             >
                               Review walkthrough logs &rarr;
                             </button>
@@ -4577,11 +4587,11 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
             const totalWithCoords = zoneA + zoneB + zoneC || 1;
 
             return (
-              <div className="flex-1 flex gap-5 min-h-0">
+              <div className="flex-1 flex gap-6 sm:p-8 min-h-0">
                 {/* Left Panel: Filters, scrubber, statistics */}
-                <div className="w-80 flex flex-col gap-4 flex-shrink-0 border-r border-border-subtle pr-5 min-h-0 overflow-y-auto">
+                <div className="w-80 flex flex-col gap-3 flex-shrink-0 border-r border-border-subtle pr-5 min-h-0 overflow-y-auto">
                   <div>
-                    <h3 className="text-[15px] font-bold text-text-primary uppercase tracking-wider">Defect Matrix Location Map</h3>
+                    <h3 className="text-[14.5px] font-bold text-text-primary uppercase tracking-wider">Defect Matrix Location Map</h3>
                     <p className="text-[11.5px] text-text-secondary mt-0.5">Visualize physical defect distributions and hotspot clusters on floor parts.</p>
                   </div>
 
@@ -4606,7 +4616,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   <div className="flex flex-col gap-2 bg-surface p-3 rounded-2xl border border-border-subtle">
                     <div className="flex justify-between items-center text-[11.5px]">
                       <span className="text-text-secondary font-bold uppercase tracking-wider">Timeline Scrubber</span>
-                      <span className="text-[#22D3EE] font-extrabold font-mono text-[11.5px] bg-[#1E3A5F]/40 border border-[#22D3EE]/20 px-2 py-1 rounded">
+                      <span className="text-[#3B82F6] font-extrabold font-mono text-[11.5px] bg-[#3B82F6]/40 border border-[#3B82F6]/20 px-2 py-1 rounded">
                         {targetScrubDate}
                       </span>
                     </div>
@@ -4619,7 +4629,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         const idx = parseInt(e.target.value);
                         setScrubIndex(idx);
                       }}
-                      className="w-full h-1 bg-surface-elevated rounded-lg appearance-none cursor-pointer accent-[#0EA5E9]"
+                      className="w-full h-1 bg-surface-elevated rounded-lg appearance-none cursor-pointer accent-[#3B82F6]"
                     />
                     <div className="flex justify-between text-[12.5px] text-slate-600 font-extrabold uppercase mt-1">
                       <span>{availDates[0]}</span>
@@ -4642,8 +4652,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   </div>
 
                   {/* Zone stats breakdown */}
-                  <div className="bg-surface p-3 rounded-2xl border border-border-subtle flex flex-col gap-2.5">
-                    <span className="text-[10.5px] text-[#22D3EE] font-extrabold uppercase tracking-wider pl-0.5">Floor Hotspots Zone Audit</span>
+                  <div className="bg-surface p-3 rounded-2xl border border-border-subtle flex flex-col gap-3">
+                    <span className="text-[10.5px] text-[#3B82F6] font-extrabold uppercase tracking-wider pl-0.5">Floor Hotspots Zone Audit</span>
                     
                     <div className="flex flex-col gap-2 text-[11.5px]">
                       {/* Zone 1 */}
@@ -4653,7 +4663,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                           <span className="text-text-primary">{zoneA} ({Math.round((zoneA/totalWithCoords)*100)}%)</span>
                         </div>
                         <div className="w-full bg-surface-elevated h-1 rounded-full overflow-hidden">
-                          <div className="bg-[#0EA5E9] h-full rounded-full" style={{ width: `${(zoneA/totalWithCoords)*100}%` }}></div>
+                          <div className="bg-[#3B82F6] h-full rounded-full" style={{ width: `${(zoneA/totalWithCoords)*100}%` }}></div>
                         </div>
                       </div>
 
@@ -4686,23 +4696,23 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     <span className="font-bold text-text-secondary uppercase tracking-wider">Hotspot Density Scale</span>
                     <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-[#EF4444] block shadow shadow-red-500/20"></span><span>High-Density Hotspot (&ge; 3 defects)</span></div>
                     <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-[#F97316] block shadow shadow-orange-500/20"></span><span>Medium-Density (2 defects)</span></div>
-                    <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-[#0EA5E9] block shadow shadow-blue-500/20"></span><span>Low-Density (1 defect)</span></div>
+                    <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-[#3B82F6] block shadow shadow-blue-500/20"></span><span>Low-Density (1 defect)</span></div>
                   </div>
                 </div>
 
                 {/* Right Panel: Large SVG Visual Map canvas */}
-                <div className="flex-1 bg-surface rounded-2xl border border-border-subtle p-6 flex flex-col items-center justify-center relative min-w-0">
-                  <div className="absolute top-4 left-4 bg-surface-elevated border border-border-subtle px-3 py-1 rounded-xl text-[11.5px] text-text-secondary">
+                <div className="flex-1 bg-surface rounded-2xl border border-border-subtle p-3 flex flex-col items-center justify-center relative min-w-0">
+                  <div className="absolute top-3 left-4 bg-surface-elevated border border-border-subtle px-3 py-1 rounded-xl text-[11.5px] text-text-secondary">
                     Active Layer: <span className="text-text-primary font-bold">{isHeadlight ? "Headlight Housing Spec" : "Tail Light Spec"}</span>
                   </div>
 
-                  <div className="relative w-full max-w-[500px] aspect-square flex items-center justify-center border border-border-subtle bg-[#070b13]/60 rounded-3xl p-5 shadow-2xl">
+                  <div className="relative w-full max-w-[500px] aspect-square flex items-center justify-center border border-border-subtle bg-[#070b13]/60 rounded-3xl p-6 sm:p-8 shadow-2xl">
                     <svg viewBox="0 0 100 100" className="w-full h-full object-contain">
                       {isHeadlight ? (
                         <g>
                           <path d="M10,50 C10,25 40,20 90,40 C90,40 70,75 30,70 C15,68 10,60 10,50 Z" fill="#1E293B" stroke="#475569" strokeWidth="1.5" />
-                          <circle cx="45" cy="48" r="14" fill="#0EA5E9" opacity="0.1" stroke="#38BDF8" strokeWidth="0.5" />
-                          <circle cx="75" cy="42" r="8" fill="#0EA5E9" opacity="0.1" stroke="#38BDF8" strokeWidth="0.5" />
+                          <circle cx="45" cy="48" r="14" fill="#3B82F6" opacity="0.1" stroke="#38BDF8" strokeWidth="0.5" />
+                          <circle cx="75" cy="42" r="8" fill="#3B82F6" opacity="0.1" stroke="#38BDF8" strokeWidth="0.5" />
                           <path d="M12,48 C20,35 45,35 45,48" stroke="#64748B" strokeWidth="1" fill="none" />
                         </g>
                       ) : (
@@ -4718,7 +4728,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                       {currentFilteredList.map((inc) => {
                         if (inc.defect_location_x === undefined || inc.defect_location_y === undefined) return null;
                         const w = getIncidentWeight(inc, currentFilteredList);
-                        const color = w >= 3 ? '#EF4444' : w === 2 ? '#F97316' : '#0EA5E9';
+                        const color = w >= 3 ? '#EF4444' : w === 2 ? '#F97316' : '#3B82F6';
                         
                         return (
                           <g key={inc.id}>
@@ -4750,14 +4760,14 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     {/* Floating tooltips inside SVG wrapper */}
                     {hoveredDot && (
                       <div 
-                        className="absolute bg-surface border border-[#22D3EE]/30 p-2.5 rounded-xl text-[11.5px] text-left max-w-[200px] shadow-2xl z-20 pointer-events-none animate-in fade-in duration-150" 
+                        className="absolute bg-surface border border-[#3B82F6]/30 p-2.5 rounded-xl text-[11.5px] text-left max-w-[200px] shadow-2xl z-20 pointer-events-none animate-in fade-in duration-150" 
                         style={{ 
                           left: `${hoveredDot.defect_location_x * 100}%`, 
                           top: `${hoveredDot.defect_location_y * 100}%`, 
                           transform: 'translate(-50%, -108%)' 
                         }}
                       >
-                        <p className="font-mono text-[#22D3EE] font-bold">{hoveredDot.id}</p>
+                        <p className="font-mono text-[#3B82F6] font-bold">{hoveredDot.id}</p>
                         <p className="text-text-primary font-semibold mt-0.5">{hoveredDot.area}</p>
                         <p className="text-text-secondary mt-1 line-clamp-2">"{hoveredDot.description}"</p>
                         <div className="border-t border-border-subtle mt-1.5 pt-1.5 flex flex-col gap-0.5 text-[12.5px] text-text-secondary">
@@ -4780,7 +4790,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
           
           {/* TAB 1: INCIDENTS FEED (Split layout: Table + Activities) */}
           {activeTab === 'incidents' && (
-            <div className="flex-1 flex gap-4 min-h-0">
+            <div className="flex-1 flex gap-3 min-h-0">
               {/* Left Column: Incidents Table */}
               <div className="flex-1 flex flex-col min-h-0 border-r border-border-subtle pr-4">
                 <div className="flex gap-2 mb-3 flex-shrink-0">
@@ -4791,14 +4801,14 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       placeholder="Search parts, defects..."
-                      className="w-full h-8 bg-surface border border-border-subtle focus:border-[#0EA5E9] focus:bg-surface-elevated rounded-xl pl-9 pr-3 text-[13.5px] text-text-primary focus:outline-none focus:ring-1 focus:ring-[#0EA5E9]/20 transition-all placeholder-text-secondary"
+                      className="w-full h-8 bg-surface border border-border-subtle focus:border-[#3B82F6] focus:bg-surface-elevated rounded-xl pl-9 pr-3 text-[13.5px] text-text-primary focus:outline-none focus:ring-1 focus:ring-[#3B82F6]/20 transition-all placeholder-text-secondary"
                     />
                   </div>
                   
                   <select 
                     value={selectedSupplierFilter}
                     onChange={(e) => setSelectedSupplierFilter(e.target.value)}
-                    className="h-8 bg-surface border border-border-subtle hover:border-border-subtle rounded-xl px-3.5 text-[13.5px] text-text-primary focus:outline-none focus:ring-1 focus:ring-[#0EA5E9]/20 transition-all"
+                    className="h-8 bg-surface border border-border-subtle hover:border-border-subtle rounded-xl px-3.5 text-[13.5px] text-text-primary focus:outline-none focus:ring-1 focus:ring-[#3B82F6]/20 transition-all"
                   >
                     <option value="all">All Suppliers</option>
                     <option value="magna">Magna AutoSystems</option>
@@ -4808,7 +4818,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
                 <div className="flex-1 overflow-y-auto overflow-x-auto scrollbar-thin">
                   {filteredIncidents.length > 0 && (
-                    <span className="text-[10.5px] text-[#22D3EE] font-bold mb-2 flex items-center gap-1">
+                    <span className="text-[10.5px] text-[#3B82F6] font-bold mb-2 flex items-center gap-1">
                       <span>💡 Tip:</span>
                       <span className="text-text-secondary">Scroll down inside this list to view more reports.</span>
                     </span>
@@ -4846,12 +4856,12 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                             <td className="py-2 px-2 font-medium text-text-primary">
                               {users.find(u => u.id === inc.rep_id)?.name || 'Clarence Kuiken'}
                             </td>
-                            <td className="py-2 px-2 text-[#22D3EE] font-medium">Magna</td>
+                            <td className="py-2 px-2 text-[#3B82F6] font-medium">Magna</td>
                             <td className="py-2 px-2">
                               <span className={`px-2 py-1 rounded-full text-[10.5px] font-bold ${
-                                inc.status === 'Open' ? 'bg-red-500/10 text-red-400 border border-red-500/20' :
-                                inc.status === 'Acknowledged' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' :
-                                'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                                inc.status === 'Open' ? 'bg-red-50 text-red-600 border border-red-200' :
+                                inc.status === 'Acknowledged' ? 'bg-amber-50 text-amber-600 border border-amber-200' :
+                                'bg-emerald-50 text-emerald-600 border border-emerald-200'
                               }`}>
                                 {inc.status === 'Open' ? '🔴 Red Alert (Awaiting Review)' : 
                                  inc.status === 'Acknowledged' ? '🟡 In Progress' : '🟢 Closed'}
@@ -4860,7 +4870,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                             <td className="py-2 px-2">
                               <button 
                                 onClick={() => setSelectedIncident(inc)}
-                                className="bg-[#1E3A5F] hover:bg-[#1E3A5F]/85 text-[#22D3EE] border border-[#22D3EE]/25 py-1 px-2.5 rounded-lg font-bold flex items-center gap-0.5 cursor-pointer text-[11.5px]"
+                                className="bg-[#3B82F6] hover:bg-[#3B82F6]/85 text-white border border-[#3B82F6]/25 py-1 px-2.5 rounded-lg font-bold flex items-center gap-0.5 cursor-pointer text-[11.5px]"
                               >
                                 <Eye className="w-3.5 h-3.5" />
                                 <span>Inspect</span>
@@ -4886,7 +4896,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   <span className="text-[12.5px] bg-surface-elevated px-2 py-1 rounded text-text-secondary font-mono">Real-Time</span>
                 </div>
                 
-                <div className="flex-1 bg-surface rounded-xl p-3 border border-border-subtle flex flex-col gap-3.5 overflow-y-auto">
+                <div className="flex-1 bg-surface rounded-xl p-3 border border-border-subtle flex flex-col gap-3 overflow-y-auto">
                   {getDynamicActivities().length > 0 ? (
                     getDynamicActivities().map((act, idx) => (
                       <div key={idx} className={`border-l-2 ${act.color} pl-2 py-1`}>
@@ -4910,24 +4920,24 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
           {/* TAB 1.25: CUSTOMER QUALITY PARTNER PORTAL */}
           {activeTab === 'customer-portal' && (
-            <div className="flex-1 flex flex-col gap-5 min-h-0 text-left">
+            <div className="flex-1 flex flex-col gap-6 sm:p-8 min-h-0 text-left">
               {/* Header */}
               <div className="flex justify-between items-center pb-2 border-b border-border-subtle flex-shrink-0">
                 <div>
-                  <h3 className="text-[15px] font-bold text-text-primary uppercase tracking-wider">Customer Portal Dashboard</h3>
+                  <h3 className="text-[14.5px] font-bold text-text-primary uppercase tracking-wider">Customer Portal Dashboard</h3>
                   <span className="text-[11.5px] text-text-secondary">Quality, audit hours tracking, and representative assignments for {(suppliers.find(s => s.id === currentUserCustomerId)?.name || currentUserCustomerId.toUpperCase())}</span>
                 </div>
               </div>
 
               {/* Scrollable Contents */}
-              <div className="flex-1 overflow-y-auto scrollbar-thin pr-1 flex flex-col gap-6">
+              <div className="flex-1 overflow-y-auto scrollbar-thin pr-1 flex flex-col gap-3">
                 
                 {/* 1. Location & Rep Assignments Grid */}
                 <div>
                   <h4 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider mb-3 flex items-center gap-2">
-                    <MapPin className="w-4.5 h-4.5 text-[#22D3EE]" /> My Locations & Active QRE Assignments
+                    <MapPin className="w-4.5 h-4.5 text-[#3B82F6]" /> My Locations & Active QRE Assignments
                   </h4>
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-3 gap-3">
                     {(suppliers.find(s => s.id === currentUserCustomerId)?.plants_served || []).map(pId => {
                       const plant = plants.find(pl => pl.id === pId);
                       if (!plant) return null;
@@ -4942,18 +4952,18 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         .reduce((acc, curr) => acc + curr.hours, 0);
 
                       return (
-                        <div key={pId} className="bg-surface-elevated border border-border-subtle p-4 rounded-2xl flex flex-col gap-3">
+                        <div key={pId} className="bg-surface-elevated border border-border-subtle p-3 rounded-2xl flex flex-col gap-3">
                           <div className="flex justify-between items-start">
                             <div>
                               <h5 className="text-[13.5px] font-bold text-text-primary leading-tight">{plant.name}</h5>
                               <span className="text-[10.5px] text-text-secondary font-medium">{plant.address}</span>
                             </div>
-                            <span className="px-2 py-1 rounded bg-sky-400/10 text-sky-400 text-[12.5px] font-extrabold uppercase">{plant.oem_brand}</span>
+                            <span className="px-2 py-1 rounded bg-amber-50 text-amber-600 text-[12.5px] font-extrabold uppercase">{plant.oem_brand}</span>
                           </div>
                           
                           {/* Rep Assignment Details */}
-                          <div className="bg-surface p-2.5 rounded-xl border border-border-subtle flex items-center gap-2.5">
-                            <span className="w-8 h-8 rounded-full bg-[#1E3A5F] flex items-center justify-center text-[13.5px] text-[#22D3EE] font-bold">{rep?.avatar || 'QRE'}</span>
+                          <div className="bg-surface p-2.5 rounded-xl border border-border-subtle flex items-center gap-3">
+                            <span className="w-8 h-8 rounded-full bg-[#3B82F6] flex items-center justify-center text-[13.5px] text-[#3B82F6] font-bold">{rep?.avatar || 'QRE'}</span>
                             <div className="flex flex-col">
                               <span className="text-[11.5px] text-text-secondary font-bold uppercase tracking-wider">Assigned QRE</span>
                               <span className="text-[13.5px] text-text-primary font-bold">{rep?.name || 'Assigned Rep'}</span>
@@ -4968,7 +4978,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                             </div>
                             <div className="w-full bg-surface h-2 rounded-full overflow-hidden border border-border-subtle">
                               <div 
-                                className="bg-[#0EA5E9] h-full rounded-full transition-all duration-500" 
+                                className="bg-[#3B82F6] h-full rounded-full transition-all duration-500" 
                                 style={{ width: `${Math.min(100, (unbilledHours / 40) * 100)}%` }}
                               />
                             </div>
@@ -4981,20 +4991,20 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 </div>
 
                 {/* 2. Extra Hours Approvals Workflow Queue */}
-                <div className="grid grid-cols-2 gap-6">
-                  <div className="bg-surface-elevated border border-border-subtle p-5 rounded-2xl flex flex-col gap-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-surface-elevated border border-border-subtle p-6 sm:p-8 rounded-2xl flex flex-col gap-3">
                     <h4 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider border-b border-border-subtle pb-2 flex items-center gap-2">
-                      <AlertCircle className="w-4.5 h-4.5 text-sky-400" /> Overtime & Extra Hours Approvals Queue
+                      <AlertCircle className="w-4.5 h-4.5 text-amber-600" /> Overtime & Extra Hours Approvals Queue
                     </h4>
                     <div className="flex flex-col gap-3 max-h-[350px] overflow-y-auto pr-1">
                       {extraHoursRequests.filter(r => r.supplier_id === currentUserCustomerId && r.status === 'pending_customer').length === 0 ? (
                         <div className="text-center py-8 text-slate-550 italic">No pending extra hours requests.</div>
                       ) : (
                         extraHoursRequests.filter(r => r.supplier_id === currentUserCustomerId && r.status === 'pending_customer').map(req => (
-                          <div key={req.id} className="p-3.5 bg-surface rounded-xl border border-border-subtle flex flex-col gap-2">
+                          <div key={req.id} className="p-3 bg-surface rounded-xl border border-border-subtle flex flex-col gap-2">
                             <div className="flex justify-between items-center text-[11.5px]">
                               <span className="font-extrabold text-text-primary uppercase">{req.userName}</span>
-                              <span className="text-sky-400 font-extrabold">{req.hours} hrs requested</span>
+                              <span className="text-amber-600 font-extrabold">{req.hours} hrs requested</span>
                             </div>
                             <div className="text-[11.5px] text-text-secondary"><strong className="text-text-secondary uppercase tracking-wider">Location:</strong> {plants.find(p => p.id === req.plant_id)?.name || req.plant_id}</div>
                             <div className="text-[11.5px] text-text-secondary"><strong className="text-text-secondary uppercase tracking-wider">Reason:</strong> "{req.reason}"</div>
@@ -5029,9 +5039,9 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   </div>
 
                   {/* 3. Published Shift Summaries Log */}
-                  <div className="bg-surface-elevated border border-border-subtle p-5 rounded-2xl flex flex-col gap-3">
+                  <div className="bg-surface-elevated border border-border-subtle p-6 sm:p-8 rounded-2xl flex flex-col gap-3">
                     <h4 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider border-b border-border-subtle pb-2 flex items-center gap-2">
-                      <FileText className="w-4.5 h-4.5 text-[#0EA5E9]" /> Published Quality Shift Reports
+                      <FileText className="w-4.5 h-4.5 text-[#3B82F6]" /> Published Quality Shift Reports
                     </h4>
                     <div className="flex flex-col gap-3 max-h-[350px] overflow-y-auto pr-1">
                       {(() => {
@@ -5046,7 +5056,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                           const rep = users.find(u => u.id === report.rep_id);
                           const plant = plants.find(p => p.id === report.plant_id);
                           return (
-                            <div key={report.id} className="p-3.5 bg-surface rounded-xl border border-border-subtle flex flex-col gap-2">
+                            <div key={report.id} className="p-3 bg-surface rounded-xl border border-border-subtle flex flex-col gap-2">
                               <div className="flex justify-between items-center text-[11.5px]">
                                 <span className="font-bold text-text-primary">{plant?.name || 'Oshawa'}</span>
                                 <span className="text-text-secondary font-mono">{report.date}</span>
@@ -5059,7 +5069,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                               </div>
                               <button 
                                 onClick={() => setSelectedShiftReport(report)}
-                                className="mt-1 w-max text-[#22D3EE] hover:text-[#0EA5E9] text-[10.5px] font-bold uppercase tracking-wider transition-colors"
+                                className="mt-1 w-max text-[#3B82F6] hover:text-[#3B82F6] text-[10.5px] font-bold uppercase tracking-wider transition-colors"
                               >
                                 View Report Details →
                               </button>
@@ -5077,16 +5087,16 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
           {/* TAB: CUSTOMER APPROVALS (OVERTIME) */}
           {activeTab === 'approvals' && userRole === 'customer' && (
-            <div className="flex-1 flex flex-col gap-4 min-h-0">
+            <div className="flex-1 flex flex-col gap-3 min-h-0">
               <div className="flex justify-between items-center pb-2 border-b border-border-subtle flex-shrink-0">
-                <h3 className="text-[15px] font-bold text-text-primary uppercase tracking-wider flex items-center gap-2">
-                  <Clock className="w-5 h-5 text-amber-400" />
+                <h3 className="text-[14.5px] font-bold text-text-primary uppercase tracking-wider flex items-center gap-2">
+                  <Clock className="w-5 h-5 text-amber-600" />
                   Time & Expense Approvals
                 </h3>
                 <span className="text-[11.5px] text-text-secondary font-medium">Review QRE Overtime & Expenses</span>
               </div>
               
-              <div className="flex-1 overflow-y-auto scrollbar-thin pr-1 flex flex-col gap-4">
+              <div className="flex-1 overflow-y-auto scrollbar-thin pr-1 flex flex-col gap-3">
                 {(() => {
                   const customerPlants = suppliers.find(s => s.id === currentUserCustomerId)?.plants_served || [];
                   // Find expenses for reps assigned to this customer's plants
@@ -5108,23 +5118,23 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     const costImpact = (req.amount * 28).toFixed(2);
                     
                     return (
-                      <div key={req.id} className="stitch-panel p-4 flex flex-col gap-3">
+                      <div key={req.id} className="stitch-panel p-3 flex flex-col gap-3">
                         <div className="flex justify-between items-start border-b border-border-subtle pb-3">
                           <div>
                             <div className="flex items-center gap-2 mb-1">
-                              <span className="px-2 py-1 bg-amber-500/20 border border-amber-500/30 text-amber-400 text-[10.5px] font-bold uppercase rounded">
+                              <span className="px-2 py-1 bg-amber-100 border border-amber-300 text-amber-600 text-[10.5px] font-bold uppercase rounded">
                                 {req.category}
                               </span>
                               <span className="text-[11.5px] text-text-secondary font-mono">{req.date}</span>
                             </div>
-                            <h4 className="text-[15px] font-bold text-text-primary flex items-center gap-1.5">
-                              <User className="w-4.5 h-4.5 text-sky-400" />
+                            <h4 className="text-[14.5px] font-bold text-text-primary flex items-center gap-1.5">
+                              <User className="w-4.5 h-4.5 text-amber-600" />
                               {rep?.name || 'Unknown Rep'}
                             </h4>
                           </div>
                           <div className="flex flex-col items-end text-right">
                             <span className="text-[11.5px] text-text-secondary font-bold uppercase">Requested Amount</span>
-                            <span className="text-lg font-black text-text-primary">{req.amount} {req.category.includes('Overtime') ? 'Hours' : 'USD'}</span>
+                            <span className="text-[14.5px] font-black text-text-primary">{req.amount} {req.category.includes('Overtime') ? 'Hours' : 'USD'}</span>
                           </div>
                         </div>
                         
@@ -5136,11 +5146,11 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         </div>
                         
                         <div className="flex items-center justify-between mt-2 pt-3 border-t border-border-subtle">
-                          <div className="flex items-center gap-2 px-3 py-1.5 bg-sky-950/30 border border-sky-900/50 rounded-lg">
-                            <DollarSign className="w-4.5 h-4.5 text-sky-400" />
+                          <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-950/30 border border-amber-900/50 rounded-lg">
+                            <DollarSign className="w-4.5 h-4.5 text-amber-600" />
                             <div className="flex flex-col">
-                              <span className="text-[12.5px] font-bold text-sky-500 uppercase">Estimated Cost Impact</span>
-                              <span className="text-[13.5px] font-bold text-sky-300">${costImpact} USD</span>
+                              <span className="text-[12.5px] font-bold text-amber-500 uppercase">Estimated Cost Impact</span>
+                              <span className="text-[13.5px] font-bold text-amber-600">${costImpact} USD</span>
                             </div>
                           </div>
                           
@@ -5155,7 +5165,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                   window.dispatchEvent(new Event('ids_pulse_db_update'));
                                 }
                               }}
-                              className="px-4 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 hover:text-rose-300 border border-rose-500/20 font-bold text-[13.5px] rounded-lg transition-colors flex items-center gap-1.5"
+                              className="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 hover:text-rose-600 border border-rose-200 font-bold text-[13.5px] rounded-lg transition-colors flex items-center gap-1.5"
                             >
                               <X className="w-4.5 h-4" /> Reject
                             </button>
@@ -5183,9 +5193,9 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
           {/* TAB 1.5: DAILY SHIFT SUMMARIES LOG (Donna requested to view rep reports) */}
           {activeTab === 'shift-logs' && (
-            <div className="flex-1 flex flex-col gap-4 min-h-0">
+            <div className="flex-1 flex flex-col gap-3 min-h-0">
               <div className="flex justify-between items-center pb-2 border-b border-border-subtle flex-shrink-0">
-                <h3 className="text-[15px] font-bold text-text-primary uppercase tracking-wider">End-Of-Shift Walkthrough logs</h3>
+                <h3 className="text-[14.5px] font-bold text-text-primary uppercase tracking-wider">End-Of-Shift Walkthrough logs</h3>
                 <span className="text-[11.5px] text-text-secondary font-medium">Auto-aggregated shift logs from rep phones</span>
               </div>
 
@@ -5197,19 +5207,19 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   }
                   return true;
                 }).map(sr => (
-                  <div key={sr.id} className="bg-surface-elevated border border-border-subtle rounded-2xl p-4 flex justify-between items-center hover:border-border-subtle transition-colors">
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-full bg-[#1E3A5F]/60 flex items-center justify-center text-text-primary border border-[#22D3EE]/20 flex-shrink-0">
-                        <Calendar className="w-5 h-5 text-[#22D3EE]" />
+                  <div key={sr.id} className="bg-surface-elevated border border-border-subtle rounded-2xl p-3 flex justify-between items-center hover:border-border-subtle transition-colors">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-[#3B82F6]/60 flex items-center justify-center text-text-primary border border-[#3B82F6]/20 flex-shrink-0">
+                        <Calendar className="w-5 h-5 text-[#3B82F6]" />
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <h4 className="text-[15px] font-bold text-text-primary leading-none">Shift Walkthrough Report</h4>
+                          <h4 className="text-[14.5px] font-bold text-text-primary leading-none">Shift Walkthrough Report</h4>
                           <span className="text-[10.5px] bg-surface-elevated border border-border-subtle text-text-secondary px-2 py-1 rounded-full font-bold">
                             {sr.date}
                           </span>
                           {sr.status === 'published' && (
-                            <span className="text-[12.5px] bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 px-2 py-1 rounded font-bold uppercase tracking-wider">
+                            <span className="text-[12.5px] bg-emerald-50 border border-emerald-300 text-emerald-600 px-2 py-1 rounded font-bold uppercase tracking-wider">
                               Published
                             </span>
                           )}
@@ -5234,7 +5244,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                       
                       <button 
                         onClick={() => setSelectedShiftReport(sr)}
-                        className="bg-[#1E3A5F] hover:bg-[#1E3A5F]/85 text-[#22D3EE] border border-[#22D3EE]/30 py-2 px-4 rounded-xl text-[13.5px] font-bold transition-all cursor-pointer flex items-center gap-1 flex-shrink-0"
+                        className="bg-[#3B82F6] hover:bg-[#3B82F6]/85 text-white border border-[#3B82F6]/30 py-2 px-4 rounded-xl text-[13.5px] font-bold transition-all cursor-pointer flex items-center gap-1 flex-shrink-0"
                       >
                         <Eye className="w-3.5 h-3.5" />
                         <span>Review details</span>
@@ -5248,10 +5258,10 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
           {/* TAB 2: SUPPLIERS DIRECTORY */}
           {activeTab === 'suppliers' && (
-            <div className="flex-1 flex flex-col gap-4 min-h-0">
+            <div className="flex-1 flex flex-col gap-3 min-h-0">
               <div className="flex justify-between items-center pb-2 border-b border-border-subtle flex-shrink-0">
                 <div>
-                  <h3 className="text-[15px] font-bold text-text-primary uppercase tracking-wider">Supplier Partnerships</h3>
+                  <h3 className="text-[14.5px] font-bold text-text-primary uppercase tracking-wider">Supplier Partnerships</h3>
                   <span className="text-[11.5px] text-text-secondary">Tier-1 supplier quality contacts</span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -5264,22 +5274,22 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   </button>
                   <button 
                     onClick={handleDownloadSupplierDirectoryReport}
-                    className="flex items-center gap-1.5 bg-[#0EA5E9] hover:bg-[#0EA5E9]/90 text-text-primary font-bold py-1.5 px-3 rounded-lg text-[13.5px] cursor-pointer transition-colors"
+                    className="flex items-center gap-1.5 bg-[#3B82F6] hover:bg-[#3B82F6]/90 text-text-primary font-bold py-1.5 px-3 rounded-lg text-[13.5px] cursor-pointer transition-colors"
                   >
                     <Download className="w-3.5 h-3.5" />
                     <span>Download PDF</span>
                   </button>
                 </div>
               </div>
-              <div className="flex-1 overflow-y-auto scrollbar-thin pr-1 grid grid-cols-2 gap-4">
+              <div className="flex-1 overflow-y-auto scrollbar-thin pr-1 grid grid-cols-2 gap-3">
                 {suppliers.map(sup => (
-                  <div key={sup.id} className="bg-surface-elevated border border-border-subtle rounded-2xl p-4 flex flex-col gap-3 h-fit">
+                  <div key={sup.id} className="bg-surface-elevated border border-border-subtle rounded-2xl p-3 flex flex-col gap-3 h-fit">
                     <div className="flex justify-between items-start">
                       <div>
-                        <h4 className="text-[15px] font-extrabold text-text-primary">{sup.name}</h4>
+                        <h4 className="text-[14.5px] font-extrabold text-text-primary">{sup.name}</h4>
                         <span className="text-[11.5px] text-text-secondary">Active Supplier Partner</span>
                       </div>
-                      <span className="px-2 py-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10.5px] font-bold rounded-full">ACTIVE CONTRACT</span>
+                      <span className="px-2 py-1 bg-emerald-50 border border-emerald-200 text-emerald-600 text-[10.5px] font-bold rounded-full">ACTIVE CONTRACT</span>
                     </div>
                     
                     <div className="border-t border-border-subtle pt-2 flex flex-col gap-1.5 text-[13.5px] text-text-secondary">
@@ -5290,7 +5300,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                             <p className="font-semibold text-text-primary">{c.name}</p>
                             <p className="text-text-secondary text-[10.5px]">{c.role}</p>
                           </div>
-                          <a href={`mailto:${c.email}`} className="text-[#0EA5E9] hover:underline font-mono">{c.email}</a>
+                          <a href={`mailto:${c.email}`} className="text-[#3B82F6] hover:underline font-mono">{c.email}</a>
                         </div>
                       ))}
                     </div>
@@ -5303,11 +5313,11 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
           {/* TAB 3: TIME & MILEAGE TRACKING (COLLEEN'S VIEW) */}
           {activeTab === 'time-tracking' && (
             userRole === 'qre' ? (
-              <div className="flex-1 flex flex-col gap-4 min-h-0 text-left">
+              <div className="flex-1 flex flex-col gap-3 min-h-0 text-left">
                 {/* Header */}
                 <div className="flex justify-between items-center pb-2 border-b border-border-subtle flex-shrink-0">
                   <div>
-                    <h3 className="text-[15px] font-bold text-text-primary uppercase tracking-wider">Representative Portal</h3>
+                    <h3 className="text-[14.5px] font-bold text-text-primary uppercase tracking-wider">Representative Portal</h3>
                     <span className="text-[11.5px] text-text-secondary">Log hours, expenses, and request overtime approvals</span>
                   </div>
                   
@@ -5316,7 +5326,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     <button
                       onClick={() => setAccountingSubTab('log-hours')}
                       className={`px-3 py-1.5 rounded-lg text-[11.5px] font-bold transition-all cursor-pointer ${
-                        accountingSubTab === 'log-hours' ? 'bg-[#0EA5E9] text-text-primary' : 'text-text-secondary hover:text-text-primary'
+                        accountingSubTab === 'log-hours' ? 'bg-[#3B82F6] text-text-primary' : 'text-text-secondary hover:text-text-primary'
                       }`}
                     >
                       Log Hours & Expenses
@@ -5324,7 +5334,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     <button
                       onClick={() => setAccountingSubTab('extra-hours')}
                       className={`px-3 py-1.5 rounded-lg text-[11.5px] font-bold transition-all cursor-pointer ${
-                        accountingSubTab === 'extra-hours' ? 'bg-[#0EA5E9] text-text-primary' : 'text-text-secondary hover:text-text-primary'
+                        accountingSubTab === 'extra-hours' ? 'bg-[#3B82F6] text-text-primary' : 'text-text-secondary hover:text-text-primary'
                       }`}
                     >
                       Request Overtime / Extra Hours
@@ -5332,7 +5342,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     <button
                       onClick={() => setAccountingSubTab('my-logs')}
                       className={`px-3 py-1.5 rounded-lg text-[11.5px] font-bold transition-all cursor-pointer ${
-                        accountingSubTab === 'my-logs' ? 'bg-[#0EA5E9] text-text-primary' : 'text-text-secondary hover:text-text-primary'
+                        accountingSubTab === 'my-logs' ? 'bg-[#3B82F6] text-text-primary' : 'text-text-secondary hover:text-text-primary'
                       }`}
                     >
                       My Submissions History
@@ -5341,15 +5351,15 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 </div>
 
                 {/* Scrollable area */}
-                <div className="flex-1 overflow-y-auto scrollbar-thin pr-1 flex flex-col gap-4">
+                <div className="flex-1 overflow-y-auto scrollbar-thin pr-1 flex flex-col gap-3">
                   {accountingSubTab === 'log-hours' && (
-                    <div className="grid grid-cols-2 gap-6">
+                    <div className="grid grid-cols-2 gap-3">
                       {/* QRE log hours form */}
                       <form onSubmit={(e) => {
                         handleLogHoursSubmit(e);
-                      }} className="bg-surface-elevated border border-border-subtle p-5 rounded-2xl flex flex-col gap-4 text-left">
+                      }} className="bg-surface-elevated border border-border-subtle p-6 sm:p-8 rounded-2xl flex flex-col gap-3 text-left">
                         <h4 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider border-b border-border-subtle pb-2 flex items-center gap-2">
-                          <Clock className="w-4.5 h-4.5 text-[#22D3EE]" /> Log My Hours & Mileage
+                          <Clock className="w-4.5 h-4.5 text-[#3B82F6]" /> Log My Hours & Mileage
                         </h4>
                         <div className="flex flex-col gap-1">
                           <span className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Representative</span>
@@ -5362,7 +5372,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                           <select value={logHoursSupplierId} onChange={(e) => {
                             setLogHoursSupplierId(e.target.value);
                             setLogHoursRepId(currentUserRepId);
-                          }} className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary focus:outline-none focus:border-[#0EA5E9]">
+                          }} className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary focus:outline-none focus:border-[#3B82F6]">
                             {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                           </select>
                         </div>
@@ -5384,15 +5394,15 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                           <label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Notes / Activity summary</label>
                           <input type="text" placeholder="Detail the sort activity" value={logHoursNotes} onChange={(e) => setLogHoursNotes(e.target.value)} className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary" />
                         </div>
-                        <button type="submit" className="bg-[#0EA5E9] hover:bg-[#0EA5E9]/90 text-text-primary font-bold py-2 rounded-xl text-[13.5px] cursor-pointer transition-colors mt-2">Log Hours</button>
+                        <button type="submit" className="bg-[#3B82F6] hover:bg-[#3B82F6]/90 text-text-primary font-bold py-2 rounded-xl text-[13.5px] cursor-pointer transition-colors mt-2">Log Hours</button>
                       </form>
 
                       {/* QRE log expense form */}
                       <form onSubmit={(e) => {
                         handleLogExpenseSubmit(e);
-                      }} className="bg-surface-elevated border border-border-subtle p-5 rounded-2xl flex flex-col gap-4 text-left h-fit">
+                      }} className="bg-surface-elevated border border-border-subtle p-6 sm:p-8 rounded-2xl flex flex-col gap-3 text-left h-fit">
                         <h4 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider border-b border-border-subtle pb-2 flex items-center gap-2">
-                          <DollarSign className="w-4.5 h-4.5 text-emerald-400" /> Log My Expense Claim
+                          <DollarSign className="w-4.5 h-4.5 text-emerald-600" /> Log My Expense Claim
                         </h4>
                         <div className="flex flex-col gap-1">
                           <span className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Representative</span>
@@ -5439,13 +5449,13 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   )}
 
                   {accountingSubTab === 'extra-hours' && (
-                    <div className="grid grid-cols-2 gap-6">
-                      <form onSubmit={handleExtraHoursSubmit} className="bg-surface-elevated border border-border-subtle p-5 rounded-2xl flex flex-col gap-4 text-left">
+                    <div className="grid grid-cols-2 gap-3">
+                      <form onSubmit={handleExtraHoursSubmit} className="bg-surface-elevated border border-border-subtle p-6 sm:p-8 rounded-2xl flex flex-col gap-3 text-left">
                         <h4 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider border-b border-border-subtle pb-2 flex items-center gap-2">
-                          <AlertCircle className="w-4.5 h-4.5 text-sky-400" /> {selectedEditingRequestId ? "Revise Overtime Request" : "File Request for Overtime / Extra Hours"}
+                          <AlertCircle className="w-4.5 h-4.5 text-amber-600" /> {selectedEditingRequestId ? "Revise Overtime Request" : "File Request for Overtime / Extra Hours"}
                         </h4>
                         {selectedEditingRequestId && (
-                          <div className="bg-cyan-500/10 border border-cyan-500/35 p-2.5 rounded-xl text-[11.5px] text-cyan-400 font-bold flex justify-between items-center">
+                          <div className="bg-cyan-50 border border-cyan-500/35 p-2.5 rounded-xl text-[11.5px] text-cyan-600 font-bold flex justify-between items-center">
                             <span>Editing Rejected Request: #{selectedEditingRequestId}</span>
                             <button
                               type="button"
@@ -5453,7 +5463,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                 setSelectedEditingRequestId(null);
                                 setExtraHoursReason('');
                               }}
-                              className="text-[13.5px] font-black text-cyan-400 hover:text-text-primary cursor-pointer px-1"
+                              className="text-[13.5px] font-black text-cyan-600 hover:text-text-primary cursor-pointer px-1"
                               title="Cancel Edit Mode"
                             >
                               ✕
@@ -5488,10 +5498,10 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                           <label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Justification Reason</label>
                           <textarea placeholder="Please detail the reason for extra hours sorting request..." value={extraHoursReason} onChange={(e) => setExtraHoursReason(e.target.value)} required rows="3" className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary focus:outline-none" />
                         </div>
-                        <button type="submit" className="bg-[#0EA5E9] hover:bg-[#0EA5E9]/90 text-text-primary font-bold py-2 rounded-xl text-[13.5px] cursor-pointer transition-colors mt-2">File Overtime Request</button>
+                        <button type="submit" className="bg-[#3B82F6] hover:bg-[#3B82F6]/90 text-text-primary font-bold py-2 rounded-xl text-[13.5px] cursor-pointer transition-colors mt-2">File Overtime Request</button>
                       </form>
 
-                      <div className="bg-surface-elevated border border-border-subtle p-5 rounded-2xl flex flex-col gap-3">
+                      <div className="bg-surface-elevated border border-border-subtle p-6 sm:p-8 rounded-2xl flex flex-col gap-3">
                         <h4 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider border-b border-border-subtle pb-2">My Overtime Requests Status</h4>
                         <div className="flex flex-col gap-3 overflow-y-auto max-h-[400px]">
                           {extraHoursRequests.filter(r => r.rep_id === currentUserRepId).length === 0 ? (
@@ -5502,9 +5512,9 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                 <div className="flex justify-between items-center">
                                   <span className="text-[11.5px] text-text-secondary font-bold uppercase">{suppliers.find(s => s.id === req.supplier_id)?.name || 'Client'}</span>
                                   <span className={`px-2 py-1 rounded text-[12.5px] font-bold uppercase ${
-                                    req.status === 'approved' ? 'bg-emerald-500/10 text-emerald-400' :
-                                    req.status.startsWith('rejected') ? 'bg-rose-500/10 text-rose-400' :
-                                    'bg-sky-500/10 text-sky-400'
+                                    req.status === 'approved' ? 'bg-emerald-50 text-emerald-600' :
+                                    req.status.startsWith('rejected') ? 'bg-rose-50 text-rose-600' :
+                                    'bg-amber-50 text-amber-600'
                                   }`}>{req.status.replace(/_/g, ' ')}</span>
                                 </div>
                                 <div className="text-[13.5px] font-semibold text-text-primary">{req.hours} hours on {req.date}</div>
@@ -5522,7 +5532,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                       setExtraHoursReason(req.reason);
                                       alert("Form loaded with rejected request details. Modify and submit to resubmit.");
                                     }}
-                                    className="mt-1 px-2.5 py-1 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 font-bold text-[10.5px] uppercase rounded border border-cyan-500/20 transition-colors w-fit cursor-pointer"
+                                    className="mt-1 px-2.5 py-1 bg-cyan-50 hover:bg-cyan-100 text-cyan-600 font-bold text-[10.5px] uppercase rounded border border-cyan-200 transition-colors w-fit cursor-pointer"
                                   >
                                     Revise & Resubmit
                                   </button>
@@ -5536,8 +5546,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   )}
 
                   {accountingSubTab === 'my-logs' && (
-                    <div className="grid grid-cols-2 gap-6">
-                      <div className="bg-surface-elevated border border-border-subtle p-5 rounded-2xl flex flex-col gap-3">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="bg-surface-elevated border border-border-subtle p-6 sm:p-8 rounded-2xl flex flex-col gap-3">
                         <h4 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider border-b border-border-subtle pb-2">Logged Hours Summary (No Rates)</h4>
                         <div className="overflow-x-auto">
                           <table className="w-full text-[13.5px] text-left">
@@ -5553,7 +5563,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                     <td className="py-2 font-mono">{entry.date}</td>
                                     <td className="py-2 text-text-secondary">{suppliers.find(s => s.id === entry.supplier_id)?.name || 'Client'}</td>
                                     <td className="py-2 text-right text-text-primary font-bold">{entry.hours} hrs</td>
-                                    <td className="py-2 text-right text-sky-400">{entry.mileage_km || 0} km</td>
+                                    <td className="py-2 text-right text-amber-600">{entry.mileage_km || 0} km</td>
                                   </tr>
                                 ))
                               )}
@@ -5562,7 +5572,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         </div>
                       </div>
 
-                      <div className="bg-surface-elevated border border-border-subtle p-5 rounded-2xl flex flex-col gap-3">
+                      <div className="bg-surface-elevated border border-border-subtle p-6 sm:p-8 rounded-2xl flex flex-col gap-3">
                         <h4 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider border-b border-border-subtle pb-2">Logged Expenses (Reimbursable Claims)</h4>
                         <div className="overflow-x-auto">
                           <table className="w-full text-[13.5px] text-left">
@@ -5580,9 +5590,9 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                     <td className="py-2 text-text-primary font-bold">${parseFloat(exp.amount).toFixed(2)}</td>
                                     <td className="py-2 text-right">
                                       <span className={`px-2 py-1 rounded text-[12.5px] font-bold uppercase ${
-                                        exp.status === 'approved' ? 'bg-emerald-500/10 text-emerald-400' :
-                                        exp.status === 'rejected' ? 'bg-rose-500/10 text-rose-400' :
-                                        'bg-sky-500/10 text-sky-400'
+                                        exp.status === 'approved' ? 'bg-emerald-50 text-emerald-600' :
+                                        exp.status === 'rejected' ? 'bg-rose-50 text-rose-600' :
+                                        'bg-amber-50 text-amber-600'
                                       }`}>{exp.status || 'submitted'}</span>
                                     </td>
                                   </tr>
@@ -5597,11 +5607,11 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 </div>
               </div>
             ) : (
-              <div className="flex-1 flex flex-col gap-4 min-h-0 text-left">
+              <div className="flex-1 flex flex-col gap-3 min-h-0 text-left">
                 {/* Portal Header */}
                 <div className="flex justify-between items-center pb-2 border-b border-border-subtle flex-shrink-0">
                   <div>
-                    <h3 className="text-[15px] font-bold text-text-primary uppercase tracking-wider">Invoicing, Rates & Payroll Portal</h3>
+                    <h3 className="text-[14.5px] font-bold text-text-primary uppercase tracking-wider">Invoicing, Rates & Payroll Portal</h3>
                     <span className="text-[11.5px] text-text-secondary">Colleen's accountant workspace</span>
                   </div>
                   
@@ -5610,7 +5620,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     <button
                       onClick={() => setAccountingSubTab('log-hours')}
                       className={`px-3 py-1.5 rounded-lg text-[11.5px] font-bold transition-all cursor-pointer ${
-                        accountingSubTab === 'log-hours' ? 'bg-[#0EA5E9] text-text-primary' : 'text-text-secondary hover:text-text-primary'
+                        accountingSubTab === 'log-hours' ? 'bg-[#3B82F6] text-text-primary' : 'text-text-secondary hover:text-text-primary'
                       }`}
                     >
                       Log Hours & Expenses
@@ -5618,7 +5628,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     <button
                       onClick={() => setAccountingSubTab('invoice-gen')}
                       className={`px-3 py-1.5 rounded-lg text-[11.5px] font-bold transition-all cursor-pointer ${
-                        accountingSubTab === 'invoice-gen' ? 'bg-[#0EA5E9] text-text-primary' : 'text-text-secondary hover:text-text-primary'
+                        accountingSubTab === 'invoice-gen' ? 'bg-[#3B82F6] text-text-primary' : 'text-text-secondary hover:text-text-primary'
                       }`}
                     >
                       Invoicing Control
@@ -5626,7 +5636,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     <button
                       onClick={() => setAccountingSubTab('payroll')}
                       className={`px-3 py-1.5 rounded-lg text-[11.5px] font-bold transition-all cursor-pointer ${
-                        accountingSubTab === 'payroll' ? 'bg-[#0EA5E9] text-text-primary' : 'text-text-secondary hover:text-text-primary'
+                        accountingSubTab === 'payroll' ? 'bg-[#3B82F6] text-text-primary' : 'text-text-secondary hover:text-text-primary'
                       }`}
                     >
                       Rep Payroll
@@ -5634,7 +5644,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     <button
                       onClick={() => setAccountingSubTab('rates-config')}
                       className={`px-3 py-1.5 rounded-lg text-[11.5px] font-bold transition-all cursor-pointer ${
-                        accountingSubTab === 'rates-config' ? 'bg-[#0EA5E9] text-text-primary' : 'text-text-secondary hover:text-text-primary'
+                        accountingSubTab === 'rates-config' ? 'bg-[#3B82F6] text-text-primary' : 'text-text-secondary hover:text-text-primary'
                       }`}
                     >
                       Clients & Rates
@@ -5642,7 +5652,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     <button
                       onClick={() => setAccountingSubTab('bulk-entry')}
                       className={`px-3 py-1.5 rounded-lg text-[11.5px] font-bold transition-all cursor-pointer ${
-                        accountingSubTab === 'bulk-entry' ? 'bg-[#0EA5E9] text-text-primary' : 'text-text-secondary hover:text-text-primary'
+                        accountingSubTab === 'bulk-entry' ? 'bg-[#3B82F6] text-text-primary' : 'text-text-secondary hover:text-text-primary'
                       }`}
                     >
                       Manual Timesheet Entry
@@ -5651,24 +5661,24 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 </div>
 
                 {/* Scrollable Sub-tab Contents */}
-                <div className="flex-1 overflow-y-auto scrollbar-thin pr-1 flex flex-col gap-4">
+                <div className="flex-1 overflow-y-auto scrollbar-thin pr-1 flex flex-col gap-3">
                   
                   {/* SUB-TAB 1: LOG HOURS & EXPENSES */}
                   {accountingSubTab === 'log-hours' && (
-                    <div className="grid grid-cols-2 gap-6">
-                      <form onSubmit={handleLogHoursSubmit} className="bg-surface-elevated border border-border-subtle p-5 rounded-2xl flex flex-col gap-4 text-left">
+                    <div className="grid grid-cols-2 gap-3">
+                      <form onSubmit={handleLogHoursSubmit} className="bg-surface-elevated border border-border-subtle p-6 sm:p-8 rounded-2xl flex flex-col gap-3 text-left">
                         <h4 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider border-b border-border-subtle pb-2 flex items-center gap-2">
-                          <Clock className="w-4.5 h-4.5 text-[#22D3EE]" /> Log Representative Hours & Mileage
+                          <Clock className="w-4.5 h-4.5 text-[#3B82F6]" /> Log Representative Hours & Mileage
                         </h4>
                         <div className="flex flex-col gap-1">
                           <label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Representative</label>
-                          <select value={logHoursRepId} onChange={(e) => setLogHoursRepId(e.target.value)} className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary focus:outline-none focus:border-[#0EA5E9]">
+                          <select value={logHoursRepId} onChange={(e) => setLogHoursRepId(e.target.value)} className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary focus:outline-none focus:border-[#3B82F6]">
                             {users.filter(u => u.role === 'rep').map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
                           </select>
                         </div>
                         <div className="flex flex-col gap-1">
                           <label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Client (Supplier)</label>
-                          <select value={logHoursSupplierId} onChange={(e) => setLogHoursSupplierId(e.target.value)} className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary focus:outline-none focus:border-[#0EA5E9]">
+                          <select value={logHoursSupplierId} onChange={(e) => setLogHoursSupplierId(e.target.value)} className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary focus:outline-none focus:border-[#3B82F6]">
                             {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                           </select>
                         </div>
@@ -5690,12 +5700,12 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                           <label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Notes</label>
                           <input type="text" placeholder="Shift sorting notes" value={logHoursNotes} onChange={(e) => setLogHoursNotes(e.target.value)} className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary" />
                         </div>
-                        <button type="submit" className="bg-[#0EA5E9] hover:bg-[#0EA5E9]/90 text-text-primary font-bold py-2 rounded-xl text-[13.5px] cursor-pointer transition-colors mt-2">Log Hours</button>
+                        <button type="submit" className="bg-[#3B82F6] hover:bg-[#3B82F6]/90 text-text-primary font-bold py-2 rounded-xl text-[13.5px] cursor-pointer transition-colors mt-2">Log Hours</button>
                       </form>
 
-                      <form onSubmit={handleLogExpenseSubmit} className="bg-surface-elevated border border-border-subtle p-5 rounded-2xl flex flex-col gap-4 text-left h-fit">
+                      <form onSubmit={handleLogExpenseSubmit} className="bg-surface-elevated border border-border-subtle p-6 sm:p-8 rounded-2xl flex flex-col gap-3 text-left h-fit">
                         <h4 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider border-b border-border-subtle pb-2 flex items-center gap-2">
-                          <DollarSign className="w-4.5 h-4.5 text-emerald-400" /> Log Rep Expense Claim
+                          <DollarSign className="w-4.5 h-4.5 text-emerald-600" /> Log Rep Expense Claim
                         </h4>
                         <div className="flex flex-col gap-1">
                           <label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Representative</label>
@@ -5777,11 +5787,11 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     const dateRangeStr = dates.length > 0 ? `From ${dates[0]} to ${dates[dates.length - 1]}` : 'No pending periods';
 
                     return (
-                      <div className="flex flex-col gap-4 text-left">
+                      <div className="flex flex-col gap-3 text-left">
                         {/* Approval Workflows alerts for Admin */}
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="bg-surface-elevated border border-border-subtle p-4 rounded-2xl">
-                            <h5 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider mb-2 flex items-center gap-1.5"><AlertCircle className="w-4.5 h-4.5 text-sky-400" /> Overtime Approvals Queue</h5>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="bg-surface-elevated border border-border-subtle p-3 rounded-2xl">
+                            <h5 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider mb-2 flex items-center gap-1.5"><AlertCircle className="w-4.5 h-4.5 text-amber-600" /> Overtime Approvals Queue</h5>
                             <div className="flex flex-col gap-2 max-h-[220px] overflow-y-auto">
                               {extraHoursRequests.filter(r => r && r.status === 'pending_admin').length === 0 ? (
                                 <div className="text-[11.5px] text-slate-550 italic py-2">No pending overtime final approvals.</div>
@@ -5790,7 +5800,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                   <div key={req.id} className="p-2.5 bg-surface rounded-xl border border-border-subtle flex flex-col gap-1.5">
                                     <div className="flex justify-between items-center text-[11.5px]">
                                       <span className="font-bold text-text-primary">{users.find(u => u && u.id === req.rep_id)?.name || 'Rep'} @ {plants.find(p => p && p.id === req.plant_id)?.name || req.plant_id}</span>
-                                      <span className="text-sky-400 font-bold">{req.hours || 0} hrs</span>
+                                      <span className="text-amber-600 font-bold">{req.hours || 0} hrs</span>
                                     </div>
                                     <p className="text-[11.5px] text-text-secondary">"{req.reason || ''}"</p>
                                     <div className="flex gap-2 mt-1">
@@ -5804,8 +5814,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                             </div>
                           </div>
 
-                          <div className="bg-surface-elevated border border-border-subtle p-4 rounded-2xl">
-                            <h5 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider mb-2 flex items-center gap-1.5"><DollarSign className="w-4.5 h-4.5 text-emerald-400" /> Expense Claims Queue</h5>
+                          <div className="bg-surface-elevated border border-border-subtle p-3 rounded-2xl">
+                            <h5 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider mb-2 flex items-center gap-1.5"><DollarSign className="w-4.5 h-4.5 text-emerald-600" /> Expense Claims Queue</h5>
                             <div className="flex flex-col gap-2 max-h-[220px] overflow-y-auto">
                               {expenseEntries.filter(e => e && e.status === 'submitted').length === 0 ? (
                                 <div className="text-[11.5px] text-slate-550 italic py-2">No pending expense claims.</div>
@@ -5816,7 +5826,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                     <div key={exp.id} className="p-2.5 bg-surface rounded-xl border border-border-subtle flex flex-col gap-1.5">
                                       <div className="flex justify-between items-center text-[11.5px]">
                                         <span className="font-bold text-text-primary">{repName} ({exp.category || 'Expense'})</span>
-                                        <span className="text-emerald-400 font-bold">${parseFloat(exp.amount || 0).toFixed(2)}</span>
+                                        <span className="text-emerald-600 font-bold">${parseFloat(exp.amount || 0).toFixed(2)}</span>
                                       </div>
                                       <p className="text-[11.5px] text-text-secondary">"{exp.notes || ''}"</p>
                                       <div className="flex gap-2 mt-1">
@@ -5832,8 +5842,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         </div>
 
                         {/* Invoicing Controls */}
-                        <div className="bg-surface-elevated border border-border-subtle p-4 rounded-2xl flex items-center justify-between gap-4">
-                          <div className="flex gap-4 col-span-2">
+                        <div className="bg-surface-elevated border border-border-subtle p-3 rounded-2xl flex items-center justify-between gap-3">
+                          <div className="flex gap-3 col-span-2">
                             <div className="flex flex-col">
                               <label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider mb-1">Select Client</label>
                               <select 
@@ -5848,7 +5858,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                 className="bg-surface border border-border-subtle rounded-xl px-3 py-1.5 text-[13.5px] text-text-primary"
                               >
                                 {suppliers.filter(Boolean).map(s => <option key={s.id} value={s.id}>{s.name} ({(s.invoice_schedule || 'weekly').toUpperCase()})</option>)}
-                                <option value="ADD_NEW" className="text-cyan-400 font-bold">+ Add New Client...</option>
+                                <option value="ADD_NEW" className="text-cyan-600 font-bold">+ Add New Client...</option>
                               </select>
                             </div>
                             <div className="flex flex-col">
@@ -5871,25 +5881,25 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                             </div>
                           </div>
                           <div className="flex gap-2">
-                            <button onClick={() => handleGenerateClientInvoicePDF(client, dateRangeStr, includedEntries, includedExpenses)} disabled={includedEntries.length === 0 && includedExpenses.length === 0} className="flex items-center gap-1.5 bg-[#0EA5E9] disabled:opacity-40 hover:bg-[#0EA5E9]/90 text-text-primary font-bold py-2 px-4 rounded-xl text-[13.5px] transition-colors cursor-pointer"><Printer className="w-4.5 h-4" /> PDF Invoice</button>
+                            <button onClick={() => handleGenerateClientInvoicePDF(client, dateRangeStr, includedEntries, includedExpenses)} disabled={includedEntries.length === 0 && includedExpenses.length === 0} className="flex items-center gap-1.5 bg-[#3B82F6] disabled:opacity-40 hover:bg-[#3B82F6]/90 text-text-primary font-bold py-2 px-4 rounded-xl text-[13.5px] transition-colors cursor-pointer"><Printer className="w-4.5 h-4" /> PDF Invoice</button>
                             <button onClick={() => handleExportClientQuickBooks(includedEntries)} disabled={includedEntries.length === 0} className="flex items-center gap-1.5 bg-[#10B981] disabled:opacity-40 hover:bg-[#10B981]/90 text-text-primary font-bold py-2 px-4 rounded-xl text-[13.5px] transition-colors cursor-pointer"><FileSpreadsheet className="w-4.5 h-4" /> QuickBooks CSV</button>
                             <button onClick={() => handleMarkAsInvoiced(includedEntries, includedExpenses)} disabled={includedEntries.length === 0 && includedExpenses.length === 0} className="flex items-center gap-1.5 bg-surface border border-border-subtle disabled:opacity-40 text-text-primary font-bold py-2 px-4 rounded-xl text-[13.5px] cursor-pointer"><CheckCircle2 className="w-4.5 h-4" /> Mark Invoiced</button>
                           </div>
                         </div>
 
                         {/* Consolidated Totals */}
-                        <div className="grid grid-cols-4 gap-3 bg-surface-elevated border border-border-subtle p-4 rounded-2xl">
-                          <div className="flex flex-col"><span className="text-[10.5px] text-text-secondary font-bold uppercase">Hours Billing</span><span className="text-lg font-bold text-text-primary mt-0.5">{includedEntries.reduce((acc, curr) => acc + (curr.hours || 0), 0)} hrs</span><span className="text-[11.5px] text-text-secondary mt-1">Sub: {hoursSubDisplay}</span></div>
-                          <div className="flex flex-col"><span className="text-[10.5px] text-text-secondary font-bold uppercase">Mileage</span><span className="text-lg font-bold text-text-primary mt-0.5">{includedEntries.reduce((acc, curr) => acc + (curr.mileage_km || 0), 0)} km</span><span className="text-[11.5px] text-text-secondary mt-1">Sub: {mileageSubDisplay}</span></div>
-                          <div className="flex flex-col"><span className="text-[10.5px] text-text-secondary font-bold uppercase">Expenses</span><span className="text-lg font-bold text-emerald-450 mt-0.5">{expenseSubDisplay}</span><span className="text-[11.5px] text-text-secondary mt-1">Reimbursable claims</span></div>
-                          <div className="flex flex-col"><span className="text-[10.5px] text-text-secondary font-bold uppercase">Invoice Total</span><span className="text-lg font-bold text-[#22D3EE] mt-0.5">{grandTotalDisplay}</span><span className="text-[10.5px] text-text-secondary mt-1">{dateRangeStr}</span></div>
+                        <div className="grid grid-cols-4 gap-3 bg-surface-elevated border border-border-subtle p-3 rounded-2xl">
+                          <div className="flex flex-col"><span className="text-[10.5px] text-text-secondary font-bold uppercase">Hours Billing</span><span className="text-[14.5px] font-bold text-text-primary mt-0.5">{includedEntries.reduce((acc, curr) => acc + (curr.hours || 0), 0)} hrs</span><span className="text-[11.5px] text-text-secondary mt-1">Sub: {hoursSubDisplay}</span></div>
+                          <div className="flex flex-col"><span className="text-[10.5px] text-text-secondary font-bold uppercase">Mileage</span><span className="text-[14.5px] font-bold text-text-primary mt-0.5">{includedEntries.reduce((acc, curr) => acc + (curr.mileage_km || 0), 0)} km</span><span className="text-[11.5px] text-text-secondary mt-1">Sub: {mileageSubDisplay}</span></div>
+                          <div className="flex flex-col"><span className="text-[10.5px] text-text-secondary font-bold uppercase">Expenses</span><span className="text-[14.5px] font-bold text-emerald-450 mt-0.5">{expenseSubDisplay}</span><span className="text-[11.5px] text-text-secondary mt-1">Reimbursable claims</span></div>
+                          <div className="flex flex-col"><span className="text-[10.5px] text-text-secondary font-bold uppercase">Invoice Total</span><span className="text-[14.5px] font-bold text-[#3B82F6] mt-0.5">{grandTotalDisplay}</span><span className="text-[10.5px] text-text-secondary mt-1">{dateRangeStr}</span></div>
                         </div>
 
                         {/* Items Table list */}
-                        <div className="bg-surface-elevated border border-border-subtle rounded-2xl p-4">
-                          <h4 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider mb-3 flex items-center gap-2"><FileText className="w-4.5 h-4.5 text-[#22D3EE]" /> Consolidated Items List</h4>
+                        <div className="bg-surface-elevated border border-border-subtle rounded-2xl p-3">
+                          <h4 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider mb-3 flex items-center gap-2"><FileText className="w-4.5 h-4.5 text-[#3B82F6]" /> Consolidated Items List</h4>
                           {clientEntries.length === 0 && clientExpenses.length === 0 ? <div className="text-center py-6 text-slate-550">All hours and expenses are invoiced for this client.</div> : (
-                            <div className="flex flex-col gap-4">
+                            <div className="flex flex-col gap-3">
                               {clientEntries.length > 0 && (
                                 <table className="w-full text-[13.5px] text-left">
                                   <thead>
@@ -5910,7 +5920,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                                 if (isExcluded) setExcludedInvoiceEntryIds(prev => prev.filter(id => id !== entry.id));
                                                 else setExcludedInvoiceEntryIds(prev => [...prev, entry.id]);
                                               }}
-                                              className="accent-[#0EA5E9] w-3.5 h-3.5 cursor-pointer"
+                                              className="accent-[#3B82F6] w-3.5 h-3.5 cursor-pointer"
                                             />
                                           </td>
                                           <td className="py-2 text-text-primary font-semibold">{users.find(u => u && u.id === entry.rep_id)?.name || 'Rep'}</td>
@@ -5918,7 +5928,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                           <td className="py-2 text-right">{entry.hours || 0} hrs</td>
                                           <td className="py-2 text-right text-text-secondary">{rowSymbol} {(billing_rate || 28.00).toFixed(2)}/hr</td>
                                           <td className="py-2 text-right text-text-primary font-bold">{rowSymbol} {((entry.hours || 0) * (billing_rate || 28.00)).toFixed(2)}</td>
-                                          <td className="py-2 text-right text-sky-400">{entry.mileage_km || 0} km</td>
+                                          <td className="py-2 text-right text-amber-600">{entry.mileage_km || 0} km</td>
                                           <td className="py-2 text-right text-emerald-450">{rowSymbol} {((entry.mileage_km || 0) * 0.73).toFixed(2)}</td>
                                         </tr>
                                       );
@@ -5954,9 +5964,9 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                             </td>
                                             <td className="py-2 text-text-primary font-semibold">{users.find(u => u && u.id === exp.rep_id)?.name || 'Rep'}</td>
                                             <td className="py-2 font-mono">{exp.date || ''}</td>
-                                            <td className="py-2"><span className="px-2 py-1 rounded bg-emerald-500/10 text-emerald-400 text-[12.5px] font-bold uppercase">{exp.category}</span></td>
+                                            <td className="py-2"><span className="px-2 py-1 rounded bg-emerald-50 text-emerald-600 text-[12.5px] font-bold uppercase">{exp.category}</span></td>
                                             <td className="py-2 text-text-secondary">{exp.notes || ''}</td>
-                                            <td className="py-2 text-right text-emerald-400 font-bold">{expSymbol} {parseFloat(exp.amount || 0).toFixed(2)}</td>
+                                            <td className="py-2 text-right text-emerald-600 font-bold">{expSymbol} {parseFloat(exp.amount || 0).toFixed(2)}</td>
                                           </tr>
                                         );
                                       })}
@@ -5973,7 +5983,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
                   {/* SUB-TAB 3: PAYROLL */}
                   {accountingSubTab === 'payroll' && (
-                    <div className="bg-surface-elevated border border-border-subtle p-5 rounded-2xl flex flex-col gap-4 text-left">
+                    <div className="bg-surface-elevated border border-border-subtle p-6 sm:p-8 rounded-2xl flex flex-col gap-3 text-left">
                       <h4 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider pb-2 border-b border-border-subtle">Rep Bi-Weekly Payroll Preview</h4>
                       <table className="w-full text-[13.5px] text-left">
                         <thead>
@@ -5999,10 +6009,10 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                   <td className="py-2 text-right">{clientHours} hrs</td>
                                   <td className="py-2 text-right font-mono text-text-secondary">${pay_rate.toFixed(2)}</td>
                                   <td className="py-2 text-right text-text-primary font-semibold">${hoursPay.toFixed(2)}</td>
-                                  <td className="py-2 text-right text-sky-400">{clientMileage} km</td>
+                                  <td className="py-2 text-right text-amber-600">{clientMileage} km</td>
                                   <td className="py-2 text-right text-emerald-450">${mileagePay.toFixed(2)}</td>
-                                  <td className="py-2 text-right text-emerald-400">${expAmt > 0 ? `$${expAmt.toFixed(2)}` : '—'}</td>
-                                  <td className="py-2 text-right text-[#22D3EE] font-black">${(hoursPay + mileagePay + expAmt).toFixed(2)}</td>
+                                  <td className="py-2 text-right text-emerald-600">${expAmt > 0 ? `$${expAmt.toFixed(2)}` : '—'}</td>
+                                  <td className="py-2 text-right text-[#3B82F6] font-black">${(hoursPay + mileagePay + expAmt).toFixed(2)}</td>
                                 </tr>
                               );
                             });
@@ -6013,17 +6023,17 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   )}
 
                   {accountingSubTab === 'bulk-entry' && (
-                    <div className="bg-surface-elevated border border-border-subtle p-5 rounded-2xl flex flex-col gap-4 text-left overflow-x-auto">
+                    <div className="bg-surface-elevated border border-border-subtle p-6 sm:p-8 rounded-2xl flex flex-col gap-3 text-left overflow-x-auto">
                       <div className="flex justify-between items-end pb-2 border-b border-border-subtle">
                         <div>
                           <h4 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider flex items-center gap-1.5">
-                            <Users className="w-4.5 h-4.5 text-[#22D3EE]" /> Spreadsheet-Style Matrix (Bulk Hours)
+                            <Users className="w-4.5 h-4.5 text-[#3B82F6]" /> Spreadsheet-Style Matrix (Bulk Hours)
                           </h4>
                           <p className="text-[11.5px] text-text-secondary mt-1 max-w-[600px]">
                             Select a Job/Project and a Week Start. Tab through the grid to rapidly punch in hours for all QREs at once.
                           </p>
                         </div>
-                        <div className="flex gap-4">
+                        <div className="flex gap-3">
                           <div className="flex flex-col gap-1">
                             <label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Project / Job</label>
                             <select value={matrixRepId} onChange={(e) => setMatrixRepId(e.target.value)} className="bg-surface border border-border-subtle rounded-xl px-3 py-1.5 text-[13.5px] text-text-primary font-bold">
@@ -6037,7 +6047,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         </div>
                       </div>
                       
-                      <form onSubmit={handleSubmitMatrix} className="flex flex-col gap-4 mt-2">
+                      <form onSubmit={handleSubmitMatrix} className="flex flex-col gap-3 mt-2">
                         <table className="w-full text-left text-[13.5px]">
                           <thead>
                             <tr className="border-b border-border-subtle text-text-secondary font-bold uppercase text-[10.5px]">
@@ -6047,8 +6057,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                               <th className="py-2 text-center w-16">Wed</th>
                               <th className="py-2 text-center w-16">Thu</th>
                               <th className="py-2 text-center w-16">Fri</th>
-                              <th className="py-2 text-center w-16 text-sky-400/70">Sat</th>
-                              <th className="py-2 text-center w-16 text-sky-400/70">Sun</th>
+                              <th className="py-2 text-center w-16 text-amber-600/70">Sat</th>
+                              <th className="py-2 text-center w-16 text-amber-600/70">Sun</th>
                               <th className="py-2 text-right">Total</th>
                             </tr>
                           </thead>
@@ -6087,11 +6097,11 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                         tabIndex="0"
                                         value={rowData[day] || ''} 
                                         onChange={(e) => updateCell(day, e.target.value)}
-                                        className="w-14 bg-surface border border-border-subtle rounded-lg px-2 py-1.5 text-center text-text-primary focus:border-[#0EA5E9] focus:outline-none focus:ring-1 focus:ring-[#0EA5E9] font-mono shadow-inner"
+                                        className="w-14 bg-surface border border-border-subtle rounded-lg px-2 py-1.5 text-center text-text-primary focus:border-[#3B82F6] focus:outline-none focus:ring-1 focus:ring-[#3B82F6] font-mono shadow-inner"
                                       />
                                     </td>
                                   ))}
-                                  <td className="py-2 text-right font-bold text-[#22D3EE] font-mono">{total > 0 ? total : ''}</td>
+                                  <td className="py-2 text-right font-bold text-[#3B82F6] font-mono">{total > 0 ? total : ''}</td>
                                 </tr>
                               );
                             })}
@@ -6109,19 +6119,19 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
                   {/* SUB-TAB 4: CLIENTS & RATES */}
                   {accountingSubTab === 'rates-config' && (
-                    <div className="flex flex-col gap-6 text-left">
+                    <div className="flex flex-col gap-3 text-left">
                       {/* Sub-navigation for CRUD setups */}
                       <div className="flex gap-2 bg-surface p-1 rounded-xl border border-border-subtle w-max">
-                        <button onClick={() => setAdminCrudTab('customers')} className={`px-3 py-1.5 rounded-lg text-[10.5px] font-extrabold uppercase transition-all cursor-pointer ${adminCrudTab === 'customers' ? 'bg-[#0EA5E9] text-text-primary' : 'text-text-secondary hover:text-text-primary'}`}>Manage Customers</button>
-                        <button onClick={() => setAdminCrudTab('locations')} className={`px-3 py-1.5 rounded-lg text-[10.5px] font-extrabold uppercase transition-all cursor-pointer ${adminCrudTab === 'locations' ? 'bg-[#0EA5E9] text-text-primary' : 'text-text-secondary hover:text-text-primary'}`}>Manage Locations</button>
-                        <button onClick={() => setAdminCrudTab('reps')} className={`px-3 py-1.5 rounded-lg text-[10.5px] font-extrabold uppercase transition-all cursor-pointer ${adminCrudTab === 'reps' ? 'bg-[#0EA5E9] text-text-primary' : 'text-text-secondary hover:text-text-primary'}`}>Onboard Reps</button>
+                        <button onClick={() => setAdminCrudTab('customers')} className={`px-3 py-1.5 rounded-lg text-[10.5px] font-extrabold uppercase transition-all cursor-pointer ${adminCrudTab === 'customers' ? 'bg-[#3B82F6] text-text-primary' : 'text-text-secondary hover:text-text-primary'}`}>Manage Customers</button>
+                        <button onClick={() => setAdminCrudTab('locations')} className={`px-3 py-1.5 rounded-lg text-[10.5px] font-extrabold uppercase transition-all cursor-pointer ${adminCrudTab === 'locations' ? 'bg-[#3B82F6] text-text-primary' : 'text-text-secondary hover:text-text-primary'}`}>Manage Locations</button>
+                        <button onClick={() => setAdminCrudTab('reps')} className={`px-3 py-1.5 rounded-lg text-[10.5px] font-extrabold uppercase transition-all cursor-pointer ${adminCrudTab === 'reps' ? 'bg-[#3B82F6] text-text-primary' : 'text-text-secondary hover:text-text-primary'}`}>Onboard Reps</button>
                       </div>
 
                       {/* CRUD TAB 1: CUSTOMERS */}
                       {adminCrudTab === 'customers' && (
-                        <div className="grid grid-cols-3 gap-6">
-                          <form onSubmit={handleCreateCustomer} className="bg-surface-elevated border border-border-subtle p-5 rounded-2xl flex flex-col gap-4">
-                            <h4 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider border-b border-border-subtle pb-2 flex items-center gap-1.5"><UserPlus className="w-4.5 h-4.5 text-[#0EA5E9]" /> Add New Customer</h4>
+                        <div className="grid grid-cols-3 gap-3">
+                          <form onSubmit={handleCreateCustomer} className="bg-surface-elevated border border-border-subtle p-6 sm:p-8 rounded-2xl flex flex-col gap-3">
+                            <h4 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider border-b border-border-subtle pb-2 flex items-center gap-1.5"><UserPlus className="w-4.5 h-4.5 text-[#3B82F6]" /> Add New Customer</h4>
                             <div className="flex flex-col gap-1"><label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Company Name</label>
                               <input type="text" value={newCustomerName} onChange={(e) => setNewCustomerName(e.target.value)} placeholder="Auto Kabel" className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary" />
                             </div>
@@ -6131,10 +6141,10 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                             <div className="flex flex-col gap-1"><label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Contact Email</label>
                               <input type="email" value={newCustomerContactEmail} onChange={(e) => setNewCustomerContactEmail(e.target.value)} placeholder="jc@autokabel.mx" className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary" />
                             </div>
-                            <button type="submit" className="bg-[#0EA5E9] text-text-primary font-bold py-2 rounded-xl text-[13.5px] mt-2">Onboard Customer</button>
+                            <button type="submit" className="bg-[#3B82F6] text-text-primary font-bold py-2 rounded-xl text-[13.5px] mt-2">Onboard Customer</button>
                           </form>
 
-                          <div className="bg-surface-elevated border border-border-subtle p-5 rounded-2xl col-span-2 flex flex-col gap-3">
+                          <div className="bg-surface-elevated border border-border-subtle p-6 sm:p-8 rounded-2xl col-span-2 flex flex-col gap-3">
                             <h4 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider border-b border-border-subtle pb-2">Active Customers List</h4>
                             <table className="w-full text-[13.5px] text-left">
                               <thead>
@@ -6146,7 +6156,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                     <td className="py-2 text-text-primary font-bold">{s.name}</td>
                                     <td className="py-2 font-mono text-slate-450">{s.id.toUpperCase()}</td>
                                     <td className="py-2">{s.contacts.map(c => c.name).join(", ")}</td>
-                                    <td className="py-2"><span className="px-2 py-1 rounded bg-sky-400/10 text-sky-400 text-[10.5px] font-bold uppercase">{s.invoice_schedule || 'weekly'}</span></td>
+                                    <td className="py-2"><span className="px-2 py-1 rounded bg-amber-50 text-amber-600 text-[10.5px] font-bold uppercase">{s.invoice_schedule || 'weekly'}</span></td>
                                   </tr>
                                 ))}
                               </tbody>
@@ -6157,9 +6167,9 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
                       {/* CRUD TAB 2: LOCATIONS */}
                       {adminCrudTab === 'locations' && (
-                        <div className="grid grid-cols-3 gap-6">
-                          <form onSubmit={handleCreateLocation} className="bg-surface-elevated border border-border-subtle p-5 rounded-2xl flex flex-col gap-4">
-                            <h4 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider border-b border-border-subtle pb-2 flex items-center gap-1.5"><MapPin className="w-4.5 h-4.5 text-emerald-400" /> Map New Location</h4>
+                        <div className="grid grid-cols-3 gap-3">
+                          <form onSubmit={handleCreateLocation} className="bg-surface-elevated border border-border-subtle p-6 sm:p-8 rounded-2xl flex flex-col gap-3">
+                            <h4 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider border-b border-border-subtle pb-2 flex items-center gap-1.5"><MapPin className="w-4.5 h-4.5 text-emerald-600" /> Map New Location</h4>
                             <div className="flex flex-col gap-1"><label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Parent Customer</label>
                               <select value={newLocationSupplierId} onChange={(e) => setNewLocationSupplierId(e.target.value)} className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary">
                                 {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
@@ -6184,10 +6194,10 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                 <input type="number" value={newLocationBillRate} onChange={(e) => setNewLocationBillRate(e.target.value)} className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary" />
                               </div>
                             </div>
-                            <button type="submit" className="bg-[#0EA5E9] text-text-primary font-bold py-2 rounded-xl text-[13.5px] mt-2">Map Location & Rates</button>
+                            <button type="submit" className="bg-[#3B82F6] text-text-primary font-bold py-2 rounded-xl text-[13.5px] mt-2">Map Location & Rates</button>
                           </form>
 
-                          <div className="bg-surface-elevated border border-border-subtle p-5 rounded-2xl col-span-2 flex flex-col gap-3">
+                          <div className="bg-surface-elevated border border-border-subtle p-6 sm:p-8 rounded-2xl col-span-2 flex flex-col gap-3">
                             <h4 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider border-b border-border-subtle pb-2">Active Locations Mapping</h4>
                             <table className="w-full text-[13.5px] text-left">
                               <thead>
@@ -6199,7 +6209,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                   return (
                                     <tr key={p.id}>
                                       <td className="py-2 text-text-primary font-bold">{p.name}</td>
-                                      <td className="py-2"><span className="px-2 py-1 rounded bg-sky-400/10 text-sky-400 text-[12.5px] font-extrabold uppercase">{p.oem_brand}</span></td>
+                                      <td className="py-2"><span className="px-2 py-1 rounded bg-amber-50 text-amber-600 text-[12.5px] font-extrabold uppercase">{p.oem_brand}</span></td>
                                       <td className="py-2 text-text-secondary">{parent?.name || 'IDS Global'}</td>
                                       <td className="py-2 text-text-secondary">{p.address}</td>
                                     </tr>
@@ -6213,9 +6223,9 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
                       {/* CRUD TAB 3: REPS */}
                       {adminCrudTab === 'reps' && (
-                        <div className="grid grid-cols-3 gap-6">
-                          <form onSubmit={handleCreateRep} className="bg-surface-elevated border border-border-subtle p-5 rounded-2xl flex flex-col gap-4">
-                            <h4 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider border-b border-border-subtle pb-2 flex items-center gap-1.5"><UserPlus className="w-4.5 h-4.5 text-purple-400" /> Onboard QRE Representative</h4>
+                        <div className="grid grid-cols-3 gap-3">
+                          <form onSubmit={handleCreateRep} className="bg-surface-elevated border border-border-subtle p-6 sm:p-8 rounded-2xl flex flex-col gap-3">
+                            <h4 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider border-b border-border-subtle pb-2 flex items-center gap-1.5"><UserPlus className="w-4.5 h-4.5 text-purple-600" /> Onboard QRE Representative</h4>
                             <div className="flex flex-col gap-1"><label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Full Name</label>
                               <input type="text" value={newRepName} onChange={(e) => setNewRepName(e.target.value)} placeholder="Hugo Picon" className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary" />
                             </div>
@@ -6231,10 +6241,10 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                 <option value="USD">USD (US$)</option>
                               </select>
                             </div>
-                            <button type="submit" className="bg-[#0EA5E9] text-text-primary font-bold py-2 rounded-xl text-[13.5px] mt-2">Onboard QRE</button>
+                            <button type="submit" className="bg-[#3B82F6] text-text-primary font-bold py-2 rounded-xl text-[13.5px] mt-2">Onboard QRE</button>
                           </form>
 
-                          <div className="bg-surface-elevated border border-border-subtle p-5 rounded-2xl col-span-2 flex flex-col gap-3">
+                          <div className="bg-surface-elevated border border-border-subtle p-6 sm:p-8 rounded-2xl col-span-2 flex flex-col gap-3">
                             <h4 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider border-b border-border-subtle pb-2">Active Field Representatives</h4>
                             <table className="w-full text-[13.5px] text-left">
                               <thead>
@@ -6244,13 +6254,13 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                 {users.filter(u => u.role === 'rep').map(r => (
                                   <tr key={r.id}>
                                     <td className="py-2 text-text-primary font-bold flex items-center gap-2">
-                                      <span className="w-6 h-6 rounded-full bg-[#1E3A5F] flex items-center justify-center text-[11.5px] text-[#22D3EE] font-bold">{r.avatar}</span>
+                                      <span className="w-6 h-6 rounded-full bg-[#3B82F6] flex items-center justify-center text-[11.5px] text-[#3B82F6] font-bold">{r.avatar}</span>
                                       {r.name}
                                     </td>
                                     <td className="py-2 font-mono text-slate-450">{r.email}</td>
                                     <td className="py-2 text-text-secondary">{r.phone}</td>
-                                    <td className="py-2 font-mono text-[#22D3EE] font-bold">{r.pay_currency || getRepPayCurrency(r.id)}</td>
-                                    <td className="py-2"><span className="px-2 py-1 rounded bg-emerald-500/10 text-emerald-400 text-[12.5px] font-bold uppercase">Field QRE</span></td>
+                                    <td className="py-2 font-mono text-[#3B82F6] font-bold">{r.pay_currency || getRepPayCurrency(r.id)}</td>
+                                    <td className="py-2"><span className="px-2 py-1 rounded bg-emerald-50 text-emerald-600 text-[12.5px] font-bold uppercase">Field QRE</span></td>
                                   </tr>
                                 ))}
                               </tbody>
@@ -6261,8 +6271,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
                       {/* RATES OVERRIDES SECTION */}
                       {adminCrudTab === 'customers' && (
-                        <div className="grid grid-cols-3 gap-6 pt-6 border-t border-border-subtle">
-                          <form onSubmit={handleSaveRateConfig} className="bg-surface-elevated border border-border-subtle p-5 rounded-2xl flex flex-col gap-4">
+                        <div className="grid grid-cols-3 gap-3 pt-6 border-t border-border-subtle">
+                          <form onSubmit={handleSaveRateConfig} className="bg-surface-elevated border border-border-subtle p-6 sm:p-8 rounded-2xl flex flex-col gap-3">
                             <h4 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider border-b border-border-subtle pb-2">Set Custom Rate Override</h4>
                             <div className="flex flex-col gap-1"><label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Representative</label>
                               <select 
@@ -6277,7 +6287,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                 className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary"
                               >
                                 {users.filter(u => u.role === 'rep' || u.role === 'qre' || u.id === '1' || u.id === 'rep_hugo' || u.id === 'rep_nabil' || u.id === 'rep_rogelio').map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
-                                <option value="ADD_NEW" className="text-cyan-400 font-bold">+ Add New Rep...</option>
+                                <option value="ADD_NEW" className="text-cyan-600 font-bold">+ Add New Rep...</option>
                               </select>
                             </div>
                             <div className="flex flex-col gap-1"><label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Client</label>
@@ -6293,7 +6303,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                 className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary"
                               >
                                 {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                                <option value="ADD_NEW" className="text-cyan-400 font-bold">+ Add New Client...</option>
+                                <option value="ADD_NEW" className="text-cyan-600 font-bold">+ Add New Client...</option>
                               </select>
                             </div>
                             <div className="flex flex-col gap-1"><label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Pay Rate ($/hr)</label>
@@ -6308,10 +6318,10 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                 <option value="CAD">CAD (C$)</option>
                               </select>
                             </div>
-                            <button type="submit" className="bg-[#0EA5E9] text-text-primary font-bold py-2 rounded-xl text-[13.5px] mt-2">Save Rate Override</button>
+                            <button type="submit" className="bg-[#3B82F6] text-text-primary font-bold py-2 rounded-xl text-[13.5px] mt-2">Save Rate Override</button>
                           </form>
                           
-                          <div className="bg-surface-elevated border border-border-subtle p-5 rounded-2xl col-span-2 flex flex-col gap-3">
+                          <div className="bg-surface-elevated border border-border-subtle p-6 sm:p-8 rounded-2xl col-span-2 flex flex-col gap-3">
                             <h4 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider border-b border-border-subtle pb-2">Custom Rates Overrides Matrix</h4>
                             {rates.length === 0 ? <div className="text-center py-6 text-slate-550 italic">No custom rates configured. System defaults applied ($28/hr billing, $20/hr pay).</div> : (
                               <table className="w-full text-[13.5px] text-left">
@@ -6328,9 +6338,9 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                       <tr key={r.id}>
                                         <td className="py-2 text-text-primary font-semibold">{users.find(u => u.id === r.rep_id)?.name || 'Rep'}</td>
                                         <td className="py-2 text-text-secondary">{suppliers.find(s => s.id === r.supplier_id)?.name || 'Client'}</td>
-                                        <td className="py-2 text-right font-bold text-[#22D3EE]">{billSymbol} {parseFloat(r.billing_rate).toFixed(2)}/hr</td>
+                                        <td className="py-2 text-right font-bold text-[#3B82F6]">{billSymbol} {parseFloat(r.billing_rate).toFixed(2)}/hr</td>
                                         <td className="py-2 text-right font-bold text-emerald-450">{paySymbol} {parseFloat(r.pay_rate).toFixed(2)}/hr</td>
-                                        <td className="py-2 text-right"><button onClick={() => handleDeleteRate(r.id)} className="px-2 py-1 bg-surface-elevated text-rose-400 text-[10.5px] uppercase rounded">Delete</button></td>
+                                        <td className="py-2 text-right"><button onClick={() => handleDeleteRate(r.id)} className="px-2 py-1 bg-surface-elevated text-rose-600 text-[10.5px] uppercase rounded">Delete</button></td>
                                       </tr>
                                     );
                                   })}
@@ -6349,7 +6359,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
           )}
           {activeTab === 'emails' && (
             <div className="flex-1 flex flex-col min-h-0">
-              <h3 className="text-[15px] font-bold text-text-primary uppercase tracking-wider pb-2 border-b border-border-subtle mb-3">Outgoing Transaction Mail Audit</h3>
+              <h3 className="text-[14.5px] font-bold text-text-primary uppercase tracking-wider pb-2 border-b border-border-subtle mb-3">Outgoing Transaction Mail Audit</h3>
               
               <div className="flex-1 overflow-y-auto">
                 <table className="w-full border-collapse text-left text-[13.5px]">
@@ -6371,13 +6381,13 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         <tr key={log.id} className="hover:bg-surface-elevated transition-colors">
                           <td className="py-3 px-3 font-mono text-[11.5px]">{new Date(log.sent_at).toLocaleTimeString()}</td>
                           <td className="py-3 px-3 font-bold text-text-primary">{log.subject}</td>
-                          <td className="py-3 px-3 text-[#22D3EE] font-medium">{repName}</td>
+                          <td className="py-3 px-3 text-[#3B82F6] font-medium">{repName}</td>
                           <td className="py-3 px-3 truncate max-w-[120px] text-text-secondary">{log.to_emails}</td>
-                          <td className="py-3 px-3 text-indigo-400 text-[11.5px]">{log.cc_emails}</td>
+                          <td className="py-3 px-3 text-indigo-600 text-[11.5px]">{log.cc_emails}</td>
                           <td className="py-3 px-3">
                             <button 
                               onClick={() => setSelectedEmailLog(log)}
-                              className="text-[#22D3EE] font-bold hover:underline cursor-pointer"
+                              className="text-[#3B82F6] font-bold hover:underline cursor-pointer"
                             >
                               Inspect Body
                             </button>
@@ -6393,45 +6403,45 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
           {/* TAB 5: USER DIRECTORY & QUICK DISPATCH */}
           {activeTab === 'users' && (
-            <div className="flex-1 flex flex-col gap-4 min-h-0">
+            <div className="flex-1 flex flex-col gap-3 min-h-0">
               <div className="flex justify-between items-center pb-2 border-b border-border-subtle flex-shrink-0">
-                <h3 className="text-[15px] font-bold text-text-primary uppercase tracking-wider">Operational Rep Directory & Active Assignments</h3>
+                <h3 className="text-[14.5px] font-bold text-text-primary uppercase tracking-wider">Operational Rep Directory & Active Assignments</h3>
                 <button 
                   onClick={() => setShowAssignRepModal(true)}
-                  className="bg-[#0EA5E9] hover:bg-[#0EA5E9]/90 text-text-primary font-bold py-1.5 px-3 rounded-lg text-[13.5px] cursor-pointer flex items-center gap-1"
+                  className="bg-[#3B82F6] hover:bg-[#3B82F6]/90 text-text-primary font-bold py-1.5 px-3 rounded-lg text-[13.5px] cursor-pointer flex items-center gap-1"
                 >
                   <UserPlus className="w-3.5 h-3.5" />
                   <span>Assign Rep Dispatch</span>
                 </button>
               </div>
 
-              <div className="flex-1 overflow-y-auto scrollbar-thin pr-1 flex flex-col gap-4">
+              <div className="flex-1 overflow-y-auto scrollbar-thin pr-1 flex flex-col gap-3">
                 {/* Statistics Cards Header */}
                 <div className="grid grid-cols-4 gap-3 flex-shrink-0">
-                  <div className="bg-surface-elevated border border-border-subtle p-3.5 rounded-2xl text-left">
+                  <div className="bg-surface-elevated border border-border-subtle p-3 rounded-2xl text-left">
                     <span className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Total Active Reps</span>
                     <span className="text-xl font-extrabold text-text-primary mt-1 block leading-none">{users.filter(u => u.role === 'rep').length}</span>
                   </div>
-                  <div className="bg-surface-elevated border border-border-subtle p-3.5 rounded-2xl text-left">
+                  <div className="bg-surface-elevated border border-border-subtle p-3 rounded-2xl text-left">
                     <span className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Reps On Shift</span>
                     <span className="text-xl font-extrabold text-emerald-450 mt-1 block leading-none">
                       {users.filter(u => u && u.role === 'rep' && shiftReports.some(sr => sr.rep_id === u.id && sr.status === 'Draft')).length}
                     </span>
                   </div>
-                  <div className="bg-surface-elevated border border-border-subtle p-3.5 rounded-2xl text-left">
+                  <div className="bg-surface-elevated border border-border-subtle p-3 rounded-2xl text-left">
                     <span className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Total Suspect Materials</span>
                     <span className="text-xl font-extrabold text-amber-450 mt-1 block leading-none">{incidents.length}</span>
                   </div>
-                  <div className="bg-surface-elevated border border-border-subtle p-3.5 rounded-2xl text-left">
+                  <div className="bg-surface-elevated border border-border-subtle p-3 rounded-2xl text-left">
                     <span className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Total Rework Logged</span>
-                    <span className="text-xl font-extrabold text-[#22D3EE] mt-1 block leading-none">
+                    <span className="text-xl font-extrabold text-[#3B82F6] mt-1 block leading-none">
                       {reworkLogs.reduce((acc, curr) => acc + (curr.pieces_reworked || curr.quantity || 0), 0)} pcs
                     </span>
                   </div>
                 </div>
 
                 {/* Reps Detail List Grid */}
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-3">
                   {users.filter(u => u && u.role === 'rep').map(u => {
                     const activeShift = shiftReports.find(r => r.rep_id === u.id && r.status === 'Draft');
                     const assignedRates = rates.filter(r => r.rep_id === u.id);
@@ -6442,10 +6452,10 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     const totalRework = reworkLogs.filter(rl => rl.rep_id === u.id).reduce((acc, curr) => acc + (curr.pieces_reworked || curr.quantity || 0), 0);
                     
                     return (
-                      <div key={u.id} className="bg-surface-elevated border border-border-subtle p-4 rounded-2xl flex flex-col gap-3.5 hover:border-border-subtle transition-colors">
+                      <div key={u.id} className="bg-surface-elevated border border-border-subtle p-3 rounded-2xl flex flex-col gap-3 hover:border-border-subtle transition-colors">
                         <div className="flex justify-between items-start">
                           <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-[#1E3A5F] flex items-center justify-center font-bold text-[15px] text-[#22D3EE] border border-[#0EA5E9]/25">
+                            <div className="w-10 h-10 rounded-full bg-[#3B82F6] flex items-center justify-center font-bold text-[14.5px] text-[#3B82F6] border border-[#3B82F6]/25">
                               {u.avatar}
                             </div>
                             <div className="text-left">
@@ -6455,7 +6465,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                           </div>
                           
                           {activeShift ? (
-                            <span className="px-2 py-1 bg-emerald-500/10 text-emerald-400 text-[12.5px] font-extrabold uppercase rounded-full tracking-wider animate-pulse flex items-center gap-1 border border-emerald-500/20">
+                            <span className="px-2 py-1 bg-emerald-50 text-emerald-600 text-[12.5px] font-extrabold uppercase rounded-full tracking-wider animate-pulse flex items-center gap-1 border border-emerald-200">
                               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> On Shift
                             </span>
                           ) : (
@@ -6475,7 +6485,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                           </div>
                           {activeShift && (
                             <div className="flex justify-between border-t border-border-subtle pt-1.5">
-                              <span className="text-emerald-400 uppercase font-bold text-[11.5px]">Active Plant Location:</span>
+                              <span className="text-emerald-600 uppercase font-bold text-[11.5px]">Active Plant Location:</span>
                               <span className="text-emerald-350 font-bold">
                                 {plants.find(p => p.id === activeShift.plant_id)?.name || activeShift.plant_id}
                               </span>
@@ -6508,10 +6518,10 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
           {/* TAB 6: REWORK LOGS FEED */}
           {activeTab === 'rework-logs' && (
-            <div className="flex-1 flex flex-col gap-4 min-h-0">
+            <div className="flex-1 flex flex-col gap-3 min-h-0">
               <div className="flex justify-between items-center pb-2 border-b border-border-subtle flex-shrink-0">
                 <div>
-                  <h3 className="text-[15px] font-bold text-text-primary uppercase tracking-wider">Defect Rework Logs Feed</h3>
+                  <h3 className="text-[14.5px] font-bold text-text-primary uppercase tracking-wider">Defect Rework Logs Feed</h3>
                   <span className="text-[11.5px] text-text-secondary font-medium">Rep rework pieces, hours, and notes</span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -6524,7 +6534,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   </button>
                   <button 
                     onClick={handleDownloadReworkFeedReport}
-                    className="flex items-center gap-1.5 bg-[#0EA5E9] hover:bg-[#0EA5E9]/90 text-text-primary font-bold py-1.5 px-3 rounded-lg text-[13.5px] cursor-pointer transition-colors"
+                    className="flex items-center gap-1.5 bg-[#3B82F6] hover:bg-[#3B82F6]/90 text-text-primary font-bold py-1.5 px-3 rounded-lg text-[13.5px] cursor-pointer transition-colors"
                   >
                     <Download className="w-3.5 h-3.5" />
                     <span>Download PDF Report</span>
@@ -6534,7 +6544,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
               <div className="flex-1 overflow-y-auto scrollbar-thin pr-1">
                 {reworkLogs.length > 0 && (
-                  <span className="text-[10.5px] text-[#22D3EE] font-bold mb-1.5 block">
+                  <span className="text-[10.5px] text-[#3B82F6] font-bold mb-1.5 block">
                     💡 Tip: Click any row to view details, download PDF, or print.
                   </span>
                 )}
@@ -6562,11 +6572,11 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                             className="hover:bg-surface-elevated text-text-primary cursor-pointer transition-colors"
                           >
                             <td className="py-2.5 px-3 font-medium">{new Date(rw.created_at).toLocaleDateString()}</td>
-                            <td className="py-2.5 px-3 text-[#22D3EE] font-semibold">{rep}</td>
+                            <td className="py-2.5 px-3 text-[#3B82F6] font-semibold">{rep}</td>
                             <td className="py-2.5 px-3 font-semibold text-text-primary">PN {rw.part_id}</td>
                             <td className="py-2.5 px-3 uppercase text-[11.5px] text-slate-450 font-bold">{rw.supplier_id}</td>
                             <td className="py-2.5 px-3 font-bold text-text-primary text-center bg-emerald-500/5">{rw.qty} pcs</td>
-                            <td className="py-2.5 px-3 font-bold text-sky-400">{Math.round(rw.time_spent_minutes / 60 * 10) / 10} hrs</td>
+                            <td className="py-2.5 px-3 font-bold text-amber-600">{Math.round(rw.time_spent_minutes / 60 * 10) / 10} hrs</td>
                             <td className="py-2.5 px-3 text-text-secondary max-w-[200px] truncate" title={rw.notes}>{rw.notes}</td>
                           </tr>
                         );
@@ -6586,13 +6596,13 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
           {/* TAB 7: LAUNCH ROADMAP & TIMELINE */}
           {activeTab === 'roadmap' && (
-            <div className="flex-1 flex flex-col gap-4 min-h-0 relative">
+            <div className="flex-1 flex flex-col gap-3 min-h-0 relative">
               {isRoadmapLocked && (
                 <div className="absolute inset-0 bg-surface backdrop-blur-[6px] rounded-2xl flex flex-col items-center justify-center z-30 px-6 py-8 text-center border border-border-subtle">
-                  <div className="w-14 h-14 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center mb-4 text-xl shadow-lg shadow-amber-500/5 animate-pulse">
+                  <div className="w-14 h-14 rounded-full bg-amber-50 border border-amber-300 flex items-center justify-center mb-4 text-xl shadow-lg shadow-amber-500/5 animate-pulse">
                     🔒
                   </div>
-                  <h3 className="text-[15px] font-bold text-text-primary uppercase tracking-wider">Confidential Launch Roadmap Lock</h3>
+                  <h3 className="text-[14.5px] font-bold text-text-primary uppercase tracking-wider">Confidential Launch Roadmap Lock</h3>
                   <p className="text-[11.5px] text-text-secondary mt-1 max-w-[280px] leading-relaxed">Enter passcode to unlock the 36-week product timeline and team budgeting models.</p>
                   
                   <form 
@@ -6626,7 +6636,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     </button>
                   </form>
                   {roadmapLockError && (
-                    <span className="text-[10.5px] text-red-400 font-bold mt-2 block animate-bounce">⚠️ Incorrect passcode</span>
+                    <span className="text-[10.5px] text-red-600 font-bold mt-2 block animate-bounce">⚠️ Incorrect passcode</span>
                   )}
                 </div>
               )}
@@ -6634,8 +6644,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
               {/* Header section */}
               <div className="flex justify-between items-center pb-2 border-b border-border-subtle flex-shrink-0">
                 <div>
-                  <h3 className="text-[15px] font-bold text-text-primary uppercase tracking-wider flex items-center gap-2">
-                    <Milestone className="w-4.5 h-4.5 text-amber-400" />
+                  <h3 className="text-[14.5px] font-bold text-text-primary uppercase tracking-wider flex items-center gap-2">
+                    <Milestone className="w-4.5 h-4.5 text-amber-600" />
                     <span>Production Launch Roadmap & Time-to-Market</span>
                   </h3>
                   <span className="text-[11.5px] text-text-secondary font-medium">Visual 36-week engineering schedule, dynamic budget estimators, and app store validation mitigations</span>
@@ -6668,7 +6678,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                       <div className="w-px h-4.5 bg-surface-elevated mx-1"></div>
                       <button
                         onClick={() => setIsRoadmapLocked(true)}
-                        className="px-2.5 py-1 rounded-lg text-[11.5px] font-bold text-amber-400 hover:bg-surface-elevated cursor-pointer flex items-center gap-1 transition-colors"
+                        className="px-2.5 py-1 rounded-lg text-[11.5px] font-bold text-amber-600 hover:bg-surface-elevated cursor-pointer flex items-center gap-1 transition-colors"
                         title="Lock Roadmap tab"
                       >
                         <span>🔒 Lock Roadmap</span>
@@ -6679,12 +6689,12 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
               </div>
 
               {/* Roadmap Body */}
-              <div className="flex-1 flex gap-5 min-h-0 overflow-hidden">
+              <div className="flex-1 flex gap-6 sm:p-8 min-h-0 overflow-hidden">
                 {/* Left Side: Chronological Phase Timeline (Scrollable) */}
                 <div className="w-[45%] flex flex-col gap-3 overflow-y-auto scrollbar-thin pr-1 flex-shrink-0">
-                  <div className="p-3.5 bg-surface-elevated border border-border-subtle rounded-xl">
+                  <div className="p-3 bg-surface-elevated border border-slate-100 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
                     <div className="flex items-center gap-2 mb-2 text-[13.5px] font-bold text-text-primary">
-                      <Clock className="w-4.5 h-4.5 text-amber-400" />
+                      <Clock className="w-4.5 h-4.5 text-amber-600" />
                       <span>Product Lifecycle Roadmap (36 Weeks)</span>
                     </div>
                     <p className="text-[12.5px] leading-relaxed text-text-secondary">
@@ -6692,7 +6702,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     </p>
                     <div className="mt-3 flex items-center justify-between text-[11.5px] text-slate-450 border-t border-border-subtle pt-2 font-semibold">
                       <span>Prototype status:</span>
-                      <span className="text-emerald-400 flex items-center gap-1">
+                      <span className="text-emerald-600 flex items-center gap-1">
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
                         Phase 1, 2, 3 Active
                       </span>
@@ -6700,14 +6710,14 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   </div>
 
                   {/* List of 7 Phases */}
-                  <div className="flex flex-col gap-2.5">
+                  <div className="flex flex-col gap-3">
                     {[
                       {
                         id: 1,
                         weeks: 'W1–W4',
                         title: 'Discovery & Core Spec',
                         status: 'Completed',
-                        statusColor: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+                        statusColor: 'bg-emerald-50 text-emerald-600 border-emerald-200',
                         desc: 'Figma wireframes, database schema definition, security policies, and API specifications.'
                       },
                       {
@@ -6715,7 +6725,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         weeks: 'W4–W9',
                         title: 'Database & Backend APIs',
                         status: 'Prototype Ready',
-                        statusColor: 'bg-teal-500/10 text-teal-400 border-teal-500/20',
+                        statusColor: 'bg-teal-50 text-teal-600 border-teal-200',
                         desc: 'API endpoint builds, Express server backend, database seeding routines, file storage setup.'
                       },
                       {
@@ -6723,7 +6733,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         weeks: 'W9–W15',
                         title: 'Web Portal & Mobile Launch',
                         status: 'Prototype Testing',
-                        statusColor: 'bg-sky-500/10 text-sky-400 border-sky-500/20',
+                        statusColor: 'bg-amber-50 text-amber-600 border-amber-200',
                         desc: 'Vite React dashboard modules, spreadsheet generation, and real-time socket connections.'
                       },
                       {
@@ -6731,7 +6741,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         weeks: 'W15–W21',
                         title: 'Multi-Plant Rollout (USA/CA/MX)',
                         status: 'Prototype Testing',
-                        statusColor: 'bg-sky-500/10 text-sky-400 border-sky-500/20',
+                        statusColor: 'bg-amber-50 text-amber-600 border-amber-200',
                         desc: 'React Native camera masks, canvas drawings, offline DB sync, and email preview routing.'
                       },
                       {
@@ -6739,7 +6749,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         weeks: 'W21–W26',
                         title: 'Pulse AI & Smart Auditing',
                         status: 'Prototype Testing',
-                        statusColor: 'bg-sky-500/10 text-sky-400 border-sky-500/20',
+                        statusColor: 'bg-amber-50 text-amber-600 border-amber-200',
                         desc: 'OpenAI assistants, similarity algorithms, custom audit rules, and commands parsing.'
                       },
                       {
@@ -6764,12 +6774,12 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         onClick={() => setActiveRoadmapPhase(phase.id)}
                         className={`w-full p-3 text-left rounded-xl border transition-all cursor-pointer flex gap-3 ${
                           activeRoadmapPhase === phase.id
-                            ? 'bg-[#1E3A5F]/40 border-amber-500/40 shadow-md shadow-amber-500/5'
+                            ? 'bg-[#3B82F6]/40 border-amber-500/40 shadow-md shadow-amber-500/5'
                             : 'bg-surface-elevated border-border-subtle hover:bg-surface-elevated hover:border-border-subtle'
                         }`}
                       >
                         <div className="flex flex-col items-center justify-center bg-surface border border-border-subtle px-2 py-1.5 rounded-lg min-w-[52px] h-fit">
-                          <span className="text-[11.5px] font-extrabold text-amber-400 uppercase leading-none">{phase.weeks}</span>
+                          <span className="text-[11.5px] font-extrabold text-amber-600 uppercase leading-none">{phase.weeks}</span>
                           <span className="text-[12.5px] font-bold text-text-secondary mt-1 uppercase leading-none">Phase {phase.id}</span>
                         </div>
                         <div className="flex-1 min-w-0">
@@ -6787,7 +6797,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 </div>
 
                 {/* Right Side: Details Pane */}
-                <div className="flex-1 flex flex-col gap-4 overflow-y-auto scrollbar-thin pr-1">
+                <div className="flex-1 flex flex-col gap-3 overflow-y-auto scrollbar-thin pr-1">
                   
                   {/* Phase Details Card */}
                   {(() => {
@@ -6893,11 +6903,11 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     const currentPhaseObj = phases[activeRoadmapPhase] || phases[1];
 
                     return (
-                      <div className="bg-surface-elevated border border-border-subtle rounded-xl p-4 flex flex-col gap-3 animate-in fade-in duration-200">
+                      <div className="bg-surface-elevated border border-slate-100 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-3 flex flex-col gap-3 animate-in fade-in duration-200">
                         <div className="flex justify-between items-start border-b border-border-subtle pb-2">
                           <div>
                             <h4 className="text-[13.5px] font-extrabold text-text-primary uppercase tracking-wider">{currentPhaseObj.title}</h4>
-                            <span className="text-[11.5px] text-amber-400 font-bold block mt-0.5">{currentPhaseObj.duration}</span>
+                            <span className="text-[11.5px] text-amber-600 font-bold block mt-0.5">{currentPhaseObj.duration}</span>
                           </div>
                           <span className="text-[10.5px] bg-surface border border-border-subtle text-text-primary px-2 py-1 rounded font-extrabold uppercase">
                             {currentPhaseObj.status}
@@ -6937,28 +6947,28 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         {/* Risk alerts */}
                         <div className="bg-amber-500/5 border border-amber-500/15 p-2.5 rounded-lg flex gap-2">
                           <div className="flex-shrink-0 mt-0.5">
-                            <span className="text-amber-400 font-bold text-[13.5px]">⚠️</span>
+                            <span className="text-amber-600 font-bold text-[13.5px]">⚠️</span>
                           </div>
                           <div className="text-[11.5px]">
                             <span className="text-text-primary font-bold block">Risk: {currentPhaseObj.risk}</span>
-                            <span className="text-text-secondary block mt-0.5"><span className="text-amber-400/90 font-bold">Mitigation:</span> {currentPhaseObj.mitigation}</span>
+                            <span className="text-text-secondary block mt-0.5"><span className="text-amber-600/90 font-bold">Mitigation:</span> {currentPhaseObj.mitigation}</span>
                           </div>
                         </div>
                       </div>
                     );
                   })()}
                   {/* Team Cost Estimation Card */}
-                  <div className="bg-surface-elevated border border-border-subtle rounded-xl p-4 flex flex-col gap-3 relative overflow-hidden">
+                  <div className="bg-surface-elevated border border-slate-100 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-3 flex flex-col gap-3 relative overflow-hidden">
                     <div className="flex items-center justify-between border-b border-border-subtle pb-2">
                       <div className="flex items-center gap-1.5">
-                        <TrendingUp className="w-4.5 h-4.5 text-emerald-400" />
+                        <TrendingUp className="w-4.5 h-4.5 text-emerald-600" />
                         <span className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider">Recommended Team & Budgets</span>
                       </div>
                       <div className="flex items-center gap-2">
                         {!isBudgetLocked && (
                           <button
                             onClick={() => setIsBudgetLocked(true)}
-                            className="text-[10.5px] text-[#22D3EE] hover:text-text-primary font-extrabold uppercase bg-[#1E3A5F]/60 hover:bg-[#1E3A5F] border border-[#22D3EE]/25 px-2 py-1 rounded cursor-pointer transition-colors"
+                            className="text-[10.5px] text-[#3B82F6] hover:text-text-primary font-extrabold uppercase bg-[#3B82F6]/60 hover:bg-[#3B82F6] border border-[#3B82F6]/25 px-2 py-1 rounded cursor-pointer transition-colors"
                           >
                             🔒 Lock Section
                           </button>
@@ -6971,7 +6981,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                       {/* Password Lock Overlay */}
                       {isBudgetLocked && (
                         <div className="absolute inset-0 bg-surface backdrop-blur-[5px] rounded-xl flex flex-col items-center justify-center z-10 px-4 py-2 text-center min-h-[120px]">
-                          <span className="text-lg mb-1">🔒</span>
+                          <span className="text-[14.5px] mb-1">🔒</span>
                           <span className="text-[11.5px] font-extrabold text-text-primary uppercase tracking-wider block">Confidential Budget Restrictive Access</span>
                           <span className="text-[11.5px] text-slate-450 mt-0.5 block">Enter password to view cost estimations</span>
                           
@@ -6994,19 +7004,19 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                               placeholder="Password"
                               value={budgetPassword}
                               onChange={(e) => setBudgetPassword(e.target.value)}
-                              className={`flex-1 bg-surface-elevated border text-[12.5px] px-2.5 py-1 rounded-lg text-text-primary placeholder-text-secondary focus:outline-none focus:border-[#22D3EE]/50 ${
+                              className={`flex-1 bg-surface-elevated border text-[12.5px] px-2.5 py-1 rounded-lg text-text-primary placeholder-text-secondary focus:outline-none focus:border-[#3B82F6]/50 ${
                                 budgetLockError ? 'border-red-500/50' : 'border-border-subtle'
                               }`}
                             />
                             <button
                               type="submit"
-                              className="bg-[#22D3EE] hover:bg-[#22D3EE]/85 text-slate-950 font-bold text-[10.5px] px-3 py-1 rounded-lg cursor-pointer transition-colors flex-shrink-0"
+                              className="bg-[#3B82F6] hover:bg-[#3B82F6]/85 text-slate-950 font-bold text-[10.5px] px-3 py-1 rounded-lg cursor-pointer transition-colors flex-shrink-0"
                             >
                               Unlock
                             </button>
                           </form>
                           {budgetLockError && (
-                            <span className="text-[10.5px] text-red-400 font-bold mt-1.5 block animate-bounce">⚠️ Incorrect password</span>
+                            <span className="text-[10.5px] text-red-600 font-bold mt-1.5 block animate-bounce">⚠️ Incorrect password</span>
                           )}
                         </div>
                       )}
@@ -7015,7 +7025,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         {/* Left: Financial summary */}
                         <div className="bg-surface border border-border-subtle rounded-xl p-3 flex flex-col justify-center items-center text-center">
                           <span className="text-[10.5px] text-text-secondary uppercase font-extrabold tracking-wider">total estimated budget</span>
-                          <span className="text-lg font-black text-emerald-400 mt-1">
+                          <span className="text-[14.5px] font-black text-emerald-600 mt-1">
                             {roadmapTeamType === 'onshore' ? '$146,000 – $240,000' : '$52,000 – $90,000'}
                           </span>
                           <span className="text-[12.5px] text-text-secondary mt-1 leading-normal italic">
@@ -7052,7 +7062,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
           {/* TAB 7.5: PROJECTS REGISTRY & RATES MANAGER */}
           {activeTab === 'projects' && (
-            <div className="flex-1 flex flex-col gap-6 min-h-0 text-left">
+            <div className="flex-1 flex flex-col gap-3 min-h-0 text-left">
               {/* Top Summary Row */}
               {(() => {
                 const activeProjects = projects.filter(p => p.status === 'Active');
@@ -7064,11 +7074,11 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   .reduce((sum, p) => sum + (parseFloat(p.billing_rate) || 0) * 160, 0);
 
                 return (
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 flex-shrink-0">
-                    <div className="bg-surface-elevated border border-border-subtle rounded-2xl p-6 flex flex-col gap-1 shadow-md shadow-black/10">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 flex-shrink-0">
+                    <div className="bg-surface-elevated border border-border-subtle rounded-2xl p-3 flex flex-col gap-1 shadow-md shadow-black/10">
                       <div className="flex justify-between items-start">
                         <span className="text-[11.5px] font-bold text-text-secondary uppercase tracking-wider">Total Active Projects</span>
-                        <FolderKanban className="w-5 h-5 text-cyan-400" />
+                        <FolderKanban className="w-5 h-5 text-cyan-600" />
                       </div>
                       <div className="text-2xl font-black text-text-primary mt-2">{activeProjects.length} Projects</div>
                       <div className="text-[11.5px] text-emerald-450 font-semibold flex items-center gap-1 mt-1">
@@ -7076,7 +7086,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                       </div>
                     </div>
 
-                    <div className="bg-surface-elevated border border-border-subtle rounded-2xl p-6 flex flex-col gap-1 shadow-md shadow-black/10">
+                    <div className="bg-surface-elevated border border-border-subtle rounded-2xl p-3 flex flex-col gap-1 shadow-md shadow-black/10">
                       <div className="flex justify-between items-start">
                         <span className="text-[11.5px] font-bold text-text-secondary uppercase tracking-wider">CAD Est. Monthly Revenue</span>
                         <DollarSign className="w-5 h-5 text-emerald-450" />
@@ -7085,10 +7095,10 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                       <div className="text-[11.5px] text-text-secondary mt-1">Based on 160 standard hrs/rep</div>
                     </div>
 
-                    <div className="bg-surface-elevated border border-border-subtle rounded-2xl p-6 flex flex-col gap-1 shadow-md shadow-black/10">
+                    <div className="bg-surface-elevated border border-border-subtle rounded-2xl p-3 flex flex-col gap-1 shadow-md shadow-black/10">
                       <div className="flex justify-between items-start">
                         <span className="text-[11.5px] font-bold text-text-secondary uppercase tracking-wider">USD Est. Monthly Revenue</span>
-                        <DollarSign className="w-5 h-5 text-cyan-400" />
+                        <DollarSign className="w-5 h-5 text-cyan-600" />
                       </div>
                       <div className="text-2xl font-black text-text-primary mt-2">US$ {usdBilled.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
                       <div className="text-[11.5px] text-text-secondary mt-1">Based on 160 standard hrs/rep</div>
@@ -7099,13 +7109,13 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
               {/* Main Workspace Layout */}
               {!selectedProjectId ? (
-                <div className="flex-1 grid grid-cols-1 xl:grid-cols-3 gap-6 min-h-0">
+                <div className="flex-1 grid grid-cols-1 xl:grid-cols-3 gap-3 min-h-0">
                   {/* Left Column: Projects Registry Table (Span 2) */}
                   <div className="xl:col-span-2 bg-surface-elevated border border-border-subtle rounded-2xl flex flex-col min-h-0">
                     <div className="px-6 py-4 border-b border-border-subtle flex justify-between items-center bg-surface">
                       <div>
-                        <h3 className="text-[15px] font-bold text-text-primary uppercase tracking-wider flex items-center gap-2">
-                          <FolderKanban className="w-4.5 h-4.5 text-cyan-400" />
+                        <h3 className="text-[14.5px] font-bold text-text-primary uppercase tracking-wider flex items-center gap-2">
+                          <FolderKanban className="w-4.5 h-4.5 text-cyan-600" />
                           <span>Active Projects Registry</span>
                         </h3>
                         <span className="text-[11.5px] text-text-secondary font-medium">Registry of representatives actively working at supplier locations</span>
@@ -7115,7 +7125,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         <button 
                           onClick={() => setSelectedCurrencyFilter('all')}
                           className={`px-3 py-1 rounded-lg font-bold cursor-pointer transition-all ${
-                            selectedCurrencyFilter === 'all' ? 'bg-[#1E3A5F] text-text-primary' : 'text-text-secondary hover:text-text-primary'
+                            selectedCurrencyFilter === 'all' ? 'bg-[#3B82F6] text-white' : 'text-text-secondary hover:text-text-primary'
                           }`}
                         >
                           ALL
@@ -7123,7 +7133,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         <button 
                           onClick={() => setSelectedCurrencyFilter('USD')}
                           className={`px-3 py-1 rounded-lg font-bold cursor-pointer transition-all ${
-                            selectedCurrencyFilter === 'USD' ? 'bg-[#1E3A5F] text-text-primary' : 'text-text-secondary hover:text-text-primary'
+                            selectedCurrencyFilter === 'USD' ? 'bg-[#3B82F6] text-white' : 'text-text-secondary hover:text-text-primary'
                           }`}
                         >
                           USD
@@ -7131,7 +7141,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         <button 
                           onClick={() => setSelectedCurrencyFilter('CAD')}
                           className={`px-3 py-1 rounded-lg font-bold cursor-pointer transition-all ${
-                            selectedCurrencyFilter === 'CAD' ? 'bg-[#1E3A5F] text-text-primary' : 'text-text-secondary hover:text-text-primary'
+                            selectedCurrencyFilter === 'CAD' ? 'bg-[#3B82F6] text-white' : 'text-text-secondary hover:text-text-primary'
                           }`}
                         >
                           CAD
@@ -7177,16 +7187,16 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                   onClick={() => setSelectedProjectId(p.id)}
                                   className="hover:bg-surface transition-colors cursor-pointer group"
                                 >
-                                  <td className="py-3 px-6 font-semibold text-text-primary capitalize group-hover:text-[#0EA5E9] transition-colors">{clientName}</td>
-                                  <td className="py-3 px-6 font-mono text-[#22D3EE] font-bold">{p.project_number}</td>
+                                  <td className="py-3 px-6 font-semibold text-text-primary capitalize group-hover:text-[#3B82F6] transition-colors">{clientName}</td>
+                                  <td className="py-3 px-6 font-mono text-[#3B82F6] font-bold">{p.project_number}</td>
                                   <td className="py-3 px-6 text-text-secondary">{p.description}</td>
                                   <td className="py-3 px-6 text-text-primary">{plantName}</td>
                                   <td className="py-3 px-6 font-medium text-text-primary">{repName}</td>
                                   <td className="py-3 px-6 text-text-secondary">{p.start_date}</td>
-                                  <td className="py-3 px-6 text-right font-bold text-emerald-400">{p.currency === 'CAD' ? 'C$' : 'US$'} {parseFloat(p.billing_rate).toFixed(2)}/hr</td>
+                                  <td className="py-3 px-6 text-right font-bold text-emerald-600">{p.currency === 'CAD' ? 'C$' : 'US$'} {parseFloat(p.billing_rate).toFixed(2)}/hr</td>
                                   <td className="py-3 px-6 text-right text-text-secondary">{p.currency === 'CAD' ? 'C$' : 'US$'} {parseFloat(p.pay_rate).toFixed(2)}/hr</td>
-                                  <td className="py-3 px-4 text-right">
-                                    <button className="text-[10.5px] uppercase font-bold text-[#0EA5E9] bg-[#0EA5E9]/10 px-2.5 py-1 rounded-lg group-hover:bg-[#0EA5E9] group-hover:text-text-primary transition-all whitespace-nowrap">View</button>
+                                  <td className="py-1 px-2 text-right">
+                                    <button className="text-[10.5px] uppercase font-bold text-[#3B82F6] bg-[#3B82F6]/10 px-2.5 py-1 rounded-lg group-hover:bg-[#3B82F6] group-hover:text-text-primary transition-all whitespace-nowrap">View</button>
                                   </td>
                                 </tr>
                               );
@@ -7198,8 +7208,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   </div>
 
                   {/* Right Column: Create / Edit Project Form Panel (Span 1) */}
-                  <div className="xl:col-span-1 bg-surface-elevated border border-border-subtle rounded-2xl p-6 flex flex-col min-h-0">
-                    <h3 className="text-[15px] font-bold text-text-primary uppercase tracking-wider mb-6 pb-2 border-b border-border-subtle">
+                  <div className="xl:col-span-1 bg-surface-elevated border border-border-subtle rounded-2xl p-3 flex flex-col min-h-0">
+                    <h3 className="text-[14.5px] font-bold text-text-primary uppercase tracking-wider mb-6 pb-2 border-b border-border-subtle">
                       Register New Project
                     </h3>
                     <form 
@@ -7231,7 +7241,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         setNewProjPay('');
                         window.dispatchEvent(new Event('ids_pulse_db_update'));
                       }}
-                      className="flex flex-col gap-4 flex-1 overflow-y-auto pr-1 scrollbar-thin"
+                      className="flex flex-col gap-3 flex-1 overflow-y-auto pr-1 scrollbar-thin"
                     >
                       <div className="flex flex-col gap-1">
                         <label className="text-[11.5px] font-bold text-text-secondary uppercase tracking-wider">Assign Representative</label>
@@ -7250,7 +7260,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                           {users.filter(u => u.role === 'rep' || u.role === 'qre' || u.id === '1' || u.id === 'rep_hugo' || u.id === 'rep_nabil' || u.id === 'rep_rogelio').map(u => (
                             <option key={u.id} value={u.id}>{u.name}</option>
                           ))}
-                          <option value="ADD_NEW" className="text-cyan-400 font-bold">+ Add New Rep...</option>
+                          <option value="ADD_NEW" className="text-cyan-600 font-bold">+ Add New Rep...</option>
                         </select>
                       </div>
 
@@ -7271,7 +7281,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                           {suppliers.map(s => (
                             <option key={s.id} value={s.id}>{s.name}</option>
                           ))}
-                          <option value="ADD_NEW" className="text-cyan-400 font-bold">+ Add New Client...</option>
+                          <option value="ADD_NEW" className="text-cyan-600 font-bold">+ Add New Client...</option>
                         </select>
                       </div>
 
@@ -7292,7 +7302,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                           {plants.map(p => (
                             <option key={p.id} value={p.id}>{p.name}</option>
                           ))}
-                          <option value="ADD_NEW" className="text-cyan-400 font-bold">+ Add New Plant...</option>
+                          <option value="ADD_NEW" className="text-cyan-600 font-bold">+ Add New Plant...</option>
                         </select>
                       </div>
 
@@ -7321,7 +7331,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         <div className="flex flex-col gap-1">
                           <label className="text-[11.5px] font-bold text-text-secondary uppercase tracking-wider">Billing Rate / Hr</label>
                           <div className="relative">
-                            <span className="absolute left-3.5 top-3.5 text-text-secondary text-[11.5px] font-mono">$</span>
+                            <span className="absolute left-3.5 top-3 text-text-secondary text-[11.5px] font-mono">$</span>
                             <input 
                               type="number" 
                               step="0.01" 
@@ -7336,7 +7346,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         <div className="flex flex-col gap-1">
                           <label className="text-[11.5px] font-bold text-text-secondary uppercase tracking-wider">Pay Rate / Hr</label>
                           <div className="relative">
-                            <span className="absolute left-3.5 top-3.5 text-text-secondary text-[11.5px] font-mono">$</span>
+                            <span className="absolute left-3.5 top-3 text-text-secondary text-[11.5px] font-mono">$</span>
                             <input 
                               type="number" 
                               step="0.01" 
@@ -7351,14 +7361,14 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
                       <div className="flex flex-col gap-2 mt-1 text-left">
                         <label className="text-[11.5px] font-bold text-text-secondary uppercase tracking-wider">Billing Currency</label>
-                        <div className="flex gap-4">
+                        <div className="flex gap-3">
                           <label className="flex items-center gap-2 cursor-pointer text-[13.5px] text-text-primary">
                             <input 
                               type="radio" 
                               name="newProjCurrency" 
                               checked={newProjCurrency === 'USD'}
                               onChange={() => setNewProjCurrency('USD')}
-                              className="text-[#22D3EE] focus:ring-[#22D3EE] bg-surface border-border-subtle"
+                              className="text-[#3B82F6] focus:ring-[#3B82F6] bg-surface border-border-subtle"
                             />
                             USD (US$)
                           </label>
@@ -7368,7 +7378,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                               name="newProjCurrency" 
                               checked={newProjCurrency === 'CAD'}
                               onChange={() => setNewProjCurrency('CAD')}
-                              className="text-[#22D3EE] focus:ring-[#22D3EE] bg-surface border-border-subtle"
+                              className="text-[#3B82F6] focus:ring-[#3B82F6] bg-surface border-border-subtle"
                             />
                             CAD (C$)
                           </label>
@@ -7377,7 +7387,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
                       <button 
                         type="submit"
-                        className="mt-4 w-full bg-cyan-500/10 hover:bg-cyan-500/20 text-[#22D3EE] border border-cyan-500/20 font-bold py-2.5 rounded-xl text-[13.5px] cursor-pointer flex justify-center items-center gap-2"
+                        className="mt-4 w-full bg-cyan-50 hover:bg-cyan-100 text-[#3B82F6] border border-cyan-200 font-bold py-2.5 rounded-xl text-[13.5px] cursor-pointer flex justify-center items-center gap-2"
                       >
                         <PlusCircle className="w-4.5 h-4" />
                         <span>Register Project Assignment</span>
@@ -7415,48 +7425,48 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                             <ArrowLeft className="w-4.5 h-4.5" />
                           </button>
                           <h3 className="text-xl font-bold text-text-primary uppercase tracking-wider flex items-center gap-3">
-                            <FolderKanban className="w-6 h-6 text-cyan-400" />
+                            <FolderKanban className="w-6 h-6 text-cyan-600" />
                             <span>Project {proj.project_number}</span>
                           </h3>
                         </div>
                         <div className="text-[13.5px] text-text-secondary font-medium ml-12 mt-1">{proj.description}</div>
                       </div>
-                      <div className="flex items-center gap-4">
-                        <div className={`px-4 py-1.5 rounded-full text-[11.5px] font-black uppercase tracking-wider border ${proj.status === 'Active' ? 'bg-emerald-400/10 text-emerald-400 border-emerald-400/20' : 'bg-surface-elevated text-text-secondary border-border-subtle'}`}>
+                      <div className="flex items-center gap-3">
+                        <div className={`px-4 py-1.5 rounded-full text-[11.5px] font-black uppercase tracking-wider border ${proj.status === 'Active' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : 'bg-surface-elevated text-text-secondary border-border-subtle'}`}>
                           {proj.status}
                         </div>
                       </div>
                     </div>
                     
-                    <div className="p-8 flex-1 overflow-y-auto">
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                        <div className="bg-surface border border-border-subtle rounded-xl p-5 flex flex-col">
+                    <div className="p-6 sm:p-8 flex-1 overflow-y-auto">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
+                        <div className="bg-surface border border-border-subtle rounded-xl p-6 sm:p-8 flex flex-col">
                           <span className="text-[11.5px] font-bold text-text-secondary uppercase tracking-wider">Client</span>
-                          <span className="text-lg font-black text-text-primary mt-1 capitalize">{clientName}</span>
+                          <span className="text-[14.5px] font-black text-text-primary mt-1 capitalize">{clientName}</span>
                           <span className="text-[12.5px] text-text-secondary mt-0.5">{plantName}</span>
                         </div>
                         
-                        <div className="bg-surface border border-border-subtle rounded-xl p-5 flex flex-col">
+                        <div className="bg-surface border border-border-subtle rounded-xl p-6 sm:p-8 flex flex-col">
                           <span className="text-[11.5px] font-bold text-text-secondary uppercase tracking-wider">Assigned Rep</span>
-                          <span className="text-lg font-black text-text-primary mt-1">{repName}</span>
+                          <span className="text-[14.5px] font-black text-text-primary mt-1">{repName}</span>
                           <span className="text-[12.5px] text-text-secondary mt-0.5">Started: {proj.start_date}</span>
                         </div>
                         
-                        <div className="bg-surface border border-border-subtle rounded-xl p-5 flex flex-col">
+                        <div className="bg-surface border border-border-subtle rounded-xl p-6 sm:p-8 flex flex-col">
                           <span className="text-[11.5px] font-bold text-text-secondary uppercase tracking-wider">Financials</span>
-                          <span className="text-lg font-black text-emerald-400 mt-1">Bill: {sym} {parseFloat(proj.billing_rate).toFixed(2)}/hr</span>
+                          <span className="text-[14.5px] font-black text-emerald-600 mt-1">Bill: {sym} {parseFloat(proj.billing_rate).toFixed(2)}/hr</span>
                           <span className="text-[12.5px] text-text-secondary mt-0.5">Pay: {sym} {parseFloat(proj.pay_rate).toFixed(2)}/hr</span>
                         </div>
                         
-                        <div className="bg-surface border border-border-subtle rounded-xl p-5 flex flex-col">
+                        <div className="bg-surface border border-border-subtle rounded-xl p-6 sm:p-8 flex flex-col">
                           <span className="text-[11.5px] font-bold text-text-secondary uppercase tracking-wider">Revenue To Date</span>
-                          <span className="text-2xl font-black text-[#22D3EE] mt-1">{sym} {revenueToDate.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
+                          <span className="text-2xl font-black text-[#3B82F6] mt-1">{sym} {revenueToDate.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
                           <span className="text-[12.5px] text-text-secondary mt-0.5">Invoiced: {invoicedHours} hrs</span>
                         </div>
                       </div>
                       
-                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        <div className="lg:col-span-2 bg-surface border border-border-subtle rounded-xl p-6">
+                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+                        <div className="lg:col-span-2 bg-surface border border-border-subtle rounded-xl p-3">
                           <h4 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider mb-4 border-b border-border-subtle pb-2">Time Tracking Summary</h4>
                           
                           <div className="flex items-end gap-12 mt-6">
@@ -7466,12 +7476,12 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                             </div>
                             
                             <div className="flex flex-col gap-2">
-                              <span className="text-4xl font-black text-emerald-400">{invoicedHours.toFixed(1)}</span>
+                              <span className="text-4xl font-black text-emerald-600">{invoicedHours.toFixed(1)}</span>
                               <span className="text-[11.5px] font-bold text-text-secondary uppercase tracking-wider">Hrs Invoiced</span>
                             </div>
                             
                             <div className="flex flex-col gap-2">
-                              <span className="text-4xl font-black text-amber-400">{uninvoicedHours.toFixed(1)}</span>
+                              <span className="text-4xl font-black text-amber-600">{uninvoicedHours.toFixed(1)}</span>
                               <span className="text-[11.5px] font-bold text-text-secondary uppercase tracking-wider">Uninvoiced Queue</span>
                             </div>
                           </div>
@@ -7482,12 +7492,12 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                           </div>
                         </div>
                         
-                        <div className="bg-surface border border-border-subtle rounded-xl p-6">
+                        <div className="bg-surface border border-border-subtle rounded-xl p-3">
                           <h4 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider mb-4 border-b border-border-subtle pb-2">Quick Actions</h4>
                           <div className="flex flex-col gap-3">
                             <button 
                               onClick={() => { setActiveTab('time-tracking'); }}
-                              className="w-full bg-[#0EA5E9]/10 text-[#0EA5E9] hover:bg-[#0EA5E9] hover:text-text-primary transition-colors font-bold py-3 rounded-lg text-[12.5px] uppercase tracking-wider cursor-pointer flex items-center justify-center gap-2"
+                              className="w-full bg-[#3B82F6]/10 text-[#3B82F6] hover:bg-[#3B82F6] hover:text-text-primary transition-colors font-bold py-3 rounded-lg text-[12.5px] uppercase tracking-wider cursor-pointer flex items-center justify-center gap-2"
                             >
                               Log Additional Hours
                             </button>
@@ -7498,7 +7508,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                 saveEntity('projects', proj);
                                 window.dispatchEvent(new Event('ids_pulse_db_update'));
                               }}
-                              className={`w-full font-bold py-3 rounded-lg text-[12.5px] uppercase tracking-wider cursor-pointer flex items-center justify-center gap-2 transition-colors ${proj.status === 'Active' ? 'bg-surface-elevated text-text-secondary hover:text-text-primary hover:bg-surface-elevated' : 'bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-text-primary'}`}
+                              className={`w-full font-bold py-3 rounded-lg text-[12.5px] uppercase tracking-wider cursor-pointer flex items-center justify-center gap-2 transition-colors ${proj.status === 'Active' ? 'bg-surface-elevated text-text-secondary hover:text-text-primary hover:bg-surface-elevated' : 'bg-emerald-50 text-emerald-500 hover:bg-emerald-500 hover:text-text-primary'}`}
                             >
                               {proj.status === 'Active' ? 'Mark Project Complete' : 'Re-open Project'}
                             </button>
@@ -7515,35 +7525,37 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
           {/* TAB 8: SYSTEM EVENTS LOGS */}
           {activeTab === 'system-logs' && userRole === 'shahroz' && (
-            <div className="flex-1 flex flex-col gap-4 min-h-0 text-left">
+            <div className="flex-1 flex flex-col gap-3 min-h-0 text-left">
               <div className="flex justify-between items-center pb-2 border-b border-border-subtle flex-shrink-0">
                 <div>
-                  <h3 className="text-[15px] font-bold text-text-primary uppercase tracking-wider flex items-center gap-2">
+                  <h3 className="text-[14.5px] font-bold text-text-primary uppercase tracking-wider flex items-center gap-2">
                     <Server className="w-4.5 h-4.5 text-emerald-450" />
                     <span>Real-time System Events Logger</span>
                   </h3>
                   <span className="text-[11.5px] text-text-secondary font-medium">Audit logs of all database transactions, client authentication, and phone simulator background events</span>
                 </div>
-                <button 
-                  onClick={() => {
-                    localStorage.setItem('ids_pulse_db', JSON.stringify({
-                      ...JSON.parse(localStorage.getItem('ids_pulse_db') || '{}'),
-                      systemLogs: [{ id: `log_${Date.now()}`, timestamp: new Date().toISOString(), category: 'system', action: 'clear', details: 'System logs manually cleared by admin.' }]
-                    }));
-                    window.dispatchEvent(new Event('ids_pulse_db_update'));
-                  }}
-                  className="bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 font-bold py-1.5 px-3 rounded-lg text-[13.5px] cursor-pointer"
-                >
-                  Clear Log Console
-                </button>
+                {userRole === 'shahroz' && (
+                  <button 
+                    onClick={() => {
+                      localStorage.setItem('ids_pulse_db', JSON.stringify({
+                        ...JSON.parse(localStorage.getItem('ids_pulse_db') || '{}'),
+                        systemLogs: [{ id: `log_${Date.now()}`, timestamp: new Date().toISOString(), category: 'system', action: 'clear', details: 'System logs manually cleared by admin.' }]
+                      }));
+                      window.dispatchEvent(new Event('ids_pulse_db_update'));
+                    }}
+                    className="bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 font-bold py-1.5 px-3 rounded-lg text-[13.5px] cursor-pointer"
+                  >
+                    Clear Log Console
+                  </button>
+                )}
               </div>
 
-              <div className="flex-1 bg-surface border border-border-subtle rounded-2xl p-4 flex flex-col gap-3 min-h-0">
+              <div className="flex-1 bg-surface border border-border-subtle rounded-2xl p-3 flex flex-col gap-3 min-h-0">
                 <div className="flex gap-2 bg-surface-elevated p-2 rounded-xl border border-border-subtle text-[11.5px] items-center justify-between">
                   <span className="text-text-secondary font-semibold">Live stream enabled • Console buffered to LocalStorage</span>
                   <div className="flex gap-1.5">
                     <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-                    <span className="text-emerald-400 font-bold uppercase tracking-wider text-[12.5px]">Receiving Stream</span>
+                    <span className="text-emerald-600 font-bold uppercase tracking-wider text-[12.5px]">Receiving Stream</span>
                   </div>
                 </div>
 
@@ -7554,13 +7566,13 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                       return <div className="text-slate-650 italic text-center py-10">Console buffer empty. Perform operations on the phone simulator or dashboard to see logs stream.</div>;
                     }
                     return logs.slice().reverse().map(l => {
-                      let badgeColor = 'bg-blue-500/10 text-blue-400 border-blue-500/20';
-                      if (l.category === 'auth') badgeColor = 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20';
-                      if (l.category === 'shift') badgeColor = 'bg-amber-500/10 text-amber-400 border-amber-500/20';
-                      if (l.category === 'incident') badgeColor = 'bg-rose-500/10 text-rose-400 border-rose-500/20';
-                      if (l.category === 'rework') badgeColor = 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20';
-                      if (l.category === 'system') badgeColor = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
-                      if (l.category === 'payroll') badgeColor = 'bg-emerald-500/10 text-[#22D3EE] border-emerald-500/20';
+                      let badgeColor = 'bg-blue-50 text-blue-600 border-blue-200';
+                      if (l.category === 'auth') badgeColor = 'bg-indigo-50 text-indigo-600 border-indigo-200';
+                      if (l.category === 'shift') badgeColor = 'bg-amber-50 text-amber-600 border-amber-200';
+                      if (l.category === 'incident') badgeColor = 'bg-rose-50 text-rose-600 border-rose-200';
+                      if (l.category === 'rework') badgeColor = 'bg-cyan-50 text-cyan-600 border-cyan-200';
+                      if (l.category === 'system') badgeColor = 'bg-emerald-50 text-emerald-600 border-emerald-200';
+                      if (l.category === 'payroll') badgeColor = 'bg-emerald-50 text-[#3B82F6] border-emerald-200';
                       return (
                         <div key={l.id} className="pb-1.5 border-b border-border-subtle flex items-start gap-3">
                           <span className="text-slate-550 flex-shrink-0">[{new Date(l.timestamp).toLocaleTimeString()}]</span>
@@ -7581,13 +7593,13 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       {/* OVERLAY PANEL 1: INCIDENT DETAIL DRAWER */}
       {selectedIncident && (
         <div 
-          className="absolute inset-y-0 right-0 w-[420px] bg-surface border-l border-border-subtle shadow-2xl p-5 flex flex-col z-40 animate-in slide-in-from-right duration-250"
+          className="absolute inset-y-0 right-0 w-[420px] bg-surface border-l border-border-subtle shadow-2xl p-6 sm:p-8 flex flex-col z-40 animate-in slide-in-from-right duration-250"
           onClick={() => setOpenTooltip(null)}
         >
           {/* Drawer Header */}
           <div className="flex items-center justify-between border-b border-border-subtle pb-3 mb-4 flex-shrink-0">
             <div>
-              <h3 className="text-[15px] font-bold text-text-primary">Incident Details</h3>
+              <h3 className="text-[14.5px] font-bold text-text-primary">Incident Details</h3>
               <span className="text-[11.5px] text-text-secondary font-mono">{selectedIncident.id}</span>
             </div>
             <button 
@@ -7599,7 +7611,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
           </div>
 
           {/* Drawer Scrollable Middle Body */}
-          <div className="flex-1 overflow-y-auto pr-1 flex flex-col gap-4 min-h-0">
+          <div className="flex-1 overflow-y-auto pr-1 flex flex-col gap-3 min-h-0">
             
             {/* Photo Gallery with annotations */}
             <div className="flex flex-col gap-2">
@@ -7608,7 +7620,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 {selectedIncident.photos.map(p => (
                   <div key={p.id} className="aspect-square bg-surface-elevated border border-border-subtle rounded-lg overflow-hidden relative group">
                     <img src={p.url} className="w-full h-full object-cover" alt="Audit" />
-                    <span className="absolute bottom-1 right-1 bg-surface text-[12.5px] px-1 py-1 rounded text-[#22D3EE] font-bold">{p.type}</span>
+                    <span className="absolute bottom-1 right-1 bg-surface text-[12.5px] px-1 py-1 rounded text-[#3B82F6] font-bold">{p.type}</span>
                   </div>
                 ))}
               </div>
@@ -7616,7 +7628,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
             {/* Defective Parts List */}
             {selectedIncident.parts_list && selectedIncident.parts_list.length > 0 && (
-              <div className="bg-surface-elevated border border-border-subtle rounded-xl p-3.5 flex flex-col gap-2">
+              <div className="bg-surface-elevated border border-slate-100 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-3 flex flex-col gap-2">
                 <span className="text-[11.5px] text-text-secondary uppercase font-bold tracking-wider">Affected Defective Parts ({selectedIncident.parts_list.length})</span>
                 <div className="flex flex-col gap-2">
                   {selectedIncident.parts_list.map((item) => (
@@ -7624,13 +7636,13 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                       <div className="min-w-0">
                         <div className="font-bold text-text-primary flex items-center gap-1.5">
                           <span>PN {item.part_number}</span>
-                          <span className="text-[10.5px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 px-2 py-0.2 rounded-md font-medium">{item.bin}</span>
+                          <span className="text-[10.5px] bg-emerald-50 text-emerald-600 border border-emerald-200 px-2 py-0.2 rounded-md font-medium">{item.bin}</span>
                         </div>
                         <span className="text-[11.5px] text-text-secondary block truncate">{item.description}</span>
                       </div>
                       <div className="text-right flex-shrink-0">
                         <span className="text-[11.5px] text-text-secondary block uppercase font-bold">qty</span>
-                        <span className="text-text-primary font-extrabold text-[15px]">{item.qty} pcs</span>
+                        <span className="text-text-primary font-extrabold text-[14.5px]">{item.qty} pcs</span>
                       </div>
                     </div>
                   ))}
@@ -7639,22 +7651,22 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
             )}
 
             {/* Defect description summary */}
-            <div className="bg-surface-elevated border border-border-subtle rounded-xl p-3.5 text-[13.5px] text-text-primary">
+            <div className="bg-surface-elevated border border-slate-100 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-3 text-[13.5px] text-text-primary">
               <p className="font-semibold text-text-secondary">Defect Narrative:</p>
               <p className="mt-1 leading-relaxed">{selectedIncident.description}</p>
               
               <div className="mt-3 grid grid-cols-2 gap-2 text-[11.5px] border-t border-border-subtle pt-2 text-text-secondary">
-                <div><span className="font-bold">Rep Logged:</span> <span className="text-[#22D3EE] font-extrabold">{users.find(u => u.id === selectedIncident.rep_id)?.name || 'Clarence Kuiken'}</span></div>
+                <div><span className="font-bold">Rep Logged:</span> <span className="text-[#3B82F6] font-extrabold">{users.find(u => u.id === selectedIncident.rep_id)?.name || 'Clarence Kuiken'}</span></div>
                 <div><span className="font-bold">Part Affected:</span> <span className="text-text-primary font-semibold">{selectedIncident.parts_list && selectedIncident.parts_list.length > 0 ? selectedIncident.parts_list[0].part_number : selectedIncident.part_id}</span></div>
                 <div><span className="font-bold">Area Found:</span> <span className="text-text-primary font-semibold">{selectedIncident.area}</span></div>
                 <div><span className="font-bold">Action Taken:</span> <span className="text-text-primary font-semibold">{selectedIncident.action_taken}</span></div>
-                <div className="col-span-2"><span className="font-bold">Supplier Contact:</span> <span className="text-[#22D3EE] font-semibold">{selectedIncident.supplier_contact}</span></div>
+                <div className="col-span-2"><span className="font-bold">Supplier Contact:</span> <span className="text-[#3B82F6] font-semibold">{selectedIncident.supplier_contact}</span></div>
               </div>
             </div>
 
             {/* Defect Location Heatmap Placement Coordinates */}
             {selectedIncident.defect_location_x !== undefined && selectedIncident.defect_location_x !== null && (
-              <div className="bg-surface-elevated border border-border-subtle rounded-xl p-3.5 flex flex-col gap-2">
+              <div className="bg-surface-elevated border border-slate-100 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-3 flex flex-col gap-2">
                 <span className="text-[11.5px] text-text-secondary uppercase font-bold tracking-wider">Defect Matrix Coordinates</span>
                 <div className="relative bg-surface rounded-lg p-2 border border-border-subtle flex items-center justify-center h-28 overflow-hidden">
                   <svg viewBox="0 0 100 100" className="w-full h-full max-h-24 object-contain">
@@ -7664,8 +7676,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         return (
                           <g>
                             <path d="M10,50 C10,25 40,20 90,40 C90,40 70,75 30,70 C15,68 10,60 10,50 Z" fill="#1E293B" stroke="#475569" strokeWidth="2" />
-                            <circle cx="45" cy="48" r="14" fill="#0EA5E9" opacity="0.1" stroke="#38BDF8" strokeWidth="0.5" />
-                            <circle cx="75" cy="42" r="8" fill="#0EA5E9" opacity="0.1" stroke="#38BDF8" strokeWidth="0.5" />
+                            <circle cx="45" cy="48" r="14" fill="#3B82F6" opacity="0.1" stroke="#38BDF8" strokeWidth="0.5" />
+                            <circle cx="75" cy="42" r="8" fill="#3B82F6" opacity="0.1" stroke="#38BDF8" strokeWidth="0.5" />
                           </g>
                         );
                       } else {
@@ -7689,7 +7701,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                       className="animate-pulse"
                     />
                   </svg>
-                  <div className="absolute bottom-1 right-2 bg-surface text-[11.5px] text-[#22D3EE] font-mono px-1 py-1 rounded">
+                  <div className="absolute bottom-1 right-2 bg-surface text-[11.5px] text-[#3B82F6] font-mono px-1 py-1 rounded">
                     X: {selectedIncident.defect_location_x} | Y: {selectedIncident.defect_location_y}
                   </div>
                 </div>
@@ -7704,7 +7716,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 <select 
                   value={selectedIncident.status}
                   onChange={(e) => handleUpdateStatus(selectedIncident.id, e.target.value)}
-                  className="h-8 bg-surface border border-border-subtle hover:border-border-subtle rounded-xl px-3.5 text-[13.5px] text-text-primary focus:outline-none focus:ring-1 focus:ring-[#0EA5E9]/20 transition-all"
+                  className="h-8 bg-surface border border-border-subtle hover:border-border-subtle rounded-xl px-3.5 text-[13.5px] text-text-primary focus:outline-none focus:ring-1 focus:ring-[#3B82F6]/20 transition-all"
                 >
                   <option value="Open">Open</option>
                   <option value="Acknowledged">Acknowledged</option>
@@ -7718,7 +7730,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
               <span className="text-[11.5px] text-text-secondary uppercase font-bold tracking-wider">incident timeline</span>
               <div className="flex flex-col gap-3 pl-3 border-l-2 border-border-subtle text-[12.5px] text-text-secondary">
                 <div className="relative">
-                  <div className="absolute -left-[18px] top-1 w-2.5 h-2.5 rounded-full bg-[#0EA5E9]"></div>
+                  <div className="absolute -left-[18px] top-1 w-2.5 h-2.5 rounded-full bg-[#3B82F6]"></div>
                   <p className="font-bold text-text-primary">Incident Logged & Dispatched</p>
                   <p className="text-[11.5px] text-text-secondary">{new Date(selectedIncident.created_at).toLocaleTimeString()}</p>
                 </div>
@@ -7741,8 +7753,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
           <div className="mt-4 pt-4 border-t border-border-subtle flex-shrink-0 flex flex-col gap-3">
             
             {/* Export & Actions Box (Locked to bottom, tooltip triggers only on the ? circle) */}
-            <div className="flex flex-col gap-2 bg-[#1E3A5F]/20 p-3 rounded-xl border border-[#22D3EE]/15" onClick={(e) => e.stopPropagation()}>
-              <span className="text-[10.5px] text-[#22D3EE] font-bold uppercase tracking-wider pl-0.5">Export & Share Audit</span>
+            <div className="flex flex-col gap-2 bg-[#3B82F6]/20 p-3 rounded-xl border border-[#3B82F6]/15" onClick={(e) => e.stopPropagation()}>
+              <span className="text-[10.5px] text-[#3B82F6] font-bold uppercase tracking-wider pl-0.5">Export & Share Audit</span>
               <div className="grid grid-cols-3 gap-2">
                 
                 {/* Download PDF */}
@@ -7807,7 +7819,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 <div className="relative">
                   <button 
                     onClick={() => handleResendSupplierEmail(selectedIncident)}
-                    className="w-full bg-[#1E3A5F] hover:bg-[#1E3A5F]/90 text-[#22D3EE] border border-[#22D3EE]/25 py-2 rounded-lg text-[10.5px] font-bold transition-colors cursor-pointer text-center"
+                    className="w-full bg-[#3B82F6] hover:bg-[#3B82F6]/90 text-[#3B82F6] border border-[#3B82F6]/25 py-2 rounded-lg text-[10.5px] font-bold transition-colors cursor-pointer text-center"
                   >
                     Resend Email
                   </button>
@@ -7847,7 +7859,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
       {/* OVERLAY PANEL 2: EMAIL LOG INSPECTOR */}
       {selectedEmailLog && (
-        <div className="absolute inset-0 bg-surface backdrop-blur-xs flex items-center justify-center p-6 z-50 animate-in fade-in duration-200">
+        <div className="absolute inset-0 bg-surface backdrop-blur-xs flex items-center justify-center p-3 z-50 animate-in fade-in duration-200">
           <div className="bg-surface-elevated border border-border-subtle rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col max-h-[600px] text-left">
             <div className="bg-surface px-5 py-4 border-b border-border-subtle flex items-center justify-between">
               <div>
@@ -7856,15 +7868,15 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
               </div>
               <button onClick={() => setSelectedEmailLog(null)} className="text-text-secondary hover:text-text-primary"><X className="w-5 h-5" /></button>
             </div>
-            <div className="p-4 bg-surface border-b border-border-subtle flex flex-col gap-1.5 text-[13.5px] text-text-primary font-mono">
-              <div><span className="text-[#22D3EE] font-bold">To:</span> {selectedEmailLog.to_emails}</div>
-              <div><span className="text-[#22D3EE] font-bold">CC:</span> {selectedEmailLog.cc_emails}</div>
-              <div><span className="text-[#22D3EE] font-bold">Subject:</span> {selectedEmailLog.subject}</div>
+            <div className="p-3 bg-surface border-b border-border-subtle flex flex-col gap-1.5 text-[13.5px] text-text-primary font-mono">
+              <div><span className="text-[#3B82F6] font-bold">To:</span> {selectedEmailLog.to_emails}</div>
+              <div><span className="text-[#3B82F6] font-bold">CC:</span> {selectedEmailLog.cc_emails}</div>
+              <div><span className="text-[#3B82F6] font-bold">Subject:</span> {selectedEmailLog.subject}</div>
               <div><span className="text-text-secondary font-bold">Sent Stamp:</span> {new Date(selectedEmailLog.sent_at).toLocaleString()}</div>
             </div>
-            <div className="flex-1 overflow-y-auto p-6 bg-surface-elevated text-[13.5px]">
+            <div className="flex-1 overflow-y-auto p-3 bg-surface-elevated text-[13.5px]">
               <div 
-                className="prose prose-invert max-w-none bg-surface p-5 rounded-2xl border border-border-subtle text-text-primary font-sans"
+                className="prose prose-invert max-w-none bg-surface p-6 sm:p-8 rounded-2xl border border-border-subtle text-text-primary font-sans"
                 dangerouslySetInnerHTML={{ __html: selectedEmailLog.body }}
               />
             </div>
@@ -7877,7 +7889,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
       {/* OVERLAY PANEL 3: DAILY SHIFT WALKTHROUGH DETAILS (Donna's Review Panel) */}
       {selectedShiftReport && (
-        <div className="absolute inset-0 bg-surface backdrop-blur-xs flex items-center justify-center p-6 z-50 animate-in fade-in duration-200">
+        <div className="absolute inset-0 bg-surface backdrop-blur-xs flex items-center justify-center p-3 z-50 animate-in fade-in duration-200">
           <div className="bg-surface-elevated border border-border-subtle rounded-3xl w-full max-w-3xl overflow-hidden shadow-2xl flex flex-col max-h-[700px] text-left">
             <div className="bg-surface px-5 py-4 border-b border-border-subtle flex items-center justify-between">
               <div>
@@ -7887,14 +7899,14 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
               <button onClick={() => setSelectedShiftReport(null)} className="text-text-secondary hover:text-text-primary"><X className="w-5 h-5" /></button>
             </div>
 
-            <div className="p-4 bg-surface border-b border-border-subtle flex flex-col gap-1 text-[13.5px] text-text-primary">
+            <div className="p-3 bg-surface border-b border-border-subtle flex flex-col gap-1 text-[13.5px] text-text-primary">
               <div>Rep: <span className="font-bold text-text-primary">{users.find(u => u.id === selectedShiftReport.rep_id)?.name}</span></div>
               <div>Plant Location: <span className="font-bold text-text-primary">GM Oshawa Plant</span></div>
               <div>Time Compiled: <span className="font-mono text-[11.5px] text-text-secondary">{new Date(selectedShiftReport.sent_at || selectedShiftReport.created_at || new Date()).toLocaleString()}</span></div>
             </div>
 
             {/* Displaying checked areas in detail cards */}
-            <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-3 bg-surface-elevated">
+            <div className="flex-1 overflow-y-auto p-6 sm:p-8 flex flex-col gap-3 bg-surface-elevated">
               <span className="text-[11.5px] text-text-secondary uppercase font-bold tracking-wider">Walked Area Audits</span>
               <div className="grid grid-cols-2 gap-3">
                 {selectedShiftReport.areas_walked.map((area, idx) => (
@@ -7902,7 +7914,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     <div className="flex justify-between items-center">
                       <span className="text-[13.5px] font-bold text-text-primary">{area.name}</span>
                       <span className={`px-2 py-1 rounded text-[12.5px] font-bold tracking-wider uppercase ${
-                        area.status === 'issues' ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                        area.status === 'issues' ? 'bg-rose-50 text-rose-600 border border-rose-200' : 'bg-emerald-50 text-emerald-600 border border-emerald-200'
                       }`}>
                         {area.status === 'issues' ? 'Defects Found' : 'No Issues'}
                       </span>
@@ -7917,14 +7929,14 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
               {/* Bonus tasks details */}
               {selectedShiftReport.bonus_tasks && selectedShiftReport.bonus_tasks.length > 0 && (
                 <div className="flex flex-col gap-2 mt-4 pt-3 border-t border-border-subtle">
-                  <span className="text-[11.5px] text-[#22D3EE] font-bold uppercase tracking-wider">Requested Sorts & Audits</span>
+                  <span className="text-[11.5px] text-[#3B82F6] font-bold uppercase tracking-wider">Requested Sorts & Audits</span>
                   {selectedShiftReport.bonus_tasks.map((task, idx) => (
                     <div key={idx} className="bg-surface border border-border-subtle rounded-xl p-3 flex justify-between items-center text-[13.5px]">
                       <div>
                         <p className="font-bold text-text-primary">{task.task}</p>
                         <p className="text-[11.5px] text-text-secondary mt-1 leading-normal">{task.notes || 'Audit check completed.'}</p>
                       </div>
-                      <span className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 px-2 py-1 rounded text-[10.5px] font-bold uppercase">
+                      <span className="bg-emerald-50 border border-emerald-200 text-emerald-600 px-2 py-1 rounded text-[10.5px] font-bold uppercase">
                         Completed
                       </span>
                     </div>
@@ -7934,8 +7946,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
             </div>
 
             {/* Export & Actions Box for Shift Walkthrough */}
-            <div className="mx-5 my-3 flex flex-col gap-2 bg-[#1E3A5F]/20 p-3 rounded-xl border border-[#22D3EE]/15 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
-              <span className="text-[10.5px] text-[#22D3EE] font-bold uppercase tracking-wider pl-0.5">Export & Share Walkthrough Summary</span>
+            <div className="mx-5 my-3 flex flex-col gap-2 bg-[#3B82F6]/20 p-3 rounded-xl border border-[#3B82F6]/15 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+              <span className="text-[10.5px] text-[#3B82F6] font-bold uppercase tracking-wider pl-0.5">Export & Share Walkthrough Summary</span>
               <div className="grid grid-cols-2 gap-2">
                 {/* Download PDF */}
                 <div className="relative">
@@ -8006,7 +8018,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
       {/* OVERLAY PANEL 3.5: DEFECT REWORK LOG DETAILS (Rework Inspector Modal) */}
       {selectedReworkLog && (
-        <div className="absolute inset-0 bg-surface backdrop-blur-xs flex items-center justify-center p-6 z-50 animate-in fade-in duration-200">
+        <div className="absolute inset-0 bg-surface backdrop-blur-xs flex items-center justify-center p-3 z-50 animate-in fade-in duration-200">
           <div className="bg-surface-elevated border border-border-subtle rounded-3xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col max-h-[600px] text-left">
             <div className="bg-surface px-5 py-4 border-b border-border-subtle flex items-center justify-between">
               <div>
@@ -8016,7 +8028,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
               <button onClick={() => setSelectedReworkLog(null)} className="text-text-secondary hover:text-text-primary"><X className="w-5 h-5" /></button>
             </div>
 
-            <div className="p-5 flex-1 overflow-y-auto bg-surface-elevated flex flex-col gap-4">
+            <div className="p-6 sm:p-8 flex-1 overflow-y-auto bg-surface-elevated flex flex-col gap-3">
               <div className="grid grid-cols-2 gap-3">
                 <div className="bg-surface p-3 rounded-xl border border-border-subtle">
                   <span className="text-[10.5px] text-text-secondary font-bold uppercase tracking-wider block">Field Representative</span>
@@ -8032,31 +8044,31 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 </div>
                 <div className="bg-surface p-3 rounded-xl border border-border-subtle">
                   <span className="text-[10.5px] text-text-secondary font-bold uppercase tracking-wider block">Part Affected</span>
-                  <span className="text-[13.5px] font-extrabold text-[#22D3EE] mt-1 block">
+                  <span className="text-[13.5px] font-extrabold text-[#3B82F6] mt-1 block">
                     PN {selectedReworkLog.part_id}
                   </span>
                 </div>
                 <div className="bg-surface p-3 rounded-xl border border-border-subtle">
                   <span className="text-[10.5px] text-text-secondary font-bold uppercase tracking-wider block">Supplier Partner</span>
-                  <span className="text-[13.5px] font-extrabold text-[#22D3EE] mt-1 block uppercase">
+                  <span className="text-[13.5px] font-extrabold text-[#3B82F6] mt-1 block uppercase">
                     {selectedReworkLog.supplier_id}
                   </span>
                 </div>
                 <div className="bg-surface p-3 rounded-xl border border-border-subtle bg-emerald-500/5 border-emerald-500/10">
-                  <span className="text-[10.5px] text-emerald-400 font-bold uppercase tracking-wider block">Pieces Reworked</span>
-                  <span className="text-[15px] font-extrabold text-emerald-400 mt-1 block">
+                  <span className="text-[10.5px] text-emerald-600 font-bold uppercase tracking-wider block">Pieces Reworked</span>
+                  <span className="text-[14.5px] font-extrabold text-emerald-600 mt-1 block">
                     {selectedReworkLog.qty} pcs
                   </span>
                 </div>
-                <div className="bg-surface p-3 rounded-xl border border-border-subtle bg-sky-500/5 border-sky-500/10">
-                  <span className="text-[10.5px] text-sky-400 font-bold uppercase tracking-wider block">Labor Hours Spent</span>
-                  <span className="text-[15px] font-extrabold text-sky-400 mt-1 block">
+                <div className="bg-surface p-3 rounded-xl border border-border-subtle bg-amber-500/5 border-amber-500/10">
+                  <span className="text-[10.5px] text-amber-600 font-bold uppercase tracking-wider block">Labor Hours Spent</span>
+                  <span className="text-[14.5px] font-extrabold text-amber-600 mt-1 block">
                     {Math.round(selectedReworkLog.time_spent_minutes / 60 * 10) / 10} hrs
                   </span>
                 </div>
               </div>
 
-              <div className="bg-surface p-3.5 rounded-xl border border-border-subtle">
+              <div className="bg-surface p-3 rounded-xl border border-border-subtle">
                 <span className="text-[10.5px] text-text-secondary font-bold uppercase tracking-wider block mb-1">Remarks & Narrative</span>
                 <p className="text-[13.5px] text-slate-355 leading-relaxed font-sans whitespace-pre-wrap">
                   {selectedReworkLog.notes || 'No comments recorded for this rework event.'}
@@ -8065,8 +8077,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
             </div>
 
             {/* Export & Actions Box for Rework Entry */}
-            <div className="mx-5 my-2 flex flex-col gap-2 bg-[#1E3A5F]/20 p-3 rounded-xl border border-[#22D3EE]/15 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
-              <span className="text-[10.5px] text-[#22D3EE] font-bold uppercase tracking-wider pl-0.5">Export & Share Rework Record</span>
+            <div className="mx-5 my-2 flex flex-col gap-2 bg-[#3B82F6]/20 p-3 rounded-xl border border-[#3B82F6]/15 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+              <span className="text-[10.5px] text-[#3B82F6] font-bold uppercase tracking-wider pl-0.5">Export & Share Rework Record</span>
               <div className="grid grid-cols-2 gap-2">
                 <div className="relative">
                   <button 
@@ -8135,20 +8147,20 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
       {/* QUICK ASSIGN REP DISPATCH MODAL ( Donna requested for daily assignment ) */}
       {showAssignRepModal && (
-        <div className="absolute inset-0 bg-surface backdrop-blur-xs flex items-center justify-center p-6 z-50 animate-in fade-in duration-200">
+        <div className="absolute inset-0 bg-surface backdrop-blur-xs flex items-center justify-center p-3 z-50 animate-in fade-in duration-200">
           <form onSubmit={handleAssignRepSubmit} className="bg-surface-elevated border border-border-subtle rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl flex flex-col text-left">
             <div className="bg-surface px-5 py-4 border-b border-border-subtle flex items-center justify-between">
               <h3 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider">Assign Rep Dispatch</h3>
               <button type="button" onClick={() => setShowAssignRepModal(false)} className="text-text-secondary hover:text-text-primary"><X className="w-5 h-5" /></button>
             </div>
             
-            <div className="p-5 flex flex-col gap-4">
+            <div className="p-6 sm:p-8 flex flex-col gap-3">
               <div className="flex flex-col gap-1.5">
                 <label className="text-[10.5px] font-bold text-text-secondary uppercase pl-0.5">Select Field Representative</label>
                 <select 
                   value={assignRepName}
                   onChange={(e) => setAssignRepName(e.target.value)}
-                  className="h-10 w-full bg-surface border border-border-subtle hover:border-border-subtle rounded-xl px-3.5 text-[13.5px] text-text-primary focus:outline-none focus:ring-1 focus:ring-[#0EA5E9]/20 transition-all"
+                  className="h-10 w-full bg-surface border border-border-subtle hover:border-border-subtle rounded-xl px-3.5 text-[13.5px] text-text-primary focus:outline-none focus:ring-1 focus:ring-[#3B82F6]/20 transition-all"
                 >
                   <option value="Clarence Kuiken">Clarence Kuiken</option>
                   <option value="Donna Cabral">Donna Cabral (Lead)</option>
@@ -8160,7 +8172,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 <select 
                   value={assignPlant}
                   onChange={(e) => setAssignPlant(e.target.value)}
-                  className="h-10 w-full bg-surface border border-border-subtle hover:border-border-subtle rounded-xl px-3.5 text-[13.5px] text-text-primary focus:outline-none focus:ring-1 focus:ring-[#0EA5E9]/20 transition-all"
+                  className="h-10 w-full bg-surface border border-border-subtle hover:border-border-subtle rounded-xl px-3.5 text-[13.5px] text-text-primary focus:outline-none focus:ring-1 focus:ring-[#3B82F6]/20 transition-all"
                 >
                   <option value="gm_oshawa">GM Oshawa Plant</option>
                   <option value="magna_autosystems">Magna AutoSystems Belleville</option>
@@ -8179,7 +8191,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
               </button>
               <button 
                 type="submit" 
-                className="h-10 px-4 bg-[#0EA5E9] hover:bg-[#0284c7] text-text-primary rounded-xl text-[13.5px] font-bold transition-all cursor-pointer shadow-md shadow-[#0EA5E9]/10"
+                className="h-10 px-4 bg-[#3B82F6] hover:bg-[#0284c7] text-text-primary rounded-xl text-[13.5px] font-bold transition-all cursor-pointer shadow-md shadow-[#3B82F6]/10"
               >
                 Assign Dispatch
               </button>
@@ -8191,7 +8203,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       {/* RECEIPT LIGHTBOX MODAL */}
       {selectedReceiptPhoto && (
         <div 
-          className="absolute inset-0 bg-surface backdrop-blur-xs flex items-center justify-center p-6 z-50 animate-in fade-in duration-200" 
+          className="absolute inset-0 bg-surface backdrop-blur-xs flex items-center justify-center p-3 z-50 animate-in fade-in duration-200" 
           onClick={() => setSelectedReceiptPhoto(null)}
         >
           <div 
@@ -8202,7 +8214,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
             <div className="bg-surface px-5 py-4 border-b border-border-subtle flex items-center justify-between">
               <div>
                 <h3 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider flex items-center gap-1.5">
-                  <DollarSign className="w-3.5 h-3.5 text-emerald-400" />
+                  <DollarSign className="w-3.5 h-3.5 text-emerald-600" />
                   <span>Receipt Verification Lightbox</span>
                 </h3>
                 <p className="text-[10.5px] text-text-secondary mt-0.5">Scanned attachment verification for reimbursement approval</p>
@@ -8216,7 +8228,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
             </div>
 
             {/* Receipt Image Body */}
-            <div className="p-6 flex items-center justify-center bg-surface border-b border-border-subtle">
+            <div className="p-3 flex items-center justify-center bg-surface border-b border-border-subtle">
               <div className="max-h-[60vh] rounded-2xl overflow-hidden border border-border-subtle shadow-inner bg-surface-elevated flex items-center justify-center">
                 <img 
                   src={selectedReceiptPhoto} 
@@ -8244,7 +8256,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       {/* 1. VISUAL CALENDAR PICKER MODAL */}
       {showCalendarModal && (
         <div 
-          className="absolute inset-0 bg-surface backdrop-blur-xs flex items-center justify-center p-6 z-50 animate-in fade-in duration-200" 
+          className="absolute inset-0 bg-surface backdrop-blur-xs flex items-center justify-center p-3 z-50 animate-in fade-in duration-200" 
           onClick={() => setShowCalendarModal(false)}
         >
           <div 
@@ -8268,7 +8280,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
             </div>
 
             {/* Calendar Controls (Month Selector) */}
-            <div className="p-4 flex flex-col gap-3">
+            <div className="p-3 flex flex-col gap-3">
               <div className="flex justify-between items-center bg-surface px-3 py-2 rounded-xl border border-border-subtle calendar-controls-strip">
                 <button 
                   type="button"
@@ -8326,7 +8338,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         }}
                         className={`aspect-square rounded-lg flex flex-col items-center justify-center gap-0.5 border text-[11.5px] font-bold relative transition-colors cursor-pointer calendar-day-btn ${
                           isSelected
-                            ? 'bg-[#1E3A5F] border-[#22D3EE]/30 text-text-primary font-extrabold shadow-md active-day'
+                            ? 'bg-[#3B82F6] border-[#3B82F6]/30 text-text-primary font-extrabold shadow-md active-day'
                             : 'bg-surface hover:bg-surface-elevated border-border-subtle text-text-secondary hover:text-text-primary'
                         }`}
                         aria-label={`Select ${monthNames[calendarMonthIndex]} ${d}, ${calendarYear}`}
@@ -8335,7 +8347,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         {/* Event Dot */}
                         {(activity.hasIncidents || activity.hasShifts || activity.hasRework) && (
                           <span className={`w-1 h-1 rounded-full ${
-                            activity.hasIncidents ? 'bg-red-500' : activity.hasShifts ? 'bg-emerald-500' : 'bg-sky-500'
+                            activity.hasIncidents ? 'bg-red-500' : activity.hasShifts ? 'bg-emerald-500' : 'bg-amber-500'
                           }`}></span>
                         )}
                       </button>
@@ -8347,7 +8359,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
             </div>
 
             {/* Quick Demo Date Presets & Cancel Action */}
-            <div className="bg-surface p-4 border-t border-border-subtle flex flex-col gap-2 calendar-modal-footer">
+            <div className="bg-surface p-3 border-t border-border-subtle flex flex-col gap-2 calendar-modal-footer">
               <span className="text-[12.5px] text-text-secondary font-bold uppercase tracking-wider block">Demo Quick Pick:</span>
               <div className="flex gap-2">
                 <button
@@ -8357,7 +8369,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     setShowAllDates(false);
                     setShowCalendarModal(false);
                   }}
-                  className="h-8 bg-surface-elevated border border-border-subtle hover:bg-surface-elevated text-[#22D3EE] hover:text-[#22D3EE] font-bold text-[10.5px] rounded-xl flex-1 cursor-pointer text-center transition-colors"
+                  className="h-8 bg-surface-elevated border border-border-subtle hover:bg-surface-elevated text-[#3B82F6] hover:text-[#3B82F6] font-bold text-[10.5px] rounded-xl flex-1 cursor-pointer text-center transition-colors"
                 >
                   May 28 (Incident Demo)
                 </button>
@@ -8390,14 +8402,14 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       {showHelpDrawer && (
         <div className="absolute inset-0 bg-surface backdrop-blur-2xs flex justify-end z-50 animate-in fade-in duration-200" onClick={() => setShowHelpDrawer(false)}>
           <div 
-            className="w-full max-w-sm bg-surface-elevated border-l border-border-subtle h-full shadow-2xl p-5 flex flex-col overflow-hidden text-left"
+            className="w-full max-w-sm bg-surface-elevated border-l border-border-subtle h-full shadow-2xl p-6 sm:p-8 flex flex-col overflow-hidden text-left"
             onClick={(e) => e.stopPropagation()}
           >
             
             {/* Drawer Header */}
             <div className="flex items-center justify-between border-b border-border-subtle pb-3 mb-4 flex-shrink-0">
               <div>
-                <h3 className="text-[15px] font-bold text-text-primary uppercase tracking-wider">Web Portal Guide</h3>
+                <h3 className="text-[14.5px] font-bold text-text-primary uppercase tracking-wider">Web Portal Guide</h3>
                 <p className="text-[11.5px] text-text-secondary mt-0.5">Simple guidance for non-tech users</p>
               </div>
               <button onClick={() => setShowHelpDrawer(false)} className="text-text-secondary hover:text-text-primary p-1 hover:bg-slate-855 rounded-lg cursor-pointer">
@@ -8406,17 +8418,17 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
             </div>
 
             {/* Scrollable middle text */}
-            <div className="flex-1 overflow-y-auto pr-1 flex flex-col gap-4 text-[13.5px] text-text-primary leading-relaxed min-h-0">
+            <div className="flex-1 overflow-y-auto pr-1 flex flex-col gap-3 text-[13.5px] text-text-primary leading-relaxed min-h-0">
               
-              <div className="bg-[#1E3A5F]/20 p-3.5 rounded-2xl border border-[#22D3EE]/15">
-                <h4 className="font-bold text-text-primary text-[12.5px] uppercase tracking-wide mb-1 text-[#22D3EE]">📅 Using the Calendar</h4>
+              <div className="bg-[#3B82F6]/20 p-3 rounded-2xl border border-[#3B82F6]/15">
+                <h4 className="font-bold text-text-primary text-[12.5px] uppercase tracking-wide mb-1 text-[#3B82F6]">📅 Using the Calendar</h4>
                 <p className="text-[11.5px]">
                   Click on any day in the top date bar to filter the entire screen to that date. Days with activity show tiny colored dots:
                 </p>
                 <div className="mt-2 flex flex-col gap-1.5 text-[10.5px] text-text-primary">
                   <div className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-red-500"></span> <span>Red: Incident defects logged by reps</span></div>
                   <div className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> <span>Green: Shift checklists walked by reps</span></div>
-                  <div className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-sky-500"></span> <span>Blue: Supplier parts rework logged</span></div>
+                  <div className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span> <span>Blue: Supplier parts rework logged</span></div>
                 </div>
               </div>
 
@@ -8425,7 +8437,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 
                 <div>
                   <h5 className="font-bold text-text-primary text-[11.5px] flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#22D3EE]"></span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#3B82F6]"></span>
                     <span>1. Incident Defects Feed</span>
                   </h5>
                   <p className="text-[11.5px] mt-0.5 text-text-secondary pl-3">
@@ -8435,7 +8447,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
                 <div>
                   <h5 className="font-bold text-text-primary text-[11.5px] flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#0EA5E9]"></span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#3B82F6]"></span>
                     <span>2. Daily Tasks Planner</span>
                   </h5>
                   <p className="text-[11.5px] mt-0.5 text-slate-450 pl-3">
@@ -8486,7 +8498,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
         {notifications.map(n => (
           <div 
             key={n.id} 
-            className="pointer-events-auto bg-surface-elevated border-2 border-border-subtle rounded-2xl p-4 shadow-2xl flex gap-3 items-start animate-in slide-in-from-right duration-300 relative overflow-hidden"
+            className="pointer-events-auto bg-surface-elevated border-2 border-border-subtle rounded-2xl p-3 shadow-2xl flex gap-3 items-start animate-in slide-in-from-right duration-300 relative overflow-hidden"
             style={{ borderColor: n.type === 'defect' ? '#ef4444' : (n.type === 'rework' || n.type === 'expense') ? '#10b981' : '#0ea5e9' }}
           >
             {/* Ambient indicator accent line on the side */}
@@ -8497,9 +8509,9 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
             <div className="flex-1 pl-1 text-left">
               <h4 className="text-[13.5px] font-black text-text-primary uppercase tracking-wider flex items-center gap-1.5">
                 {n.type === 'defect' && <AlertCircle className="w-3.5 h-3.5 text-red-500" />}
-                {n.type === 'rework' && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />}
-                {n.type === 'shift' && <Activity className="w-3.5 h-3.5 text-cyan-400" />}
-                {n.type === 'expense' && <DollarSign className="w-3.5 h-3.5 text-emerald-400" />}
+                {n.type === 'rework' && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />}
+                {n.type === 'shift' && <Activity className="w-3.5 h-3.5 text-cyan-600" />}
+                {n.type === 'expense' && <DollarSign className="w-3.5 h-3.5 text-emerald-600" />}
                 {n.title}
               </h4>
               <p className="text-[11.5px] text-text-primary leading-relaxed mt-1 font-medium">{n.message}</p>
@@ -8516,13 +8528,13 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
       {/* QUICK ADD REPRESENTATIVE MODAL */}
       {showQuickAddRep && (
-        <div className="fixed inset-0 bg-surface backdrop-blur-sm z-[999] flex items-center justify-center p-4">
-          <div className="bg-surface-elevated border border-border-subtle p-6 rounded-2xl w-full max-w-sm flex flex-col gap-4 text-left shadow-2xl animate-in fade-in zoom-in duration-200">
+        <div className="fixed inset-0 bg-surface backdrop-blur-sm z-[999] flex items-center justify-center p-3">
+          <div className="bg-surface-elevated border border-border-subtle p-3 rounded-2xl w-full max-w-sm flex flex-col gap-3 text-left shadow-2xl animate-in fade-in zoom-in duration-200">
             <div className="flex justify-between items-center border-b border-border-subtle pb-2">
               <h4 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider flex items-center gap-1.5">
-                <UserPlus className="w-4.5 h-4.5 text-purple-400" /> Quick Add Representative
+                <UserPlus className="w-4.5 h-4.5 text-purple-600" /> Quick Add Representative
               </h4>
-              <button onClick={() => setShowQuickAddRep(false)} className="text-text-secondary hover:text-text-primary text-[15px]">✕</button>
+              <button onClick={() => setShowQuickAddRep(false)} className="text-text-secondary hover:text-text-primary text-[14.5px]">✕</button>
             </div>
             <form onSubmit={handleQuickAddRepSubmit} className="flex flex-col gap-3">
               <div className="flex flex-col gap-1">
@@ -8589,13 +8601,13 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
       {/* QUICK ADD CLIENT / SUPPLIER MODAL */}
       {showQuickAddClient && (
-        <div className="fixed inset-0 bg-surface backdrop-blur-sm z-[999] flex items-center justify-center p-4">
-          <div className="bg-surface-elevated border border-border-subtle p-6 rounded-2xl w-full max-w-sm flex flex-col gap-4 text-left shadow-2xl animate-in fade-in zoom-in duration-200">
+        <div className="fixed inset-0 bg-surface backdrop-blur-sm z-[999] flex items-center justify-center p-3">
+          <div className="bg-surface-elevated border border-border-subtle p-3 rounded-2xl w-full max-w-sm flex flex-col gap-3 text-left shadow-2xl animate-in fade-in zoom-in duration-200">
             <div className="flex justify-between items-center border-b border-border-subtle pb-2">
               <h4 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider flex items-center gap-1.5">
-                <PlusCircle className="w-4.5 h-4.5 text-cyan-400" /> Quick Add Client / Supplier
+                <PlusCircle className="w-4.5 h-4.5 text-cyan-600" /> Quick Add Client / Supplier
               </h4>
-              <button onClick={() => setShowQuickAddClient(false)} className="text-text-secondary hover:text-text-primary text-[15px]">✕</button>
+              <button onClick={() => setShowQuickAddClient(false)} className="text-text-secondary hover:text-text-primary text-[14.5px]">✕</button>
             </div>
             <form onSubmit={handleQuickAddClientSubmit} className="flex flex-col gap-3">
               <div className="flex flex-col gap-1">
@@ -8643,13 +8655,13 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
       {/* QUICK ADD PLANT / LOCATION MODAL */}
       {showQuickAddPlant && (
-        <div className="fixed inset-0 bg-surface backdrop-blur-sm z-[999] flex items-center justify-center p-4">
-          <div className="bg-surface-elevated border border-border-subtle p-6 rounded-2xl w-full max-w-sm flex flex-col gap-4 text-left shadow-2xl animate-in fade-in zoom-in duration-200">
+        <div className="fixed inset-0 bg-surface backdrop-blur-sm z-[999] flex items-center justify-center p-3">
+          <div className="bg-surface-elevated border border-border-subtle p-3 rounded-2xl w-full max-w-sm flex flex-col gap-3 text-left shadow-2xl animate-in fade-in zoom-in duration-200">
             <div className="flex justify-between items-center border-b border-border-subtle pb-2">
               <h4 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider flex items-center gap-1.5">
-                <MapPin className="w-4.5 h-4.5 text-emerald-400" /> Quick Add Plant Location
+                <MapPin className="w-4.5 h-4.5 text-emerald-600" /> Quick Add Plant Location
               </h4>
-              <button onClick={() => setShowQuickAddPlant(false)} className="text-text-secondary hover:text-text-primary text-[15px]">✕</button>
+              <button onClick={() => setShowQuickAddPlant(false)} className="text-text-secondary hover:text-text-primary text-[14.5px]">✕</button>
             </div>
             <form onSubmit={handleQuickAddPlantSubmit} className="flex flex-col gap-3">
               <div className="flex flex-col gap-1">

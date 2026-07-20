@@ -3436,7 +3436,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   };
 
   return (
-    <div className={`web-dashboard-frame flex-1 bg-[#080d1a] border border-border-subtle rounded-3xl p-3 shadow-2xl flex flex-col ${layoutMode === 'dashboard-only' || layoutMode === 'roadmap-only' ? 'min-h-[calc(100vh-140px)]' : 'h-[780px]'} overflow-hidden text-left relative`}>
+    <div className={`web-dashboard-frame flex-1 bg-bg-primary border border-border-subtle rounded-3xl p-3 shadow-2xl flex flex-col ${layoutMode === 'dashboard-only' || layoutMode === 'roadmap-only' ? 'min-h-[calc(100vh-140px)]' : 'h-[780px]'} overflow-hidden text-left relative`}>
       
       {/* Dashboard Top Header */}
       <div className="flex items-center justify-between pb-5 border-b border-border-subtle flex-shrink-0">
@@ -4071,7 +4071,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         className={`p-3 rounded-2xl text-[12.5px] leading-relaxed whitespace-pre-wrap ${
                           msg.sender === 'user'
                             ? 'bg-[#3B82F6] text-white rounded-tr-none border border-[#3B82F6]/20'
-                            : 'bg-surface-elevated text-slate-250 rounded-tl-none border border-border-subtle'
+                            : 'bg-surface-elevated text-text-primary rounded-tl-none border border-border-subtle'
                         }`}
                       >
                         

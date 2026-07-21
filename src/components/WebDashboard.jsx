@@ -3,11 +3,48 @@ import {
   Shield, Activity, Server, FileText, Users, Mail, DollarSign, Database, 
   Search, Filter, ChevronRight, X, Clock, CheckCircle2, UserCheck, AlertCircle, 
   FileSpreadsheet, Calendar, ArrowRight, UserPlus, MapPin, Printer, Download, Eye, Sparkles,
-  Milestone, TrendingUp, FolderKanban, PlusCircle, ArrowLeft, Camera
+  Milestone, TrendingUp, FolderKanban, PlusCircle, ArrowLeft, Camera, ClipboardCheck
 } from 'lucide-react';
 import { getEntities, saveEntity, resetDB, logSystemEvent, addProject, deleteRate } from './SharedDatabase';
 import { jsPDF } from 'jspdf';
 import { LOGO_BASE64 } from './LogoBase64';
+
+export const EXPENSE_GROUPS = {
+  INTERNAL: 'Internal Expense (IDS)',
+  EXTERNAL: 'External Expense (Billed to Client)'
+};
+
+export const EXPENSE_CATEGORIES = [
+  'Travel Expense (Mileage, Tolls)',
+  'Operational (FedEx, Packaging)',
+  'Tools and Rework',
+  'Others (Per Diem, Lodging)'
+];
+
+export const generateTrackingCode = (clientPrefix, dateString, prefix = '') => {
+  const date = new Date(dateString || new Date());
+  const start = new Date(date.getFullYear(), 0, 1);
+  const days = Math.floor((date - start) / (24 * 60 * 60 * 1000));
+  const weekNumber = Math.ceil(days / 7) || 1;
+  const rand = Math.floor(100 + Math.random() * 900);
+  const pfx = clientPrefix ? clientPrefix.toUpperCase().substring(0, 3) : 'GEN';
+  return `${pfx}-W${weekNumber}-${prefix}${rand}`;
+};
+
+export const calculateOT = (hours, dateString, rules) => {
+  if (!rules) return { regular: hours, ot: 0, ot_reason: null };
+  const d = new Date(dateString);
+  const day = d.getDay();
+  
+  if (day === 0) return { regular: 0, ot: hours, ot_reason: 'Sunday' }; // Sunday
+  if (day === 6) return { regular: 0, ot: hours, ot_reason: 'Saturday' }; // Saturday
+  
+  if (hours > rules.daily_threshold) {
+    return { regular: rules.daily_threshold, ot: hours - rules.daily_threshold, ot_reason: 'Daily Overtime' };
+  }
+  
+  return { regular: hours, ot: 0, ot_reason: null };
+};
 
 export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false, userRole = 'admin', currentUserRepId = '', currentUserCustomerId = '', layoutMode = 'side-by-side' }) {
   const [incidents, setIncidents] = useState([]);
@@ -69,6 +106,20 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   
   // Accounting Sub-tab Navigation
   const [accountingSubTab, setAccountingSubTab] = useState('log-hours');
+
+  // Daily Checklists State
+  const [weeklyChecklists, setWeeklyChecklists] = useState({
+    'Monday': { cleanliness: false, tools: false, ppe: false, materials: false, reporting: false },
+    'Tuesday': { cleanliness: false, tools: false, ppe: false, materials: false, reporting: false },
+    'Wednesday': { cleanliness: false, tools: false, ppe: false, materials: false, reporting: false },
+    'Thursday': { cleanliness: false, tools: false, ppe: false, materials: false, reporting: false },
+    'Friday': { cleanliness: false, tools: false, ppe: false, materials: false, reporting: false },
+    'Saturday': { cleanliness: false, tools: false, ppe: false, materials: false, reporting: false },
+    'Sunday': { cleanliness: false, tools: false, ppe: false, materials: false, reporting: false }
+  });
+  const [weeklySignOff, setWeeklySignOff] = useState(false);
+  const [editingEntry, setEditingEntry] = useState(null);
+  const [editForm, setEditForm] = useState({ date: '', qty: '', amount: '', notes: '', reason: '' });
   
   // Log Hours Form Inputs
   const [logHoursRepId, setLogHoursRepId] = useState('rep_hugo');
@@ -82,7 +133,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   const [logExpRepId, setLogExpRepId] = useState('rep_hugo');
   const [logExpSupplierId, setLogExpSupplierId] = useState('autokabel');
   const [logExpDate, setLogExpDate] = useState(new Date().toISOString().substring(0, 10));
-  const [logExpCategory, setLogExpCategory] = useState('Fuel');
+  const [logExpGroup, setLogExpGroup] = useState(EXPENSE_GROUPS.EXTERNAL);
+  const [logExpCategory, setLogExpCategory] = useState(EXPENSE_CATEGORIES[0]);
   const [logExpAmount, setLogExpAmount] = useState('');
   const [logExpNotes, setLogExpNotes] = useState('');
 
@@ -279,6 +331,63 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     setRates(getEntities('rates') || []);
     const user = sessionStorage.getItem('ids_pulse_admin_user') || 'Admin';
     logSystemEvent('system', 'delete_rate', `${user} deleted custom rate override configuration ID ${rateId}.`);
+  };
+
+
+  const handleEditSave = (e) => {
+    e.preventDefault();
+    if (!editingEntry || !editForm.reason.trim()) {
+      alert("You must provide a reason for the edit to update the audit trail.");
+      return;
+    }
+    const timestamp = new Date().toISOString();
+    const adminName = users.find(u => u.id === (currentUserRepId || currentUserCustomerId))?.name || 'Admin';
+    
+    if (editingEntry.type === 'time') {
+      const idx = timeEntries.findIndex(t => t.id === editingEntry.id);
+      if (idx !== -1) {
+        const updated = { ...timeEntries[idx] };
+        const auditLog = {
+          action: 'EDITED',
+          timestamp,
+          by: adminName,
+          reason: editForm.reason,
+          changes: `Hours changed from ${updated.hours} to ${editForm.qty}`
+        };
+        updated.date = editForm.date;
+        updated.hours = parseFloat(editForm.qty);
+        updated.audit_trail = [...(updated.audit_trail || []), auditLog];
+        
+        const newArr = [...timeEntries];
+        newArr[idx] = updated;
+        setTimeEntries(newArr);
+        localStorage.setItem('ids_pulse_time_entries', JSON.stringify(newArr));
+      }
+    } else if (editingEntry.type === 'expense') {
+      const idx = expenseEntries.findIndex(x => x.id === editingEntry.id);
+      if (idx !== -1) {
+        const updated = { ...expenseEntries[idx] };
+        const auditLog = {
+          action: 'EDITED',
+          timestamp,
+          by: adminName,
+          reason: editForm.reason,
+          changes: `Amount changed from ${updated.amount} to ${editForm.amount}`
+        };
+        updated.date = editForm.date;
+        updated.amount = editForm.amount;
+        updated.audit_trail = [...(updated.audit_trail || []), auditLog];
+        
+        const newArr = [...expenseEntries];
+        newArr[idx] = updated;
+        setExpenseEntries(newArr);
+        localStorage.setItem('ids_pulse_expense_entries', JSON.stringify(newArr));
+      }
+    }
+    
+    setEditingEntry(null);
+    setEditForm({ date: '', qty: '', amount: '', notes: '', reason: '' });
+    if (dbUpdateTrigger) dbUpdateTrigger(Date.now());
   };
 
   const handleSubmitMatrix = (e) => {
@@ -1537,7 +1646,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 </tr>
               `).join('')}
             </tbody>
-          </table>
+          </table></div>
         </div>
       `;
     }
@@ -1986,7 +2095,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   </tr>
                 `).join('')}
               </tbody>
-            </table>
+            </table></div>
 
             ${sr.bonus_tasks && sr.bonus_tasks.length > 0 ? `
               <div class="section-title">Requested Sorts & Audits</div>
@@ -2007,7 +2116,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     </tr>
                   `).join('')}
                 </tbody>
-              </table>
+              </table></div>
             ` : ''}
 
             <div class="footer">
@@ -2401,7 +2510,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   `;
                 }).join('')}
               </tbody>
-            </table>
+            </table></div>
 
             <div class="footer">
               <span>System: IDS Payroll Timesheets</span>
@@ -2593,7 +2702,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   </tr>
                 ` : ''}
               </tbody>
-            </table>
+            </table></div>
 
             <div class="footer">
               <span>System: IDS Rework Logging Feed</span>
@@ -3749,7 +3858,22 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     <span>My Hours & Expenses</span>
                   </div>
                   {activeTab === 'time-tracking' && <div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>}
+                </button>\n
+                <button 
+                  onClick={() => setActiveTab('daily-checklists')}
+                  className={`w-full h-12 px-4 rounded-xl font-bold text-[13.5px] transition-all cursor-pointer flex items-center justify-between border ${
+                    activeTab === 'daily-checklists' 
+                      ? 'bg-blue-50 text-blue-700 border-blue-200 shadow-sm' 
+                      : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle hover:border-border-subtle'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <ClipboardCheck className="w-4.5 h-4.5 text-[#3B82F6]" />
+                    <span>Daily Checklists</span>
+                  </div>
+                  {activeTab === 'daily-checklists' && <div className="w-1.5 h-1.5 rounded-full bg-[#3B82F6]"></div>}
                 </button>
+
               </>
             )}
 
@@ -3827,7 +3951,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 </button>
 
                 {/* Hide these tabs from accountant */}
-                {userRole !== 'accountant' && (
+                {(userRole !== 'accountant' || activeTab === 'finance') && (
                   <>
                  <button
                     onClick={() => setActiveTab('incidents')}
@@ -3887,7 +4011,22 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                       <span>Shift Summaries Log</span>
                     </div>
                     {activeTab === 'shift-logs' && <div className="w-1.5 h-1.5 rounded-full bg-[#3B82F6]"></div>}
-                  </button>
+                  </button>\n
+                <button 
+                  onClick={() => setActiveTab('daily-checklists')}
+                  className={`w-full h-12 px-4 rounded-xl font-bold text-[13.5px] transition-all cursor-pointer flex items-center justify-between border ${
+                    activeTab === 'daily-checklists' 
+                      ? 'bg-blue-50 text-blue-700 border-blue-200 shadow-sm' 
+                      : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle hover:border-border-subtle'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <ClipboardCheck className="w-4.5 h-4.5 text-[#3B82F6]" />
+                    <span>Daily Checklists</span>
+                  </div>
+                  {activeTab === 'daily-checklists' && <div className="w-1.5 h-1.5 rounded-full bg-[#3B82F6]"></div>}
+                </button>
+
 
                   <button 
                     onClick={() => setActiveTab('suppliers')}
@@ -3916,7 +4055,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   >
                     <div className="flex items-center gap-3">
                       <DollarSign className="w-4.5 h-4.5 text-emerald-600" />
-                      <span>Timesheets & Mileage</span>
+                      <span>Timesheets & Logging</span>
                     </div>
                     {activeTab === 'time-tracking' && <div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>}
                   </button>
@@ -4826,7 +4965,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     </span>
                   )}
                   {filteredIncidents.length > 0 ? (
-                     <table className="w-full border-collapse text-left text-[13.5px]">
+                     <div className="overflow-x-auto w-full"><table className="w-full border-collapse text-left text-[13.5px]">
                       <thead>
                         <tr className="border-b border-border-subtle text-text-secondary font-bold uppercase tracking-wider text-[10.5px]">
                           <th className="py-2 px-2">Date Found</th>
@@ -4881,7 +5020,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                           </tr>
                         ))}
                       </tbody>
-                    </table>
+                    </table></div>
                   ) : (
                     <div className="flex flex-col items-center justify-center h-48 text-center text-text-secondary">
                       <AlertCircle className="w-7 h-7 text-slate-600 mb-2" />
@@ -5258,6 +5397,118 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
             </div>
           )}
 
+          
+          {/* DAILY CHECKLISTS TAB */}
+          {activeTab === 'daily-checklists' && (
+            <div className="flex-1 flex flex-col gap-3 min-h-0 bg-surface rounded-xl border border-border-subtle p-6 overflow-y-auto">
+              <div className="flex justify-between items-center pb-4 border-b border-border-subtle">
+                <div>
+                  <h3 className="text-xl font-bold text-text-primary">Weekly REP Activities Report</h3>
+                  <span className="text-sm text-text-secondary">Mandatory 5-point daily checklist for shift workers</span>
+                </div>
+                {weeklySignOff ? (
+                  <div className="flex items-center gap-2 text-emerald-600 bg-emerald-50 px-4 py-2 rounded-lg font-bold border border-emerald-200">
+                    <CheckCircle2 className="w-5 h-5" />
+                    <span>Signed Off</span>
+                  </div>
+                ) : (
+                  <button 
+                    onClick={() => {
+                      const allChecked = Object.values(weeklyChecklists).some(day => 
+                        Object.values(day).some(val => val)
+                      );
+                      if (allChecked) {
+                        setWeeklySignOff(true);
+                      } else {
+                        alert('Please check off at least some activities before signing off.');
+                      }
+                    }}
+                    className="bg-[#3B82F6] hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg flex items-center gap-2 transition-colors cursor-pointer shadow-sm shadow-blue-500/20"
+                  >
+                    <ClipboardCheck className="w-4.5 h-4.5" />
+                    <span>Sign Off Weekly Report</span>
+                  </button>
+                )}
+              </div>
+              
+              <div className="overflow-x-auto w-full mt-4">
+                <table className="w-full text-left border-collapse border border-border-subtle rounded-xl overflow-hidden shadow-sm text-[13.5px]">
+                  <thead>
+                    <tr className="bg-surface-elevated text-text-secondary">
+                      <th className="p-3 border-b border-border-subtle font-semibold w-1/3">Checklist Item</th>
+                      {Object.keys(weeklyChecklists).map(day => (
+                        <th key={day} className="p-3 border-b border-l border-border-subtle font-semibold text-center">{day.substring(0,3)}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[
+                      { key: 'cleanliness', label: '1. Area Cleanliness Maintained' },
+                      { key: 'tools', label: '2. Tools & Scanners Calibrated' },
+                      { key: 'ppe', label: '3. Mandatory PPE Worn' },
+                      { key: 'materials', label: '4. Materials Stocked for Next Shift' },
+                      { key: 'reporting', label: '5. End-of-Day Defect Reporting Done' }
+                    ].map((item, idx) => (
+                      <tr key={item.key} className={idx % 2 === 0 ? 'bg-surface' : 'bg-surface-elevated/30'}>
+                        <td className="p-3 border-b border-border-subtle font-bold text-text-primary">
+                          {item.label}
+                        </td>
+                        {Object.entries(weeklyChecklists).map(([day, checks]) => (
+                          <td key={day} className="p-3 border-b border-l border-border-subtle text-center">
+                            <input 
+                              type="checkbox" 
+                              checked={checks[item.key]}
+                              disabled={weeklySignOff}
+                              onChange={(e) => {
+                                setWeeklyChecklists(prev => ({
+                                  ...prev,
+                                  [day]: {
+                                    ...prev[day],
+                                    [item.key]: e.target.checked
+                                  }
+                                }));
+                              }}
+                              className="w-4.5 h-4.5 cursor-pointer accent-[#3B82F6]"
+                            />
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Progress Bar */}
+              <div className="mt-8 bg-surface-elevated p-5 rounded-xl border border-border-subtle">
+                <h4 className="font-bold text-text-primary mb-4 text-[14.5px]">Weekly Completion Progress</h4>
+                {(() => {
+                  const totalItems = 7 * 5; // 7 days * 5 items
+                  const completedItems = Object.values(weeklyChecklists).reduce((acc, day) => 
+                    acc + Object.values(day).filter(v => v).length, 0
+                  );
+                  const progress = Math.round((completedItems / totalItems) * 100);
+                  return (
+                    <div className="flex flex-col gap-2.5">
+                      <div className="flex justify-between text-[13.5px] text-text-secondary font-bold">
+                        <span>{completedItems} / {totalItems} Activities Checked</span>
+                        <span className="text-emerald-600">{progress}%</span>
+                      </div>
+                      <div className="w-full h-3.5 bg-border-subtle rounded-full overflow-hidden shadow-inner">
+                        <div 
+                          className="h-full bg-emerald-500 rounded-full transition-all duration-500 relative overflow-hidden" 
+                          style={{ width: progress + '%' }}
+                        >
+                          <div className="absolute inset-0 bg-white/20" style={{ backgroundImage: 'linear-gradient(45deg, rgba(255,255,255,0.15) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.15) 75%, transparent 75%, transparent)' }}></div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
+          )}
+
+
           {/* TAB 2: SUPPLIERS DIRECTORY */}
           {activeTab === 'suppliers' && (
             <div className="flex-1 flex flex-col gap-3 min-h-0">
@@ -5313,8 +5564,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
           )}
 
           {/* TAB 3: TIME & MILEAGE TRACKING (COLLEEN'S VIEW) */}
-          {activeTab === 'time-tracking' && (
-            userRole === 'qre' ? (
+          {(activeTab === 'time-tracking' || activeTab === 'finance') && (
+            (activeTab === 'time-tracking' && userRole === 'qre') ? (
               <div className="flex-1 flex flex-col gap-3 min-h-0 text-left">
                 {/* Header */}
                 <div className="flex justify-between items-center pb-2 border-b border-border-subtle flex-shrink-0">
@@ -5427,23 +5678,41 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                             <input type="date" value={logExpDate} onChange={(e) => setLogExpDate(e.target.value)} className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary" />
                           </div>
                           <div className="flex flex-col gap-1">
-                            <label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Category</label>
-                            <select value={logExpCategory} onChange={(e) => setLogExpCategory(e.target.value)} className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary">
-                              <option value="Fuel">Fuel</option>
-                              <option value="Meals">Meals</option>
-                              <option value="Parking">Parking</option>
-                              <option value="Tolls">Tolls</option>
-                              <option value="Supplies">Supplies</option>
+                            <label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Expense Group</label>
+                            <select value={logExpGroup} onChange={(e) => setLogExpGroup(e.target.value)} className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary">
+                              <option value={EXPENSE_GROUPS.EXTERNAL}>{EXPENSE_GROUPS.EXTERNAL}</option>
+                              <option value={EXPENSE_GROUPS.INTERNAL}>{EXPENSE_GROUPS.INTERNAL}</option>
                             </select>
                           </div>
                         </div>
-                        <div className="flex flex-col gap-1">
-                          <label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Amount ($)</label>
-                          <input type="number" step="0.01" placeholder="0.00" value={logExpAmount} onChange={(e) => setLogExpAmount(e.target.value)} className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary" />
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="flex flex-col gap-1">
+                            <label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Category</label>
+                            <select value={logExpCategory} onChange={(e) => setLogExpCategory(e.target.value)} className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary">
+                              {EXPENSE_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                            </select>
+                          </div>
+                          <div className="flex flex-col gap-1">
+                            <label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Amount ($)</label>
+                            <input type="number" step="0.01" placeholder="0.00" value={logExpAmount} onChange={(e) => setLogExpAmount(e.target.value)} className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary" />
+                          </div>
                         </div>
                         <div className="flex flex-col gap-1">
-                          <label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Claim Notes</label>
-                          <input type="text" placeholder="Purpose of travel or purchase" value={logExpNotes} onChange={(e) => setLogExpNotes(e.target.value)} className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary" />
+                          <label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Observations / Notes</label>
+                          <input type="text" placeholder="Purpose of expense" value={logExpNotes} onChange={(e) => setLogExpNotes(e.target.value)} className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary" />
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Receipt / Photo</label>
+                          <div className="flex items-center gap-2">
+                            <button type="button" onClick={() => setSelectedReceiptPhoto('captured_receipt.jpg')} className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[12px] text-text-primary flex items-center gap-2 flex-1 justify-center hover:bg-surface-elevated">
+                              <Camera className="w-4 h-4 text-[#10B981]" /> {selectedReceiptPhoto ? 'Photo Attached' : 'Capture Receipt'}
+                            </button>
+                            {selectedReceiptPhoto && (
+                              <button type="button" onClick={() => setSelectedReceiptPhoto(null)} className="p-2 bg-red-500/10 text-red-500 rounded-xl hover:bg-red-500/20">
+                                <X className="w-4 h-4" />
+                              </button>
+                            )}
+                          </div>
                         </div>
                         <button type="submit" className="bg-[#10B981] hover:bg-[#10B981]/90 text-text-primary font-bold py-2 rounded-xl text-[13.5px] cursor-pointer transition-colors mt-2">Log Expense</button>
                       </form>
@@ -5552,7 +5821,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                       <div className="bg-surface-elevated border border-border-subtle p-6 sm:p-8 rounded-2xl flex flex-col gap-3">
                         <h4 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider border-b border-border-subtle pb-2">Logged Hours Summary (No Rates)</h4>
                         <div className="overflow-x-auto">
-                          <table className="w-full text-[13.5px] text-left">
+                          <div className="overflow-x-auto w-full"><table className="w-full text-[13.5px] text-left">
                             <thead>
                               <tr className="border-b border-border-subtle text-text-secondary font-bold uppercase text-[10.5px]"><th className="py-2">Date</th><th className="py-2">Client</th><th className="py-2 text-right">Hours</th><th className="py-2 text-right">Mileage</th></tr>
                             </thead>
@@ -5570,14 +5839,14 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                 ))
                               )}
                             </tbody>
-                          </table>
+                          </table></div>
                         </div>
                       </div>
 
                       <div className="bg-surface-elevated border border-border-subtle p-6 sm:p-8 rounded-2xl flex flex-col gap-3">
                         <h4 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider border-b border-border-subtle pb-2">Logged Expenses (Reimbursable Claims)</h4>
                         <div className="overflow-x-auto">
-                          <table className="w-full text-[13.5px] text-left">
+                          <div className="overflow-x-auto w-full"><table className="w-full text-[13.5px] text-left">
                             <thead>
                               <tr className="border-b border-border-subtle text-text-secondary font-bold uppercase text-[10.5px]"><th className="py-2">Date</th><th className="py-2">Category</th><th className="py-2">Amount</th><th className="py-2 text-right">Status</th></tr>
                             </thead>
@@ -5601,7 +5870,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                 ))
                               )}
                             </tbody>
-                          </table>
+                          </table></div>
                         </div>
                       </div>
                     </div>
@@ -5701,6 +5970,13 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         <div className="flex flex-col gap-1">
                           <label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Notes</label>
                           <input type="text" placeholder="Shift sorting notes" value={logHoursNotes} onChange={(e) => setLogHoursNotes(e.target.value)} className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary" />
+                        </div>
+                        <div className="bg-[#3B82F6]/10 border border-[#3B82F6]/30 rounded-xl p-3 mt-1 flex justify-between items-center">
+                          <span className="text-[11.5px] font-bold text-[#3B82F6] uppercase tracking-wider">Expected Base Pay</span>
+                          <span className="text-[14px] font-bold text-[#3B82F6]">
+                            {users.find(u => u.id === logHoursRepId)?.pay_currency === 'CAD' ? 'CAD $' : 'USD $'}
+                            {((parseFloat(logHoursQty) || 0) * (getRepSupplierRates(logHoursRepId, logHoursSupplierId)?.pay_rate || 0)).toFixed(2)}
+                          </span>
                         </div>
                         <button type="submit" className="bg-[#3B82F6] hover:bg-[#3B82F6]/90 text-text-primary font-bold py-2 rounded-xl text-[13.5px] cursor-pointer transition-colors mt-2">Log Hours</button>
                       </form>
@@ -5903,7 +6179,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                           {clientEntries.length === 0 && clientExpenses.length === 0 ? <div className="text-center py-6 text-slate-550">All hours and expenses are invoiced for this client.</div> : (
                             <div className="flex flex-col gap-3">
                               {clientEntries.length > 0 && (
-                                <table className="w-full text-[13.5px] text-left">
+                                <div className="overflow-x-auto w-full"><table className="w-full text-[13.5px] text-left">
                                   <thead>
                                     <tr className="border-b border-border-subtle text-text-secondary font-bold uppercase text-[10.5px]"><th className="py-2 w-8 text-center">Inc</th><th className="py-2">Rep</th><th className="py-2">Date</th><th className="py-2 text-right">Hours</th><th className="py-2 text-right">Rate</th><th className="py-2 text-right">Hours Billing</th><th className="py-2 text-right">Mileage</th><th className="py-2 text-right">Mileage Billing</th></tr>
                                   </thead>
@@ -5936,13 +6212,13 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                       );
                                     })}
                                   </tbody>
-                                </table>
+                                </table></div>
                               )}
 
                               {clientExpenses.length > 0 && (
                                 <div className="mt-4 pt-4 border-t border-border-subtle">
                                   <h5 className="text-[11.5px] font-bold text-text-secondary uppercase tracking-wider mb-2">Pending Reimbursements</h5>
-                                  <table className="w-full text-[13.5px] text-left">
+                                  <div className="overflow-x-auto w-full"><table className="w-full text-[13.5px] text-left">
                                     <thead>
                                       <tr className="border-b border-border-subtle text-text-secondary font-bold uppercase text-[10.5px]"><th className="py-2 w-8 text-center">Inc</th><th className="py-2">Rep</th><th className="py-2">Date</th><th className="py-2">Category</th><th className="py-2">Notes</th><th className="py-2 text-right">Amount</th></tr>
                                     </thead>
@@ -5973,7 +6249,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                         );
                                       })}
                                     </tbody>
-                                  </table>
+                                  </table></div>
                                 </div>
                               )}
                             </div>
@@ -5987,7 +6263,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   {accountingSubTab === 'payroll' && (
                     <div className="bg-surface-elevated border border-border-subtle p-6 sm:p-8 rounded-2xl flex flex-col gap-3 text-left">
                       <h4 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider pb-2 border-b border-border-subtle">Rep Bi-Weekly Payroll Preview</h4>
-                      <table className="w-full text-[13.5px] text-left">
+                      <div className="overflow-x-auto w-full"><table className="w-full text-[13.5px] text-left">
                         <thead>
                           <tr className="border-b border-border-subtle text-text-secondary font-bold uppercase text-[10.5px]"><th className="py-2">Rep</th><th className="py-2">Client</th><th className="py-2 text-right">Hours</th><th className="py-2 text-right">Rate</th><th className="py-2 text-right">Hours Pay</th><th className="py-2 text-right">Mileage</th><th className="py-2 text-right">Mileage Pay</th><th className="py-2 text-right">Expenses</th><th className="py-2 text-right">Net Payout</th></tr>
                         </thead>
@@ -6020,7 +6296,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                             });
                           })}
                         </tbody>
-                      </table>
+                      </table></div>
                     </div>
                   )}
 
@@ -6050,7 +6326,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                       </div>
                       
                       <form onSubmit={handleSubmitMatrix} className="flex flex-col gap-3 mt-2">
-                        <table className="w-full text-left text-[13.5px]">
+                        <div className="overflow-x-auto w-full"><table className="w-full text-left text-[13.5px]">
                           <thead>
                             <tr className="border-b border-border-subtle text-text-secondary font-bold uppercase text-[10.5px]">
                               <th className="py-2 w-[220px]">Representative (QRE)</th>
@@ -6108,7 +6384,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                               );
                             })}
                           </tbody>
-                        </table>
+                        </table></div>
 
                         <div className="flex justify-end mt-4 pt-4 border-t border-border-subtle">
                           <button type="submit" className="bg-[#10B981] hover:bg-[#10B981]/90 text-text-primary font-extrabold py-3 px-8 rounded-xl text-[13.5px] uppercase tracking-wider transition-colors cursor-pointer flex items-center gap-2 shadow-lg shadow-[#10B981]/20 hover:-translate-y-0.5">
@@ -6116,6 +6392,124 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                           </button>
                         </div>
                       </form>
+                    </div>
+                  )}
+
+                  {/* SUB-TAB: TIMESHEET HISTORY (EDIT) */}
+                  {accountingSubTab === 'history' && (
+                    <div className="bg-surface-elevated border border-border-subtle p-6 sm:p-8 rounded-2xl flex flex-col gap-4 text-left">
+                      <div className="flex justify-between items-center pb-2 border-b border-border-subtle">
+                        <h4 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider flex items-center gap-2">
+                          <History className="w-4.5 h-4.5 text-[#3B82F6]" /> Master Entry History (Audit & Edit)
+                        </h4>
+                      </div>
+                      
+                      <div className="flex flex-col gap-6">
+                        {/* Time Entries */}
+                        <div>
+                          <h5 className="text-[12.5px] font-bold text-text-secondary uppercase mb-3 tracking-wider">Time & Mileage Entries</h5>
+                          <div className="overflow-x-auto w-full border border-border-subtle rounded-xl">
+                            <table className="w-full text-left text-[13px]">
+                              <thead className="bg-surface text-[10.5px] text-text-secondary uppercase tracking-wider font-bold">
+                                <tr>
+                                  <th className="p-3 border-b border-border-subtle whitespace-nowrap">ID / Date</th>
+                                  <th className="p-3 border-b border-border-subtle whitespace-nowrap">Rep</th>
+                                  <th className="p-3 border-b border-border-subtle whitespace-nowrap">Client</th>
+                                  <th className="p-3 border-b border-border-subtle whitespace-nowrap">Hours</th>
+                                  <th className="p-3 border-b border-border-subtle whitespace-nowrap">Status</th>
+                                  <th className="p-3 border-b border-border-subtle whitespace-nowrap">Actions</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-border-subtle text-text-primary">
+                                {timeEntries.slice().reverse().map(t => (
+                                  <tr key={t.id} className="hover:bg-surface/50">
+                                    <td className="p-3">
+                                      <div className="font-mono text-[10px] text-text-secondary">{t.id}</div>
+                                      <div className="font-bold text-text-primary">{t.date}</div>
+                                    </td>
+                                    <td className="p-3 font-semibold text-text-primary">{users.find(u => u.id === t.rep_id)?.name || t.rep_id}</td>
+                                    <td className="p-3 text-text-secondary">{suppliers.find(s => s.id === t.supplier_id)?.name || t.supplier_id}</td>
+                                    <td className="p-3 font-mono font-bold">{t.hours}</td>
+                                    <td className="p-3">
+                                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${t.status === 'approved' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-amber-500/10 text-amber-500'}`}>
+                                        {t.status.replace('_', ' ')}
+                                      </span>
+                                    </td>
+                                    <td className="p-3">
+                                      <button 
+                                        onClick={() => {
+                                          setEditingEntry({ type: 'time', id: t.id });
+                                          setEditForm({ date: t.date, qty: t.hours, amount: '', notes: t.notes || '', reason: '' });
+                                        }}
+                                        className="text-[11px] bg-surface border border-border-subtle hover:border-[#3B82F6] hover:text-[#3B82F6] px-2 py-1 rounded font-bold transition-colors cursor-pointer"
+                                      >
+                                        Edit
+                                      </button>
+                                    </td>
+                                  </tr>
+                                ))}
+                                {timeEntries.length === 0 && (
+                                  <tr><td colSpan="6" className="p-4 text-center text-text-secondary text-[12px]">No time entries found.</td></tr>
+                                )}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+
+                        {/* Expense Entries */}
+                        <div>
+                          <h5 className="text-[12.5px] font-bold text-text-secondary uppercase mb-3 tracking-wider">Expense Entries</h5>
+                          <div className="overflow-x-auto w-full border border-border-subtle rounded-xl">
+                            <table className="w-full text-left text-[13px]">
+                              <thead className="bg-surface text-[10.5px] text-text-secondary uppercase tracking-wider font-bold">
+                                <tr>
+                                  <th className="p-3 border-b border-border-subtle whitespace-nowrap">ID / Date</th>
+                                  <th className="p-3 border-b border-border-subtle whitespace-nowrap">Rep</th>
+                                  <th className="p-3 border-b border-border-subtle whitespace-nowrap">Category / Client</th>
+                                  <th className="p-3 border-b border-border-subtle whitespace-nowrap">Amount</th>
+                                  <th className="p-3 border-b border-border-subtle whitespace-nowrap">Status</th>
+                                  <th className="p-3 border-b border-border-subtle whitespace-nowrap">Actions</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-border-subtle text-text-primary">
+                                {expenseEntries.slice().reverse().map(e => (
+                                  <tr key={e.id} className="hover:bg-surface/50">
+                                    <td className="p-3">
+                                      <div className="font-mono text-[10px] text-text-secondary">{e.id}</div>
+                                      <div className="font-bold text-text-primary">{e.date}</div>
+                                    </td>
+                                    <td className="p-3 font-semibold text-text-primary">{users.find(u => u.id === e.rep_id)?.name || e.rep_id}</td>
+                                    <td className="p-3">
+                                      <div className="font-bold text-text-primary">{e.category}</div>
+                                      <div className="text-[11px] text-text-secondary">{suppliers.find(s => s.id === e.supplier_id)?.name || 'Internal'}</div>
+                                    </td>
+                                    <td className="p-3 font-mono font-bold text-emerald-500">\${e.amount}</td>
+                                    <td className="p-3">
+                                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${e.status === 'approved' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-amber-500/10 text-amber-500'}`}>
+                                        {e.status.replace('_', ' ')}
+                                      </span>
+                                    </td>
+                                    <td className="p-3">
+                                      <button 
+                                        onClick={() => {
+                                          setEditingEntry({ type: 'expense', id: e.id });
+                                          setEditForm({ date: e.date, qty: '', amount: e.amount, notes: e.notes || '', reason: '' });
+                                        }}
+                                        className="text-[11px] bg-surface border border-border-subtle hover:border-[#3B82F6] hover:text-[#3B82F6] px-2 py-1 rounded font-bold transition-colors cursor-pointer"
+                                      >
+                                        Edit
+                                      </button>
+                                    </td>
+                                  </tr>
+                                ))}
+                                {expenseEntries.length === 0 && (
+                                  <tr><td colSpan="6" className="p-4 text-center text-text-secondary text-[12px]">No expense entries found.</td></tr>
+                                )}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   )}
 
@@ -6148,7 +6542,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
                           <div className="bg-surface-elevated border border-border-subtle p-6 sm:p-8 rounded-2xl col-span-2 flex flex-col gap-3">
                             <h4 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider border-b border-border-subtle pb-2">Active Customers List</h4>
-                            <table className="w-full text-[13.5px] text-left">
+                            <div className="overflow-x-auto w-full"><table className="w-full text-[13.5px] text-left">
                               <thead>
                                 <tr className="border-b border-border-subtle text-text-secondary font-bold uppercase text-[10.5px]"><th>Client Name</th><th>Invoicing</th><th>Contacts</th><th>Schedule</th></tr>
                               </thead>
@@ -6162,7 +6556,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                   </tr>
                                 ))}
                               </tbody>
-                            </table>
+                            </table></div>
                           </div>
                         </div>
                       )}
@@ -6201,7 +6595,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
                           <div className="bg-surface-elevated border border-border-subtle p-6 sm:p-8 rounded-2xl col-span-2 flex flex-col gap-3">
                             <h4 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider border-b border-border-subtle pb-2">Active Locations Mapping</h4>
-                            <table className="w-full text-[13.5px] text-left">
+                            <div className="overflow-x-auto w-full"><table className="w-full text-[13.5px] text-left">
                               <thead>
                                 <tr className="border-b border-border-subtle text-text-secondary font-bold uppercase text-[10.5px]"><th>Location</th><th>OEM</th><th>Parent Customer</th><th>Address</th></tr>
                               </thead>
@@ -6218,7 +6612,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                   );
                                 })}
                               </tbody>
-                            </table>
+                            </table></div>
                           </div>
                         </div>
                       )}
@@ -6248,7 +6642,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
                           <div className="bg-surface-elevated border border-border-subtle p-6 sm:p-8 rounded-2xl col-span-2 flex flex-col gap-3">
                             <h4 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider border-b border-border-subtle pb-2">Active Field Representatives</h4>
-                            <table className="w-full text-[13.5px] text-left">
+                            <div className="overflow-x-auto w-full"><table className="w-full text-[13.5px] text-left">
                               <thead>
                                 <tr className="border-b border-border-subtle text-text-secondary font-bold uppercase text-[10.5px]"><th>Rep Name</th><th>Email</th><th>Phone</th><th>Pay Currency</th><th>Role</th></tr>
                               </thead>
@@ -6266,7 +6660,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                   </tr>
                                 ))}
                               </tbody>
-                            </table>
+                            </table></div>
                           </div>
                         </div>
                       )}
@@ -6326,7 +6720,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                           <div className="bg-surface-elevated border border-border-subtle p-6 sm:p-8 rounded-2xl col-span-2 flex flex-col gap-3">
                             <h4 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider border-b border-border-subtle pb-2">Custom Rates Overrides Matrix</h4>
                             {rates.length === 0 ? <div className="text-center py-6 text-slate-550 italic">No custom rates configured. System defaults applied ($28/hr billing, $20/hr pay).</div> : (
-                              <table className="w-full text-[13.5px] text-left">
+                              <div className="overflow-x-auto w-full"><table className="w-full text-[13.5px] text-left">
                                 <thead>
                                   <tr className="border-b border-border-subtle text-text-secondary font-bold uppercase text-[10.5px]"><th>Rep</th><th>Client</th><th className="text-right">Bill Rate</th><th className="text-right">Pay Rate</th><th className="text-right">Action</th></tr>
                                 </thead>
@@ -6347,7 +6741,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                     );
                                   })}
                                 </tbody>
-                              </table>
+                              </table></div>
                             )}
                           </div>
                         </div>
@@ -6364,7 +6758,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
               <h3 className="text-[14.5px] font-bold text-text-primary uppercase tracking-wider pb-2 border-b border-border-subtle mb-3">Outgoing Transaction Mail Audit</h3>
               
               <div className="flex-1 overflow-y-auto">
-                <table className="w-full border-collapse text-left text-[13.5px]">
+                <div className="overflow-x-auto w-full"><table className="w-full border-collapse text-left text-[13.5px]">
                   <thead>
                     <tr className="border-b border-border-subtle text-text-secondary font-bold uppercase text-[10.5px]">
                       <th className="py-2 px-3">Sent Time</th>
@@ -6398,7 +6792,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                       );
                     })}
                   </tbody>
-                </table>
+                </table></div>
               </div>
             </div>
           )}
@@ -6550,7 +6944,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     💡 Tip: Click any row to view details, download PDF, or print.
                   </span>
                 )}
-                <table className="w-full border-collapse text-[13.5px] text-left">
+                <div className="overflow-x-auto w-full"><table className="w-full border-collapse text-[13.5px] text-left">
                   <thead>
                     <tr className="border-b border-border-subtle text-text-secondary font-bold uppercase tracking-wider text-[10.5px]">
                       <th className="py-2 px-3">Date logged</th>
@@ -6591,7 +6985,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                       </tr>
                     )}
                   </tbody>
-                </table>
+                </table></div>
               </div>
             </div>
           )}
@@ -7152,7 +7546,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     </div>
 
                     <div className="flex-1 overflow-auto scrollbar-thin">
-                      <table className="w-full text-left border-collapse text-[13.5px]">
+                      <div className="overflow-x-auto w-full"><table className="w-full text-left border-collapse text-[13.5px]">
                         <thead className="bg-surface sticky top-0 z-10 border-b border-border-subtle">
                           <tr className="font-bold text-text-secondary uppercase tracking-wider">
                             <th className="py-3.5 px-6">Client/Supplier</th>
@@ -7205,7 +7599,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                             });
                           })()}
                         </tbody>
-                      </table>
+                      </table></div>
                     </div>
                   </div>
 

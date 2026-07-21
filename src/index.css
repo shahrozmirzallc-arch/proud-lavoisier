@@ -582,6 +582,20 @@ body {
   color: var(--text) !important;
 }
 
+body:not(.mode-light) {
+  color-scheme: dark;
+}
+
+body.mode-light {
+  color-scheme: light;
+}
+
+/* Fix for native select option readability across all themes */
+select option {
+  background-color: var(--surface) !important;
+  color: var(--text) !important;
+}
+
 /* Specific Frame Mappings */
 .web-dashboard-frame,
 .lock-screen-frame {

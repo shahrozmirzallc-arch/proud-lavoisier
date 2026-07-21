@@ -297,10 +297,8 @@ function App() {
                 setIsUnlocked(true);
                 if (loginType === 'admin') {
                   const adminName = targetUser;
-                  // Force Light Mode for Accountant to fix readability of data tables
-                  if (adminName === 'colleen') {
-                    setDayNight('night');
-                  }
+                  // Default to Dark Theme ('day') on login for all roles
+                  setDayNight('day');
                   const reactRole = (adminName === 'shahroz' || adminName === 'idspulse') ? 'shahroz' : 
                                     (adminName === 'colleen' ? 'accountant' : 
                                     (adminName === 'donna' ? 'lead' : 'owner'));
@@ -311,6 +309,7 @@ function App() {
                   sessionStorage.setItem('ids_pulse_admin_user', adminName);
                   setAuthError(false);
                 } else if (loginType === 'rep') {
+                  setDayNight('day');
                   setUserRole('rep');
                   const repId = targetUser === 'clarence' ? '1' : `rep_${targetUser}`;
                   setCurrentUserRepId(repId);
@@ -321,6 +320,7 @@ function App() {
                   sessionStorage.removeItem('ids_pulse_admin_user');
                   setAuthError(false);
                 } else if (loginType === 'customer') {
+                  setDayNight('day');
                   setUserRole('customer');
                   setCurrentUserCustomerId(targetUser);
                   setLayoutMode('dashboard-only');

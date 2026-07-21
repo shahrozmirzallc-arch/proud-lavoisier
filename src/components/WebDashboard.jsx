@@ -3,7 +3,7 @@ import {
   Shield, Activity, Server, FileText, Users, Mail, DollarSign, Database, 
   Search, Filter, ChevronRight, X, Clock, CheckCircle2, UserCheck, AlertCircle, 
   FileSpreadsheet, Calendar, ArrowRight, UserPlus, MapPin, Printer, Download, Eye, Sparkles,
-  Milestone, TrendingUp, FolderKanban, PlusCircle, ArrowLeft
+  Milestone, TrendingUp, FolderKanban, PlusCircle, ArrowLeft, Camera
 } from 'lucide-react';
 import { getEntities, saveEntity, resetDB, logSystemEvent, addProject, deleteRate } from './SharedDatabase';
 import { jsPDF } from 'jspdf';
@@ -873,6 +873,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   };
 
   // Pulse AI States
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const fileInputRef = useRef(null);
   const [pulseAiChat, setPulseAiChat] = useState(() => [
     {
       id: 'msg_welcome',
@@ -3314,40 +3316,6 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
           : "I have successfully audited the Quality Defect logs. 🟢 All entries are complete, and no duplicate defects or missing supplier QM contacts were found!";
       } else if (userRole === 'accountant') {
         responseText = count > 0 
-          ? `I have completed the Financial timesheet audit. ⚠️ Found ${count} potential errors, negative values, or missing receipts in the system. I have flagged them in the Audit & Verification Center.`
-          : "I have successfully audited all timesheets and mileage logs. 🟢 No calculations discrepancies, negative hours, or missing receipts were found!";
-      } else {
-        responseText = count > 0 
-          ? `I have completed the full system audit. ⚠️ Found ${count} total warnings (timesheet discrepancies, missing receipts, and duplicate defect logs). I have flagged them in the Audit Center on the right panel.`
-          : "I have successfully audited the entire database. 🟢 All calculations are correct, and no math discrepancies, overlaps, or duplicate logs were found!";
-      }
-      action = 'audit';
-    } else if (lowerText.includes('excel') || lowerText.includes('xlsx') || lowerText.includes('payroll')) {
-      const name = userRole === 'shahroz' ? 'Shahroz' : 'Colleen';
-      responseText = `Sure ${name}, I am compiling and exporting the styled Excel spreadsheet (.xlsx) now. It will include dynamic headers, total invoicing calculations, and proper alignments.`;
-      action = 'excel';
-    } else if (lowerText.includes('csv') || lowerText.includes('quickbooks') || lowerText.includes('qb')) {
-      responseText = "Sure, exporting the QuickBooks CSV spreadsheet now. It contains corporate headers and formatted timesheets.";
-      action = 'csv';
-    } else if (lowerText.includes('report') || lowerText.includes('pdf') || lowerText.includes('download')) {
-      responseText = userRole === 'lead' ? "Generating compiled Quality Rework Feed report PDF..." : "Generating compiled Timesheet Audit report PDF...";
-      action = 'pdf';
-    } else if (lowerText.includes('hello') || lowerText.includes('hi') || lowerText.includes('hey')) {
-      if (userRole === 'shahroz') {
-        responseText = "Hello Shahroz Mirza! I am online and ready to audit. Let me know if you want me to audit timesheets, verify defect metrics, or export documents.";
-      } else if (userRole === 'admin' || userRole === 'owner') {
-        responseText = "Hello Greg Phillippe! I am online and ready to audit. Let me know if you want me to audit timesheets or export documents.";
-      } else if (userRole === 'accountant') {
-        responseText = "Hello Colleen Boyd! I am online and ready to audit timesheets or export payroll spreadsheets.";
-      } else if (userRole === 'lead') {
-        responseText = "Hello Donna Cabral! I am online and ready to audit quality logs or run duplicate defect checks.";
-      } else {
-        responseText = "Hello! I am online and ready to assist you. Let me know what you need.";
-      }
-    } else {
-      if (userRole === 'lead') {
-        responseText = "I'm not sure how to process that request. As Quality Lead, you can ask me to: \n1. 'Audit quality defect logs' \n2. 'Scan for duplicate defects' \n3. 'Download Quality Report PDF'";
-      } else if (userRole === 'accountant') {
         responseText = "I'm not sure how to process that request. As Accountant, you can ask me to: \n1. 'Audit timesheets and receipts' \n2. 'Download the styled Excel payroll sheet' \n3. 'Export QuickBooks CSV timesheets'";
       } else {
         responseText = "I'm not sure how to process that request. You can ask me to: \n1. 'Audit the database for mistakes' \n2. 'Download the styled Excel payroll sheet' \n3. 'Export QuickBooks CSV timesheets'\n4. 'Download the Timesheet PDF report'";
@@ -3355,6 +3323,34 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     }
 
     return { responseText, action };
+  };
+
+  // AI Vision Simulator
+  const handleSimulateImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    setIsUploadingImage(true);
+    
+    // Add User message
+    const userMsg = {
+      id: `msg_user_${Date.now()}`,
+      sender: 'user',
+      text: `📸 Uploaded image: ${file.name}`,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    };
+    setPulseAiChat(prev => [...prev, userMsg]);
+    
+    setTimeout(() => {
+      setIsUploadingImage(false);
+      const aiMsg = {
+        id: `msg_ai_${Date.now()}`,
+        sender: 'ai',
+        text: "📸 **AI Vision Simulator Active**\n\nScanning uploaded image using computer vision...\n\n🔴 **Defect Detected:** Visual scratch on Top Panel.\n🎯 **Confidence Score:** 94%\n📋 **Recommended Action:** Scrap part and log under code V-02.",
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+      setPulseAiChat(prev => [...prev, aiMsg]);
+    }, 2500);
   };
 
   // Immediate Chip Command Executor
@@ -4177,19 +4173,25 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 </div>
 
                 {/* Chat Input form */}
-                <form onSubmit={handleSendPulseAiMessage} className="flex gap-2 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
-                  <input 
-                    type="text"
-                    value={pulseAiInput}
-                    onChange={(e) => setPulseAiInput(e.target.value)}
-                    placeholder="Ask Pulse AI to audit timesheets or export files..."
-                    className="flex-1 h-12 px-4 bg-surface-elevated border border-border-subtle focus:border-border-subtle rounded-xl text-[13.5px] text-text-primary placeholder-text-secondary outline-none transition-colors"
-                  />
+                <form onSubmit={handleSendPulseAiMessage} className="flex gap-2 flex-shrink-0 relative" onClick={(e) => e.stopPropagation()}>
+                  <div className="relative flex-1">
+                    <input 
+                      type="text"
+                      value={pulseAiInput}
+                      onChange={(e) => setPulseAiInput(e.target.value)}
+                      placeholder="Ask Pulse AI to audit timesheets or export files..."
+                      className="w-full h-12 pl-4 pr-12 bg-surface-elevated border border-border-subtle focus:border-border-subtle rounded-xl text-[13.5px] text-text-primary placeholder-text-secondary outline-none transition-colors"
+                    />
+                    <label className="absolute right-3 top-3 text-text-secondary hover:text-text-primary cursor-pointer transition-colors" title="Upload Image for AI Vision">
+                      <Camera className="w-6 h-6 p-0.5" />
+                      <input type="file" className="hidden" accept="image/*" onChange={handleSimulateImageUpload} disabled={isUploadingImage} />
+                    </label>
+                  </div>
                   <button 
                     type="submit"
-                    className="w-10 h-10 bg-[#3B82F6] hover:bg-[#3B82F6]/90 text-text-primary rounded-xl border border-[#3B82F6]/20 flex items-center justify-center cursor-pointer transition-colors"
+                    className="w-12 h-12 bg-[#3B82F6] hover:bg-[#3B82F6]/90 text-text-primary rounded-xl border border-[#3B82F6]/20 flex items-center justify-center cursor-pointer transition-colors"
                   >
-                    <ArrowRight className="w-4.5 h-4" />
+                    <ArrowRight className="w-5 h-5 text-white" />
                   </button>
                 </form>
               </div>

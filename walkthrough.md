@@ -172,3 +172,15 @@ We have successfully audited, verified, and deployed a series of UI and logic up
 - Pushed updates (commit `374e2de`) to Git master and deployed to Vercel production.
 
 
+
+## 2026-07-21 - Gemini - Global Security Gateway & E2E Audit
+
+**Task:** Audit the complete system after replacing the WebDashboard layout and implementing the Global Security Gateway, and ensure system stability.
+
+**Done:**
+- Simulated full End-to-End operations for QREs, Customers, Admins, and Accountants.
+- Discovered and fixed a major routing bug where QREs logging through the Security Gateway were wrongly routed to the dashboard-only layout, completely hiding their mobile app.
+- Rewrote layout logic in App.jsx so QREs properly load the phone-only layout on login.
+- Designed and executed e2e_qre.cjs which launches a headless Puppeteer browser, passes the Gateway login, utilizes Fast Auth inside the PhoneSimulator, clicks New Suspect Material, and verifies the reporting pipeline successfully.
+- Prevented a silent UI freeze and substring() TypeError across WebDashboard.jsx by implementing optional chaining system-wide during data parses.
+- Audited production deployment via https://proud-lavoisier.vercel.app and confirmed total system stability.

@@ -314,7 +314,7 @@ function App() {
                   setUserRole('rep');
                   const repId = targetUser === 'clarence' ? '1' : `rep_${targetUser}`;
                   setCurrentUserRepId(repId);
-                  setLayoutMode('dashboard-only');
+                  setLayoutMode('phone-only');
                   sessionStorage.setItem('ids_pulse_unlocked', 'true');
                   sessionStorage.setItem('ids_pulse_role', 'rep');
                   sessionStorage.setItem('ids_pulse_rep_id', repId);

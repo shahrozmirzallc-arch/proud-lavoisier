@@ -3849,7 +3849,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   onClick={() => setActiveTab('time-tracking')}
                   className={`w-full h-12 px-4 rounded-xl font-bold text-[13.5px] transition-all cursor-pointer flex items-center justify-between border ${
                     activeTab === 'time-tracking' 
-                      ? 'bg-blue-50 text-blue-700 border-blue-200 shadow-sm' 
+                      ? 'bg-sky-950/60 text-sky-300 border-sky-500/40 shadow-md shadow-sky-500/10 font-bold' 
                       : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle hover:border-border-subtle'
                   }`}
                 >
@@ -3863,7 +3863,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   onClick={() => setActiveTab('daily-checklists')}
                   className={`w-full h-12 px-4 rounded-xl font-bold text-[13.5px] transition-all cursor-pointer flex items-center justify-between border ${
                     activeTab === 'daily-checklists' 
-                      ? 'bg-blue-50 text-blue-700 border-blue-200 shadow-sm' 
+                      ? 'bg-sky-950/60 text-sky-300 border-sky-500/40 shadow-md shadow-sky-500/10 font-bold' 
                       : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle hover:border-border-subtle'
                   }`}
                 >
@@ -3957,7 +3957,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     onClick={() => setActiveTab('incidents')}
                     className={`w-full h-12 px-4 rounded-xl font-bold text-[13.5px] transition-all cursor-pointer flex items-center justify-between border ${
                       activeTab === 'incidents' 
-                        ? 'bg-blue-50 text-blue-700 border-blue-200 shadow-sm' 
+                        ? 'bg-sky-950/60 text-sky-300 border-sky-500/40 shadow-md shadow-sky-500/10 font-bold' 
                         : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle hover:border-border-subtle'
                     }`}
                   >
@@ -3972,7 +3972,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     onClick={() => setActiveTab('heatmap')}
                     className={`w-full h-12 px-4 rounded-xl font-bold text-[13.5px] transition-all cursor-pointer flex items-center justify-between border ${
                       activeTab === 'heatmap' 
-                        ? 'bg-blue-50 text-blue-700 border-blue-200 shadow-sm' 
+                        ? 'bg-sky-950/60 text-sky-300 border-sky-500/40 shadow-md shadow-sky-500/10 font-bold' 
                         : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle hover:border-border-subtle'
                     }`}
                   >
@@ -3987,7 +3987,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     onClick={() => setActiveTab('daily-planner')}
                     className={`w-full h-12 px-4 rounded-xl font-bold text-[13.5px] transition-all cursor-pointer flex items-center justify-between border ${
                       activeTab === 'daily-planner' 
-                        ? 'bg-blue-50 text-blue-700 border-blue-200 shadow-sm' 
+                        ? 'bg-sky-950/60 text-sky-300 border-sky-500/40 shadow-md shadow-sky-500/10 font-bold' 
                         : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle hover:border-border-subtle'
                     }`}
                   >
@@ -4002,7 +4002,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     onClick={() => setActiveTab('shift-logs')}
                     className={`w-full h-12 px-4 rounded-xl font-bold text-[13.5px] transition-all cursor-pointer flex items-center justify-between border ${
                       activeTab === 'shift-logs' 
-                        ? 'bg-blue-50 text-blue-700 border-blue-200 shadow-sm' 
+                        ? 'bg-sky-950/60 text-sky-300 border-sky-500/40 shadow-md shadow-sky-500/10 font-bold' 
                         : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle hover:border-border-subtle'
                     }`}
                   >
@@ -4016,7 +4016,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   onClick={() => setActiveTab('daily-checklists')}
                   className={`w-full h-12 px-4 rounded-xl font-bold text-[13.5px] transition-all cursor-pointer flex items-center justify-between border ${
                     activeTab === 'daily-checklists' 
-                      ? 'bg-blue-50 text-blue-700 border-blue-200 shadow-sm' 
+                      ? 'bg-sky-950/60 text-sky-300 border-sky-500/40 shadow-md shadow-sky-500/10 font-bold' 
                       : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle hover:border-border-subtle'
                   }`}
                 >
@@ -4032,7 +4032,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     onClick={() => setActiveTab('suppliers')}
                     className={`w-full h-12 px-4 rounded-xl font-bold text-[13.5px] transition-all cursor-pointer flex items-center justify-between border ${
                       activeTab === 'suppliers' 
-                        ? 'bg-blue-50 text-blue-700 border-blue-200 shadow-sm' 
+                        ? 'bg-sky-950/60 text-sky-300 border-sky-500/40 shadow-md shadow-sky-500/10 font-bold' 
                         : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle hover:border-border-subtle'
                     }`}
                   >
@@ -4049,7 +4049,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     onClick={() => setActiveTab('time-tracking')}
                     className={`w-full h-12 px-4 rounded-xl font-bold text-[13.5px] transition-all cursor-pointer flex items-center justify-between border ${
                       activeTab === 'time-tracking' 
-                        ? 'bg-blue-50 text-blue-700 border-blue-200 shadow-sm' 
+                        ? 'bg-sky-950/60 text-sky-300 border-sky-500/40 shadow-md shadow-sky-500/10 font-bold' 
                         : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle hover:border-border-subtle'
                     }`}
                   >
@@ -4067,7 +4067,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     onClick={() => setActiveTab('rework-logs')}
                     className={`w-full h-12 px-4 rounded-xl font-bold text-[13.5px] transition-all cursor-pointer flex items-center justify-between border ${
                       activeTab === 'rework-logs' 
-                        ? 'bg-blue-50 text-blue-700 border-blue-200 shadow-sm' 
+                        ? 'bg-sky-950/60 text-sky-300 border-sky-500/40 shadow-md shadow-sky-500/10 font-bold' 
                         : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle hover:border-border-subtle'
                     }`}
                   >
@@ -4082,7 +4082,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     onClick={() => setActiveTab('emails')}
                     className={`w-full h-12 px-4 rounded-xl font-bold text-[13.5px] transition-all cursor-pointer flex items-center justify-between border ${
                       activeTab === 'emails' 
-                        ? 'bg-blue-50 text-blue-700 border-blue-200 shadow-sm' 
+                        ? 'bg-sky-950/60 text-sky-300 border-sky-500/40 shadow-md shadow-sky-500/10 font-bold' 
                         : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle hover:border-border-subtle'
                     }`}
                   >
@@ -4099,7 +4099,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     onClick={() => setActiveTab('users')}
                     className={`w-full h-12 px-4 rounded-xl font-bold text-[13.5px] transition-all cursor-pointer flex items-center justify-between border ${
                       activeTab === 'users' 
-                        ? 'bg-blue-50 text-blue-700 border-blue-200 shadow-sm' 
+                        ? 'bg-sky-950/60 text-sky-300 border-sky-500/40 shadow-md shadow-sky-500/10 font-bold' 
                         : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle hover:border-border-subtle'
                     }`}
                   >
@@ -4115,7 +4115,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                       onClick={() => setActiveTab('roadmap')}
                       className={`w-full h-12 px-4 rounded-xl font-bold text-[13.5px] transition-all cursor-pointer flex items-center justify-between border ${
                         activeTab === 'roadmap' 
-                          ? 'bg-blue-50 text-blue-700 border-blue-200 shadow-sm' 
+                          ? 'bg-sky-950/60 text-sky-300 border-sky-500/40 shadow-md shadow-sky-500/10 font-bold' 
                           : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle hover:border-border-subtle'
                       }`}
                     >
@@ -4131,7 +4131,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     onClick={() => setActiveTab('projects')}
                     className={`w-full h-12 px-4 rounded-xl font-bold text-[13.5px] transition-all cursor-pointer flex items-center justify-between border ${
                       activeTab === 'projects' 
-                        ? 'bg-blue-50 text-blue-700 border-blue-200 shadow-sm' 
+                        ? 'bg-sky-950/60 text-sky-300 border-sky-500/40 shadow-md shadow-sky-500/10 font-bold' 
                         : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle hover:border-border-subtle'
                     }`}
                   >
@@ -4147,7 +4147,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                       onClick={() => setActiveTab('system-logs')}
                       className={`w-full h-12 px-4 rounded-xl font-bold text-[13.5px] transition-all cursor-pointer flex items-center justify-between border ${
                         activeTab === 'system-logs' 
-                          ? 'bg-blue-50 text-blue-700 border-blue-200 shadow-sm' 
+                          ? 'bg-sky-950/60 text-sky-300 border-sky-500/40 shadow-md shadow-sky-500/10 font-bold' 
                           : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle hover:border-border-subtle'
                       }`}
                     >

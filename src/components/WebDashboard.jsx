@@ -3858,7 +3858,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     <span>My Hours & Expenses</span>
                   </div>
                   {activeTab === 'time-tracking' && <div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>}
-                </button>\n
+                </button>
                 <button 
                   onClick={() => setActiveTab('daily-checklists')}
                   className={`w-full h-12 px-4 rounded-xl font-bold text-[13.5px] transition-all cursor-pointer flex items-center justify-between border ${

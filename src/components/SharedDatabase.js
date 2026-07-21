@@ -309,7 +309,7 @@ export function getEntities(type) {
   const repId = sessionStorage.getItem('ids_pulse_rep_id') || '';
 
   if (isUnlocked) {
-    const isAdmin = ['admin', 'owner', 'accountant', 'lead', 'shahroz'].includes(role);
+    const isAdmin = ['admin', 'owner', 'accountant', 'lead', 'shahroz']?.includes(role);
 
     if (!isAdmin) {
       if (type === 'rates') {
@@ -337,13 +337,13 @@ export function getEntities(type) {
           return entities.filter(e => e.supplier_id === customerId);
         }
         if (type === 'shiftReports') {
-          const validPlants = (db.plants || []).filter(p => (p.supplier_ids || []).includes(customerId)).map(p => p.id);
-          return entities.filter(r => validPlants.includes(r.plant_id) && r.status === 'published');
+          const validPlants = (db.plants || []).filter(p => (p.supplier_ids || [])?.includes(customerId)).map(p => p.id);
+          return entities.filter(r => validPlants?.includes(r.plant_id) && r.status === 'published');
         }
         if (type === 'plants') {
           const supplier = (db.suppliers || []).find(s => s.id === customerId);
           const served = supplier?.plants_served || [];
-          return entities.filter(p => served.includes(p.id));
+          return entities.filter(p => served?.includes(p.id));
         }
         if (type === 'suppliers') {
           return entities.filter(s => s.id === customerId);
@@ -416,7 +416,7 @@ export function saveEntity(type, entity) {
 
 // Add user
 export function addUser(user) {
-  const newUser = { ...user, id: user.id || `usr_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`, created_at: new Date().toISOString() };
+  const newUser = { ...user, id: user.id || `usr_${Date.now()}_${Math.random().toString(36)?.substring(2, 7)}`, created_at: new Date().toISOString() };
   return saveEntity('users', newUser);
 }
 
@@ -424,7 +424,7 @@ export function addUser(user) {
 export function addIncident(incident) {
   const newIncident = {
     ...incident,
-    id: incident.id || `inc_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+    id: incident.id || `inc_${Date.now()}_${Math.random().toString(36)?.substring(2, 7)}`,
     status: incident.status || 'Open',
     created_at: new Date().toISOString()
   };
@@ -435,7 +435,7 @@ export function addIncident(incident) {
 export function addShiftReport(report) {
   const newReport = {
     ...report,
-    id: report.id || `sr_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+    id: report.id || `sr_${Date.now()}_${Math.random().toString(36)?.substring(2, 7)}`,
     status: report.status || 'Draft',
     created_at: new Date().toISOString()
   };
@@ -446,7 +446,7 @@ export function addShiftReport(report) {
 export function addReworkLog(log) {
   const newLog = {
     ...log,
-    id: log.id || `rw_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+    id: log.id || `rw_${Date.now()}_${Math.random().toString(36)?.substring(2, 7)}`,
     created_at: new Date().toISOString()
   };
   return saveEntity('reworkLogs', newLog);
@@ -456,7 +456,7 @@ export function addReworkLog(log) {
 export function addTimeEntry(entry) {
   const newEntry = {
     ...entry,
-    id: entry.id || `te_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+    id: entry.id || `te_${Date.now()}_${Math.random().toString(36)?.substring(2, 7)}`,
     created_at: new Date().toISOString()
   };
   return saveEntity('timeEntries', newEntry);
@@ -466,7 +466,7 @@ export function addTimeEntry(entry) {
 export function addEmailLog(log) {
   const newLog = {
     ...log,
-    id: log.id || `el_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+    id: log.id || `el_${Date.now()}_${Math.random().toString(36)?.substring(2, 7)}`,
     sent_at: new Date().toISOString(),
     delivery_status: log.delivery_status || 'delivered'
   };
@@ -484,7 +484,7 @@ export function resetDB() {
 export function addDailyTask(task) {
   const newTask = {
     ...task,
-    id: task.id || `dt_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+    id: task.id || `dt_${Date.now()}_${Math.random().toString(36)?.substring(2, 7)}`,
     status: task.status || 'pending'
   };
   return saveEntity('dailyTasks', newTask);
@@ -494,7 +494,7 @@ export function addDailyTask(task) {
 export function addExpenseEntry(entry) {
   const newEntry = {
     ...entry,
-    id: entry.id || `exp_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+    id: entry.id || `exp_${Date.now()}_${Math.random().toString(36)?.substring(2, 7)}`,
     created_at: new Date().toISOString()
   };
   return saveEntity('expenseEntries', newEntry);
@@ -503,7 +503,7 @@ export function addExpenseEntry(entry) {
 // Get all rates
 export function getRates() {
   const role = sessionStorage.getItem('ids_pulse_role');
-  if (!['admin', 'accountant', 'lead', 'shahroz'].includes(role)) {
+  if (!['admin', 'accountant', 'lead', 'shahroz']?.includes(role)) {
     return [];
   }
   const db = getDB();
@@ -524,7 +524,7 @@ export function saveRate(rate) {
     db.rates[index] = { ...db.rates[index], ...rate };
     finalRate = db.rates[index];
   } else {
-    const newRate = { id: `rate_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`, ...rate };
+    const newRate = { id: `rate_${Date.now()}_${Math.random().toString(36)?.substring(2, 7)}`, ...rate };
     db.rates.push(newRate);
     finalRate = newRate;
   }
@@ -568,7 +568,7 @@ export function saveExtraHoursRequest(req) {
 export function addExtraHoursRequest(req) {
   const newReq = {
     ...req,
-    id: req.id || `ehr_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+    id: req.id || `ehr_${Date.now()}_${Math.random().toString(36)?.substring(2, 7)}`,
     status: req.status || 'pending_customer',
     created_at: new Date().toISOString(),
     history: req.history || [{ status: 'pending_customer', user: req.userName || 'Rep', timestamp: new Date().toISOString(), comment: 'Request submitted' }]
@@ -591,8 +591,8 @@ export function updateExtraHoursRequestStatus(reqId, status, user, comment) {
         incident_id: reqId,
         to_emails: 'greg.p@integritydriven.com',
         cc_emails: 'rep_assigned@integritydriven.com', // Would look up Rep's email in real system
-        subject: `[OVERTIME ${actionText.toUpperCase()}] Request ${reqId} by Customer`,
-        body: `<h3>OVERTIME REQUEST ${actionText.toUpperCase()}</h3><p>Customer user <strong>${user}</strong> has ${actionText.toLowerCase()} the overtime request.</p><p><strong>Comment:</strong> ${comment}</p>`
+        subject: `[OVERTIME ${actionText?.toUpperCase()}] Request ${reqId} by Customer`,
+        body: `<h3>OVERTIME REQUEST ${actionText?.toUpperCase()}</h3><p>Customer user <strong>${user}</strong> has ${actionText?.toLowerCase()} the overtime request.</p><p><strong>Comment:</strong> ${comment}</p>`
       });
     }
     return saveExtraHoursRequest(req);
@@ -603,7 +603,7 @@ export function updateExtraHoursRequestStatus(reqId, status, user, comment) {
 // Log a system event
 export function logSystemEvent(category, action, details) {
   const newLog = {
-    id: `log_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+    id: `log_${Date.now()}_${Math.random().toString(36)?.substring(2, 7)}`,
     timestamp: new Date().toISOString(),
     category,
     action,
@@ -616,7 +616,7 @@ export function logSystemEvent(category, action, details) {
 // Add new project
 export function addProject(proj) {
   const newProj = {
-    id: `proj_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+    id: `proj_${Date.now()}_${Math.random().toString(36)?.substring(2, 7)}`,
     ...proj,
     status: proj.status || 'Active'
   };

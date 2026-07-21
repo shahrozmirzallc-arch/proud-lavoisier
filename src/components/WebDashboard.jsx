@@ -1291,7 +1291,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       inc.area.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesSupplier = selectedSupplierFilter === 'all' || inc.supplier_id === selectedSupplierFilter;
     const matchesStatus = selectedStatusFilter === 'all' || inc.status === selectedStatusFilter;
-    const matchesDate = showAllDates || inc.created_at.startsWith(selectedDate);
+    const matchesDate = showAllDates || inc.created_at?.startsWith(selectedDate);
     return matchesSearch && matchesSupplier && matchesStatus && matchesDate;
   });
 
@@ -1401,9 +1401,9 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
   // Dot Activity Indicator Helper
   const getDateActivity = (dateStr) => {
-    const hasIncidents = incidents.some(inc => inc.created_at.startsWith(dateStr));
+    const hasIncidents = incidents.some(inc => inc.created_at?.startsWith(dateStr));
     const hasShifts = shiftReports.some(sr => sr.date === dateStr);
-    const hasRework = reworkLogs.some(log => log.created_at.startsWith(dateStr));
+    const hasRework = reworkLogs.some(log => log.created_at?.startsWith(dateStr));
     return { hasIncidents, hasShifts, hasRework };
   };
 
@@ -1428,7 +1428,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
     // Incidents
     incidents.forEach(inc => {
-      if (showAllDates || inc.created_at.startsWith(selectedDate)) {
+      if (showAllDates || inc.created_at?.startsWith(selectedDate)) {
         const repName = users.find(u => u.id === inc.rep_id)?.name || 'Clarence Kuiken';
         const firstPN = inc.parts_list?.[0]?.part_number || inc.part_id;
         const partSubject = inc.parts_list && inc.parts_list.length > 1
@@ -1447,7 +1447,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
     // Rework logs
     reworkLogs.forEach(rw => {
-      if (showAllDates || rw.created_at.startsWith(selectedDate)) {
+      if (showAllDates || rw.created_at?.startsWith(selectedDate)) {
         const repName = users.find(u => u.id === rw.rep_id)?.name || 'Clarence Kuiken';
         list.push({
           time: new Date(rw.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
@@ -1467,12 +1467,12 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
   // Calculations for metrics cards (filtered by date if selected)
   const totalOpenIncidents = incidents.filter(i => 
-    (showAllDates || i.created_at.startsWith(selectedDate)) && 
+    (showAllDates || i.created_at?.startsWith(selectedDate)) && 
     (i.status === 'Open' || i.status === 'Acknowledged')
   ).length;
 
   const totalReworkPcs = reworkLogs
-    .filter(r => showAllDates || r.created_at.startsWith(selectedDate))
+    .filter(r => showAllDates || r.created_at?.startsWith(selectedDate))
     .reduce((acc, curr) => acc + curr.qty, 0);
 
   const activeRepsCount = users.filter(u => u.role === 'rep').length;
@@ -2580,7 +2580,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     
     y += 7;
 
-    const filteredRework = reworkLogs.filter(rw => showAllDates || rw.created_at.startsWith(selectedDate));
+    const filteredRework = reworkLogs.filter(rw => showAllDates || rw.created_at?.startsWith(selectedDate));
 
     filteredRework.forEach((rw) => {
       const rep = users.find(u => u.id === rw.rep_id)?.name || 'Clarence Kuiken';
@@ -2632,7 +2632,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
 
-    const filteredRework = reworkLogs.filter(rw => showAllDates || rw.created_at.startsWith(selectedDate));
+    const filteredRework = reworkLogs.filter(rw => showAllDates || rw.created_at?.startsWith(selectedDate));
 
     printWindow.document.write(`
       <html>
@@ -4213,7 +4213,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         {msg.text.split('\n').map((line, i) => (
                           <span key={i} className="block min-h-[1.2em]">
                             {line.split(/(\*\*.*?\*\*)/g).map((part, j) => 
-                              part.startsWith('**') && part.endsWith('**') 
+                              part?.startsWith('**') && part?.endsWith('**') 
                                 ? <strong key={j} className="font-extrabold text-[#22D3EE]">{part.slice(2, -2)}</strong> 
                                 : part
                             )}
@@ -4613,7 +4613,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 {(() => {
                   const dayEntries = timeEntries.filter(t => t.date === selectedDate && (selectedTaskRepId === 'all' || t.rep_id === selectedTaskRepId));
                   const report = shiftReports.find(r => r.date === selectedDate && (selectedTaskRepId === 'all' || r.rep_id === selectedTaskRepId));
-                  const reworkToday = reworkLogs.filter(r => r.created_at.startsWith(selectedDate) && (selectedTaskRepId === 'all' || r.rep_id === selectedTaskRepId));
+                  const reworkToday = reworkLogs.filter(r => r.created_at?.startsWith(selectedDate) && (selectedTaskRepId === 'all' || r.rep_id === selectedTaskRepId));
                   const qtyReworked = reworkToday.reduce((acc, curr) => acc + curr.qty, 0);
                   
                   return (
@@ -4649,7 +4649,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                           </div>
                           <div className="bg-surface p-2 rounded-xl border border-border-subtle">
                             <span className="text-[18px] font-extrabold text-red-600 block leading-none">
-                              {incidents.filter(inc => inc.created_at.startsWith(selectedDate) && (selectedTaskRepId === 'all' || inc.rep_id === selectedTaskRepId)).length}
+                              {incidents.filter(inc => inc.created_at?.startsWith(selectedDate) && (selectedTaskRepId === 'all' || inc.rep_id === selectedTaskRepId)).length}
                             </span>
                             <span className="text-[12.5px] text-text-secondary uppercase tracking-wide block mt-1">Incidents</span>
                           </div>
@@ -5784,7 +5784,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                   <span className="text-[11.5px] text-text-secondary font-bold uppercase">{suppliers.find(s => s.id === req.supplier_id)?.name || 'Client'}</span>
                                   <span className={`px-2 py-1 rounded text-[12.5px] font-bold uppercase ${
                                     req.status === 'approved' ? 'bg-emerald-50 text-emerald-600' :
-                                    req.status.startsWith('rejected') ? 'bg-rose-50 text-rose-600' :
+                                    req.status?.startsWith('rejected') ? 'bg-rose-50 text-rose-600' :
                                     'bg-amber-50 text-amber-600'
                                   }`}>{req.status.replace(/_/g, ' ')}</span>
                                 </div>
@@ -5792,7 +5792,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                 <div className="text-[11.5px] text-text-secondary italic">" {req.reason} "</div>
                                 {req.customer_comment && <div className="text-[10.5px] text-text-secondary"><strong className="text-text-secondary">Customer Note:</strong> {req.customer_comment}</div>}
                                 {req.admin_comment && <div className="text-[10.5px] text-text-secondary"><strong className="text-text-secondary">Admin Note:</strong> {req.admin_comment}</div>}
-                                {req.status.startsWith('rejected') && (
+                                {req.status?.startsWith('rejected') && (
                                   <button
                                     onClick={() => {
                                       setSelectedEditingRequestId(req.id);
@@ -6958,7 +6958,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   </thead>
                   <tbody className="divide-y divide-slate-855 text-text-primary">
                     {reworkLogs
-                      .filter(rw => showAllDates || rw.created_at.startsWith(selectedDate))
+                      .filter(rw => showAllDates || rw.created_at?.startsWith(selectedDate))
                       .map(rw => {
                         const rep = users.find(u => u.id === rw.rep_id)?.name || 'Clarence Kuiken';
                         return (
@@ -6977,7 +6977,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                           </tr>
                         );
                       })}
-                    {reworkLogs.filter(rw => showAllDates || rw.created_at.startsWith(selectedDate)).length === 0 && (
+                    {reworkLogs.filter(rw => showAllDates || rw.created_at?.startsWith(selectedDate)).length === 0 && (
                       <tr>
                         <td colSpan="7" className="py-8 text-center text-text-secondary italic">
                           {!showAllDates && !hasDataForSelectedDate() ? "No records found for this date." : "No rework logged on this date."}

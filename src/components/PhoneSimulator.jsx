@@ -875,7 +875,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
     setSendingShiftReport(true);
     setTimeout(() => {
       const todayDate = new Date().toISOString().substring(0, 10);
-      const repIncidentsCount = getEntities('incidents').filter(inc => inc.rep_id === currentUser.id && inc.created_at.startsWith(todayDate)).length;
+      const repIncidentsCount = getEntities('incidents').filter(inc => inc.rep_id === currentUser.id && inc.created_at?.startsWith(todayDate)).length;
       
       const dbReports = getEntities('shiftReports');
       const existingDraft = dbReports.find(r => r.rep_id === currentUser.id && r.status === 'Draft');
@@ -1146,7 +1146,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                       <div className="flex flex-col text-right">
                         <span className="text-[10.5px] font-bold text-slate-700 uppercase tracking-wider">Incidents</span>
                         <span className="text-[14px] font-black text-blue-600">
-                          {getEntities('incidents').filter(inc => inc.created_at.startsWith(new Date().toISOString().substring(0, 10))).length} logged
+                          {getEntities('incidents').filter(inc => inc.created_at?.startsWith(new Date().toISOString().substring(0, 10))).length} logged
                         </span>
                       </div>
                     </div>

@@ -3760,65 +3760,65 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
         </div>
       )}
 
-      {/* Metrics Cards row with Helper Explanations */}
+      {/* Metrics Cards row with Vibrant Dark Glassmorphic Design */}
       {!forceRoadmapOnly && (
         <div className="grid grid-cols-4 gap-3 mt-5 flex-shrink-0">
-        <div className="glass-panel hover:border-border-subtle glow-pulse-red rounded-2xl p-3 flex flex-col justify-between h-28 border-red-500/10 hover:border-red-300 transition-all">
-          <div>
-            <span className="text-[10.5px] font-extrabold text-text-secondary uppercase tracking-wider block">Active Suspect Materials</span>
-            <span className="text-2xl font-extrabold text-text-primary mt-0.5 block leading-none">{totalOpenIncidents}</span>
-          </div>
-          <span className="text-[10.5px] text-[#3B82F6] bg-[#3B82F6]/10 border border-[#3B82F6]/20 px-2 py-1 rounded font-bold w-fit">
-            Awaiting Supplier Actions
-          </span>
-        </div>
-        
-        <div className="glass-panel hover:border-border-subtle glow-pulse-emerald rounded-2xl p-3 flex flex-col justify-between h-28 border-emerald-500/10 hover:border-emerald-300 transition-all">
-          <div>
-            <span className="text-[10.5px] font-extrabold text-text-secondary uppercase tracking-wider block">Parts Reworked</span>
-            <span className="text-2xl font-extrabold text-text-primary mt-0.5 block leading-none">{totalReworkPcs} pcs</span>
-          </div>
-          <span className="text-[10.5px] text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-1 rounded font-bold w-fit">
-            Rework Logs Synced
-          </span>
-        </div>
-        
-        <div className="glass-panel hover:border-border-subtle glow-pulse-blue rounded-2xl p-3 flex flex-col justify-between h-28 border-amber-500/10 hover:border-amber-300 transition-all">
-          <div>
-            <span className="text-[10.5px] font-extrabold text-text-secondary uppercase tracking-wider block">Active Rep Dispatches</span>
-            <span className="text-2xl font-extrabold text-text-primary mt-0.5 block leading-none">{activeRepsCount} reps</span>
-          </div>
-          <span className="text-[10.5px] text-amber-600 bg-amber-50 border border-amber-200 px-2 py-1 rounded font-bold w-fit">
-            Auditing Plant Floors
-          </span>
-        </div>
-        
-        {['admin', 'owner', 'accountant', 'lead', 'shahroz']?.includes(userRole) ? (
-          <div className="glass-panel hover:border-border-subtle glow-pulse-purple rounded-2xl p-3 flex flex-col justify-between h-28 border-purple-500/10 hover:border-purple-300 transition-all">
+          <div className="bg-gradient-to-br from-red-950/50 via-slate-900/90 to-slate-900/90 border border-red-500/30 hover:border-red-400/60 shadow-lg shadow-red-950/20 rounded-2xl p-3.5 flex flex-col justify-between h-28 transition-all group">
             <div>
-              <span className="text-[10.5px] font-extrabold text-text-secondary uppercase tracking-wider block">Supplier Invoice Billable</span>
-              <span className="text-2xl font-extrabold text-text-primary mt-0.5 block leading-none">
-                {selectedCurrencyFilter === 'CAD' ? `C$ ${cadInvoicedTotal.toFixed(2)}` : 
-                 selectedCurrencyFilter === 'USD' ? `US$ ${usdInvoicedTotal.toFixed(2)}` : 
-                 `C$ ${cadInvoicedTotal.toFixed(2)} / US$ ${usdInvoicedTotal.toFixed(2)}`}
+              <span className="text-[10.5px] font-extrabold text-red-300 uppercase tracking-wider block">Active Suspect Materials</span>
+              <span className="text-2xl font-extrabold text-red-400 mt-0.5 block leading-none font-mono">{totalOpenIncidents}</span>
+            </div>
+            <span className="text-[10.5px] text-red-300 bg-red-950/80 border border-red-500/40 px-2 py-1 rounded-lg font-extrabold w-fit uppercase tracking-wider">
+              Awaiting Supplier Actions
+            </span>
+          </div>
+          
+          <div className="bg-gradient-to-br from-emerald-950/50 via-slate-900/90 to-slate-900/90 border border-emerald-500/30 hover:border-emerald-400/60 shadow-lg shadow-emerald-950/20 rounded-2xl p-3.5 flex flex-col justify-between h-28 transition-all group">
+            <div>
+              <span className="text-[10.5px] font-extrabold text-emerald-300 uppercase tracking-wider block">Parts Reworked</span>
+              <span className="text-2xl font-extrabold text-emerald-400 mt-0.5 block leading-none font-mono">{totalReworkPcs} pcs</span>
+            </div>
+            <span className="text-[10.5px] text-emerald-300 bg-emerald-950/80 border border-emerald-500/40 px-2 py-1 rounded-lg font-extrabold w-fit uppercase tracking-wider">
+              Rework Logs Synced
+            </span>
+          </div>
+          
+          <div className="bg-gradient-to-br from-cyan-950/50 via-slate-900/90 to-slate-900/90 border border-cyan-500/30 hover:border-cyan-400/60 shadow-lg shadow-cyan-950/20 rounded-2xl p-3.5 flex flex-col justify-between h-28 transition-all group">
+            <div>
+              <span className="text-[10.5px] font-extrabold text-cyan-300 uppercase tracking-wider block">Active Rep Dispatches</span>
+              <span className="text-2xl font-extrabold text-cyan-400 mt-0.5 block leading-none font-mono">{activeRepsCount} reps</span>
+            </div>
+            <span className="text-[10.5px] text-cyan-300 bg-cyan-950/80 border border-cyan-500/40 px-2 py-1 rounded-lg font-extrabold w-fit uppercase tracking-wider">
+              Auditing Plant Floors
+            </span>
+          </div>
+          
+          {['admin', 'owner', 'accountant', 'lead', 'shahroz']?.includes(userRole) ? (
+            <div className="bg-gradient-to-br from-purple-950/50 via-slate-900/90 to-slate-900/90 border border-purple-500/30 hover:border-purple-400/60 shadow-lg shadow-purple-950/20 rounded-2xl p-3.5 flex flex-col justify-between h-28 transition-all group">
+              <div>
+                <span className="text-[10.5px] font-extrabold text-purple-300 uppercase tracking-wider block">Supplier Invoice Billable</span>
+                <span className="text-2xl font-extrabold text-purple-400 mt-0.5 block leading-none font-mono">
+                  {selectedCurrencyFilter === 'CAD' ? `C$ ${cadInvoicedTotal.toFixed(2)}` : 
+                   selectedCurrencyFilter === 'USD' ? `US$ ${usdInvoicedTotal.toFixed(2)}` : 
+                   `C$ ${cadInvoicedTotal.toFixed(2)} / US$ ${usdInvoicedTotal.toFixed(2)}`}
+                </span>
+              </div>
+              <span className="text-[10.5px] text-purple-300 bg-purple-950/80 border border-purple-500/40 px-2 py-1 rounded-lg font-extrabold w-fit uppercase tracking-wider">
+                Rate: $0.73/km standard
               </span>
             </div>
-            <span className="text-[10.5px] text-indigo-600 bg-indigo-50 border border-indigo-200 px-2 py-1 rounded font-bold w-fit">
-              Rate: $0.73/km standard
-            </span>
-          </div>
-        ) : (
-          <div className="glass-panel hover:border-border-subtle glow-pulse-purple rounded-2xl p-3 flex flex-col justify-between h-28 border-purple-500/10 hover:border-purple-300 transition-all">
-            <div>
-              <span className="text-[10.5px] font-extrabold text-text-secondary uppercase tracking-wider block">Total Audited Hours</span>
-              <span className="text-2xl font-extrabold text-text-primary mt-0.5 block leading-none">{totalHours.toFixed(1)} hrs</span>
+          ) : (
+            <div className="bg-gradient-to-br from-purple-950/50 via-slate-900/90 to-slate-900/90 border border-purple-500/30 hover:border-purple-400/60 shadow-lg shadow-purple-950/20 rounded-2xl p-3.5 flex flex-col justify-between h-28 transition-all group">
+              <div>
+                <span className="text-[10.5px] font-extrabold text-purple-300 uppercase tracking-wider block">Total Audited Hours</span>
+                <span className="text-2xl font-extrabold text-purple-400 mt-0.5 block leading-none font-mono">{totalHours.toFixed(1)} hrs</span>
+              </div>
+              <span className="text-[10.5px] text-purple-300 bg-purple-950/80 border border-purple-500/40 px-2 py-1 rounded-lg font-extrabold w-fit uppercase tracking-wider">
+                Audited Floor Hours Logged
+              </span>
             </div>
-            <span className="text-[10.5px] text-indigo-600 bg-indigo-50 border border-indigo-200 px-2 py-1 rounded font-bold w-fit">
-              Audited Floor Hours Logged
-            </span>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
       )}
 
       {/* Main Panel Content Area */}

@@ -4011,7 +4011,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                       <span>Shift Summaries Log</span>
                     </div>
                     {activeTab === 'shift-logs' && <div className="w-1.5 h-1.5 rounded-full bg-[#3B82F6]"></div>}
-                  </button>\n
+                  </button>
                 <button 
                   onClick={() => setActiveTab('daily-checklists')}
                   className={`w-full h-12 px-4 rounded-xl font-bold text-[13.5px] transition-all cursor-pointer flex items-center justify-between border ${

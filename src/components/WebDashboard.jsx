@@ -6597,7 +6597,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
           )}
 
           {/* TAB 7: LAUNCH ROADMAP & TIMELINE */}
-          {activeTab === 'roadmap' && (
+          {activeTab === 'roadmap' && userRole === 'shahroz' && (
             <div className="flex-1 flex flex-col gap-3 min-h-0 relative">
               {isRoadmapLocked && (
                 <div className="absolute inset-0 bg-surface backdrop-blur-[6px] rounded-2xl flex flex-col items-center justify-center z-30 px-6 py-8 text-center border border-border-subtle">

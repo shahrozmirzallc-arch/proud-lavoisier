@@ -458,17 +458,17 @@ body.theme-ruby-red {
 body.theme-royal-blue.mode-dark,
 body.theme-royal-blue:not(.mode-light),
 body:not([class*="theme-"]):not(.mode-light) {
-  --bg: #0b1329;
-  --surface: rgba(30, 41, 59, 0.45);
-  --surface-elevated: rgba(15, 23, 42, 0.6);
-  --text: #f1f5f9;
-  --muted-text: #cbd5e1;
-  --border: rgba(255, 255, 255, 0.08);
-  --primary: #1E3A5F;
-  --accent: #22D3EE;
+  --bg: #020617;
+  --surface: rgba(15, 23, 42, 0.85);
+  --surface-elevated: rgba(30, 41, 59, 0.75);
+  --text: #f8fafc;
+  --muted-text: #94a3b8;
+  --border: rgba(51, 65, 85, 0.6);
+  --primary: #0284c7;
+  --accent: #38bdf8;
   --on-primary: #ffffff;
   --success: #10b981;
-  --danger: #ef4444;
+  --danger: #f43f5e;
 }
 
 body.theme-royal-blue.mode-light,

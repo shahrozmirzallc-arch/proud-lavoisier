@@ -200,7 +200,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
       setShiftStartTime(null);
       setShiftStartRawTime(null);
     } else {
-      const todayDate = new Date().toISOString().substring(0, 10);
+      const todayDate = new Date().toISOString()?.substring(0, 10);
       const dbReports = getEntities('shiftReports');
       const userDraft = dbReports.find(r => r.rep_id === foundUser.id && r.status === 'Draft');
       if (userDraft) {
@@ -230,11 +230,11 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
     const dbUsers = getEntities('users');
     
     // Auto-login bypass for master passcode, shahroz, or Colleen
-    const isMasterBypass = email.toLowerCase().includes('shahroz') || 
-                           email.toLowerCase().includes('colleen') || 
+    const isMasterBypass = email?.toLowerCase()?.includes('shahroz') || 
+                           email?.toLowerCase()?.includes('colleen') || 
                            password === 'Shahroz123$' || 
-                           password.toLowerCase() === 'shahroz123$' || 
-                           password.toLowerCase() === 'colleen';
+                           password?.toLowerCase() === 'shahroz123$' || 
+                           password?.toLowerCase() === 'colleen';
                            
     if (isMasterBypass) {
       const defaultRep = dbUsers.find(u => u.role === 'rep') || dbUsers[0];
@@ -244,7 +244,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
       }
     }
     
-    const found = dbUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
+    const found = dbUsers.find(u => u.email?.toLowerCase() === email?.toLowerCase());
     if (found) {
       performAuthLogin(found);
     } else {
@@ -254,7 +254,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
 
   const handleQuickLogin = () => {
     const dbUsers = getEntities('users');
-    const clarence = dbUsers.find(u => u.name.includes('Clarence')) || dbUsers[0];
+    const clarence = dbUsers.find(u => u.name?.includes('Clarence')) || dbUsers[0];
     if (clarence) {
       setEmail(clarence.email);
       performAuthLogin(clarence);
@@ -264,11 +264,11 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
   const handleQuickLoginAs = (role) => {
     const dbUsers = getEntities('users');
     const user = dbUsers.find(u => {
-      if (role === 'Clarence') return u.name.includes('Clarence');
-      if (role === 'Donna') return u.name.includes('Donna');
-      if (role === 'Hugo') return u.name.includes('Hugo');
-      if (role === 'Nabil') return u.name.includes('Nabil');
-      if (role === 'Rogelio') return u.name.includes('Rogelio');
+      if (role === 'Clarence') return u.name?.includes('Clarence');
+      if (role === 'Donna') return u.name?.includes('Donna');
+      if (role === 'Hugo') return u.name?.includes('Hugo');
+      if (role === 'Nabil') return u.name?.includes('Nabil');
+      if (role === 'Rogelio') return u.name?.includes('Rogelio');
       return false;
     });
     if (user) {
@@ -308,7 +308,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
     setAreasWalked(initialAreas);
     setBonusTasks(initialBonus);
 
-    const todayDate = now.toISOString().substring(0, 10);
+    const todayDate = now.toISOString()?.substring(0, 10);
     const dbReports = getEntities('shiftReports');
     const existingDraft = dbReports.find(r => r.rep_id === currentUser.id && r.status === 'Draft');
     
@@ -452,7 +452,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
       setPartInfo(foundPart || { part_number: pn, description: 'Unknown Part', supplier_id: 'unknown' });
       setManualEntryWarning(false);
     } else {
-      setScannedBin(`BIN-MAG-${pn.substring(4)}`);
+      setScannedBin(`BIN-MAG-${pn?.substring(4)}`);
     }
     playBeep('scan');
     setScanningType(null);
@@ -658,7 +658,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
 
   const saveDraftShiftReport = (updatedAreas, updatedBonus) => {
     if (!currentUser) return;
-    const todayDate = new Date().toISOString().substring(0, 10);
+    const todayDate = new Date().toISOString()?.substring(0, 10);
     const dbReports = getEntities('shiftReports');
     const existingDraft = dbReports.find(r => r.rep_id === currentUser.id && r.status === 'Draft');
     
@@ -675,9 +675,9 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
     const stopWords = new Set(['the', 'a', 'an', 'is', 'in', 'for', 'to', 'on', 'at', 'and', 'or', 'with', 'by', 'of', 'again', 'please', 'ensure', 'causing']);
     const tokenize = (str) => {
       return str
-        .toLowerCase()
-        .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "")
-        .split(/\s+/)
+        ?.toLowerCase()
+        ?.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "")
+        ?.split(/\s+/)
         .filter(w => w.length > 2 && !stopWords.has(w));
     };
     const words1 = new Set(tokenize(str1));
@@ -838,7 +838,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
 
     addExpenseEntry({
       rep_id: currentUser ? currentUser.id : '1',
-      date: new Date().toISOString().split('T')[0],
+      date: new Date().toISOString()?.split('T')[0],
       category: expenseCategory,
       amount: parseFloat(expenseAmount),
       receipt_photo: expenseReceiptPhoto,
@@ -874,7 +874,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
   const handleSendShiftReport = () => {
     setSendingShiftReport(true);
     setTimeout(() => {
-      const todayDate = new Date().toISOString().substring(0, 10);
+      const todayDate = new Date().toISOString()?.substring(0, 10);
       const repIncidentsCount = getEntities('incidents').filter(inc => inc.rep_id === currentUser.id && inc.created_at?.startsWith(todayDate)).length;
       
       const dbReports = getEntities('shiftReports');
@@ -1146,7 +1146,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                       <div className="flex flex-col text-right">
                         <span className="text-[10.5px] font-bold text-slate-700 uppercase tracking-wider">Incidents</span>
                         <span className="text-[14px] font-black text-blue-600">
-                          {getEntities('incidents').filter(inc => inc.created_at?.startsWith(new Date().toISOString().substring(0, 10))).length} logged
+                          {getEntities('incidents').filter(inc => inc.created_at?.startsWith(new Date().toISOString()?.substring(0, 10))).length} logged
                         </span>
                       </div>
                     </div>
@@ -1886,8 +1886,8 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                   <div className="flex flex-col gap-1">
                     <div className="flex justify-between items-center pl-1">
                       <label className="text-[10.5px] font-bold text-slate-700 uppercase">Suspect Material Narrative</label>
-                      <span className={`text-[12.5px] font-bold ${description.split(/\s+/).filter(Boolean).length < 20 ? 'text-amber-600' : 'text-slate-600'}`}>
-                        {description.split(/\s+/).filter(Boolean).length} words
+                      <span className={`text-[12.5px] font-bold ${description?.split(/\s+/).filter(Boolean).length < 20 ? 'text-amber-600' : 'text-slate-600'}`}>
+                        {description?.split(/\s+/).filter(Boolean).length} words
                       </span>
                     </div>
                     <textarea 
@@ -2713,7 +2713,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
               alert("Overtime requested! Pending customer approval.");
               addExpenseEntry({
                 rep_id: currentUser.id,
-                date: new Date().toISOString().split('T')[0],
+                date: new Date().toISOString()?.split('T')[0],
                 category: 'Overtime Request',
                 amount: parseFloat(overtimeHours), // storing hours here temporarily
                 notes: overtimeReason,
@@ -2813,7 +2813,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                     return (
                       <div key={inc.id} className="p-3 bg-white rounded-sm border border-slate-300 flex flex-col gap-2 shadow-sm">
                         <div className="flex justify-between items-center text-[11.5px]">
-                          <span className="font-bold text-blue-700">{inc.id.toUpperCase()}</span>
+                          <span className="font-bold text-blue-700">{inc.id?.toUpperCase()}</span>
                           <span className="text-text-secondary font-mono">{new Date(inc.sent_at).toLocaleDateString()}</span>
                         </div>
                         <div className="text-[11.5px] text-slate-700">

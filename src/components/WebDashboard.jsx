@@ -27,7 +27,7 @@ export const generateTrackingCode = (clientPrefix, dateString, prefix = '') => {
   const days = Math.floor((date - start) / (24 * 60 * 60 * 1000));
   const weekNumber = Math.ceil(days / 7) || 1;
   const rand = Math.floor(100 + Math.random() * 900);
-  const pfx = clientPrefix ? clientPrefix.toUpperCase().substring(0, 3) : 'GEN';
+  const pfx = clientPrefix ? clientPrefix?.toUpperCase()?.substring(0, 3) : 'GEN';
   return `${pfx}-W${weekNumber}-${prefix}${rand}`;
 };
 
@@ -90,7 +90,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   const [newProjClient, setNewProjClient] = useState('');
   const [newProjPlant, setNewProjPlant] = useState('');
   const [newProjDesc, setNewProjDesc] = useState('');
-  const [newProjStartDate, setNewProjStartDate] = useState(new Date().toISOString().substring(0, 10));
+  const [newProjStartDate, setNewProjStartDate] = useState(new Date().toISOString()?.substring(0, 10));
   const [newProjBilling, setNewProjBilling] = useState('');
   const [newProjPay, setNewProjPay] = useState('');
   const [newProjCurrency, setNewProjCurrency] = useState('USD');
@@ -124,7 +124,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   // Log Hours Form Inputs
   const [logHoursRepId, setLogHoursRepId] = useState('rep_hugo');
   const [logHoursSupplierId, setLogHoursSupplierId] = useState('autokabel');
-  const [logHoursDate, setLogHoursDate] = useState(new Date().toISOString().substring(0, 10));
+  const [logHoursDate, setLogHoursDate] = useState(new Date().toISOString()?.substring(0, 10));
   const [logHoursQty, setLogHoursQty] = useState('');
   const [logHoursMileage, setLogHoursMileage] = useState('');
   const [logHoursNotes, setLogHoursNotes] = useState('');
@@ -132,7 +132,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   // Log Expense Form Inputs
   const [logExpRepId, setLogExpRepId] = useState('rep_hugo');
   const [logExpSupplierId, setLogExpSupplierId] = useState('autokabel');
-  const [logExpDate, setLogExpDate] = useState(new Date().toISOString().substring(0, 10));
+  const [logExpDate, setLogExpDate] = useState(new Date().toISOString()?.substring(0, 10));
   const [logExpGroup, setLogExpGroup] = useState(EXPENSE_GROUPS.EXTERNAL);
   const [logExpCategory, setLogExpCategory] = useState(EXPENSE_CATEGORIES[0]);
   const [logExpAmount, setLogExpAmount] = useState('');
@@ -155,7 +155,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   // Extra Hours Requests State
   const [extraHoursRequests, setExtraHoursRequests] = useState([]);
   const [extraHoursQty, setExtraHoursQty] = useState('8.0');
-  const [extraHoursDate, setExtraHoursDate] = useState(new Date().toISOString().substring(0, 10));
+  const [extraHoursDate, setExtraHoursDate] = useState(new Date().toISOString()?.substring(0, 10));
   const [extraHoursReason, setExtraHoursReason] = useState('');
   const [extraHoursSupplierId, setExtraHoursSupplierId] = useState('autokabel');
   const [extraHoursPlantId, setExtraHoursPlantId] = useState('mercedes_tuscaloosa');
@@ -167,7 +167,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     const d = new Date();
     const day = d.getDay();
     const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-    return new Date(d.setDate(diff)).toISOString().substring(0, 10);
+    return new Date(d.setDate(diff)).toISOString()?.substring(0, 10);
   });
   const [matrixData, setMatrixData] = useState({});
 
@@ -208,7 +208,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   // Dynamic Rate Override Resolver with Plant/Location scoping and active session role protection
   const getRepSupplierRates = (rep_id, supplier_id, plant_id = '') => {
     const role = sessionStorage.getItem('ids_pulse_role') || 'rep';
-    const isAdmin = ['admin', 'owner', 'accountant', 'lead', 'shahroz'].includes(role);
+    const isAdmin = ['admin', 'owner', 'accountant', 'lead', 'shahroz']?.includes(role);
     if (!isAdmin) {
       return { billing_rate: 0, pay_rate: 0, currency: 'USD' };
     }
@@ -406,7 +406,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
         if (hours > 0) {
           const entryDate = new Date(start);
           entryDate.setDate(entryDate.getDate() + daysOffset[index]);
-          const dateStr = entryDate.toISOString().substring(0, 10);
+          const dateStr = entryDate.toISOString()?.substring(0, 10);
           
           const newEntry = {
             id: `time_matrix_${Date.now()}_${Math.floor(Math.random()*1000)}`,
@@ -495,7 +495,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       doc.text("BILL TO:", 14, 45);
       doc.setFont("Helvetica", "normal");
       doc.text(client?.name || 'Unknown Client', 14, 50);
-      doc.text("Billing Schedule: " + (client?.invoice_schedule || 'weekly').toUpperCase(), 14, 55);
+      doc.text("Billing Schedule: " + (client?.invoice_schedule || 'weekly')?.toUpperCase(), 14, 55);
 
       doc.setFont("Helvetica", "bold");
       doc.text("INVOICE DETAILS:", 120, 45);
@@ -594,7 +594,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
       const user = sessionStorage.getItem('ids_pulse_admin_user') || 'Admin';
       logSystemEvent('payroll', 'invoice_export', `${user} generated client billing invoice PDF for ${client.name}.`);
-      doc.save(`Invoice_${client.name.replace(/\s+/g, '_')}_${Date.now()}.pdf`);
+      doc.save(`Invoice_${client.name?.replace(/\s+/g, '_')}_${Date.now()}.pdf`);
     } catch (err) {
       console.error(err);
       alert("Error generating PDF: " + err.message);
@@ -607,7 +607,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       alert("Customer name is required.");
       return;
     }
-    const newId = newCustomerName.toLowerCase().replace(/[^a-z0-9]/g, '_');
+    const newId = newCustomerName?.toLowerCase()?.replace(/[^a-z0-9]/g, '_');
     const newCust = {
       id: newId,
       name: newCustomerName,
@@ -634,18 +634,18 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       alert("Location name is required.");
       return;
     }
-    const newId = newLocationName.toLowerCase().replace(/[^a-z0-9]/g, '_');
+    const newId = newLocationName?.toLowerCase()?.replace(/[^a-z0-9]/g, '_');
     const newPlant = {
       id: newId,
       name: newLocationName,
       address: newLocationAddress,
-      oem_brand: newLocationName.split(' ')[0] || 'OEM'
+      oem_brand: newLocationName?.split(' ')[0] || 'OEM'
     };
     saveEntity('plants', newPlant);
     
     const sup = suppliers.find(s => s.id === newLocationSupplierId);
     if (sup) {
-      if (!sup.plants_served.includes(newId)) {
+      if (!sup.plants_served?.includes(newId)) {
         sup.plants_served.push(newId);
         saveEntity('suppliers', sup);
         setSuppliers(getEntities('suppliers'));
@@ -677,7 +677,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       alert("Representative name is required.");
       return;
     }
-    const newId = `rep_${newRepName.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
+    const newId = `rep_${newRepName?.toLowerCase()?.replace(/[^a-z0-9]/g, '_')}`;
     const newRep = {
       id: newId,
       name: newRepName,
@@ -685,7 +685,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       role: 'rep',
       phone: newRepPhone,
       pay_currency: newRepPayCurrency,
-      avatar: newRepName.split(' ').map(n => n[0]).join('').toUpperCase()
+      avatar: newRepName?.split(' ').map(n => n[0]).join('')?.toUpperCase()
     };
     saveEntity('users', newRep);
     setUsers(getEntities('users'));
@@ -706,7 +706,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       alert("Representative name is required.");
       return;
     }
-    const newId = `rep_${quickRepName.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
+    const newId = `rep_${quickRepName?.toLowerCase()?.replace(/[^a-z0-9]/g, '_')}`;
     const newRep = {
       id: newId,
       name: quickRepName,
@@ -714,7 +714,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       role: 'rep',
       phone: quickRepPhone,
       pay_currency: quickRepPayCurrency,
-      avatar: quickRepName.split(' ').map(n => n[0]).join('').toUpperCase()
+      avatar: quickRepName?.split(' ').map(n => n[0]).join('')?.toUpperCase()
     };
     saveEntity('users', newRep);
     setUsers(getEntities('users'));
@@ -740,7 +740,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       alert("Client name is required.");
       return;
     }
-    const newId = quickClientName.toLowerCase().replace(/[^a-z0-9]/g, '_');
+    const newId = quickClientName?.toLowerCase()?.replace(/[^a-z0-9]/g, '_');
     const newCust = {
       id: newId,
       name: quickClientName,
@@ -768,12 +768,12 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       alert("Plant name is required.");
       return;
     }
-    const newId = quickPlantName.toLowerCase().replace(/[^a-z0-9]/g, '_');
+    const newId = quickPlantName?.toLowerCase()?.replace(/[^a-z0-9]/g, '_');
     const newPlant = {
       id: newId,
       name: quickPlantName,
       address: quickPlantAddress,
-      oem_brand: quickPlantName.split(' ')[0] || 'OEM'
+      oem_brand: quickPlantName?.split(' ')[0] || 'OEM'
     };
     saveEntity('plants', newPlant);
     setPlants(getEntities('plants'));
@@ -781,7 +781,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     if (quickPlantSupplierId) {
       const sup = suppliers.find(s => s.id === quickPlantSupplierId);
       if (sup) {
-        if (!sup.plants_served.includes(newId)) {
+        if (!sup.plants_served?.includes(newId)) {
           sup.plants_served.push(newId);
           saveEntity('suppliers', sup);
           setSuppliers(getEntities('suppliers'));
@@ -1285,10 +1285,10 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     }
 
     const matchesSearch = 
-      inc.part_id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (inc.parts_list && inc.parts_list.some(p => p.part_number.toLowerCase().includes(searchQuery.toLowerCase()))) ||
-      inc.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      inc.area.toLowerCase().includes(searchQuery.toLowerCase());
+      inc.part_id?.toLowerCase()?.includes(searchQuery?.toLowerCase()) ||
+      (inc.parts_list && inc.parts_list.some(p => p.part_number?.toLowerCase()?.includes(searchQuery?.toLowerCase()))) ||
+      inc.description?.toLowerCase()?.includes(searchQuery?.toLowerCase()) ||
+      inc.area?.toLowerCase()?.includes(searchQuery?.toLowerCase());
     const matchesSupplier = selectedSupplierFilter === 'all' || inc.supplier_id === selectedSupplierFilter;
     const matchesStatus = selectedStatusFilter === 'all' || inc.status === selectedStatusFilter;
     const matchesDate = showAllDates || inc.created_at?.startsWith(selectedDate);
@@ -1324,9 +1324,9 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   // Get all dates with records in the database
   const getAvailableDates = () => {
     const datesSet = new Set();
-    incidents.forEach(inc => inc.created_at && datesSet.add(inc.created_at.substring(0, 10)));
+    incidents.forEach(inc => inc.created_at && datesSet.add(inc.created_at?.substring(0, 10)));
     shiftReports.forEach(sr => sr.date && datesSet.add(sr.date));
-    reworkLogs.forEach(rw => rw.created_at && datesSet.add(rw.created_at.substring(0, 10)));
+    reworkLogs.forEach(rw => rw.created_at && datesSet.add(rw.created_at?.substring(0, 10)));
     timeEntries.forEach(te => te.date && datesSet.add(te.date));
     dailyTasks.forEach(dt => dt.date && datesSet.add(dt.date));
     expenseEntries.forEach(ee => ee.date && datesSet.add(ee.date));
@@ -1371,7 +1371,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
   // Check if any database records exist for selectedDate
   const hasDataForSelectedDate = () => {
-    return getAvailableDates().includes(selectedDate);
+    return getAvailableDates()?.includes(selectedDate);
   };
 
   const monthNames = [
@@ -1436,7 +1436,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
           : firstPN;
         list.push({
           time: new Date(inc.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          date: inc.created_at.substring(0, 10),
+          date: inc.created_at?.substring(0, 10),
           title: 'Defect Incident Reported',
           desc: `PN ${partSubject} | ${inc.area} | Rep: ${repName}`,
           color: 'border-red-500',
@@ -1451,7 +1451,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
         const repName = users.find(u => u.id === rw.rep_id)?.name || 'Clarence Kuiken';
         list.push({
           time: new Date(rw.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          date: rw.created_at.substring(0, 10),
+          date: rw.created_at?.substring(0, 10),
           title: 'Rework Logged',
           desc: `${rw.qty} pcs reworked (${rw.time_spent_minutes}m spent) | Rep: ${repName}`,
           color: 'border-amber-500',
@@ -1553,12 +1553,12 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     if (type === "shift") {
       const hasIssues = data?.areas_walked?.some(area => {
         if (area.status === 'issues') return true;
-        const notes = (area.notes || "").toLowerCase();
-        return notes.includes("fail") || notes.includes("safety") || notes.includes("defect") || notes.includes("issue") || notes.includes("rattle");
+        const notes = (area.notes || "")?.toLowerCase();
+        return notes?.includes("fail") || notes?.includes("safety") || notes?.includes("defect") || notes?.includes("issue") || notes?.includes("rattle");
       });
       const hasBonusIssues = data?.bonus_tasks?.some(t => {
-        const notes = (t.notes || "").toLowerCase();
-        return notes.includes("fail") || notes.includes("safety") || notes.includes("defect") || notes.includes("issue");
+        const notes = (t.notes || "")?.toLowerCase();
+        return notes?.includes("fail") || notes?.includes("safety") || notes?.includes("defect") || notes?.includes("issue");
       });
 
       if (hasIssues || hasBonusIssues) {
@@ -1583,16 +1583,16 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       };
     }
 
-    const desc = (data?.description || "").toLowerCase();
-    const action = (data?.action_taken || "").toLowerCase();
+    const desc = (data?.description || "")?.toLowerCase();
+    const action = (data?.action_taken || "")?.toLowerCase();
     const status = data?.status || "";
     const isCritical = status === "Red Alert" || data?.rma_required === "Y" || data?.rma_required === "Yes";
     
     const hasCriticalKeywords = 
-      desc.includes("fail") || desc.includes("safety") || desc.includes("recall") || 
-      desc.includes("critical") || desc.includes("scrap") || desc.includes("non-conforming") || 
-      desc.includes("leak") || desc.includes("short") || desc.includes("crack") ||
-      action.includes("scrap") || action.includes("return") || action.includes("rma");
+      desc?.includes("fail") || desc?.includes("safety") || desc?.includes("recall") || 
+      desc?.includes("critical") || desc?.includes("scrap") || desc?.includes("non-conforming") || 
+      desc?.includes("leak") || desc?.includes("short") || desc?.includes("crack") ||
+      action?.includes("scrap") || action?.includes("return") || action?.includes("rma");
 
     if (isCritical || hasCriticalKeywords) {
       return {
@@ -2591,7 +2591,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       doc.text(new Date(rw.created_at).toLocaleDateString(), 22, y + 5);
       doc.text(rep, 46, y + 5);
       doc.text(`PN ${rw.part_id}`, 80, y + 5);
-      doc.text(rw.supplier_id.toUpperCase(), 100, y + 5);
+      doc.text(rw.supplier_id?.toUpperCase(), 100, y + 5);
       
       doc.setFont("helvetica", "bold");
       doc.text(`${rw.qty} pcs`, 122, y + 5);
@@ -2755,7 +2755,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       { label: "Logged By (Rep):", val: repName },
       { label: "Date Logged:", val: new Date(rw.created_at).toLocaleDateString() },
       { label: "Part Number:", val: `PN ${rw.part_id}` },
-      { label: "Supplier Partner:", val: rw.supplier_id.toUpperCase() },
+      { label: "Supplier Partner:", val: rw.supplier_id?.toUpperCase() },
       { label: "Pieces Reworked:", val: `${rw.qty} pcs` },
       { label: "Time Allocated:", val: `${Math.round(rw.time_spent_minutes / 60 * 10) / 10} hours` },
       { label: "Classification Reasoning:", val: conf.reason }
@@ -2862,7 +2862,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
               <div class="field"><span class="label">Logged By (Rep)</span><span class="val">${repName}</span></div>
               <div class="field"><span class="label">Date Logged</span><span class="val">${new Date(rw.created_at).toLocaleString()}</span></div>
               <div class="field"><span class="label">Part Number Reworked</span><span class="val">PN ${rw.part_id}</span></div>
-              <div class="field"><span class="label">Supplier Partner</span><span class="val">${rw.supplier_id.toUpperCase()}</span></div>
+              <div class="field"><span class="label">Supplier Partner</span><span class="val">${rw.supplier_id?.toUpperCase()}</span></div>
               <div class="field"><span class="label">Pieces Reworked</span><span class="val">${rw.qty} pcs</span></div>
               <div class="field"><span class="label">Time Spent (Labor)</span><span class="val">${Math.round(rw.time_spent_minutes / 60 * 10) / 10} hours</span></div>
               <div class="field" style="grid-column: span 2;"><span class="label">Classification Rationale</span><span class="val" style="font-weight: 500; font-size: 11px; color: ${conf.color};">${conf.reason}</span></div>
@@ -2892,7 +2892,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   const handleExportQuickBooks = () => {
     try {
       const conf = getConfidentiality(timeEntries, "payroll");
-      const todayDate = new Date().toISOString().substring(0, 10);
+      const todayDate = new Date().toISOString()?.substring(0, 10);
       
       const csvLines = [
         `[IDS PULSE LOGO: SHIELD & WAVE]`,
@@ -2915,9 +2915,9 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
         const mileageCost = (entry.mileage_km || 0) * 0.73;
         const totalBilling = (entry.hours || 0) * 28.00 + mileageCost;
         return [
-          `"${repName.replace(/"/g, '""')}"`,
+          `"${repName?.replace(/"/g, '""')}"`,
           `"${entry.date || ''}"`,
-          `"${plant.replace(/"/g, '""')}"`,
+          `"${plant?.replace(/"/g, '""')}"`,
           entry.hours || 0,
           entry.mileage_km || 0,
           mileageCost.toFixed(2),
@@ -2930,7 +2930,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
         const repName = rep ? rep.name : 'Unknown Rep';
         const totalBilling = (entry.amount || 0) * 28.00;
         return [
-          `"${repName.replace(/"/g, '""')}"`,
+          `"${repName?.replace(/"/g, '""')}"`,
           `"${entry.date || ''}"`,
           `"Overtime Approved"`,
           entry.amount || 0,
@@ -3277,7 +3277,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       worksheet.getCell('A' + (footerStartIdx+2)).font = { size: 8, color: { argb: '94A3B8' } };
 
       // Write to buffer and download
-      const todayDate = new Date().toISOString().substring(0, 10);
+      const todayDate = new Date().toISOString()?.substring(0, 10);
       const buffer = await workbook.xlsx.writeBuffer();
       const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
       const url = URL.createObjectURL(blob);
@@ -3346,7 +3346,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     // We group by day, part_id, and area
     const dayGroups = {};
     incidents.forEach((inc) => {
-      const day = inc.created_at.substring(0, 10);
+      const day = inc.created_at?.substring(0, 10);
       const key = `${day}_${inc.part_id}_${inc.area}`;
       if (!dayGroups[key]) {
         dayGroups[key] = [];
@@ -3360,7 +3360,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
         logs.push({
           type: 'warning',
           category: 'Duplicate Detection',
-          message: `Potential duplicate incident logs detected (Qty: ${group.length}) for part ${group[0].part_id} in ${group[0].area} on date ${key.substring(0,10)}.`,
+          message: `Potential duplicate incident logs detected (Qty: ${group.length}) for part ${group[0].part_id} in ${group[0].area} on date ${key?.substring(0,10)}.`,
           items: group
         });
       }
@@ -3393,12 +3393,12 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
   // Shared AI Command & Permission Processor
   const processAiCommand = (cmdText) => {
-    const lowerText = cmdText.toLowerCase();
+    const lowerText = cmdText?.toLowerCase();
     let responseText = '';
     let action = null; // 'excel' | 'csv' | 'pdf' | 'audit' | null
 
     // 1. Financial check
-    const isFinancialQuery = lowerText.includes('excel') || lowerText.includes('xlsx') || lowerText.includes('payroll') || lowerText.includes('csv') || lowerText.includes('quickbooks') || lowerText.includes('qb');
+    const isFinancialQuery = lowerText?.includes('excel') || lowerText?.includes('xlsx') || lowerText?.includes('payroll') || lowerText?.includes('csv') || lowerText?.includes('quickbooks') || lowerText?.includes('qb');
     if (isFinancialQuery && userRole === 'lead') {
       return {
         responseText: "Access Denied: As Quality Lead, you do not have permission to view, audit, or export financial timesheets or payroll records.",
@@ -3407,7 +3407,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     }
 
     // 2. Quality check
-    const isQualityQuery = lowerText.includes('report') || lowerText.includes('pdf') || lowerText.includes('download') || lowerText.includes('defect') || lowerText.includes('duplicate');
+    const isQualityQuery = lowerText?.includes('report') || lowerText?.includes('pdf') || lowerText?.includes('download') || lowerText?.includes('defect') || lowerText?.includes('duplicate');
     if (isQualityQuery && userRole === 'accountant') {
       return {
         responseText: "Access Denied: As Accountant, you do not have permission to view, audit, or export quality defect incidents or reports.",
@@ -3416,7 +3416,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     }
 
     // 3. Process commands
-    if (lowerText.includes('audit') || lowerText.includes('error') || lowerText.includes('mistake') || lowerText.includes('number') || lowerText.includes('defect') || lowerText.includes('duplicate')) {
+    if (lowerText?.includes('audit') || lowerText?.includes('error') || lowerText?.includes('mistake') || lowerText?.includes('number') || lowerText?.includes('defect') || lowerText?.includes('duplicate')) {
       const logs = runPulseAiAudit();
       const count = logs.length;
       if (userRole === 'lead') {
@@ -3793,7 +3793,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
           </span>
         </div>
         
-        {['admin', 'owner', 'accountant', 'lead', 'shahroz'].includes(userRole) ? (
+        {['admin', 'owner', 'accountant', 'lead', 'shahroz']?.includes(userRole) ? (
           <div className="glass-panel hover:border-border-subtle glow-pulse-purple rounded-2xl p-3 flex flex-col justify-between h-28 border-purple-500/10 hover:border-purple-300 transition-all">
             <div>
               <span className="text-[10.5px] font-extrabold text-text-secondary uppercase tracking-wider block">Supplier Invoice Billable</span>
@@ -3932,7 +3932,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
             )}
 
             {/* ADMIN SIDEBAR BUTTONS */}
-            {['admin', 'owner', 'accountant', 'lead', 'shahroz'].includes(userRole) && (
+            {['admin', 'owner', 'accountant', 'lead', 'shahroz']?.includes(userRole) && (
               <>
                 <button 
                   onClick={() => setActiveTab('pulse-ai')}
@@ -4210,9 +4210,9 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         }`}
                       >
                         
-                        {msg.text.split('\n').map((line, i) => (
+                        {msg.text?.split('\n').map((line, i) => (
                           <span key={i} className="block min-h-[1.2em]">
-                            {line.split(/(\*\*.*?\*\*)/g).map((part, j) => 
+                            {line?.split(/(\*\*.*?\*\*)/g).map((part, j) => 
                               part?.startsWith('**') && part?.endsWith('**') 
                                 ? <strong key={j} className="font-extrabold text-[#22D3EE]">{part.slice(2, -2)}</strong> 
                                 : part
@@ -4691,14 +4691,14 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
           {/* TAB 0.8: VISUAL HEAT MAPS */}
           {activeTab === 'heatmap' && (() => {
             const availDates = incidents.length > 0 
-              ? Array.from(new Set(incidents.map(i => i.created_at.substring(0, 10)))).sort()
+              ? Array.from(new Set(incidents.map(i => i.created_at?.substring(0, 10)))).sort()
               : ['2026-05-28', '2026-06-01', '2026-06-02', '2026-06-03'];
             const targetScrubDate = availDates[Math.min(scrubIndex, availDates.length - 1)] || availDates[availDates.length - 1];
 
             const currentFilteredList = incidents.filter(inc => {
               const incPartNo = inc.parts_list?.[0]?.part_number || inc.part_id;
               const matchesPart = incPartNo === selectedHeatmapPart;
-              const matchesDate = inc.created_at.substring(0, 10) <= targetScrubDate;
+              const matchesDate = inc.created_at?.substring(0, 10) <= targetScrubDate;
               const matchesSupplier = selectedSupplierFilter === 'all' || inc.supplier_id === selectedSupplierFilter;
               const matchesStatus = selectedStatusFilter === 'all' || inc.status === selectedStatusFilter;
               return matchesPart && matchesDate && matchesSupplier && matchesStatus;
@@ -5066,7 +5066,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
               <div className="flex justify-between items-center pb-2 border-b border-border-subtle flex-shrink-0">
                 <div>
                   <h3 className="text-[14.5px] font-bold text-text-primary uppercase tracking-wider">Customer Portal Dashboard</h3>
-                  <span className="text-[11.5px] text-text-secondary">Quality, audit hours tracking, and representative assignments for {(suppliers.find(s => s.id === currentUserCustomerId)?.name || currentUserCustomerId.toUpperCase())}</span>
+                  <span className="text-[11.5px] text-text-secondary">Quality, audit hours tracking, and representative assignments for {(suppliers.find(s => s.id === currentUserCustomerId)?.name || currentUserCustomerId?.toUpperCase())}</span>
                 </div>
               </div>
 
@@ -5187,7 +5187,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     <div className="flex flex-col gap-3 max-h-[350px] overflow-y-auto pr-1">
                       {(() => {
                         const customerPlants = suppliers.find(s => s.id === currentUserCustomerId)?.plants_served || [];
-                        const customerReports = shiftReports.filter(r => r.status === 'published' && customerPlants.includes(r.plant_id));
+                        const customerReports = shiftReports.filter(r => r.status === 'published' && customerPlants?.includes(r.plant_id));
                         
                         if (customerReports.length === 0) {
                           return <div className="text-center py-8 text-slate-550 italic">No published shift logs available.</div>;
@@ -5275,7 +5275,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                           </div>
                           <div className="flex flex-col items-end text-right">
                             <span className="text-[11.5px] text-text-secondary font-bold uppercase">Requested Amount</span>
-                            <span className="text-[14.5px] font-black text-text-primary">{req.amount} {req.category.includes('Overtime') ? 'Hours' : 'USD'}</span>
+                            <span className="text-[14.5px] font-black text-text-primary">{req.amount} {req.category?.includes('Overtime') ? 'Hours' : 'USD'}</span>
                           </div>
                         </div>
                         
@@ -5344,7 +5344,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 {shiftReports.filter(sr => {
                   if (userRole === 'customer') {
                     const customerPlants = suppliers.find(s => s.id === currentUserCustomerId)?.plants_served || [];
-                    return sr.status === 'published' && customerPlants.includes(sr.plant_id);
+                    return sr.status === 'published' && customerPlants?.includes(sr.plant_id);
                   }
                   return true;
                 }).map(sr => (
@@ -5373,7 +5373,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     </div>
                     
                     <div className="flex items-center gap-2">
-                      {['admin', 'owner', 'accountant', 'lead', 'shahroz'].includes(userRole) && sr.status !== 'published' && (
+                      {['admin', 'owner', 'accountant', 'lead', 'shahroz']?.includes(userRole) && sr.status !== 'published' && (
                         <button 
                           onClick={() => handlePublishReport(sr.id)}
                           className="bg-emerald-500 hover:bg-emerald-600 text-slate-950 py-2 px-3 rounded-xl text-[13.5px] font-bold transition-all cursor-pointer flex items-center gap-1 flex-shrink-0"
@@ -5437,7 +5437,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     <tr className="bg-surface-elevated text-text-secondary">
                       <th className="p-3 border-b border-border-subtle font-semibold w-1/3">Checklist Item</th>
                       {Object.keys(weeklyChecklists).map(day => (
-                        <th key={day} className="p-3 border-b border-l border-border-subtle font-semibold text-center">{day.substring(0,3)}</th>
+                        <th key={day} className="p-3 border-b border-l border-border-subtle font-semibold text-center">{day?.substring(0,3)}</th>
                       ))}
                     </tr>
                   </thead>
@@ -5786,7 +5786,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                     req.status === 'approved' ? 'bg-emerald-50 text-emerald-600' :
                                     req.status?.startsWith('rejected') ? 'bg-rose-50 text-rose-600' :
                                     'bg-amber-50 text-amber-600'
-                                  }`}>{req.status.replace(/_/g, ' ')}</span>
+                                  }`}>{req.status?.replace(/_/g, ' ')}</span>
                                 </div>
                                 <div className="text-[13.5px] font-semibold text-text-primary">{req.hours} hours on {req.date}</div>
                                 <div className="text-[11.5px] text-text-secondary italic">" {req.reason} "</div>
@@ -6033,8 +6033,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     const clientEntries = timeEntries.filter(t => t && t.supplier_id === (client?.id || selectedInvoiceSupplier) && !t.invoiced && (selectedInvoiceCurrency === 'all' || getRepSupplierRates(t.rep_id, t.supplier_id, t.plant_id).currency === selectedInvoiceCurrency));
                     const clientExpenses = expenseEntries.filter(e => e && e.supplier_id === (client?.id || selectedInvoiceSupplier) && !e.invoiced && (selectedInvoiceCurrency === 'all' || getExpenseCurrency(e) === selectedInvoiceCurrency));
 
-                    const includedEntries = clientEntries.filter(t => !excludedInvoiceEntryIds.includes(t.id));
-                    const includedExpenses = clientExpenses.filter(e => !excludedInvoiceExpenseIds.includes(e.id));
+                    const includedEntries = clientEntries.filter(t => !excludedInvoiceEntryIds?.includes(t.id));
+                    const includedExpenses = clientExpenses.filter(e => !excludedInvoiceExpenseIds?.includes(e.id));
 
                     const cadEntries = includedEntries.filter(t => getRepSupplierRates(t.rep_id, t.supplier_id, t.plant_id).currency === 'CAD');
                     const cadExpenses = includedExpenses.filter(e => getExpenseCurrency(e) === 'CAD');
@@ -6135,7 +6135,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                 }}
                                 className="bg-surface border border-border-subtle rounded-xl px-3 py-1.5 text-[13.5px] text-text-primary"
                               >
-                                {suppliers.filter(Boolean).map(s => <option key={s.id} value={s.id}>{s.name} ({(s.invoice_schedule || 'weekly').toUpperCase()})</option>)}
+                                {suppliers.filter(Boolean).map(s => <option key={s.id} value={s.id}>{s.name} ({(s.invoice_schedule || 'weekly')?.toUpperCase()})</option>)}
                                 <option value="ADD_NEW" className="text-cyan-600 font-bold">+ Add New Client...</option>
                               </select>
                             </div>
@@ -6187,7 +6187,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                     {clientEntries.map(entry => {
                                       const { billing_rate, currency } = getRepSupplierRates(entry.rep_id, entry.supplier_id, entry.plant_id);
                                       const rowSymbol = currency === 'CAD' ? 'C$' : 'US$';
-                                      const isExcluded = excludedInvoiceEntryIds.includes(entry.id);
+                                      const isExcluded = excludedInvoiceEntryIds?.includes(entry.id);
                                       return (
                                         <tr key={entry.id} className={`hover:bg-surface ${isExcluded ? 'opacity-40' : ''}`}>
                                           <td className="py-2 text-center">
@@ -6226,7 +6226,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                       {clientExpenses.map(exp => {
                                         const expCurr = getExpenseCurrency(exp);
                                         const expSymbol = expCurr === 'CAD' ? 'C$' : 'US$';
-                                        const isExcluded = excludedInvoiceExpenseIds.includes(exp.id);
+                                        const isExcluded = excludedInvoiceExpenseIds?.includes(exp.id);
                                         return (
                                           <tr key={exp.id} className={`hover:bg-surface ${isExcluded ? 'opacity-40' : ''}`}>
                                             <td className="py-2 text-center">
@@ -6432,7 +6432,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                     <td className="p-3 font-mono font-bold">{t.hours}</td>
                                     <td className="p-3">
                                       <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${t.status === 'approved' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-amber-500/10 text-amber-500'}`}>
-                                        {t.status.replace('_', ' ')}
+                                        {t.status?.replace('_', ' ')}
                                       </span>
                                     </td>
                                     <td className="p-3">
@@ -6486,7 +6486,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                     <td className="p-3 font-mono font-bold text-emerald-500">\${e.amount}</td>
                                     <td className="p-3">
                                       <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${e.status === 'approved' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-amber-500/10 text-amber-500'}`}>
-                                        {e.status.replace('_', ' ')}
+                                        {e.status?.replace('_', ' ')}
                                       </span>
                                     </td>
                                     <td className="p-3">
@@ -6550,7 +6550,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                 {suppliers.map(s => (
                                   <tr key={s.id}>
                                     <td className="py-2 text-text-primary font-bold">{s.name}</td>
-                                    <td className="py-2 font-mono text-slate-450">{s.id.toUpperCase()}</td>
+                                    <td className="py-2 font-mono text-slate-450">{s.id?.toUpperCase()}</td>
                                     <td className="py-2">{s.contacts.map(c => c.name).join(", ")}</td>
                                     <td className="py-2"><span className="px-2 py-1 rounded bg-amber-50 text-amber-600 text-[10.5px] font-bold uppercase">{s.invoice_schedule || 'weekly'}</span></td>
                                   </tr>
@@ -6601,7 +6601,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                               </thead>
                               <tbody className="divide-y divide-slate-850 text-text-primary">
                                 {plants.map(p => {
-                                  const parent = suppliers.find(s => s.plants_served.includes(p.id));
+                                  const parent = suppliers.find(s => s.plants_served?.includes(p.id));
                                   return (
                                     <tr key={p.id}>
                                       <td className="py-2 text-text-primary font-bold">{p.name}</td>
@@ -7004,7 +7004,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   <form 
                     onSubmit={(e) => {
                       e.preventDefault();
-                      const pw = roadmapPassword.trim().toLowerCase().replace(/\s+/g, '');
+                      const pw = roadmapPassword.trim()?.toLowerCase()?.replace(/\s+/g, '');
                       if (pw === 'shahroz') {
                         setIsRoadmapLocked(false);
                         setRoadmapLockError(false);
@@ -7384,7 +7384,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                           <form 
                             onSubmit={(e) => {
                               e.preventDefault();
-                              const pw = budgetPassword.trim().toLowerCase().replace(/\s+/g, '');
+                              const pw = budgetPassword.trim()?.toLowerCase()?.replace(/\s+/g, '');
                               if (pw === 'shahroz') {
                                 setIsBudgetLocked(false);
                                 setBudgetLockError(false);
@@ -7617,12 +7617,12 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         }
                         const repDetails = users.find(u => u.id === newProjRep);
                         const newProjectItem = {
-                          project_number: `PRJ-${newProjClient.substring(0, 3).toUpperCase()}-${Math.floor(100 + Math.random() * 900)}`,
+                          project_number: `PRJ-${newProjClient?.substring(0, 3)?.toUpperCase()}-${Math.floor(100 + Math.random() * 900)}`,
                           client_id: newProjClient,
-                          description: `Rep ${repDetails ? repDetails.name.split(' ')[1] || repDetails.name : 'Staff'} ${newProjDesc || 'Inspection'}`,
+                          description: `Rep ${repDetails ? repDetails.name?.split(' ')[1] || repDetails.name : 'Staff'} ${newProjDesc || 'Inspection'}`,
                           plant_id: newProjPlant,
                           rep_id: newProjRep,
-                          start_date: newProjStartDate || new Date().toISOString().split('T')[0],
+                          start_date: newProjStartDate || new Date().toISOString()?.split('T')[0],
                           currency: newProjCurrency,
                           billing_rate: parseFloat(newProjBilling),
                           pay_rate: parseFloat(newProjPay),
@@ -7973,7 +7973,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         <div key={l.id} className="pb-1.5 border-b border-border-subtle flex items-start gap-3">
                           <span className="text-slate-550 flex-shrink-0">[{new Date(l.timestamp).toLocaleTimeString()}]</span>
                           <span className={`px-2 py-1 rounded border text-[12.5px] font-extrabold uppercase tracking-wider ${badgeColor}`}>{l.category}</span>
-                          <span className="text-text-secondary"><strong className="text-text-primary">{l.action.toUpperCase()}</strong>: {l.details}</span>
+                          <span className="text-text-secondary"><strong className="text-text-primary">{l.action?.toUpperCase()}</strong>: {l.details}</span>
                         </div>
                       );
                     });

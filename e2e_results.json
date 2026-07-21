@@ -1,0 +1,72 @@
+[
+  {
+    "id": 1,
+    "role": "Owner (Shahroz Mirza)",
+    "scenario": "Executive Launch Roadmap & Full Audit",
+    "status": "PASSED",
+    "details": "Owner Dashboard & Launch Roadmap Verified"
+  },
+  {
+    "id": 2,
+    "role": "System Admin (Greg)",
+    "scenario": "Admin Operational Dashboard & Plant Registry",
+    "status": "PASSED",
+    "details": "System Admin Operational Control Verified"
+  },
+  {
+    "id": 3,
+    "role": "Quality Lead (Donna)",
+    "scenario": "Quality Lead Defect Matrix & Duplicate Audit",
+    "status": "PASSED",
+    "details": "Quality Lead Defect Governance Verified"
+  },
+  {
+    "id": 4,
+    "role": "Accountant (Colleen)",
+    "scenario": "Financial Ledger, Timesheets & Expense Lightbox",
+    "status": "PASSED",
+    "details": "Accountant Timesheets & Financial Audit Verified"
+  },
+  {
+    "id": 5,
+    "role": "QRE Rep (Clarence - GM Oshawa)",
+    "scenario": "GM Oshawa Shift Rework & CAD Defect Reporting",
+    "status": "PASSED",
+    "details": "Clarence Mobile QRE Rework Pipeline Verified"
+  },
+  {
+    "id": 6,
+    "role": "QRE Rep (Hugo - Magna Plant)",
+    "scenario": "Magna Plant On-Demand Suspect Material & Tolls Claim",
+    "status": "PASSED",
+    "details": "Hugo Mobile QRE Emergency Logging Verified"
+  },
+  {
+    "id": 7,
+    "role": "QRE Rep (Nabil - Hutchinson)",
+    "scenario": "Night Shift Rework Hours & Meal Expense Submission",
+    "status": "PASSED",
+    "details": "Nabil Night Shift Rework Logging Verified"
+  },
+  {
+    "id": 8,
+    "role": "QRE Rep (Rogelio - Mercedes Plant)",
+    "scenario": "High-Volume Part Sorting & Correction Request Submission",
+    "status": "PASSED",
+    "details": "Rogelio High-Volume Sorting Pipeline Verified"
+  },
+  {
+    "id": 9,
+    "role": "Customer (Auto Kabel)",
+    "scenario": "Auto Kabel Supplier Quality Metrics & Defect Tracking",
+    "status": "PASSED",
+    "details": "Auto Kabel Restricted Customer Portal Verified"
+  },
+  {
+    "id": 10,
+    "role": "Customer (Magna AutoSystems)",
+    "scenario": "Magna Automotive Part Defect & Rework Oversight Portal",
+    "status": "PASSED",
+    "details": "Magna Automotive Restricted Portal Verified"
+  }
+]

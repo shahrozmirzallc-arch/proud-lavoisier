@@ -40,27 +40,27 @@ const SEED_DATA = {
   ],
   suppliers: [
     { 
-      id: 'magna', name: 'Magna AutoSystems', invoice_schedule: 'weekly', allotted_hours: 45,
+      id: 'magna', name: 'Magna AutoSystems', invoice_schedule: 'weekly', allotted_hours: 45, ot_rules: { weekly_threshold: 40, daily_threshold: 8, saturday_multiplier: 1.5, sunday_multiplier: 2.0, holiday_multiplier: 2.0 },
       contacts: [{ name: 'Shahroz Mirza', email: 'shahroz.m@magna.com', role: 'Quality Manager' }, { name: 'Martin', email: 'martin.s@magna.com', role: 'Sequence Supervisor' }],
       plants_served: ['gm_oshawa'] 
     },
     { 
-      id: 'hutchinson', name: 'Hutchinson Rubber', invoice_schedule: 'monthly', allotted_hours: 30,
+      id: 'hutchinson', name: 'Hutchinson Rubber', invoice_schedule: 'monthly', allotted_hours: 30, ot_rules: { weekly_threshold: 40, daily_threshold: 8, saturday_multiplier: 1.5, sunday_multiplier: 2.0, holiday_multiplier: 2.0 },
       contacts: [{ name: 'Sarah Jenkins', email: 'sjenkins@hutchinson.ca', role: 'Supplier Quality Engineer' }],
       plants_served: ['gm_oshawa'] 
     },
     {
-      id: 'autokabel', name: 'Auto Kabel de Mexico S.A. de C.V', invoice_schedule: 'weekly', allotted_hours: 50,
+      id: 'autokabel', name: 'Auto Kabel de Mexico S.A. de C.V', invoice_schedule: 'weekly', allotted_hours: 50, ot_rules: { weekly_threshold: 40, daily_threshold: 8, saturday_multiplier: 1.5, sunday_multiplier: 2.0, holiday_multiplier: 2.0 },
       contacts: [{ name: 'Juan Carlos', email: 'jc@autokabel.mx', role: 'Plant Quality Manager' }],
       plants_served: ['mercedes_tuscaloosa', 'ford_dearborn', 'gm_slp']
     },
     {
-      id: 'brose', name: 'Brose México S.A. de C.V.', invoice_schedule: 'weekly', allotted_hours: 40,
+      id: 'brose', name: 'Brose México S.A. de C.V.', invoice_schedule: 'weekly', allotted_hours: 40, ot_rules: { weekly_threshold: 40, daily_threshold: 8, saturday_multiplier: 1.5, sunday_multiplier: 2.0, holiday_multiplier: 2.0 },
       contacts: [{ name: 'Maria Gomez', email: 'mg@brose.mx', role: 'Supplier Quality Manager' }],
       plants_served: ['gm_slp']
     },
     {
-      id: 'borgwarner', name: 'BorgWarner PDS Irapuato', invoice_schedule: 'monthly', allotted_hours: 35,
+      id: 'borgwarner', name: 'BorgWarner PDS Irapuato', invoice_schedule: 'monthly', allotted_hours: 35, ot_rules: { weekly_threshold: 40, daily_threshold: 8, saturday_multiplier: 1.5, sunday_multiplier: 2.0, holiday_multiplier: 2.0 },
       contacts: [{ name: 'Alejandro', email: 'al@borgwarner.com', role: 'Supplier Quality Engineer' }],
       plants_served: ['gm_slp']
     }
@@ -91,16 +91,16 @@ const SEED_DATA = {
     { id: 'rw_3', rep_id: 'rep_rogelio', plant_id: 'gm_slp', supplier_id: 'borgwarner', part_id: 'BW-SOL-119', qty: 50, time_spent_minutes: 120, notes: 'Air leak testing on quarantined pallet.' }
   ],
   timeEntries: [
-    { id: 'te_1', rep_id: '1', plant_id: 'gm_oshawa', supplier_id: 'magna', date: '2026-07-06', hours: 8.5, mileage_km: 45, invoiced: false, sent_to_payroll: false },
-    { id: 'te_2', rep_id: 'rep_hugo', plant_id: 'mercedes_tuscaloosa', supplier_id: 'autokabel', date: '2026-07-06', hours: 10.0, mileage_km: 85, invoiced: false, sent_to_payroll: false },
-    { id: 'te_3', rep_id: 'rep_nabil', plant_id: 'ford_dearborn', supplier_id: 'autokabel', date: '2026-07-06', hours: 8.0, mileage_km: 32, invoiced: false, sent_to_payroll: false },
-    { id: 'te_4', rep_id: 'rep_rogelio', plant_id: 'gm_slp', supplier_id: 'brose', date: '2026-07-06', hours: 6.0, mileage_km: 20, invoiced: false, sent_to_payroll: false },
-    { id: 'te_5', rep_id: 'rep_rogelio', plant_id: 'gm_slp', supplier_id: 'borgwarner', date: '2026-07-06', hours: 4.5, mileage_km: 20, invoiced: false, sent_to_payroll: false },
-    { id: 'te_6', rep_id: 'rep_rogelio', plant_id: 'gm_slp', supplier_id: 'brose', date: '2026-07-07', hours: 8.0, mileage_km: 40, invoiced: false, sent_to_payroll: false }
+    { id: 'te_1', rep_id: '1', plant_id: 'gm_oshawa', supplier_id: 'magna', date: '2026-07-06', hours: 8.5, mileage_km: 45, invoiced: false, sent_to_payroll: false, status: 'approved', tracking_code: 'LEGACY-000', ot_hours: 0, audit_trail: [] },
+    { id: 'te_2', rep_id: 'rep_hugo', plant_id: 'mercedes_tuscaloosa', supplier_id: 'autokabel', date: '2026-07-06', hours: 10.0, mileage_km: 85, invoiced: false, sent_to_payroll: false, status: 'approved', tracking_code: 'LEGACY-000', ot_hours: 0, audit_trail: [] },
+    { id: 'te_3', rep_id: 'rep_nabil', plant_id: 'ford_dearborn', supplier_id: 'autokabel', date: '2026-07-06', hours: 8.0, mileage_km: 32, invoiced: false, sent_to_payroll: false, status: 'approved', tracking_code: 'LEGACY-000', ot_hours: 0, audit_trail: [] },
+    { id: 'te_4', rep_id: 'rep_rogelio', plant_id: 'gm_slp', supplier_id: 'brose', date: '2026-07-06', hours: 6.0, mileage_km: 20, invoiced: false, sent_to_payroll: false, status: 'approved', tracking_code: 'LEGACY-000', ot_hours: 0, audit_trail: [] },
+    { id: 'te_5', rep_id: 'rep_rogelio', plant_id: 'gm_slp', supplier_id: 'borgwarner', date: '2026-07-06', hours: 4.5, mileage_km: 20, invoiced: false, sent_to_payroll: false, status: 'approved', tracking_code: 'LEGACY-000', ot_hours: 0, audit_trail: [] },
+    { id: 'te_6', rep_id: 'rep_rogelio', plant_id: 'gm_slp', supplier_id: 'brose', date: '2026-07-07', hours: 8.0, mileage_km: 40, invoiced: false, sent_to_payroll: false, status: 'approved', tracking_code: 'LEGACY-000', ot_hours: 0, audit_trail: [] }
   ],
   expenseEntries: [
-    { id: 'exp_1', rep_id: 'rep_rogelio', supplier_id: 'brose', date: '2026-07-06', category: 'Safety Gear', amount: 75.00, receipt_photo: 'https://images.unsplash.com/photo-1554415707-6e8cfc93fe23', status: 'approved' },
-    { id: 'exp_2', rep_id: 'rep_hugo', supplier_id: 'autokabel', date: '2026-07-06', category: 'Meals', amount: 28.50, receipt_photo: 'https://images.unsplash.com/photo-1554415707-6e8cfc93fe23', status: 'pending' }
+    { id: 'exp_1', rep_id: 'rep_rogelio', supplier_id: 'brose', date: '2026-07-06', category: 'Safety Gear', amount: 75.00, receipt_photo: 'https://images.unsplash.com/photo-1554415707-6e8cfc93fe23', status: 'approved', expense_group: 'External', observations: '', tracking_code: 'LEGACY-EXP-000', audit_trail: [] },
+    { id: 'exp_2', rep_id: 'rep_hugo', supplier_id: 'autokabel', date: '2026-07-06', category: 'Meals', amount: 28.50, receipt_photo: 'https://images.unsplash.com/photo-1554415707-6e8cfc93fe23', status: 'pending', expense_group: 'External', observations: '', tracking_code: 'LEGACY-EXP-000', audit_trail: [] }
   ],
   emailLogs: [],
   dailyTasks: [
@@ -113,7 +113,14 @@ const SEED_DATA = {
     { id: 'proj_3', project_number: 'PRJ-BOR-092', client_id: 'borgwarner', rep_id: 'rep_rogelio', plant_id: 'gm_slp', status: 'Active', currency: 'USD' }
   ],
   systemLogs: [],
-  extraHoursRequests: []
+  extraHoursRequests: [],
+  assignments: [
+    { id: 'assig_1', rep_id: '1', supplier_id: 'magna', plant_id: 'gm_oshawa', line: 'Sequence Area', shift: '1st Shift' },
+    { id: 'assig_2', rep_id: 'rep_hugo', supplier_id: 'autokabel', plant_id: 'mercedes_tuscaloosa', line: 'Assembly Line 4', shift: '2nd Shift' },
+    { id: 'assig_3', rep_id: 'rep_nabil', supplier_id: 'autokabel', plant_id: 'ford_dearborn', line: 'Harness Sequencing', shift: '1st Shift' },
+    { id: 'assig_4', rep_id: 'rep_rogelio', supplier_id: 'brose', plant_id: 'gm_slp', line: 'Body Shop Line 2', shift: '3rd Shift' }
+  ],
+  repActivities: []
 };
 
 // Initialize database in localStorage
@@ -128,7 +135,9 @@ export function initializeDB() {
   let updated = false;
 
   // Fix migration missing collections
-  const collections = ['users', 'rates', 'plants', 'suppliers', 'parts', 'incidents', 'reworkLogs', 'timeEntries', 'expenseEntries', 'extraHoursRequests', 'systemLogs', 'projects', 'dailyTasks', 'shiftReports', 'emailLogs'];
+  const collections = ['users', 'rates', 'plants', 'suppliers', 'parts', 'incidents', 'reworkLogs', 'timeEntries', 'expenseEntries', 'extraHoursRequests', 'systemLogs', 'projects', 'dailyTasks', 'shiftReports',
+    'assignments',
+    'repActivities', 'emailLogs', 'assignments', 'repActivities'];
   collections.forEach(col => {
     if (!data[col]) {
       data[col] = SEED_DATA[col] || [];

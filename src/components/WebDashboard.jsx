@@ -3953,72 +3953,84 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       {/* Main Panel Content Area */}
       <div className="flex-1 flex gap-6 sm:p-8 mt-5 min-h-0">
         
-        {/* Navigation Sidebar */}
+        {/* Navigation Sidebar with Grouped Categories */}
         {!forceRoadmapOnly && (
-          <div className="w-56 flex flex-col gap-2 flex-shrink-0">
+          <div className="w-56 flex flex-col gap-1.5 flex-shrink-0">
+            
             {/* QRE SIDEBAR BUTTONS */}
             {userRole === 'qre' && (
-              <>
+              <div className="flex flex-col gap-1.5">
+                <div className="text-[10px] font-extrabold text-text-secondary/70 uppercase tracking-widest px-2.5 pt-1 flex items-center gap-1.5">
+                  <Sparkles className="w-3 h-3 text-[#3B82F6]" />
+                  <span>AI Assistant</span>
+                </div>
                 <button 
                   onClick={() => setActiveTab('pulse-ai')}
-                  className={`w-full h-12 px-4 rounded-xl font-bold text-[13.5px] transition-all cursor-pointer flex items-center justify-between border relative overflow-hidden group ${
+                  className={`w-full h-11 px-3.5 rounded-xl font-bold text-[13px] transition-all cursor-pointer flex items-center justify-between border relative overflow-hidden group ${
                     activeTab === 'pulse-ai' 
                       ? 'bg-[#3B82F6] text-white border-[#3B82F6]/50 shadow-md shadow-[#3B82F6]/10' 
-                      : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle hover:border-border-subtle'
+                      : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle'
                   }`}
                 >
                   <div className="absolute inset-y-0 left-0 w-[3px] bg-[#3B82F6] shadow-[0_0_8px_#3B82F6]"></div>
-                  <div className="flex items-center gap-3">
-                    <Sparkles className="w-4.5 h-4.5 text-[#3B82F6]" />
+                  <div className="flex items-center gap-2.5">
+                    <Sparkles className="w-4 h-4 text-[#3B82F6]" />
                     <span>Pulse AI Help</span>
                   </div>
                 </button>
 
+                <div className="text-[10px] font-extrabold text-text-secondary/70 uppercase tracking-widest px-2.5 pt-2 flex items-center gap-1.5 border-t border-border-subtle/50 mt-1">
+                  <Clock className="w-3 h-3 text-emerald-500" />
+                  <span>My Work & Logging</span>
+                </div>
                 <button 
                   onClick={() => setActiveTab('time-tracking')}
-                  className={`w-full h-12 px-4 rounded-xl font-bold text-[13.5px] transition-all cursor-pointer flex items-center justify-between border ${
+                  className={`w-full h-11 px-3.5 rounded-xl font-bold text-[13px] transition-all cursor-pointer flex items-center justify-between border ${
                     activeTab === 'time-tracking' 
-                      ? 'bg-sky-950/60 text-sky-300 border-sky-500/40 shadow-md shadow-sky-500/10 font-bold' 
-                      : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle hover:border-border-subtle'
+                      ? 'bg-sky-950/60 text-sky-300 border-sky-500/40 shadow-md shadow-sky-500/10' 
+                      : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle'
                   }`}
                 >
-                  <div className="flex items-center gap-3">
-                    <Clock className="w-4.5 h-4.5 text-emerald-600" />
+                  <div className="flex items-center gap-2.5">
+                    <Clock className="w-4 h-4 text-emerald-500" />
                     <span>My Hours & Expenses</span>
                   </div>
                   {activeTab === 'time-tracking' && <div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>}
                 </button>
                 <button 
                   onClick={() => setActiveTab('daily-checklists')}
-                  className={`w-full h-12 px-4 rounded-xl font-bold text-[13.5px] transition-all cursor-pointer flex items-center justify-between border ${
+                  className={`w-full h-11 px-3.5 rounded-xl font-bold text-[13px] transition-all cursor-pointer flex items-center justify-between border ${
                     activeTab === 'daily-checklists' 
-                      ? 'bg-sky-950/60 text-sky-300 border-sky-500/40 shadow-md shadow-sky-500/10 font-bold' 
-                      : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle hover:border-border-subtle'
+                      ? 'bg-sky-950/60 text-sky-300 border-sky-500/40 shadow-md shadow-sky-500/10' 
+                      : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle'
                   }`}
                 >
-                  <div className="flex items-center gap-3">
-                    <ClipboardCheck className="w-4.5 h-4.5 text-[#3B82F6]" />
+                  <div className="flex items-center gap-2.5">
+                    <ClipboardCheck className="w-4 h-4 text-[#3B82F6]" />
                     <span>Daily Checklists</span>
                   </div>
                   {activeTab === 'daily-checklists' && <div className="w-1.5 h-1.5 rounded-full bg-[#3B82F6]"></div>}
                 </button>
-
-              </>
+              </div>
             )}
 
             {/* CUSTOMER SIDEBAR BUTTONS */}
             {userRole === 'customer' && (
-              <>
+              <div className="flex flex-col gap-1.5">
+                <div className="text-[10px] font-extrabold text-amber-500/80 uppercase tracking-widest px-2.5 pt-1 flex items-center gap-1.5">
+                  <Shield className="w-3 h-3 text-amber-500" />
+                  <span>Customer Workspace</span>
+                </div>
                 <button 
                   onClick={() => setActiveTab('customer-portal')}
-                  className={`w-full h-12 px-4 rounded-xl font-bold text-[13.5px] transition-all cursor-pointer flex items-center justify-between border ${
+                  className={`w-full h-11 px-3.5 rounded-xl font-bold text-[13px] transition-all cursor-pointer flex items-center justify-between border ${
                     activeTab === 'customer-portal' 
-                      ? 'bg-amber-50 text-text-primary border-amber-300 shadow-md shadow-sky-400/5' 
-                      : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle hover:border-border-subtle'
+                      ? 'bg-amber-50 text-text-primary border-amber-300 shadow-md shadow-amber-400/5' 
+                      : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle'
                   }`}
                 >
-                  <div className="flex items-center gap-3">
-                    <Shield className="w-4.5 h-4.5 text-amber-600" />
+                  <div className="flex items-center gap-2.5">
+                    <Shield className="w-4 h-4 text-amber-600" />
                     <span>Customer Dashboard</span>
                   </div>
                   {activeTab === 'customer-portal' && <div className="w-1.5 h-1.5 rounded-full bg-amber-400"></div>}
@@ -4026,214 +4038,270 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
                 <button 
                   onClick={() => setActiveTab('shift-logs')}
-                  className={`w-full h-12 px-4 rounded-xl font-bold text-[13.5px] transition-all cursor-pointer flex items-center justify-between border ${
+                  className={`w-full h-11 px-3.5 rounded-xl font-bold text-[13px] transition-all cursor-pointer flex items-center justify-between border ${
                     activeTab === 'shift-logs' 
-                      ? 'bg-amber-50 text-text-primary border-amber-300 shadow-md shadow-sky-400/5' 
-                      : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle hover:border-border-subtle'
+                      ? 'bg-amber-50 text-text-primary border-amber-300 shadow-md shadow-amber-400/5' 
+                      : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle'
                   }`}
                 >
-                  <div className="flex items-center gap-3">
-                    <Calendar className="w-4.5 h-4.5 text-amber-600" />
+                  <div className="flex items-center gap-2.5">
+                    <Calendar className="w-4 h-4 text-amber-600" />
                     <span>Published Reports</span>
                   </div>
                   {activeTab === 'shift-logs' && <div className="w-1.5 h-1.5 rounded-full bg-amber-400"></div>}
                 </button>
 
+                <div className="text-[10px] font-extrabold text-amber-500/80 uppercase tracking-widest px-2.5 pt-2 flex items-center gap-1.5 border-t border-border-subtle/50 mt-1">
+                  <Clock className="w-3 h-3 text-amber-500" />
+                  <span>Approvals</span>
+                </div>
                 <button 
                   onClick={() => setActiveTab('approvals')}
-                  className={`w-full h-12 px-4 rounded-xl font-bold text-[13.5px] transition-all cursor-pointer flex items-center justify-between border ${
+                  className={`w-full h-11 px-3.5 rounded-xl font-bold text-[13px] transition-all cursor-pointer flex items-center justify-between border ${
                     activeTab === 'approvals' 
                       ? 'bg-amber-50 text-text-primary border-amber-300 shadow-md shadow-amber-400/5' 
-                      : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle hover:border-border-subtle'
+                      : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle'
                   }`}
                 >
-                  <div className="flex items-center gap-3">
-                    <Clock className="w-4.5 h-4.5 text-amber-600" />
+                  <div className="flex items-center gap-2.5">
+                    <Clock className="w-4 h-4 text-amber-600" />
                     <span>Time & Approvals</span>
                   </div>
                   {expenseEntries.filter(e => e.status === 'pending_customer').length > 0 && (
-                    <span className="bg-amber-500 text-text-primary text-[10.5px] px-2 py-1 rounded-full font-bold">
+                    <span className="bg-amber-500 text-text-primary text-[10.5px] px-2 py-0.5 rounded-full font-bold">
                       {expenseEntries.filter(e => e.status === 'pending_customer').length}
                     </span>
                   )}
                 </button>
-              </>
+              </div>
             )}
 
-            {/* ADMIN SIDEBAR BUTTONS */}
+            {/* ADMIN / MANAGEMENT GROUPED SIDEBAR BUTTONS */}
             {['admin', 'owner', 'accountant', 'lead', 'shahroz']?.includes(userRole) && (
-              <>
+              <div className="flex flex-col gap-1.5">
+                
+                {/* GROUP 1: AI & INTELLIGENCE */}
+                <div className="text-[10px] font-extrabold text-[#3B82F6]/90 uppercase tracking-widest px-2.5 pt-1 flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <Sparkles className="w-3 h-3 text-[#3B82F6]" />
+                    <span>AI Intelligence</span>
+                  </span>
+                </div>
                 <button 
                   onClick={() => setActiveTab('pulse-ai')}
-                  className={`w-full h-12 px-4 rounded-xl font-bold text-[13.5px] transition-all cursor-pointer flex items-center justify-between border relative overflow-hidden group ${
+                  className={`w-full h-11 px-3.5 rounded-xl font-bold text-[13px] transition-all cursor-pointer flex items-center justify-between border relative overflow-hidden group ${
                     activeTab === 'pulse-ai' 
                       ? 'bg-[#3B82F6] text-white border-[#3B82F6]/50 shadow-md shadow-[#3B82F6]/10' 
-                      : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle hover:border-border-subtle'
+                      : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle'
                   }`}
                 >
                   <div className="absolute inset-y-0 left-0 w-[3px] bg-[#3B82F6] shadow-[0_0_8px_#3B82F6]"></div>
-                  <div className="flex items-center gap-3">
-                    <Sparkles className="w-4.5 h-4.5 text-[#3B82F6] animate-pulse" />
+                  <div className="flex items-center gap-2.5">
+                    <Sparkles className="w-4 h-4 text-[#3B82F6] animate-pulse" />
                     <span className="text-[#3B82F6] font-extrabold tracking-wide">Pulse AI</span>
                   </div>
-                  <span className="text-[10.5px] bg-[#3B82F6]/10 border border-[#3B82F6]/30 text-[#3B82F6] px-2 py-1 rounded font-bold uppercase tracking-wider scale-90">Beta</span>
+                  <span className="text-[9.5px] bg-[#3B82F6]/10 border border-[#3B82F6]/30 text-[#3B82F6] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">Beta</span>
                 </button>
 
-                {/* Hide these tabs from accountant */}
-                {(userRole !== 'accountant' || activeTab === 'finance') && (
-                  <>
-                 <button
-                    onClick={() => setActiveTab('incidents')}
-                    className={`w-full h-12 px-4 rounded-xl font-bold text-[13.5px] transition-all cursor-pointer flex items-center justify-between border ${
-                      activeTab === 'incidents' 
-                        ? 'bg-sky-950/60 text-sky-300 border-sky-500/40 shadow-md shadow-sky-500/10 font-bold' 
-                        : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle hover:border-border-subtle'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <FileText className="w-4.5 h-4.5 text-[#3B82F6]" />
-                      <span>Incident Defects Feed</span>
+                {/* GROUP 2: QUALITY & OPERATIONS */}
+                {(userRole !== 'accountant' || activeTab === 'incidents' || activeTab === 'heatmap' || activeTab === 'daily-planner' || activeTab === 'shift-logs' || activeTab === 'daily-checklists' || activeTab === 'rework-logs') && (
+                  <div className="flex flex-col gap-1 mt-1 pt-1 border-t border-border-subtle/50">
+                    <div className="text-[10px] font-extrabold text-text-secondary/70 uppercase tracking-widest px-2.5 py-1 flex items-center gap-1.5">
+                      <FileText className="w-3 h-3 text-[#3B82F6]" />
+                      <span>Quality & Operations</span>
                     </div>
-                    {activeTab === 'incidents' && <div className="w-1.5 h-1.5 rounded-full bg-[#3B82F6]"></div>}
-                  </button>
 
-                  <button 
-                    onClick={() => setActiveTab('heatmap')}
-                    className={`w-full h-12 px-4 rounded-xl font-bold text-[13.5px] transition-all cursor-pointer flex items-center justify-between border ${
-                      activeTab === 'heatmap' 
-                        ? 'bg-sky-950/60 text-sky-300 border-sky-500/40 shadow-md shadow-sky-500/10 font-bold' 
-                        : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle hover:border-border-subtle'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <MapPin className="w-4.5 h-4.5 text-[#3B82F6]" />
-                      <span>Visual Defect Matrix</span>
-                    </div>
-                    {activeTab === 'heatmap' && <div className="w-1.5 h-1.5 rounded-full bg-[#3B82F6]"></div>}
-                  </button>
+                    <button
+                      onClick={() => setActiveTab('incidents')}
+                      className={`w-full h-10 px-3.5 rounded-xl font-bold text-[13px] transition-all cursor-pointer flex items-center justify-between border ${
+                        activeTab === 'incidents' 
+                          ? 'bg-sky-950/60 text-sky-300 border-sky-500/40 shadow-md shadow-sky-500/10' 
+                          : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <FileText className="w-4 h-4 text-[#3B82F6]" />
+                        <span>Incident Defects Feed</span>
+                      </div>
+                      {activeTab === 'incidents' && <div className="w-1.5 h-1.5 rounded-full bg-[#3B82F6]"></div>}
+                    </button>
 
-                  <button 
-                    onClick={() => setActiveTab('daily-planner')}
-                    className={`w-full h-12 px-4 rounded-xl font-bold text-[13.5px] transition-all cursor-pointer flex items-center justify-between border ${
-                      activeTab === 'daily-planner' 
-                        ? 'bg-sky-950/60 text-sky-300 border-sky-500/40 shadow-md shadow-sky-500/10 font-bold' 
-                        : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle hover:border-border-subtle'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <CheckCircle2 className="w-4.5 h-4.5 text-[#3B82F6]" />
-                      <span>Daily Tasks Planner</span>
-                    </div>
-                    {activeTab === 'daily-planner' && <div className="w-1.5 h-1.5 rounded-full bg-[#3B82F6]"></div>}
-                  </button>
+                    <button 
+                      onClick={() => setActiveTab('heatmap')}
+                      className={`w-full h-10 px-3.5 rounded-xl font-bold text-[13px] transition-all cursor-pointer flex items-center justify-between border ${
+                        activeTab === 'heatmap' 
+                          ? 'bg-sky-950/60 text-sky-300 border-sky-500/40 shadow-md shadow-sky-500/10' 
+                          : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <MapPin className="w-4 h-4 text-[#3B82F6]" />
+                        <span>Visual Defect Matrix</span>
+                      </div>
+                      {activeTab === 'heatmap' && <div className="w-1.5 h-1.5 rounded-full bg-[#3B82F6]"></div>}
+                    </button>
 
-                  <button 
-                    onClick={() => setActiveTab('shift-logs')}
-                    className={`w-full h-12 px-4 rounded-xl font-bold text-[13.5px] transition-all cursor-pointer flex items-center justify-between border ${
-                      activeTab === 'shift-logs' 
-                        ? 'bg-sky-950/60 text-sky-300 border-sky-500/40 shadow-md shadow-sky-500/10 font-bold' 
-                        : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle hover:border-border-subtle'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <Calendar className="w-4.5 h-4.5 text-[#3B82F6]" />
-                      <span>Shift Summaries Log</span>
-                    </div>
-                    {activeTab === 'shift-logs' && <div className="w-1.5 h-1.5 rounded-full bg-[#3B82F6]"></div>}
-                  </button>
-                  <button 
-                    onClick={() => setActiveTab('daily-checklists')}
-                  className={`w-full h-12 px-4 rounded-xl font-bold text-[13.5px] transition-all cursor-pointer flex items-center justify-between border ${
-                    activeTab === 'daily-checklists' 
-                      ? 'bg-sky-950/60 text-sky-300 border-sky-500/40 shadow-md shadow-sky-500/10 font-bold' 
-                      : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle hover:border-border-subtle'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <ClipboardCheck className="w-4.5 h-4.5 text-[#3B82F6]" />
-                    <span>Daily Checklists</span>
+                    <button 
+                      onClick={() => setActiveTab('daily-planner')}
+                      className={`w-full h-10 px-3.5 rounded-xl font-bold text-[13px] transition-all cursor-pointer flex items-center justify-between border ${
+                        activeTab === 'daily-planner' 
+                          ? 'bg-sky-950/60 text-sky-300 border-sky-500/40 shadow-md shadow-sky-500/10' 
+                          : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <CheckCircle2 className="w-4 h-4 text-[#3B82F6]" />
+                        <span>Daily Tasks Planner</span>
+                      </div>
+                      {activeTab === 'daily-planner' && <div className="w-1.5 h-1.5 rounded-full bg-[#3B82F6]"></div>}
+                    </button>
+
+                    <button 
+                      onClick={() => setActiveTab('shift-logs')}
+                      className={`w-full h-10 px-3.5 rounded-xl font-bold text-[13px] transition-all cursor-pointer flex items-center justify-between border ${
+                        activeTab === 'shift-logs' 
+                          ? 'bg-sky-950/60 text-sky-300 border-sky-500/40 shadow-md shadow-sky-500/10' 
+                          : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <Calendar className="w-4 h-4 text-[#3B82F6]" />
+                        <span>Shift Summaries Log</span>
+                      </div>
+                      {activeTab === 'shift-logs' && <div className="w-1.5 h-1.5 rounded-full bg-[#3B82F6]"></div>}
+                    </button>
+
+                    <button 
+                      onClick={() => setActiveTab('daily-checklists')}
+                      className={`w-full h-10 px-3.5 rounded-xl font-bold text-[13px] transition-all cursor-pointer flex items-center justify-between border ${
+                        activeTab === 'daily-checklists' 
+                          ? 'bg-sky-950/60 text-sky-300 border-sky-500/40 shadow-md shadow-sky-500/10' 
+                          : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <ClipboardCheck className="w-4 h-4 text-[#3B82F6]" />
+                        <span>Daily Checklists</span>
+                      </div>
+                      {activeTab === 'daily-checklists' && <div className="w-1.5 h-1.5 rounded-full bg-[#3B82F6]"></div>}
+                    </button>
+
+                    {userRole !== 'accountant' && (
+                      <button 
+                        onClick={() => setActiveTab('rework-logs')}
+                        className={`w-full h-10 px-3.5 rounded-xl font-bold text-[13px] transition-all cursor-pointer flex items-center justify-between border ${
+                          activeTab === 'rework-logs' 
+                            ? 'bg-sky-950/60 text-sky-300 border-sky-500/40 shadow-md shadow-sky-500/10' 
+                            : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <Activity className="w-4 h-4 text-[#3B82F6]" />
+                          <span>Rework Logs Feed</span>
+                        </div>
+                        {activeTab === 'rework-logs' && <div className="w-1.5 h-1.5 rounded-full bg-[#3B82F6]"></div>}
+                      </button>
+                    )}
                   </div>
-                  {activeTab === 'daily-checklists' && <div className="w-1.5 h-1.5 rounded-full bg-[#3B82F6]"></div>}
-                </button>
-
-
-                  <button 
-                    onClick={() => setActiveTab('suppliers')}
-                    className={`w-full h-12 px-4 rounded-xl font-bold text-[13.5px] transition-all cursor-pointer flex items-center justify-between border ${
-                      activeTab === 'suppliers' 
-                        ? 'bg-sky-950/60 text-sky-300 border-sky-500/40 shadow-md shadow-sky-500/10 font-bold' 
-                        : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle hover:border-border-subtle'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <Server className="w-4.5 h-4.5 text-[#3B82F6]" />
-                      <span>Suppliers Directory</span>
-                    </div>
-                    {activeTab === 'suppliers' && <div className="w-1.5 h-1.5 rounded-full bg-[#3B82F6]"></div>}
-                  </button>
-                  </>
                 )}
+
+                {/* GROUP 3: FINANCIALS & TIME */}
+                <div className="flex flex-col gap-1 mt-1 pt-1 border-t border-border-subtle/50">
+                  <div className="text-[10px] font-extrabold text-emerald-500/80 uppercase tracking-widest px-2.5 py-1 flex items-center gap-1.5">
+                    <DollarSign className="w-3 h-3 text-emerald-500" />
+                    <span>Financials & Audit</span>
+                  </div>
 
                   <button 
                     onClick={() => setActiveTab('time-tracking')}
-                    className={`w-full h-12 px-4 rounded-xl font-bold text-[13.5px] transition-all cursor-pointer flex items-center justify-between border ${
+                    className={`w-full h-10 px-3.5 rounded-xl font-bold text-[13px] transition-all cursor-pointer flex items-center justify-between border ${
                       activeTab === 'time-tracking' 
-                        ? 'bg-sky-950/60 text-sky-300 border-sky-500/40 shadow-md shadow-sky-500/10 font-bold' 
-                        : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle hover:border-border-subtle'
+                        ? 'bg-sky-950/60 text-sky-300 border-sky-500/40 shadow-md shadow-sky-500/10' 
+                        : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle'
                     }`}
                   >
-                    <div className="flex items-center gap-3">
-                      <DollarSign className="w-4.5 h-4.5 text-emerald-600" />
+                    <div className="flex items-center gap-2.5">
+                      <DollarSign className="w-4 h-4 text-emerald-500" />
                       <span>Timesheets & Logging</span>
                     </div>
                     {activeTab === 'time-tracking' && <div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>}
                   </button>
+                </div>
 
-                {/* Hide these from accountant */}
-                {userRole !== 'accountant' && (
-                  <>
+                {/* GROUP 4: DIRECTORIES & COMMUNICATIONS */}
+                <div className="flex flex-col gap-1 mt-1 pt-1 border-t border-border-subtle/50">
+                  <div className="text-[10px] font-extrabold text-text-secondary/70 uppercase tracking-widest px-2.5 py-1 flex items-center gap-1.5">
+                    <Server className="w-3 h-3 text-[#3B82F6]" />
+                    <span>Directories & Comms</span>
+                  </div>
+
+                  {userRole !== 'accountant' && (
+                    <button 
+                      onClick={() => setActiveTab('suppliers')}
+                      className={`w-full h-10 px-3.5 rounded-xl font-bold text-[13px] transition-all cursor-pointer flex items-center justify-between border ${
+                        activeTab === 'suppliers' 
+                          ? 'bg-sky-950/60 text-sky-300 border-sky-500/40 shadow-md shadow-sky-500/10' 
+                          : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <Server className="w-4 h-4 text-[#3B82F6]" />
+                        <span>Suppliers Directory</span>
+                      </div>
+                      {activeTab === 'suppliers' && <div className="w-1.5 h-1.5 rounded-full bg-[#3B82F6]"></div>}
+                    </button>
+                  )}
+
+                  {userRole !== 'accountant' && (
+                    <button 
+                      onClick={() => setActiveTab('emails')}
+                      className={`w-full h-10 px-3.5 rounded-xl font-bold text-[13px] transition-all cursor-pointer flex items-center justify-between border ${
+                        activeTab === 'emails' 
+                          ? 'bg-sky-950/60 text-sky-300 border-sky-500/40 shadow-md shadow-sky-500/10' 
+                          : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <Mail className="w-4 h-4 text-purple-500" />
+                        <span>Email Logs</span>
+                      </div>
+                      {activeTab === 'emails' && <div className="w-1.5 h-1.5 rounded-full bg-purple-400"></div>}
+                    </button>
+                  )}
+                </div>
+
+                {/* GROUP 5: SYSTEM & ADMINISTRATION */}
+                <div className="flex flex-col gap-1 mt-1 pt-1 border-t border-border-subtle/50">
+                  <div className="text-[10px] font-extrabold text-indigo-400/80 uppercase tracking-widest px-2.5 py-1 flex items-center gap-1.5">
+                    <FolderKanban className="w-3 h-3 text-indigo-400" />
+                    <span>System & Admin</span>
+                  </div>
+
                   <button 
-                    onClick={() => setActiveTab('rework-logs')}
-                    className={`w-full h-12 px-4 rounded-xl font-bold text-[13.5px] transition-all cursor-pointer flex items-center justify-between border ${
-                      activeTab === 'rework-logs' 
-                        ? 'bg-sky-950/60 text-sky-300 border-sky-500/40 shadow-md shadow-sky-500/10 font-bold' 
-                        : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle hover:border-border-subtle'
+                    onClick={() => setActiveTab('projects')}
+                    className={`w-full h-10 px-3.5 rounded-xl font-bold text-[13px] transition-all cursor-pointer flex items-center justify-between border ${
+                      activeTab === 'projects' 
+                        ? 'bg-sky-950/60 text-sky-300 border-sky-500/40 shadow-md shadow-sky-500/10' 
+                        : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle'
                     }`}
                   >
-                    <div className="flex items-center gap-3">
-                      <Activity className="w-4.5 h-4.5 text-[#3B82F6]" />
-                      <span>Rework Logs Feed</span>
+                    <div className="flex items-center gap-2.5">
+                      <FolderKanban className="w-4 h-4 text-cyan-500" />
+                      <span>Projects Registry</span>
                     </div>
-                    {activeTab === 'rework-logs' && <div className="w-1.5 h-1.5 rounded-full bg-[#3B82F6]"></div>}
+                    {activeTab === 'projects' && <div className="w-1.5 h-1.5 rounded-full bg-cyan-400"></div>}
                   </button>
-
-                  <button 
-                    onClick={() => setActiveTab('emails')}
-                    className={`w-full h-12 px-4 rounded-xl font-bold text-[13.5px] transition-all cursor-pointer flex items-center justify-between border ${
-                      activeTab === 'emails' 
-                        ? 'bg-sky-950/60 text-sky-300 border-sky-500/40 shadow-md shadow-sky-500/10 font-bold' 
-                        : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle hover:border-border-subtle'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <Mail className="w-4.5 h-4.5 text-purple-600" />
-                      <span>Email Logs</span>
-                    </div>
-                    {activeTab === 'emails' && <div className="w-1.5 h-1.5 rounded-full bg-purple-400"></div>}
-                  </button>
-                  </>
-                )}
 
                   <button 
                     onClick={() => setActiveTab('users')}
-                    className={`w-full h-12 px-4 rounded-xl font-bold text-[13.5px] transition-all cursor-pointer flex items-center justify-between border ${
+                    className={`w-full h-10 px-3.5 rounded-xl font-bold text-[13px] transition-all cursor-pointer flex items-center justify-between border ${
                       activeTab === 'users' 
-                        ? 'bg-sky-950/60 text-sky-300 border-sky-500/40 shadow-md shadow-sky-500/10 font-bold' 
-                        : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle hover:border-border-subtle'
+                        ? 'bg-sky-950/60 text-sky-300 border-sky-500/40 shadow-md shadow-sky-500/10' 
+                        : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle'
                     }`}
                   >
-                    <div className="flex items-center gap-3">
-                      <Users className="w-4.5 h-4.5 text-indigo-600" />
+                    <div className="flex items-center gap-2.5">
+                      <Users className="w-4 h-4 text-indigo-500" />
                       <span>User Directory</span>
                     </div>
                     {activeTab === 'users' && <div className="w-1.5 h-1.5 rounded-full bg-indigo-400"></div>}
@@ -4242,54 +4310,41 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   {userRole === 'shahroz' && (
                     <button 
                       onClick={() => setActiveTab('roadmap')}
-                      className={`w-full h-12 px-4 rounded-xl font-bold text-[13.5px] transition-all cursor-pointer flex items-center justify-between border ${
+                      className={`w-full h-10 px-3.5 rounded-xl font-bold text-[13px] transition-all cursor-pointer flex items-center justify-between border ${
                         activeTab === 'roadmap' 
-                          ? 'bg-sky-950/60 text-sky-300 border-sky-500/40 shadow-md shadow-sky-500/10 font-bold' 
-                          : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle hover:border-border-subtle'
+                          ? 'bg-sky-950/60 text-sky-300 border-sky-500/40 shadow-md shadow-sky-500/10' 
+                          : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle'
                       }`}
                     >
-                      <div className="flex items-center gap-3">
-                        <Milestone className="w-4.5 h-4.5 text-amber-600" />
+                      <div className="flex items-center gap-2.5">
+                        <Milestone className="w-4 h-4 text-amber-500" />
                         <span>Launch Roadmap</span>
                       </div>
                       {activeTab === 'roadmap' && <div className="w-1.5 h-1.5 rounded-full bg-amber-400"></div>}
                     </button>
                   )}
 
-                  <button 
-                    onClick={() => setActiveTab('projects')}
-                    className={`w-full h-12 px-4 rounded-xl font-bold text-[13.5px] transition-all cursor-pointer flex items-center justify-between border ${
-                      activeTab === 'projects' 
-                        ? 'bg-sky-950/60 text-sky-300 border-sky-500/40 shadow-md shadow-sky-500/10 font-bold' 
-                        : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle hover:border-border-subtle'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <FolderKanban className="w-4.5 h-4.5 text-cyan-600" />
-                      <span>Projects Registry</span>
-                    </div>
-                    {activeTab === 'projects' && <div className="w-1.5 h-1.5 rounded-full bg-cyan-400"></div>}
-                  </button>
-
                   {userRole === 'shahroz' && (
                     <button 
                       onClick={() => setActiveTab('system-logs')}
-                      className={`w-full h-12 px-4 rounded-xl font-bold text-[13.5px] transition-all cursor-pointer flex items-center justify-between border ${
+                      className={`w-full h-10 px-3.5 rounded-xl font-bold text-[13px] transition-all cursor-pointer flex items-center justify-between border ${
                         activeTab === 'system-logs' 
-                          ? 'bg-sky-950/60 text-sky-300 border-sky-500/40 shadow-md shadow-sky-500/10 font-bold' 
-                          : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle hover:border-border-subtle'
+                          ? 'bg-sky-950/60 text-sky-300 border-sky-500/40 shadow-md shadow-sky-500/10' 
+                          : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle'
                       }`}
                     >
-                      <div className="flex items-center gap-3">
-                        <Server className="w-4.5 h-4.5 text-emerald-450" />
+                      <div className="flex items-center gap-2.5">
+                        <Server className="w-4 h-4 text-emerald-400" />
                         <span>System Events Logs</span>
                       </div>
                       {activeTab === 'system-logs' && <div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>}
                     </button>
                   )}
-                </>
-              )}
-            </div>
+                </div>
+
+              </div>
+            )}
+          </div>
         )}
 
         <div className="flex-1 bg-surface-elevated border border-border-subtle rounded-2xl p-6 sm:p-8 flex flex-col min-h-0">

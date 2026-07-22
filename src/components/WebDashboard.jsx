@@ -4012,8 +4012,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     </div>
                     {activeTab === 'shift-logs' && <div className="w-1.5 h-1.5 rounded-full bg-[#3B82F6]"></div>}
                   </button>
-                <button 
-                  onClick={() => setActiveTab('daily-checklists')}
+                  <button 
+                    onClick={() => setActiveTab('daily-checklists')}
                   className={`w-full h-12 px-4 rounded-xl font-bold text-[13.5px] transition-all cursor-pointer flex items-center justify-between border ${
                     activeTab === 'daily-checklists' 
                       ? 'bg-sky-950/60 text-sky-300 border-sky-500/40 shadow-md shadow-sky-500/10 font-bold' 

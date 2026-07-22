@@ -10,11 +10,13 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@phosphor-icons/react": "^2.1.10",
     "@supabase/supabase-js": "^2.110.1",
     "@tailwindcss/vite": "^4.3.0",
     "exceljs": "^4.4.0",
     "jspdf": "^4.2.1",
     "lucide-react": "^1.17.0",
+    "puppeteer": "^25.3.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
     "tailwindcss": "^4.3.0"

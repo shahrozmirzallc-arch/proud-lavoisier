@@ -459,8 +459,8 @@ body.theme-royal-blue.mode-dark,
 body.theme-royal-blue:not(.mode-light),
 body:not([class*="theme-"]):not(.mode-light) {
   --bg: #020617;
-  --surface: rgba(15, 23, 42, 0.85);
-  --surface-elevated: rgba(30, 41, 59, 0.75);
+  --surface: #0b172a;
+  --surface-elevated: #0f213e;
   --text: #f8fafc;
   --muted-text: #94a3b8;
   --border: rgba(51, 65, 85, 0.6);
@@ -490,11 +490,11 @@ body:not([class*="theme-"]).mode-light {
 body.theme-neon-violet.mode-dark,
 body.theme-neon-violet:not(.mode-light) {
   --bg: #1a0b2e;
-  --surface: rgba(58, 28, 95, 0.35);
-  --surface-elevated: rgba(30, 15, 50, 0.5);
+  --surface: #1e0d36;
+  --surface-elevated: #2a124c;
   --text: #f1f5f9;
   --muted-text: #a78bfa;
-  --border: rgba(255, 255, 255, 0.08);
+  --border: rgba(255, 255, 255, 0.12);
   --primary: #4c1d95;
   --accent: #06b6d4;
   --on-primary: #ffffff;
@@ -520,11 +520,11 @@ body.theme-neon-violet.mode-light {
 body.theme-emerald-green.mode-dark,
 body.theme-emerald-green:not(.mode-light) {
   --bg: #071f15;
-  --surface: rgba(16, 60, 42, 0.35);
-  --surface-elevated: rgba(8, 35, 25, 0.5);
+  --surface: #0a261a;
+  --surface-elevated: #0f3826;
   --text: #f1f5f9;
   --muted-text: #34d399;
-  --border: rgba(255, 255, 255, 0.08);
+  --border: rgba(255, 255, 255, 0.12);
   --primary: #064e3b;
   --accent: #10B981;
   --on-primary: #ffffff;
@@ -550,11 +550,11 @@ body.theme-emerald-green.mode-light {
 body.theme-ruby-red.mode-dark,
 body.theme-ruby-red:not(.mode-light) {
   --bg: #240510;
-  --surface: rgba(80, 15, 30, 0.35);
-  --surface-elevated: rgba(45, 8, 18, 0.5);
+  --surface: #2b0713;
+  --surface-elevated: #3d0a1b;
   --text: #f1f5f9;
   --muted-text: #fecdd3;
-  --border: rgba(255, 255, 255, 0.08);
+  --border: rgba(255, 255, 255, 0.12);
   --primary: #4c0519;
   --accent: #E11D48;
   --on-primary: #ffffff;

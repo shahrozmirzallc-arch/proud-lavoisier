@@ -305,7 +305,7 @@ function App() {
                     }}
                     className="bg-transparent border-none text-[9.5px] font-bold text-[#22D3EE] focus:outline-none cursor-pointer p-0.5"
                   >
-                    <option value="owner" className="bg-surface text-text-primary">Greg (Owner)</option>
+                    <option value="owner" className="bg-surface text-text-primary">Greg (Admin)</option>
                     <option value="accountant" className="bg-surface text-text-primary">Colleen (Finance)</option>
                     <option value="lead" className="bg-surface text-text-primary">Donna (Shift Lead)</option>
                     {(sessionStorage.getItem('ids_pulse_admin_user') === 'shahroz' || sessionStorage.getItem('ids_pulse_admin_user') === 'idspulse') && (
@@ -475,7 +475,7 @@ function App() {
               <span className="text-[10px] text-text-secondary font-bold uppercase tracking-wider mb-2 pl-2">
                 {userRole === 'accountant' ? "Colleen's Dashboard (Web CRM Portal)" :
                  userRole === 'lead' ? "Donna's Dashboard (Web CRM Portal)" :
-                 userRole === 'shahroz' ? "Shahroz's Admin Dashboard (Web CRM Portal)" :
+                 userRole === 'shahroz' ? "Shahroz's Super Admin Dashboard (Web CRM Portal)" :
                  userRole === 'rep' ? "QRE Representative Portal" :
                  userRole === 'customer' ? "Customer Quality Portal" :
                  "Greg's Admin Dashboard (Web CRM Portal)"}

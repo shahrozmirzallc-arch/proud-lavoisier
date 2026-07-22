@@ -1,13 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Shield, Activity, Server, FileText, Users, Mail, DollarSign, Database, 
-  Search, Filter, ChevronRight, X, Clock, CheckCircle2, UserCheck, AlertCircle, 
+  Search, Filter, ChevronRight, ChevronDown, X, Clock, CheckCircle2, UserCheck, AlertCircle, 
   FileSpreadsheet, Calendar, ArrowRight, UserPlus, MapPin, Printer, Download, Eye, Sparkles,
   Milestone, TrendingUp, FolderKanban, PlusCircle, ArrowLeft, Camera, ClipboardCheck
 } from 'lucide-react';
 import { getEntities, saveEntity, resetDB, logSystemEvent, addProject, deleteRate } from './SharedDatabase';
 import { jsPDF } from 'jspdf';
 import { LOGO_BASE64 } from './LogoBase64';
+import IntegrityWeeklyTimesheet from './IntegrityWeeklyTimesheet';
+import { generateIntegrityInvoicePDF } from '../utils/generateInvoicePdf';
+import { InvoiceModal } from './InvoiceModal';
 
 export const EXPENSE_GROUPS = {
   INTERNAL: 'Internal Expense (IDS)',
@@ -74,7 +77,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
   // Quick Add Client Form State
   const [quickClientName, setQuickClientName] = useState('');
-  const [quickClientSchedule, setQuickClientSchedule] = useState('weekly');
+  const [quickClientSchedule, setQuickClientSchedule] = useState('on-demand');
 
   // Quick Add Plant Form State
   const [quickPlantName, setQuickPlantName] = useState('');
@@ -97,6 +100,20 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   
   // Navigation & Date Navigation Filtering
   const [activeTab, setActiveTab] = useState('projects');
+  const [collapsedGroups, setCollapsedGroups] = useState({
+    ai: false,
+    quality: false,
+    financials: false,
+    comms: false,
+    system: false
+  });
+
+  const toggleGroup = (groupKey) => {
+    setCollapsedGroups(prev => ({
+      ...prev,
+      [groupKey]: !prev[groupKey]
+    }));
+  };
 
   // Live Operations Command Center (Real-Time Field Rep Radar) State
   const [repDeployments, setRepDeployments] = useState([
@@ -250,6 +267,20 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   const [editingEntry, setEditingEntry] = useState(null);
   const [editForm, setEditForm] = useState({ date: '', qty: '', amount: '', notes: '', reason: '' });
   
+  // CER Weekly Timesheet State (matching user's screenshot)
+  const [weeklyGridPerson, setWeeklyGridPerson] = useState('Boyd Colleen');
+  const [weeklyGridDate, setWeeklyGridDate] = useState('2026-07-09');
+  const [weeklyGridSaveMessage, setWeeklyGridSaveMessage] = useState(false);
+  const [weeklyGridData, setWeeklyGridData] = useState({
+    'Monday 7/6/2026': { location: 'Magna Brampton', miles: '45', billable_hours: '8.0', shift: 'A', non_billable_hours: '0', per_diem: '25.00', piece_count: '120', warehouse: '0', hilo: '0', gas: '0', trucking: '0', bonus: '0', other_expenses: '0', paid_by_cer: '0', description: 'Sorting automotive harness components', attached: false },
+    'Tuesday 7/7/2026': { location: 'Magna Brampton', miles: '45', billable_hours: '8.0', shift: 'A', non_billable_hours: '0', per_diem: '25.00', piece_count: '145', warehouse: '0', hilo: '0', gas: '0', trucking: '0', bonus: '0', other_expenses: '0', paid_by_cer: '0', description: 'Visual inspection & containment', attached: false },
+    'Wednesday 7/8/2026': { location: 'AutoKabel Windsor', miles: '120', billable_hours: '10.0', shift: 'B', non_billable_hours: '1.5', per_diem: '50.00', piece_count: '200', warehouse: '0', hilo: '0', gas: '35.00', trucking: '0', bonus: '0', other_expenses: '0', paid_by_cer: '0', description: 'High voltage cabling sort', attached: true },
+    'Thursday 7/9/2026': { location: 'AutoKabel Windsor', miles: '120', billable_hours: '8.0', shift: 'A', non_billable_hours: '0', per_diem: '25.00', piece_count: '180', warehouse: '0', hilo: '0', gas: '0', trucking: '0', bonus: '0', other_expenses: '0', paid_by_cer: '0', description: 'Shift lead handoff & report log', attached: false },
+    'Friday 7/10/2026': { location: 'Magna Brampton', miles: '45', billable_hours: '8.0', shift: 'A', non_billable_hours: '0', per_diem: '25.00', piece_count: '150', warehouse: '0', hilo: '0', gas: '0', trucking: '0', bonus: '50.00', other_expenses: '0', paid_by_cer: '0', description: 'End of week final quality audit', attached: false },
+    'Saturday 7/11/2026': { location: '', miles: '0', billable_hours: '0', shift: '', non_billable_hours: '0', per_diem: '0', piece_count: '0', warehouse: '0', hilo: '0', gas: '0', trucking: '0', bonus: '0', other_expenses: '0', paid_by_cer: '0', description: '', attached: false },
+    'Sunday 7/12/2026': { location: '', miles: '0', billable_hours: '0', shift: '', non_billable_hours: '0', per_diem: '0', piece_count: '0', warehouse: '0', hilo: '0', gas: '0', trucking: '0', bonus: '0', other_expenses: '0', paid_by_cer: '0', description: '', attached: false }
+  });
+
   // Log Hours Form Inputs
   const [logHoursRepId, setLogHoursRepId] = useState('rep_hugo');
   const [logHoursSupplierId, setLogHoursSupplierId] = useState('autokabel');
@@ -281,6 +312,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   const [invoicePONumber, setInvoicePONumber] = useState('');
   const [excludedInvoiceEntryIds, setExcludedInvoiceEntryIds] = useState([]);
   const [excludedInvoiceExpenseIds, setExcludedInvoiceExpenseIds] = useState([]);
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+  const [previewInvoiceData, setPreviewInvoiceData] = useState(null);
   // Extra Hours Requests State
   const [extraHoursRequests, setExtraHoursRequests] = useState([]);
   const [extraHoursQty, setExtraHoursQty] = useState('8.0');
@@ -312,6 +345,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   const [newCustomerContactName, setNewCustomerContactName] = useState('');
   const [newCustomerContactEmail, setNewCustomerContactEmail] = useState('');
   const [newCustomerContactRole, setNewCustomerContactRole] = useState('Quality Manager');
+  const [newCustomerInvoiceSchedule, setNewCustomerInvoiceSchedule] = useState('on-demand');
 
   const [newLocationName, setNewLocationName] = useState('');
   const [newLocationAddress, setNewLocationAddress] = useState('');
@@ -603,6 +637,30 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     document.body.removeChild(link);
   };
 
+  const handleBatchGenerateAllClientInvoices = () => {
+    if (selectedInvoiceCurrency === 'all') {
+      alert("Please select a specific Billing Currency (CAD or USD) to batch print separate client invoices.");
+      return;
+    }
+    let count = 0;
+    suppliers.filter(Boolean).forEach(clientObj => {
+      const cEntries = timeEntries.filter(t => t && t.supplier_id === clientObj.id && !t.invoiced && (getRepSupplierRates(t.rep_id, t.supplier_id, t.plant_id).currency === selectedInvoiceCurrency));
+      const cExpenses = expenseEntries.filter(e => e && e.supplier_id === clientObj.id && !e.invoiced && (getExpenseCurrency(e) === selectedInvoiceCurrency));
+      
+      if (cEntries.length > 0 || cExpenses.length > 0) {
+        const dates = cEntries.filter(e => e && e.date).map(e => e.date).sort();
+        const dRange = dates.length > 0 ? `From ${dates[0]} to ${dates[dates.length - 1]}` : 'Current Billing Period';
+        handleGenerateClientInvoicePDF(clientObj, dRange, cEntries, cExpenses);
+        count++;
+      }
+    });
+    if (count === 0) {
+      alert("No pending un-invoiced entries found for any client in " + selectedInvoiceCurrency);
+    } else {
+      alert(`Successfully generated ${count} separate client PDF invoice(s)!`);
+    }
+  };
+
   const handleGenerateClientInvoicePDF = (client, dateRangeStr, clientEntries, clientExpenses) => {
     if (selectedInvoiceCurrency === 'all') {
       alert("Please select a specific Billing Currency (CAD or USD) to print separate statements for the client.");
@@ -624,7 +682,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       doc.text("BILL TO:", 14, 45);
       doc.setFont("Helvetica", "normal");
       doc.text(client?.name || 'Unknown Client', 14, 50);
-      doc.text("Billing Schedule: " + (client?.invoice_schedule || 'weekly')?.toUpperCase(), 14, 55);
+      doc.text("Billing Schedule: " + (client?.invoice_schedule === 'on-demand' ? 'ON DEMAND (MANUAL)' : (client?.invoice_schedule || 'on-demand')?.toUpperCase()), 14, 55);
 
       doc.setFont("Helvetica", "bold");
       doc.text("INVOICE DETAILS:", 120, 45);
@@ -740,7 +798,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     const newCust = {
       id: newId,
       name: newCustomerName,
-      invoice_schedule: 'weekly',
+      invoice_schedule: newCustomerInvoiceSchedule || 'on-demand',
       contacts: [
         { name: newCustomerContactName, email: newCustomerContactEmail, role: newCustomerContactRole }
       ],
@@ -880,7 +938,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     saveEntity('suppliers', newCust);
     setSuppliers(getEntities('suppliers'));
     setQuickClientName('');
-    setQuickClientSchedule('weekly');
+    setQuickClientSchedule('on-demand');
     setShowQuickAddClient(false);
 
     // Auto-select
@@ -1095,8 +1153,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
   const getWelcomeText = (role) => {
     if (role === 'shahroz') {
-      return "Welcome back, Shahroz Mirza! I am Pulse AI. As Owner, you have complete control. I can audit timesheets, verify defect metrics, run duplicate defect scans, or compile financial reports for you.";
-    } else if (role === 'admin') {
+      return "Welcome back, Shahroz Mirza! I am Pulse AI. As Super Admin, you have complete system control. I can audit timesheets, verify defect metrics, run duplicate defect scans, or compile financial reports for you.";
+    } else if (role === 'admin' || role === 'owner') {
       return "Welcome back, Greg Phillippe! I am Pulse AI. As Admin, I can audit timesheets for mistakes, verify defect records, and prepare compliance exports for you.";
     } else if (role === 'accountant') {
       return "Welcome back, Colleen Boyd! I am Pulse AI. As Accountant, I can verify timesheets for numerical errors, flag missing receipts, and calculate grand billing totals.";
@@ -1852,6 +1910,159 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
               <span>&copy; 2026 Integrity Driven Solutions Inc.</span>
             </div>
           </div>
+          <script>
+            window.onload = function() { window.print(); setTimeout(() => window.close(), 500); }
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
+
+  const handleGenerateCerReport = () => {
+    const totalMiles = Object.values(weeklyGridData).reduce((sum, r) => sum + (parseFloat(r.miles) || 0), 0);
+    const totalBillable = Object.values(weeklyGridData).reduce((sum, r) => sum + (parseFloat(r.billable_hours) || 0), 0);
+    const totalNonBillable = Object.values(weeklyGridData).reduce((sum, r) => sum + (parseFloat(r.non_billable_hours) || 0), 0);
+    const totalPerDiem = Object.values(weeklyGridData).reduce((sum, r) => sum + (parseFloat(r.per_diem) || 0), 0);
+    const totalPieceCount = Object.values(weeklyGridData).reduce((sum, r) => sum + (parseFloat(r.piece_count) || 0), 0);
+    const totalWarehouse = Object.values(weeklyGridData).reduce((sum, r) => sum + (parseFloat(r.warehouse) || 0), 0);
+    const totalHilo = Object.values(weeklyGridData).reduce((sum, r) => sum + (parseFloat(r.hilo) || 0), 0);
+    const totalGas = Object.values(weeklyGridData).reduce((sum, r) => sum + (parseFloat(r.gas) || 0), 0);
+    const totalTrucking = Object.values(weeklyGridData).reduce((sum, r) => sum + (parseFloat(r.trucking) || 0), 0);
+    const totalBonus = Object.values(weeklyGridData).reduce((sum, r) => sum + (parseFloat(r.bonus) || 0), 0);
+    const totalOther = Object.values(weeklyGridData).reduce((sum, r) => sum + (parseFloat(r.other_expenses) || 0), 0);
+    const totalPaidByCer = Object.values(weeklyGridData).reduce((sum, r) => sum + (parseFloat(r.paid_by_cer) || 0), 0);
+
+    const rowsHtml = Object.keys(weeklyGridData).map((dayKey) => {
+      const row = weeklyGridData[dayKey];
+      return `
+        <tr>
+          <td style="font-weight: bold; background: #f8fafc;">${dayKey}</td>
+          <td>${row.location || '-'}</td>
+          <td style="background: #fef3c7; font-weight: bold; text-align: center;">${row.miles || '0'}</td>
+          <td style="text-align: center; font-weight: bold;">${row.billable_hours || '0'}</td>
+          <td style="text-align: center;">${row.shift || '-'}</td>
+          <td style="text-align: center;">${row.non_billable_hours || '0'}</td>
+          <td style="background: #fef3c7; text-align: center;">$${parseFloat(row.per_diem || 0).toFixed(2)}</td>
+          <td style="text-align: center;">${row.piece_count || '0'}</td>
+          <td style="background: #fef3c7; text-align: center;">$${parseFloat(row.warehouse || 0).toFixed(2)}</td>
+          <td style="background: #fef3c7; text-align: center;">$${parseFloat(row.hilo || 0).toFixed(2)}</td>
+          <td style="text-align: center;">$${parseFloat(row.gas || 0).toFixed(2)}</td>
+          <td style="text-align: center;">$${parseFloat(row.trucking || 0).toFixed(2)}</td>
+          <td style="text-align: center;">$${parseFloat(row.bonus || 0).toFixed(2)}</td>
+          <td style="text-align: center;">$${parseFloat(row.other_expenses || 0).toFixed(2)}</td>
+          <td style="text-align: center;">$${parseFloat(row.paid_by_cer || 0).toFixed(2)}</td>
+          <td>${row.description || '-'}</td>
+          <td style="text-align: center;">${row.attached ? '✓ Yes' : 'No'}</td>
+        </tr>
+      `;
+    }).join('');
+
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>IDS Pulse - Weekly CER Report (${weeklyGridPerson})</title>
+          <style>
+            body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 25px; color: #0f172a; background: #ffffff; }
+            .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #0969dc; padding-bottom: 12px; margin-bottom: 20px; }
+            .logo { font-size: 22px; font-weight: 900; color: #031d37; letter-spacing: 0.5px; }
+            .logo span { color: #0969dc; }
+            .subtitle { font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 1px; }
+            .meta-box { background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px 18px; margin-bottom: 20px; display: flex; justify-content: space-between; font-size: 12px; }
+            .meta-item { display: flex; flex-direction: column; gap: 4px; }
+            .meta-item span.label { font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase; }
+            .meta-item span.value { font-size: 13px; font-weight: 700; color: #0f172a; }
+            table { width: 100%; border-collapse: collapse; font-size: 10px; margin-bottom: 25px; }
+            th, td { border: 1px solid #cbd5e1; padding: 6px 8px; text-align: left; }
+            th { background: #031d37; color: #ffffff; font-weight: 800; text-transform: uppercase; font-size: 9.5px; text-align: center; }
+            tfoot tr { background: #e2e8f0; font-weight: 900; font-size: 10.5px; }
+            .signatures { display: flex; justify-content: space-between; margin-top: 40px; padding-top: 20px; border-top: 1px solid #cbd5e1; }
+            .sig-box { width: 45%; text-align: left; }
+            .sig-line { border-bottom: 2px solid #0f172a; margin-top: 40px; margin-bottom: 6px; }
+            .sig-title { font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div>
+              <div class="logo">IDS <span>PULSE</span></div>
+              <div class="subtitle">Integrity Driven Solutions Inc. — CER Weekly Audit & Timesheet Report</div>
+            </div>
+            <div style="text-align: right;">
+              <div style="font-size: 12px; font-weight: 800; color: #0969dc;">OFFICIAL AUDIT REPORT</div>
+              <div style="font-size: 10px; color: #64748b;">Generated: ${new Date().toLocaleDateString('en-US', { dateStyle: 'full' })}</div>
+            </div>
+          </div>
+
+          <div class="meta-box">
+            <div class="meta-item"><span class="label">Representative / Person</span><span class="value">${weeklyGridPerson}</span></div>
+            <div class="meta-item"><span class="label">Audit Week Ending</span><span class="value">${weeklyGridDate}</span></div>
+            <div class="meta-item"><span class="label">Total Billable Hours</span><span class="value">${totalBillable.toFixed(1)} hrs</span></div>
+            <div class="meta-item"><span class="label">Total Mileage</span><span class="value">${totalMiles} km</span></div>
+            <div class="meta-item"><span class="label">Total Reimbursable Per Diem</span><span class="value">$${totalPerDiem.toFixed(2)}</span></div>
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th>Day / Date</th>
+                <th>Location</th>
+                <th>Miles</th>
+                <th>Billable</th>
+                <th>Shift</th>
+                <th>Non-Bill.</th>
+                <th>Per Diem</th>
+                <th>Piece Qty</th>
+                <th>Warehouse</th>
+                <th>Hi Lo</th>
+                <th>Gas</th>
+                <th>Trucking</th>
+                <th>Bonus</th>
+                <th>Other Exp.</th>
+                <th>Paid CER</th>
+                <th>Description</th>
+                <th>Attach.</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rowsHtml}
+            </tbody>
+            <tfoot>
+              <tr>
+                <td style="text-align: center; font-weight: 900; background: #cbd5e1;">TOTAL</td>
+                <td>-</td>
+                <td style="text-align: center; background: #fde68a;">${totalMiles}</td>
+                <td style="text-align: center;">${totalBillable.toFixed(1)}</td>
+                <td style="text-align: center;">-</td>
+                <td style="text-align: center;">${totalNonBillable.toFixed(1)}</td>
+                <td style="text-align: center; background: #fde68a;">$${totalPerDiem.toFixed(2)}</td>
+                <td style="text-align: center;">${totalPieceCount}</td>
+                <td style="text-align: center; background: #fde68a;">$${totalWarehouse.toFixed(2)}</td>
+                <td style="text-align: center; background: #fde68a;">$${totalHilo.toFixed(2)}</td>
+                <td style="text-align: center;">$${totalGas.toFixed(2)}</td>
+                <td style="text-align: center;">$${totalTrucking.toFixed(2)}</td>
+                <td style="text-align: center;">$${totalBonus.toFixed(2)}</td>
+                <td style="text-align: center;">$${totalOther.toFixed(2)}</td>
+                <td style="text-align: center;">$${totalPaidByCer.toFixed(2)}</td>
+                <td>-</td>
+                <td>-</td>
+              </tr>
+            </tfoot>
+          </table>
+
+          <div class="signatures">
+            <div class="sig-box">
+              <div class="sig-line"></div>
+              <div class="sig-title">Representative Signature (${weeklyGridPerson})</div>
+            </div>
+            <div class="sig-box">
+              <div class="sig-line"></div>
+              <div class="sig-title">Authorized Admin Sign-off / Audit Verification</div>
+            </div>
+          </div>
+
           <script>
             window.onload = function() { window.print(); setTimeout(() => window.close(), 500); }
           </script>
@@ -3955,390 +4166,540 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
         
         {/* Navigation Sidebar with Grouped Categories */}
         {!forceRoadmapOnly && (
-          <div className="w-64 flex flex-col gap-2 flex-shrink-0">
+          <div className="w-64 flex flex-col gap-3 flex-shrink-0">
             
             {/* QRE SIDEBAR BUTTONS */}
             {userRole === 'qre' && (
-              <div className="flex flex-col gap-1.5">
-                <div className="text-[12px] font-extrabold text-text-secondary/80 uppercase tracking-widest px-2.5 pt-1 flex items-center gap-2">
-                  <Sparkles className="w-3.5 h-3.5 text-[#3B82F6]" />
-                  <span>AI Assistant</span>
-                </div>
-                <button 
-                  onClick={() => setActiveTab('pulse-ai')}
-                  className={`w-full h-11 px-3.5 rounded-xl font-bold text-[15px] transition-all cursor-pointer flex items-center justify-between border relative overflow-hidden group ${
-                    activeTab === 'pulse-ai' 
-                      ? 'bg-[#3B82F6] text-white border-[#3B82F6]/50 shadow-md shadow-[#3B82F6]/10' 
-                      : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle'
-                  }`}
-                >
-                  <div className="absolute inset-y-0 left-0 w-[3px] bg-[#3B82F6] shadow-[0_0_8px_#3B82F6]"></div>
-                  <div className="flex items-center gap-2.5">
-                    <Sparkles className="w-4.5 h-4.5 text-[#3B82F6]" />
-                    <span>Pulse AI Help</span>
+              <div className="flex flex-col gap-3">
+                {/* AI INTELLIGENCE */}
+                <div className="p-2.5 rounded-2xl bg-slate-900/50 border border-slate-800/70 shadow-sm flex flex-col gap-1.5">
+                  <div className="text-[11px] font-extrabold text-[#3B82F6] uppercase tracking-wider px-2 py-0.5 flex items-center gap-2">
+                    <Sparkles className="w-3.5 h-3.5 text-[#3B82F6]" />
+                    <span>AI Assistant</span>
                   </div>
-                </button>
+                  <button 
+                    onClick={() => setActiveTab('pulse-ai')}
+                    className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14.5px] transition-all cursor-pointer flex items-center justify-between border relative overflow-hidden group ${
+                      activeTab === 'pulse-ai' 
+                        ? 'bg-[#3B82F6] text-white border-[#3B82F6]/50 shadow-md shadow-[#3B82F6]/20' 
+                        : 'bg-surface-elevated text-text-secondary hover:bg-surface hover:text-text-primary border-border-subtle/70'
+                    }`}
+                  >
+                    <div className="absolute inset-y-0 left-0 w-[3px] bg-[#3B82F6] shadow-[0_0_8px_#3B82F6]"></div>
+                    <div className="flex items-center gap-2.5">
+                      <Sparkles className="w-4.5 h-4.5 text-[#3B82F6] animate-pulse" />
+                      <span>Pulse AI Help</span>
+                    </div>
+                  </button>
+                </div>
 
-                <div className="text-[12px] font-extrabold text-text-secondary/80 uppercase tracking-widest px-2.5 pt-2 flex items-center gap-2 border-t border-border-subtle/50 mt-1">
-                  <Clock className="w-3.5 h-3.5 text-emerald-500" />
-                  <span>My Work & Logging</span>
+                {/* QUALITY & FIELD OPERATIONS */}
+                <div className="p-2.5 rounded-2xl bg-slate-900/50 border border-slate-800/70 shadow-sm flex flex-col gap-1.5">
+                  <div className="text-[11px] font-extrabold text-sky-400 uppercase tracking-wider px-2 py-0.5 flex items-center gap-2">
+                    <FileText className="w-3.5 h-3.5 text-sky-400" />
+                    <span>Quality & Field Operations</span>
+                  </div>
+
+                  <button 
+                    onClick={() => setActiveTab('incidents')}
+                    className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14.5px] transition-all cursor-pointer flex items-center justify-between border ${
+                      activeTab === 'incidents' 
+                        ? 'bg-sky-950/70 text-sky-300 border-sky-500/50 shadow-md shadow-sky-500/20' 
+                        : 'bg-surface-elevated text-text-secondary hover:bg-surface hover:text-text-primary border-border-subtle/70'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <FileText className="w-4.5 h-4.5 text-[#3B82F6]" />
+                      <span>Incident Defects Feed</span>
+                    </div>
+                    {activeTab === 'incidents' && <div className="w-2 h-2 rounded-full bg-[#3B82F6] shadow-[0_0_6px_#3b82f6]"></div>}
+                  </button>
+
+                  <button 
+                    onClick={() => setActiveTab('heatmap')}
+                    className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14.5px] transition-all cursor-pointer flex items-center justify-between border ${
+                      activeTab === 'heatmap' 
+                        ? 'bg-sky-950/70 text-sky-300 border-sky-500/50 shadow-md shadow-sky-500/20' 
+                        : 'bg-surface-elevated text-text-secondary hover:bg-surface hover:text-text-primary border-border-subtle/70'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <MapPin className="w-4.5 h-4.5 text-[#3B82F6]" />
+                      <span>Visual Defect Matrix</span>
+                    </div>
+                    {activeTab === 'heatmap' && <div className="w-2 h-2 rounded-full bg-[#3B82F6] shadow-[0_0_6px_#3b82f6]"></div>}
+                  </button>
+
+                  <button 
+                    onClick={() => setActiveTab('shift-logs')}
+                    className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14.5px] transition-all cursor-pointer flex items-center justify-between border ${
+                      activeTab === 'shift-logs' 
+                        ? 'bg-sky-950/70 text-sky-300 border-sky-500/50 shadow-md shadow-sky-500/20' 
+                        : 'bg-surface-elevated text-text-secondary hover:bg-surface hover:text-text-primary border-border-subtle/70'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <Calendar className="w-4.5 h-4.5 text-[#3B82F6]" />
+                      <span>Shift Summaries Log</span>
+                    </div>
+                    {activeTab === 'shift-logs' && <div className="w-2 h-2 rounded-full bg-[#3B82F6] shadow-[0_0_6px_#3b82f6]"></div>}
+                  </button>
+
+                  <button 
+                    onClick={() => setActiveTab('daily-checklists')}
+                    className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14.5px] transition-all cursor-pointer flex items-center justify-between border ${
+                      activeTab === 'daily-checklists' 
+                        ? 'bg-sky-950/70 text-sky-300 border-sky-500/50 shadow-md shadow-sky-500/20' 
+                        : 'bg-surface-elevated text-text-secondary hover:bg-surface hover:text-text-primary border-border-subtle/70'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <ClipboardCheck className="w-4.5 h-4.5 text-[#3B82F6]" />
+                      <span>Daily Checklists</span>
+                    </div>
+                    {activeTab === 'daily-checklists' && <div className="w-2 h-2 rounded-full bg-[#3B82F6] shadow-[0_0_6px_#3b82f6]"></div>}
+                  </button>
+
+                  <button 
+                    onClick={() => setActiveTab('rework-logs')}
+                    className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14.5px] transition-all cursor-pointer flex items-center justify-between border ${
+                      activeTab === 'rework-logs' 
+                        ? 'bg-sky-950/70 text-sky-300 border-sky-500/50 shadow-md shadow-sky-500/20' 
+                        : 'bg-surface-elevated text-text-secondary hover:bg-surface hover:text-text-primary border-border-subtle/70'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <Activity className="w-4.5 h-4.5 text-[#3B82F6]" />
+                      <span>Rework Logs Feed</span>
+                    </div>
+                    {activeTab === 'rework-logs' && <div className="w-2 h-2 rounded-full bg-[#3B82F6] shadow-[0_0_6px_#3b82f6]"></div>}
+                  </button>
                 </div>
-                <button 
-                  onClick={() => setActiveTab('time-tracking')}
-                  className={`w-full h-11 px-3.5 rounded-xl font-bold text-[15px] transition-all cursor-pointer flex items-center justify-between border ${
-                    activeTab === 'time-tracking' 
-                      ? 'bg-sky-950/60 text-sky-300 border-sky-500/40 shadow-md shadow-sky-500/10' 
-                      : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <Clock className="w-4.5 h-4.5 text-emerald-500" />
-                    <span>My Hours & Expenses</span>
+
+                {/* MY WORK & LOGGING */}
+                <div className="p-2.5 rounded-2xl bg-slate-900/50 border border-slate-800/70 shadow-sm flex flex-col gap-1.5">
+                  <div className="text-[11px] font-extrabold text-emerald-400 uppercase tracking-wider px-2 py-0.5 flex items-center gap-2">
+                    <Clock className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>My Work & Logging</span>
                   </div>
-                  {activeTab === 'time-tracking' && <div className="w-2 h-2 rounded-full bg-emerald-400"></div>}
-                </button>
-                <button 
-                  onClick={() => setActiveTab('daily-checklists')}
-                  className={`w-full h-11 px-3.5 rounded-xl font-bold text-[15px] transition-all cursor-pointer flex items-center justify-between border ${
-                    activeTab === 'daily-checklists' 
-                      ? 'bg-sky-950/60 text-sky-300 border-sky-500/40 shadow-md shadow-sky-500/10' 
-                      : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <ClipboardCheck className="w-4.5 h-4.5 text-[#3B82F6]" />
-                    <span>Daily Checklists</span>
-                  </div>
-                  {activeTab === 'daily-checklists' && <div className="w-2 h-2 rounded-full bg-[#3B82F6]"></div>}
-                </button>
+                  <button 
+                    onClick={() => setActiveTab('time-tracking')}
+                    className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14.5px] transition-all cursor-pointer flex items-center justify-between border ${
+                      activeTab === 'time-tracking' 
+                        ? 'bg-emerald-950/70 text-emerald-300 border-emerald-500/50 shadow-md shadow-emerald-500/20' 
+                        : 'bg-surface-elevated text-text-secondary hover:bg-surface hover:text-text-primary border-border-subtle/70'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <Clock className="w-4.5 h-4.5 text-emerald-400" />
+                      <span>My Hours & Expenses</span>
+                    </div>
+                    {activeTab === 'time-tracking' && <div className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_#34d399]"></div>}
+                  </button>
+                </div>
               </div>
             )}
 
             {/* CUSTOMER SIDEBAR BUTTONS */}
             {userRole === 'customer' && (
-              <div className="flex flex-col gap-1.5">
-                <div className="text-[12px] font-extrabold text-amber-500/90 uppercase tracking-widest px-2.5 pt-1 flex items-center gap-2">
-                  <Shield className="w-3.5 h-3.5 text-amber-500" />
-                  <span>Customer Workspace</span>
-                </div>
-                <button 
-                  onClick={() => setActiveTab('customer-portal')}
-                  className={`w-full h-11 px-3.5 rounded-xl font-bold text-[15px] transition-all cursor-pointer flex items-center justify-between border ${
-                    activeTab === 'customer-portal' 
-                      ? 'bg-amber-50 text-text-primary border-amber-300 shadow-md shadow-amber-400/5' 
-                      : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <Shield className="w-4.5 h-4.5 text-amber-600" />
-                    <span>Customer Dashboard</span>
+              <div className="flex flex-col gap-3">
+                <div className="p-2.5 rounded-2xl bg-amber-950/20 border border-amber-500/30 shadow-sm flex flex-col gap-1.5">
+                  <div className="text-[11px] font-extrabold text-amber-400 uppercase tracking-wider px-2 py-0.5 flex items-center gap-2">
+                    <Shield className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Customer Workspace</span>
                   </div>
-                  {activeTab === 'customer-portal' && <div className="w-2 h-2 rounded-full bg-amber-400"></div>}
-                </button>
+                  <button 
+                    onClick={() => setActiveTab('customer-portal')}
+                    className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14.5px] transition-all cursor-pointer flex items-center justify-between border ${
+                      activeTab === 'customer-portal' 
+                        ? 'bg-amber-950/60 text-amber-300 border-amber-500/50 shadow-md shadow-amber-500/20' 
+                        : 'bg-surface-elevated text-text-secondary hover:bg-surface hover:text-text-primary border-border-subtle/70'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <Shield className="w-4.5 h-4.5 text-amber-400" />
+                      <span>Customer Dashboard</span>
+                    </div>
+                    {activeTab === 'customer-portal' && <div className="w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_6px_#fbbf24]"></div>}
+                  </button>
 
-                <button 
-                  onClick={() => setActiveTab('shift-logs')}
-                  className={`w-full h-11 px-3.5 rounded-xl font-bold text-[15px] transition-all cursor-pointer flex items-center justify-between border ${
-                    activeTab === 'shift-logs' 
-                      ? 'bg-amber-50 text-text-primary border-amber-300 shadow-md shadow-amber-400/5' 
-                      : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <Calendar className="w-4.5 h-4.5 text-amber-600" />
-                    <span>Published Reports</span>
-                  </div>
-                  {activeTab === 'shift-logs' && <div className="w-2 h-2 rounded-full bg-amber-400"></div>}
-                </button>
-
-                <div className="text-[12px] font-extrabold text-amber-500/90 uppercase tracking-widest px-2.5 pt-2 flex items-center gap-2 border-t border-border-subtle/50 mt-1">
-                  <Clock className="w-3.5 h-3.5 text-amber-500" />
-                  <span>Approvals</span>
+                  <button 
+                    onClick={() => setActiveTab('shift-logs')}
+                    className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14.5px] transition-all cursor-pointer flex items-center justify-between border ${
+                      activeTab === 'shift-logs' 
+                        ? 'bg-amber-950/60 text-amber-300 border-amber-500/50 shadow-md shadow-amber-500/20' 
+                        : 'bg-surface-elevated text-text-secondary hover:bg-surface hover:text-text-primary border-border-subtle/70'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <Calendar className="w-4.5 h-4.5 text-amber-400" />
+                      <span>Published Reports</span>
+                    </div>
+                    {activeTab === 'shift-logs' && <div className="w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_6px_#fbbf24]"></div>}
+                  </button>
                 </div>
-                <button 
-                  onClick={() => setActiveTab('approvals')}
-                  className={`w-full h-11 px-3.5 rounded-xl font-bold text-[15px] transition-all cursor-pointer flex items-center justify-between border ${
-                    activeTab === 'approvals' 
-                      ? 'bg-amber-50 text-text-primary border-amber-300 shadow-md shadow-amber-400/5' 
-                      : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <Clock className="w-4.5 h-4.5 text-amber-600" />
-                    <span>Time & Approvals</span>
+
+                <div className="p-2.5 rounded-2xl bg-amber-950/20 border border-amber-500/30 shadow-sm flex flex-col gap-1.5">
+                  <div className="text-[11px] font-extrabold text-amber-400 uppercase tracking-wider px-2 py-0.5 flex items-center gap-2">
+                    <Clock className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Approvals</span>
                   </div>
-                  {expenseEntries.filter(e => e.status === 'pending_customer').length > 0 && (
-                    <span className="bg-amber-500 text-text-primary text-[11px] px-2 py-0.5 rounded-full font-bold">
-                      {expenseEntries.filter(e => e.status === 'pending_customer').length}
-                    </span>
-                  )}
-                </button>
+                  <button 
+                    onClick={() => setActiveTab('approvals')}
+                    className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14.5px] transition-all cursor-pointer flex items-center justify-between border ${
+                      activeTab === 'approvals' 
+                        ? 'bg-amber-950/60 text-amber-300 border-amber-500/50 shadow-md shadow-amber-500/20' 
+                        : 'bg-surface-elevated text-text-secondary hover:bg-surface hover:text-text-primary border-border-subtle/70'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <Clock className="w-4.5 h-4.5 text-amber-400" />
+                      <span>Time & Approvals</span>
+                    </div>
+                    {expenseEntries.filter(e => e.status === 'pending_customer').length > 0 && (
+                      <span className="bg-amber-500 text-slate-950 text-[11px] px-2 py-0.5 rounded-full font-extrabold shadow-sm">
+                        {expenseEntries.filter(e => e.status === 'pending_customer').length}
+                      </span>
+                    )}
+                  </button>
+                </div>
               </div>
             )}
 
             {/* ADMIN / MANAGEMENT GROUPED SIDEBAR BUTTONS */}
             {['admin', 'owner', 'accountant', 'lead', 'shahroz']?.includes(userRole) && (
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-3">
                 
-                {/* GROUP 1: AI & INTELLIGENCE */}
-                <div className="text-[12px] font-extrabold text-[#3B82F6] uppercase tracking-widest px-2.5 pt-1 flex items-center justify-between">
-                  <span className="flex items-center gap-2">
-                    <Sparkles className="w-3.5 h-3.5 text-[#3B82F6]" />
-                    <span>AI Intelligence</span>
-                  </span>
-                </div>
-                <button 
-                  onClick={() => setActiveTab('pulse-ai')}
-                  className={`w-full h-11 px-3.5 rounded-xl font-bold text-[15px] transition-all cursor-pointer flex items-center justify-between border relative overflow-hidden group ${
-                    activeTab === 'pulse-ai' 
-                      ? 'bg-[#3B82F6] text-white border-[#3B82F6]/50 shadow-md shadow-[#3B82F6]/10' 
-                      : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle'
-                  }`}
-                >
-                  <div className="absolute inset-y-0 left-0 w-[3px] bg-[#3B82F6] shadow-[0_0_8px_#3B82F6]"></div>
-                  <div className="flex items-center gap-2.5">
-                    <Sparkles className="w-4.5 h-4.5 text-[#3B82F6] animate-pulse" />
-                    <span className="text-[#3B82F6] font-extrabold tracking-wide">Pulse AI</span>
+                {/* GROUP 1: AI INTELLIGENCE */}
+                <div className="p-2.5 rounded-2xl bg-slate-900/50 border border-slate-800/70 shadow-sm flex flex-col gap-1.5">
+                  <div 
+                    onClick={() => toggleGroup('ai')}
+                    className="text-[11px] font-extrabold text-[#3B82F6] uppercase tracking-wider px-2 py-1 flex items-center justify-between cursor-pointer select-none hover:text-blue-300 transition-colors"
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-[#3B82F6]" />
+                      <span>AI Intelligence</span>
+                    </span>
+                    <div className="flex items-center gap-1.5">
+                      {activeTab === 'pulse-ai' && collapsedGroups?.ai && (
+                        <div className="w-2 h-2 rounded-full bg-[#3B82F6] shadow-[0_0_6px_#3b82f6]"></div>
+                      )}
+                      {collapsedGroups?.ai ? <ChevronRight className="w-3.5 h-3.5 text-slate-400" /> : <ChevronDown className="w-3.5 h-3.5 text-slate-400" />}
+                    </div>
                   </div>
-                  <span className="text-[10px] bg-[#3B82F6]/10 border border-[#3B82F6]/30 text-[#3B82F6] px-2 py-0.5 rounded font-bold uppercase tracking-wider">Beta</span>
-                </button>
+                  {!collapsedGroups?.ai && (
+                    <button 
+                      onClick={() => setActiveTab('pulse-ai')}
+                      className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14.5px] transition-all cursor-pointer flex items-center justify-between border relative overflow-hidden group ${
+                        activeTab === 'pulse-ai' 
+                          ? 'bg-[#3B82F6] text-white border-[#3B82F6]/50 shadow-md shadow-[#3B82F6]/20' 
+                          : 'bg-surface-elevated text-text-secondary hover:bg-surface hover:text-text-primary border-border-subtle/70'
+                      }`}
+                    >
+                      <div className="absolute inset-y-0 left-0 w-[3px] bg-[#3B82F6] shadow-[0_0_8px_#3B82F6]"></div>
+                      <div className="flex items-center gap-2.5">
+                        <Sparkles className="w-4.5 h-4.5 text-[#3B82F6] animate-pulse" />
+                        <span className="text-[#3B82F6] font-extrabold tracking-wide">Pulse AI</span>
+                      </div>
+                      <span className="text-[10px] bg-[#3B82F6]/15 border border-[#3B82F6]/40 text-[#3B82F6] px-2 py-0.5 rounded font-extrabold uppercase tracking-wider">Beta</span>
+                    </button>
+                  )}
+                </div>
 
                 {/* GROUP 2: QUALITY & OPERATIONS */}
                 {(userRole !== 'accountant' || activeTab === 'incidents' || activeTab === 'heatmap' || activeTab === 'daily-planner' || activeTab === 'shift-logs' || activeTab === 'daily-checklists' || activeTab === 'rework-logs') && (
-                  <div className="flex flex-col gap-1.5 mt-1 pt-1.5 border-t border-border-subtle/60">
-                    <div className="text-[12px] font-extrabold text-text-secondary/80 uppercase tracking-widest px-2.5 py-1 flex items-center gap-2">
-                      <FileText className="w-3.5 h-3.5 text-[#3B82F6]" />
-                      <span>Quality & Operations</span>
+                  <div className="p-2.5 rounded-2xl bg-slate-900/50 border border-slate-800/70 shadow-sm flex flex-col gap-1.5">
+                    <div 
+                      onClick={() => toggleGroup('quality')}
+                      className="text-[11px] font-extrabold text-sky-400 uppercase tracking-wider px-2 py-1 flex items-center justify-between cursor-pointer select-none hover:text-sky-300 transition-colors"
+                    >
+                      <span className="flex items-center gap-1.5">
+                        <FileText className="w-3.5 h-3.5 text-sky-400" />
+                        <span>Quality & Operations</span>
+                      </span>
+                      <div className="flex items-center gap-1.5">
+                        {['incidents', 'heatmap', 'daily-planner', 'shift-logs', 'daily-checklists', 'rework-logs'].includes(activeTab) && collapsedGroups?.quality && (
+                          <div className="w-2 h-2 rounded-full bg-[#3B82F6] shadow-[0_0_6px_#3b82f6]"></div>
+                        )}
+                        {collapsedGroups?.quality ? <ChevronRight className="w-3.5 h-3.5 text-slate-400" /> : <ChevronDown className="w-3.5 h-3.5 text-slate-400" />}
+                      </div>
                     </div>
 
-                    <button
-                      onClick={() => setActiveTab('incidents')}
-                      className={`w-full h-11 px-3.5 rounded-xl font-bold text-[15px] transition-all cursor-pointer flex items-center justify-between border ${
-                        activeTab === 'incidents' 
-                          ? 'bg-sky-950/60 text-sky-300 border-sky-500/40 shadow-md shadow-sky-500/10' 
-                          : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <FileText className="w-4.5 h-4.5 text-[#3B82F6]" />
-                        <span>Incident Defects Feed</span>
-                      </div>
-                      {activeTab === 'incidents' && <div className="w-2 h-2 rounded-full bg-[#3B82F6]"></div>}
-                    </button>
+                    {!collapsedGroups?.quality && (
+                      <>
+                        <button
+                          onClick={() => setActiveTab('incidents')}
+                          className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14.5px] transition-all cursor-pointer flex items-center justify-between border ${
+                            activeTab === 'incidents' 
+                              ? 'bg-sky-950/70 text-sky-300 border-sky-500/50 shadow-md shadow-sky-500/20' 
+                              : 'bg-surface-elevated text-text-secondary hover:bg-surface hover:text-text-primary border-border-subtle/70'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <FileText className="w-4.5 h-4.5 text-[#3B82F6]" />
+                            <span>Incident Defects Feed</span>
+                          </div>
+                          {activeTab === 'incidents' && <div className="w-2 h-2 rounded-full bg-[#3B82F6] shadow-[0_0_6px_#3b82f6]"></div>}
+                        </button>
 
-                    <button 
-                      onClick={() => setActiveTab('heatmap')}
-                      className={`w-full h-11 px-3.5 rounded-xl font-bold text-[15px] transition-all cursor-pointer flex items-center justify-between border ${
-                        activeTab === 'heatmap' 
-                          ? 'bg-sky-950/60 text-sky-300 border-sky-500/40 shadow-md shadow-sky-500/10' 
-                          : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <MapPin className="w-4.5 h-4.5 text-[#3B82F6]" />
-                        <span>Visual Defect Matrix</span>
-                      </div>
-                      {activeTab === 'heatmap' && <div className="w-2 h-2 rounded-full bg-[#3B82F6]"></div>}
-                    </button>
+                        <button 
+                          onClick={() => setActiveTab('heatmap')}
+                          className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14.5px] transition-all cursor-pointer flex items-center justify-between border ${
+                            activeTab === 'heatmap' 
+                              ? 'bg-sky-950/70 text-sky-300 border-sky-500/50 shadow-md shadow-sky-500/20' 
+                              : 'bg-surface-elevated text-text-secondary hover:bg-surface hover:text-text-primary border-border-subtle/70'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <MapPin className="w-4.5 h-4.5 text-[#3B82F6]" />
+                            <span>Visual Defect Matrix</span>
+                          </div>
+                          {activeTab === 'heatmap' && <div className="w-2 h-2 rounded-full bg-[#3B82F6] shadow-[0_0_6px_#3b82f6]"></div>}
+                        </button>
 
-                    <button 
-                      onClick={() => setActiveTab('daily-planner')}
-                      className={`w-full h-11 px-3.5 rounded-xl font-bold text-[15px] transition-all cursor-pointer flex items-center justify-between border ${
-                        activeTab === 'daily-planner' 
-                          ? 'bg-sky-950/60 text-sky-300 border-sky-500/40 shadow-md shadow-sky-500/10' 
-                          : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <CheckCircle2 className="w-4.5 h-4.5 text-[#3B82F6]" />
-                        <span>Daily Tasks Planner</span>
-                      </div>
-                      {activeTab === 'daily-planner' && <div className="w-2 h-2 rounded-full bg-[#3B82F6]"></div>}
-                    </button>
+                        <button 
+                          onClick={() => setActiveTab('daily-planner')}
+                          className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14.5px] transition-all cursor-pointer flex items-center justify-between border ${
+                            activeTab === 'daily-planner' 
+                              ? 'bg-sky-950/70 text-sky-300 border-sky-500/50 shadow-md shadow-sky-500/20' 
+                              : 'bg-surface-elevated text-text-secondary hover:bg-surface hover:text-text-primary border-border-subtle/70'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <CheckCircle2 className="w-4.5 h-4.5 text-[#3B82F6]" />
+                            <span>Daily Tasks Planner</span>
+                          </div>
+                          {activeTab === 'daily-planner' && <div className="w-2 h-2 rounded-full bg-[#3B82F6] shadow-[0_0_6px_#3b82f6]"></div>}
+                        </button>
 
-                    <button 
-                      onClick={() => setActiveTab('shift-logs')}
-                      className={`w-full h-11 px-3.5 rounded-xl font-bold text-[15px] transition-all cursor-pointer flex items-center justify-between border ${
-                        activeTab === 'shift-logs' 
-                          ? 'bg-sky-950/60 text-sky-300 border-sky-500/40 shadow-md shadow-sky-500/10' 
-                          : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <Calendar className="w-4.5 h-4.5 text-[#3B82F6]" />
-                        <span>Shift Summaries Log</span>
-                      </div>
-                      {activeTab === 'shift-logs' && <div className="w-2 h-2 rounded-full bg-[#3B82F6]"></div>}
-                    </button>
+                        <button 
+                          onClick={() => setActiveTab('shift-logs')}
+                          className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14.5px] transition-all cursor-pointer flex items-center justify-between border ${
+                            activeTab === 'shift-logs' 
+                              ? 'bg-sky-950/70 text-sky-300 border-sky-500/50 shadow-md shadow-sky-500/20' 
+                              : 'bg-surface-elevated text-text-secondary hover:bg-surface hover:text-text-primary border-border-subtle/70'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <Calendar className="w-4.5 h-4.5 text-[#3B82F6]" />
+                            <span>Shift Summaries Log</span>
+                          </div>
+                          {activeTab === 'shift-logs' && <div className="w-2 h-2 rounded-full bg-[#3B82F6] shadow-[0_0_6px_#3b82f6]"></div>}
+                        </button>
 
-                    <button 
-                      onClick={() => setActiveTab('daily-checklists')}
-                      className={`w-full h-11 px-3.5 rounded-xl font-bold text-[15px] transition-all cursor-pointer flex items-center justify-between border ${
-                        activeTab === 'daily-checklists' 
-                          ? 'bg-sky-950/60 text-sky-300 border-sky-500/40 shadow-md shadow-sky-500/10' 
-                          : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <ClipboardCheck className="w-4.5 h-4.5 text-[#3B82F6]" />
-                        <span>Daily Checklists</span>
-                      </div>
-                      {activeTab === 'daily-checklists' && <div className="w-2 h-2 rounded-full bg-[#3B82F6]"></div>}
-                    </button>
+                        <button 
+                          onClick={() => setActiveTab('daily-checklists')}
+                          className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14.5px] transition-all cursor-pointer flex items-center justify-between border ${
+                            activeTab === 'daily-checklists' 
+                              ? 'bg-sky-950/70 text-sky-300 border-sky-500/50 shadow-md shadow-sky-500/20' 
+                              : 'bg-surface-elevated text-text-secondary hover:bg-surface hover:text-text-primary border-border-subtle/70'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <ClipboardCheck className="w-4.5 h-4.5 text-[#3B82F6]" />
+                            <span>Daily Checklists</span>
+                          </div>
+                          {activeTab === 'daily-checklists' && <div className="w-2 h-2 rounded-full bg-[#3B82F6] shadow-[0_0_6px_#3b82f6]"></div>}
+                        </button>
 
-                    {userRole !== 'accountant' && (
-                      <button 
-                        onClick={() => setActiveTab('rework-logs')}
-                        className={`w-full h-11 px-3.5 rounded-xl font-bold text-[15px] transition-all cursor-pointer flex items-center justify-between border ${
-                          activeTab === 'rework-logs' 
-                            ? 'bg-sky-950/60 text-sky-300 border-sky-500/40 shadow-md shadow-sky-500/10' 
-                            : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle'
-                        }`}
-                      >
-                        <div className="flex items-center gap-2.5">
-                          <Activity className="w-4.5 h-4.5 text-[#3B82F6]" />
-                          <span>Rework Logs Feed</span>
-                        </div>
-                        {activeTab === 'rework-logs' && <div className="w-2 h-2 rounded-full bg-[#3B82F6]"></div>}
-                      </button>
+                        {userRole !== 'accountant' && (
+                          <button 
+                            onClick={() => setActiveTab('rework-logs')}
+                            className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14.5px] transition-all cursor-pointer flex items-center justify-between border ${
+                              activeTab === 'rework-logs' 
+                                ? 'bg-sky-950/70 text-sky-300 border-sky-500/50 shadow-md shadow-sky-500/20' 
+                                : 'bg-surface-elevated text-text-secondary hover:bg-surface hover:text-text-primary border-border-subtle/70'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2.5">
+                              <Activity className="w-4.5 h-4.5 text-[#3B82F6]" />
+                              <span>Rework Logs Feed</span>
+                            </div>
+                            {activeTab === 'rework-logs' && <div className="w-2 h-2 rounded-full bg-[#3B82F6] shadow-[0_0_6px_#3b82f6]"></div>}
+                          </button>
+                        )}
+                      </>
                     )}
                   </div>
                 )}
 
-                {/* GROUP 3: FINANCIALS & TIME */}
-                <div className="flex flex-col gap-1.5 mt-1 pt-1.5 border-t border-border-subtle/60">
-                  <div className="text-[12px] font-extrabold text-emerald-400 uppercase tracking-widest px-2.5 py-1 flex items-center gap-2">
-                    <DollarSign className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>Financials & Audit</span>
-                  </div>
-
-                  <button 
-                    onClick={() => setActiveTab('time-tracking')}
-                    className={`w-full h-11 px-3.5 rounded-xl font-bold text-[15px] transition-all cursor-pointer flex items-center justify-between border ${
-                      activeTab === 'time-tracking' 
-                        ? 'bg-sky-950/60 text-sky-300 border-sky-500/40 shadow-md shadow-sky-500/10' 
-                        : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle'
-                    }`}
+                {/* GROUP 3: FINANCIALS & AUDIT */}
+                <div className="p-2.5 rounded-2xl bg-slate-900/50 border border-slate-800/70 shadow-sm flex flex-col gap-1.5">
+                  <div 
+                    onClick={() => toggleGroup('financials')}
+                    className="text-[11px] font-extrabold text-emerald-400 uppercase tracking-wider px-2 py-1 flex items-center justify-between cursor-pointer select-none hover:text-emerald-300 transition-colors"
                   >
-                    <div className="flex items-center gap-2.5">
-                      <DollarSign className="w-4.5 h-4.5 text-emerald-500" />
-                      <span>Timesheets & Logging</span>
+                    <span className="flex items-center gap-1.5">
+                      <DollarSign className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>Financials & Audit</span>
+                    </span>
+                    <div className="flex items-center gap-1.5">
+                      {activeTab === 'time-tracking' && collapsedGroups?.financials && (
+                        <div className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_#34d399]"></div>
+                      )}
+                      {collapsedGroups?.financials ? <ChevronRight className="w-3.5 h-3.5 text-slate-400" /> : <ChevronDown className="w-3.5 h-3.5 text-slate-400" />}
                     </div>
-                    {activeTab === 'time-tracking' && <div className="w-2 h-2 rounded-full bg-emerald-400"></div>}
-                  </button>
-                </div>
-
-                {/* GROUP 4: DIRECTORIES & COMMUNICATIONS */}
-                <div className="flex flex-col gap-1.5 mt-1 pt-1.5 border-t border-border-subtle/60">
-                  <div className="text-[12px] font-extrabold text-text-secondary/80 uppercase tracking-widest px-2.5 py-1 flex items-center gap-2">
-                    <Server className="w-3.5 h-3.5 text-[#3B82F6]" />
-                    <span>Directories & Comms</span>
                   </div>
 
-                  {userRole !== 'accountant' && (
+                  {!collapsedGroups?.financials && (
                     <button 
-                      onClick={() => setActiveTab('suppliers')}
-                      className={`w-full h-11 px-3.5 rounded-xl font-bold text-[15px] transition-all cursor-pointer flex items-center justify-between border ${
-                        activeTab === 'suppliers' 
-                          ? 'bg-sky-950/60 text-sky-300 border-sky-500/40 shadow-md shadow-sky-500/10' 
-                          : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle'
+                      onClick={() => setActiveTab('time-tracking')}
+                      className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14.5px] transition-all cursor-pointer flex items-center justify-between border ${
+                        activeTab === 'time-tracking' 
+                          ? 'bg-emerald-950/70 text-emerald-300 border-emerald-500/50 shadow-md shadow-emerald-500/20' 
+                          : 'bg-surface-elevated text-text-secondary hover:bg-surface hover:text-text-primary border-border-subtle/70'
                       }`}
                     >
                       <div className="flex items-center gap-2.5">
-                        <Server className="w-4.5 h-4.5 text-[#3B82F6]" />
-                        <span>Suppliers Directory</span>
+                        <DollarSign className="w-4.5 h-4.5 text-emerald-400" />
+                        <span>Timesheets & Logging</span>
                       </div>
-                      {activeTab === 'suppliers' && <div className="w-2 h-2 rounded-full bg-[#3B82F6]"></div>}
-                    </button>
-                  )}
-
-                  {userRole !== 'accountant' && (
-                    <button 
-                      onClick={() => setActiveTab('emails')}
-                      className={`w-full h-11 px-3.5 rounded-xl font-bold text-[15px] transition-all cursor-pointer flex items-center justify-between border ${
-                        activeTab === 'emails' 
-                          ? 'bg-sky-950/60 text-sky-300 border-sky-500/40 shadow-md shadow-sky-500/10' 
-                          : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <Mail className="w-4.5 h-4.5 text-purple-400" />
-                        <span>Email Logs</span>
-                      </div>
-                      {activeTab === 'emails' && <div className="w-2 h-2 rounded-full bg-purple-400"></div>}
+                      {activeTab === 'time-tracking' && <div className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_#34d399]"></div>}
                     </button>
                   )}
                 </div>
 
-                {/* GROUP 5: SYSTEM & ADMINISTRATION */}
-                <div className="flex flex-col gap-1.5 mt-1 pt-1.5 border-t border-border-subtle/60">
-                  <div className="text-[12px] font-extrabold text-indigo-400 uppercase tracking-widest px-2.5 py-1 flex items-center gap-2">
-                    <FolderKanban className="w-3.5 h-3.5 text-indigo-400" />
-                    <span>System & Admin</span>
+                {/* GROUP 4: DIRECTORIES & COMMS */}
+                <div className="p-2.5 rounded-2xl bg-slate-900/50 border border-slate-800/70 shadow-sm flex flex-col gap-1.5">
+                  <div 
+                    onClick={() => toggleGroup('comms')}
+                    className="text-[11px] font-extrabold text-purple-400 uppercase tracking-wider px-2 py-1 flex items-center justify-between cursor-pointer select-none hover:text-purple-300 transition-colors"
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <Server className="w-3.5 h-3.5 text-purple-400" />
+                      <span>Directories & Comms</span>
+                    </span>
+                    <div className="flex items-center gap-1.5">
+                      {['suppliers', 'emails'].includes(activeTab) && collapsedGroups?.comms && (
+                        <div className="w-2 h-2 rounded-full bg-purple-400 shadow-[0_0_6px_#c084fc]"></div>
+                      )}
+                      {collapsedGroups?.comms ? <ChevronRight className="w-3.5 h-3.5 text-slate-400" /> : <ChevronDown className="w-3.5 h-3.5 text-slate-400" />}
+                    </div>
                   </div>
 
-                  <button 
-                    onClick={() => setActiveTab('projects')}
-                    className={`w-full h-11 px-3.5 rounded-xl font-bold text-[15px] transition-all cursor-pointer flex items-center justify-between border ${
-                      activeTab === 'projects' 
-                        ? 'bg-sky-950/60 text-sky-300 border-sky-500/40 shadow-md shadow-sky-500/10' 
-                        : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <FolderKanban className="w-4.5 h-4.5 text-cyan-400" />
-                      <span>Projects Registry</span>
-                    </div>
-                    {activeTab === 'projects' && <div className="w-2 h-2 rounded-full bg-cyan-400"></div>}
-                  </button>
+                  {!collapsedGroups?.comms && (
+                    <>
+                      {userRole !== 'accountant' && (
+                        <button 
+                          onClick={() => setActiveTab('suppliers')}
+                          className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14.5px] transition-all cursor-pointer flex items-center justify-between border ${
+                            activeTab === 'suppliers' 
+                              ? 'bg-purple-950/70 text-purple-300 border-purple-500/50 shadow-md shadow-purple-500/20' 
+                              : 'bg-surface-elevated text-text-secondary hover:bg-surface hover:text-text-primary border-border-subtle/70'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <Server className="w-4.5 h-4.5 text-purple-400" />
+                            <span>Suppliers Directory</span>
+                          </div>
+                          {activeTab === 'suppliers' && <div className="w-2 h-2 rounded-full bg-purple-400 shadow-[0_0_6px_#c084fc]"></div>}
+                        </button>
+                      )}
 
-                  <button 
-                    onClick={() => setActiveTab('users')}
-                    className={`w-full h-11 px-3.5 rounded-xl font-bold text-[15px] transition-all cursor-pointer flex items-center justify-between border ${
-                      activeTab === 'users' 
-                        ? 'bg-sky-950/60 text-sky-300 border-sky-500/40 shadow-md shadow-sky-500/10' 
-                        : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <Users className="w-4.5 h-4.5 text-indigo-400" />
-                      <span>User Directory</span>
-                    </div>
-                    {activeTab === 'users' && <div className="w-2 h-2 rounded-full bg-indigo-400"></div>}
-                  </button>
-
-                  {userRole === 'shahroz' && (
-                    <button 
-                      onClick={() => setActiveTab('roadmap')}
-                      className={`w-full h-11 px-3.5 rounded-xl font-bold text-[15px] transition-all cursor-pointer flex items-center justify-between border ${
-                        activeTab === 'roadmap' 
-                          ? 'bg-sky-950/60 text-sky-300 border-sky-500/40 shadow-md shadow-sky-500/10' 
-                          : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <Milestone className="w-4.5 h-4.5 text-amber-400" />
-                        <span>Launch Roadmap</span>
-                      </div>
-                      {activeTab === 'roadmap' && <div className="w-2 h-2 rounded-full bg-amber-400"></div>}
-                    </button>
+                      {userRole !== 'accountant' && (
+                        <button 
+                          onClick={() => setActiveTab('emails')}
+                          className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14.5px] transition-all cursor-pointer flex items-center justify-between border ${
+                            activeTab === 'emails' 
+                              ? 'bg-purple-950/70 text-purple-300 border-purple-500/50 shadow-md shadow-purple-500/20' 
+                              : 'bg-surface-elevated text-text-secondary hover:bg-surface hover:text-text-primary border-border-subtle/70'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <Mail className="w-4.5 h-4.5 text-purple-400" />
+                            <span>Email Logs</span>
+                          </div>
+                          {activeTab === 'emails' && <div className="w-2 h-2 rounded-full bg-purple-400 shadow-[0_0_6px_#c084fc]"></div>}
+                        </button>
+                      )}
+                    </>
                   )}
+                </div>
 
-                  {userRole === 'shahroz' && (
-                    <button 
-                      onClick={() => setActiveTab('system-logs')}
-                      className={`w-full h-11 px-3.5 rounded-xl font-bold text-[15px] transition-all cursor-pointer flex items-center justify-between border ${
-                        activeTab === 'system-logs' 
-                          ? 'bg-sky-950/60 text-sky-300 border-sky-500/40 shadow-md shadow-sky-500/10' 
-                          : 'bg-surface-elevated text-text-secondary hover:bg-surface-elevated hover:text-text-primary border-border-subtle'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <Server className="w-4.5 h-4.5 text-emerald-400" />
-                        <span>System Events Logs</span>
-                      </div>
-                      {activeTab === 'system-logs' && <div className="w-2 h-2 rounded-full bg-emerald-400"></div>}
-                    </button>
+                {/* GROUP 5: SYSTEM & ADMIN */}
+                <div className="p-2.5 rounded-2xl bg-slate-900/50 border border-slate-800/70 shadow-sm flex flex-col gap-1.5">
+                  <div 
+                    onClick={() => toggleGroup('system')}
+                    className="text-[11px] font-extrabold text-cyan-400 uppercase tracking-wider px-2 py-1 flex items-center justify-between cursor-pointer select-none hover:text-cyan-300 transition-colors"
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <FolderKanban className="w-3.5 h-3.5 text-cyan-400" />
+                      <span>System & Admin</span>
+                    </span>
+                    <div className="flex items-center gap-1.5">
+                      {['projects', 'users', 'roadmap', 'system-logs'].includes(activeTab) && collapsedGroups?.system && (
+                        <div className="w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_6px_#22d3ee]"></div>
+                      )}
+                      {collapsedGroups?.system ? <ChevronRight className="w-3.5 h-3.5 text-slate-400" /> : <ChevronDown className="w-3.5 h-3.5 text-slate-400" />}
+                    </div>
+                  </div>
+
+                  {!collapsedGroups?.system && (
+                    <>
+                      <button 
+                        onClick={() => setActiveTab('projects')}
+                        className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14.5px] transition-all cursor-pointer flex items-center justify-between border ${
+                          activeTab === 'projects' 
+                            ? 'bg-cyan-950/70 text-cyan-300 border-cyan-500/50 shadow-md shadow-cyan-500/20' 
+                            : 'bg-surface-elevated text-text-secondary hover:bg-surface hover:text-text-primary border-border-subtle/70'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <FolderKanban className="w-4.5 h-4.5 text-cyan-400" />
+                          <span>Projects Registry</span>
+                        </div>
+                        {activeTab === 'projects' && <div className="w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_6px_#22d3ee]"></div>}
+                      </button>
+
+                      <button 
+                        onClick={() => setActiveTab('users')}
+                        className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14.5px] transition-all cursor-pointer flex items-center justify-between border ${
+                          activeTab === 'users' 
+                            ? 'bg-cyan-950/70 text-cyan-300 border-cyan-500/50 shadow-md shadow-cyan-500/20' 
+                            : 'bg-surface-elevated text-text-secondary hover:bg-surface hover:text-text-primary border-border-subtle/70'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <Users className="w-4.5 h-4.5 text-cyan-400" />
+                          <span>User Directory</span>
+                        </div>
+                        {activeTab === 'users' && <div className="w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_6px_#22d3ee]"></div>}
+                      </button>
+
+                      {userRole === 'shahroz' && (
+                        <button 
+                          onClick={() => setActiveTab('roadmap')}
+                          className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14.5px] transition-all cursor-pointer flex items-center justify-between border ${
+                            activeTab === 'roadmap' 
+                              ? 'bg-cyan-950/70 text-cyan-300 border-cyan-500/50 shadow-md shadow-cyan-500/20' 
+                              : 'bg-surface-elevated text-text-secondary hover:bg-surface hover:text-text-primary border-border-subtle/70'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <Milestone className="w-4.5 h-4.5 text-amber-400" />
+                            <span>Launch Roadmap</span>
+                          </div>
+                          {activeTab === 'roadmap' && <div className="w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_6px_#fbbf24]"></div>}
+                        </button>
+                      )}
+
+                      {userRole === 'shahroz' && (
+                        <button 
+                          onClick={() => setActiveTab('system-logs')}
+                          className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14.5px] transition-all cursor-pointer flex items-center justify-between border ${
+                            activeTab === 'system-logs' 
+                              ? 'bg-cyan-950/70 text-cyan-300 border-cyan-500/50 shadow-md shadow-cyan-500/20' 
+                              : 'bg-surface-elevated text-text-secondary hover:bg-surface hover:text-text-primary border-border-subtle/70'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <Server className="w-4.5 h-4.5 text-emerald-400" />
+                            <span>System Events Logs</span>
+                          </div>
+                          {activeTab === 'system-logs' && <div className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_#34d399]"></div>}
+                        </button>
+                      )}
+                    </>
                   )}
                 </div>
 
@@ -5136,8 +5497,9 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     className="h-8 bg-surface border border-border-subtle hover:border-border-subtle rounded-xl px-3.5 text-[13.5px] text-text-primary focus:outline-none focus:ring-1 focus:ring-[#3B82F6]/20 transition-all"
                   >
                     <option value="all">All Suppliers</option>
-                    <option value="magna">Magna AutoSystems</option>
-                    <option value="hutchinson">Hutchinson</option>
+                    {(suppliers && suppliers.length > 0 ? suppliers : SEED_DATA.suppliers).map(s => (
+                      <option key={s.id} value={s.id}>{s.name}</option>
+                    ))}
                   </select>
                 </div>
 
@@ -6112,6 +6474,22 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     >
                       Manual Timesheet Entry
                     </button>
+                    <button
+                      onClick={() => setAccountingSubTab('weekly-grid')}
+                      className={`px-3 py-1.5 rounded-lg text-[11.5px] font-bold transition-all cursor-pointer ${
+                        accountingSubTab === 'weekly-grid' ? 'bg-[#8B0000] text-white shadow-md' : 'text-text-secondary hover:text-text-primary'
+                      }`}
+                    >
+                      📋 Weekly Timesheet Grid
+                    </button>
+                    <button
+                      onClick={() => setAccountingSubTab('integrity-sheet')}
+                      className={`px-3 py-1.5 rounded-lg text-[11.5px] font-bold transition-all cursor-pointer ${
+                        accountingSubTab === 'integrity-sheet' ? 'bg-[#0969dc] text-white shadow-md' : 'text-text-secondary hover:text-text-primary'
+                      }`}
+                    >
+                      📄 Integrity Sheet (QuickBooks)
+                    </button>
                   </div>
                 </div>
 
@@ -6319,7 +6697,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                 }}
                                 className="bg-surface border border-border-subtle rounded-xl px-3 py-1.5 text-[13.5px] text-text-primary"
                               >
-                                {suppliers.filter(Boolean).map(s => <option key={s.id} value={s.id}>{s.name} ({(s.invoice_schedule || 'weekly')?.toUpperCase()})</option>)}
+                                {suppliers.filter(Boolean).map(s => <option key={s.id} value={s.id}>{s.name} ({s.invoice_schedule === 'on-demand' ? 'ON DEMAND (MANUAL)' : (s.invoice_schedule || 'on-demand')?.toUpperCase()})</option>)}
                                 <option value="ADD_NEW" className="text-cyan-600 font-bold">+ Add New Client...</option>
                               </select>
                             </div>
@@ -6342,10 +6720,11 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                               />
                             </div>
                           </div>
-                          <div className="flex gap-2">
-                            <button onClick={() => handleGenerateClientInvoicePDF(client, dateRangeStr, includedEntries, includedExpenses)} disabled={includedEntries.length === 0 && includedExpenses.length === 0} className="flex items-center gap-1.5 bg-[#3B82F6] disabled:opacity-40 hover:bg-[#3B82F6]/90 text-text-primary font-bold py-2 px-4 rounded-xl text-[13.5px] transition-colors cursor-pointer"><Printer className="w-4.5 h-4" /> PDF Invoice</button>
-                            <button onClick={() => handleExportClientQuickBooks(includedEntries)} disabled={includedEntries.length === 0} className="flex items-center gap-1.5 bg-[#10B981] disabled:opacity-40 hover:bg-[#10B981]/90 text-text-primary font-bold py-2 px-4 rounded-xl text-[13.5px] transition-colors cursor-pointer"><FileSpreadsheet className="w-4.5 h-4" /> QuickBooks CSV</button>
-                            <button onClick={() => handleMarkAsInvoiced(includedEntries, includedExpenses)} disabled={includedEntries.length === 0 && includedExpenses.length === 0} className="flex items-center gap-1.5 bg-surface border border-border-subtle disabled:opacity-40 text-text-primary font-bold py-2 px-4 rounded-xl text-[13.5px] cursor-pointer"><CheckCircle2 className="w-4.5 h-4" /> Mark Invoiced</button>
+                          <div className="flex gap-2 flex-wrap">
+                            <button onClick={() => handleGenerateClientInvoicePDF(client, dateRangeStr, includedEntries, includedExpenses)} disabled={includedEntries.length === 0 && includedExpenses.length === 0} className="flex items-center gap-1.5 bg-[#3B82F6] disabled:opacity-40 hover:bg-[#3B82F6]/90 text-text-primary font-bold py-2 px-3.5 rounded-xl text-[13px] transition-colors cursor-pointer" title="Generate PDF invoice for current client"><Printer className="w-4 h-4" /> PDF Invoice ({client?.name})</button>
+                            <button onClick={handleBatchGenerateAllClientInvoices} className="flex items-center gap-1.5 bg-purple-600 hover:bg-purple-500 text-white font-bold py-2 px-3.5 rounded-xl text-[13px] transition-colors cursor-pointer" title="Generate individual PDF invoices for all clients with pending entries"><Zap className="w-4 h-4 text-yellow-300 fill-yellow-300" /> Batch All Invoices</button>
+                            <button onClick={() => handleExportClientQuickBooks(includedEntries)} disabled={includedEntries.length === 0} className="flex items-center gap-1.5 bg-[#10B981] disabled:opacity-40 hover:bg-[#10B981]/90 text-text-primary font-bold py-2 px-3.5 rounded-xl text-[13px] transition-colors cursor-pointer"><FileSpreadsheet className="w-4 h-4" /> QuickBooks CSV</button>
+                            <button onClick={() => handleMarkAsInvoiced(includedEntries, includedExpenses)} disabled={includedEntries.length === 0 && includedExpenses.length === 0} className="flex items-center gap-1.5 bg-surface border border-border-subtle disabled:opacity-40 text-text-primary font-bold py-2 px-3.5 rounded-xl text-[13px] cursor-pointer"><CheckCircle2 className="w-4 h-4" /> Mark Invoiced</button>
                           </div>
                         </div>
 
@@ -6579,6 +6958,207 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     </div>
                   )}
 
+                  {/* SUB-TAB: WEEKLY CER TIMESHEET MATRIX GRID */}
+                  {accountingSubTab === 'weekly-grid' && (
+                    <div className="bg-surface-elevated border border-border-subtle p-4 sm:p-6 rounded-2xl flex flex-col gap-4 text-left overflow-x-auto">
+                      {/* Sub-header Controls */}
+                      <div className="flex flex-wrap items-center justify-between gap-3 bg-surface p-3 rounded-xl border border-border-subtle">
+                        <div className="flex flex-wrap items-center gap-4 text-[13px] font-bold text-text-primary">
+                          <div className="flex items-center gap-2">
+                            <span className="text-text-secondary font-semibold">Person:</span>
+                            <select
+                              value={weeklyGridPerson}
+                              onChange={(e) => setWeeklyGridPerson(e.target.value)}
+                              className="bg-surface border border-border-subtle rounded-lg px-3 py-1.5 text-text-primary font-bold focus:outline-none"
+                            >
+                              <option value="Boyd Colleen">Boyd Colleen</option>
+                              <option value="Hugo Reyes">Hugo Reyes</option>
+                              <option value="Clarence Thomas">Clarence Thomas</option>
+                              <option value="Nabil Al-Mansoor">Nabil Al-Mansoor</option>
+                              <option value="Rogelio Vance">Rogelio Vance</option>
+                              <option value="Shahroz Mirza">Shahroz Mirza</option>
+                            </select>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <span className="text-text-secondary font-semibold">Pick a Date:</span>
+                            <input
+                              type="text"
+                              value={weeklyGridDate}
+                              onChange={(e) => setWeeklyGridDate(e.target.value)}
+                              className="bg-surface border border-border-subtle rounded-lg px-2.5 py-1.5 text-text-primary font-mono text-center w-28 focus:outline-none"
+                            />
+                            <button className="px-2 py-1 bg-surface-elevated border border-border-subtle rounded text-text-secondary text-[11px]">...</button>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                          {weeklyGridSaveMessage && (
+                            <span className="text-[12px] font-bold text-emerald-500 animate-pulse">✓ Changes Saved Successfully!</span>
+                          )}
+                          <button
+                            onClick={handleGenerateCerReport}
+                            className="bg-[#3B82F6] hover:bg-blue-600 text-white font-bold px-4 py-1.5 rounded-lg text-[13px] shadow-sm transition-all cursor-pointer flex items-center gap-2"
+                          >
+                            <FileText className="w-4 h-4" />
+                            <span>Generate CER Weekly Report</span>
+                          </button>
+                          <button
+                            onClick={() => {
+                              setWeeklyGridSaveMessage(true);
+                              setTimeout(() => setWeeklyGridSaveMessage(false), 3000);
+                            }}
+                            className="bg-surface-elevated hover:bg-surface border border-border-subtle text-text-primary font-bold px-4 py-1.5 rounded-lg text-[13px] shadow-sm transition-all cursor-pointer border-b-2 active:translate-y-0.5"
+                          >
+                            Saves Changes
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Main CER Weekly Table Grid */}
+                      <div className="overflow-x-auto w-full border border-gray-400/40 rounded-xl shadow-sm">
+                        <table className="w-full text-left text-[11px] border-collapse bg-white text-slate-900 font-sans">
+                          <thead>
+                            <tr className="bg-slate-100 text-slate-800 font-bold border-b border-gray-400 text-center">
+                              <th className="p-2 border-r border-gray-300 w-28">Day / Date</th>
+                              <th className="p-2 border-r border-gray-300">Location</th>
+                              <th className="p-2 border-r border-gray-300 bg-amber-100/70 text-slate-900">Miles</th>
+                              <th className="p-2 border-r border-gray-300">Billable Hours</th>
+                              <th className="p-2 border-r border-gray-300">Shift A,B,C</th>
+                              <th className="p-2 border-r border-gray-300">Non Billable Hours</th>
+                              <th className="p-2 border-r border-gray-300 bg-amber-100/70 text-slate-900">Per Diem</th>
+                              <th className="p-2 border-r border-gray-300">Piece Count</th>
+                              <th className="p-2 border-r border-gray-300 bg-amber-100/70 text-slate-900">Warehouse</th>
+                              <th className="p-2 border-r border-gray-300 bg-amber-100/70 text-slate-900">Hi Lo</th>
+                              <th className="p-2 border-r border-gray-300">Gas</th>
+                              <th className="p-2 border-r border-gray-300">Trucking</th>
+                              <th className="p-2 border-r border-gray-300">Bonus</th>
+                              <th className="p-2 border-r border-gray-300">Other expenses</th>
+                              <th className="p-2 border-r border-gray-300">Paid By CER</th>
+                              <th className="p-2 border-r border-gray-300 bg-amber-100/70 text-slate-900 w-64">Description</th>
+                              <th className="p-2">Attach.</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {Object.keys(weeklyGridData).map((dayKey) => {
+                              const row = weeklyGridData[dayKey];
+                              const updateRow = (field, val) => {
+                                setWeeklyGridData(prev => ({
+                                  ...prev,
+                                  [dayKey]: { ...prev[dayKey], [field]: val }
+                                }));
+                              };
+
+                              return (
+                                <tr key={dayKey} className="border-b border-gray-300 hover:bg-slate-50 transition-colors">
+                                  <td className="p-2 font-semibold text-center border-r border-gray-300 bg-slate-50 text-slate-800 whitespace-nowrap">{dayKey}</td>
+                                  <td className="p-1 border-r border-gray-300">
+                                    <input type="text" value={row.location} onChange={(e) => updateRow('location', e.target.value)} className="w-full bg-transparent px-1.5 py-1 text-[11px] text-slate-900 focus:bg-amber-50 focus:outline-none" />
+                                  </td>
+                                  <td className="p-1 border-r border-gray-300 bg-amber-50/60">
+                                    <input type="number" value={row.miles} onChange={(e) => updateRow('miles', e.target.value)} className="w-14 text-center bg-transparent px-1 py-1 text-[11px] text-slate-900 font-mono focus:bg-amber-100 focus:outline-none" />
+                                  </td>
+                                  <td className="p-1 border-r border-gray-300">
+                                    <input type="number" step="0.5" value={row.billable_hours} onChange={(e) => updateRow('billable_hours', e.target.value)} className="w-14 text-center bg-transparent px-1 py-1 text-[11px] text-slate-900 font-mono focus:bg-amber-50 focus:outline-none" />
+                                  </td>
+                                  <td className="p-1 border-r border-gray-300 text-center">
+                                    <input type="text" value={row.shift} onChange={(e) => updateRow('shift', e.target.value)} className="w-10 text-center bg-transparent px-1 py-1 text-[11px] text-slate-900 uppercase font-bold focus:bg-amber-50 focus:outline-none" />
+                                  </td>
+                                  <td className="p-1 border-r border-gray-300">
+                                    <input type="number" step="0.5" value={row.non_billable_hours} onChange={(e) => updateRow('non_billable_hours', e.target.value)} className="w-14 text-center bg-transparent px-1 py-1 text-[11px] text-slate-900 font-mono focus:bg-amber-50 focus:outline-none" />
+                                  </td>
+                                  <td className="p-1 border-r border-gray-300 bg-amber-50/60">
+                                    <input type="text" value={row.per_diem} onChange={(e) => updateRow('per_diem', e.target.value)} className="w-16 text-center bg-transparent px-1 py-1 text-[11px] text-slate-900 font-mono focus:bg-amber-100 focus:outline-none" />
+                                  </td>
+                                  <td className="p-1 border-r border-gray-300">
+                                    <input type="number" value={row.piece_count} onChange={(e) => updateRow('piece_count', e.target.value)} className="w-16 text-center bg-transparent px-1 py-1 text-[11px] text-slate-900 font-mono focus:bg-amber-50 focus:outline-none" />
+                                  </td>
+                                  <td className="p-1 border-r border-gray-300 bg-amber-50/60">
+                                    <input type="text" value={row.warehouse} onChange={(e) => updateRow('warehouse', e.target.value)} className="w-14 text-center bg-transparent px-1 py-1 text-[11px] text-slate-900 font-mono focus:bg-amber-100 focus:outline-none" />
+                                  </td>
+                                  <td className="p-1 border-r border-gray-300 bg-amber-50/60">
+                                    <input type="text" value={row.hilo} onChange={(e) => updateRow('hilo', e.target.value)} className="w-14 text-center bg-transparent px-1 py-1 text-[11px] text-slate-900 font-mono focus:bg-amber-100 focus:outline-none" />
+                                  </td>
+                                  <td className="p-1 border-r border-gray-300">
+                                    <input type="text" value={row.gas} onChange={(e) => updateRow('gas', e.target.value)} className="w-14 text-center bg-transparent px-1 py-1 text-[11px] text-slate-900 font-mono focus:bg-amber-50 focus:outline-none" />
+                                  </td>
+                                  <td className="p-1 border-r border-gray-300">
+                                    <input type="text" value={row.trucking} onChange={(e) => updateRow('trucking', e.target.value)} className="w-14 text-center bg-transparent px-1 py-1 text-[11px] text-slate-900 font-mono focus:bg-amber-50 focus:outline-none" />
+                                  </td>
+                                  <td className="p-1 border-r border-gray-300">
+                                    <input type="text" value={row.bonus} onChange={(e) => updateRow('bonus', e.target.value)} className="w-14 text-center bg-transparent px-1 py-1 text-[11px] text-slate-900 font-mono focus:bg-amber-50 focus:outline-none" />
+                                  </td>
+                                  <td className="p-1 border-r border-gray-300">
+                                    <input type="text" value={row.other_expenses} onChange={(e) => updateRow('other_expenses', e.target.value)} className="w-14 text-center bg-transparent px-1 py-1 text-[11px] text-slate-900 font-mono focus:bg-amber-50 focus:outline-none" />
+                                  </td>
+                                  <td className="p-1 border-r border-gray-300">
+                                    <input type="text" value={row.paid_by_cer} onChange={(e) => updateRow('paid_by_cer', e.target.value)} className="w-14 text-center bg-transparent px-1 py-1 text-[11px] text-slate-900 font-mono focus:bg-amber-50 focus:outline-none" />
+                                  </td>
+                                  <td className="p-1 border-r border-gray-300 bg-amber-50/60">
+                                    <input type="text" value={row.description} onChange={(e) => updateRow('description', e.target.value)} className="w-full bg-transparent px-2 py-1 text-[11px] text-slate-900 focus:bg-amber-100 focus:outline-none" />
+                                  </td>
+                                  <td className="p-1 text-center">
+                                    <input type="checkbox" checked={row.attached} onChange={(e) => updateRow('attached', e.target.checked)} className="accent-[#8B0000] w-3.5 h-3.5 cursor-pointer" />
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                          <tfoot>
+                            <tr className="bg-slate-100 font-extrabold text-slate-900 border-t-2 border-gray-400 text-center">
+                              <td className="p-2 border-r border-gray-300 bg-slate-200">TOTAL</td>
+                              <td className="p-2 border-r border-gray-300"></td>
+                              <td className="p-2 border-r border-gray-300 bg-amber-100 font-mono">
+                                {Object.values(weeklyGridData).reduce((sum, r) => sum + (parseFloat(r.miles) || 0), 0)}
+                              </td>
+                              <td className="p-2 border-r border-gray-300 font-mono">
+                                {Object.values(weeklyGridData).reduce((sum, r) => sum + (parseFloat(r.billable_hours) || 0), 0)}
+                              </td>
+                              <td className="p-2 border-r border-gray-300"></td>
+                              <td className="p-2 border-r border-gray-300 font-mono">
+                                {Object.values(weeklyGridData).reduce((sum, r) => sum + (parseFloat(r.non_billable_hours) || 0), 0)}
+                              </td>
+                              <td className="p-2 border-r border-gray-300 bg-amber-100 font-mono">
+                                ${Object.values(weeklyGridData).reduce((sum, r) => sum + (parseFloat(r.per_diem) || 0), 0).toFixed(2)}
+                              </td>
+                              <td className="p-2 border-r border-gray-300 font-mono">
+                                {Object.values(weeklyGridData).reduce((sum, r) => sum + (parseFloat(r.piece_count) || 0), 0)}
+                              </td>
+                              <td className="p-2 border-r border-gray-300 bg-amber-100 font-mono">
+                                ${Object.values(weeklyGridData).reduce((sum, r) => sum + (parseFloat(r.warehouse) || 0), 0).toFixed(2)}
+                              </td>
+                              <td className="p-2 border-r border-gray-300 bg-amber-100 font-mono">
+                                ${Object.values(weeklyGridData).reduce((sum, r) => sum + (parseFloat(r.hilo) || 0), 0).toFixed(2)}
+                              </td>
+                              <td className="p-2 border-r border-gray-300 font-mono">
+                                ${Object.values(weeklyGridData).reduce((sum, r) => sum + (parseFloat(r.gas) || 0), 0).toFixed(2)}
+                              </td>
+                              <td className="p-2 border-r border-gray-300 font-mono">
+                                ${Object.values(weeklyGridData).reduce((sum, r) => sum + (parseFloat(r.trucking) || 0), 0).toFixed(2)}
+                              </td>
+                              <td className="p-2 border-r border-gray-300 font-mono">
+                                ${Object.values(weeklyGridData).reduce((sum, r) => sum + (parseFloat(r.bonus) || 0), 0).toFixed(2)}
+                              </td>
+                              <td className="p-2 border-r border-gray-300 font-mono">
+                                ${Object.values(weeklyGridData).reduce((sum, r) => sum + (parseFloat(r.other_expenses) || 0), 0).toFixed(2)}
+                              </td>
+                              <td className="p-2 border-r border-gray-300 font-mono">
+                                ${Object.values(weeklyGridData).reduce((sum, r) => sum + (parseFloat(r.paid_by_cer) || 0), 0).toFixed(2)}
+                              </td>
+                              <td className="p-2 border-r border-gray-300 bg-amber-100"></td>
+                              <td className="p-2"></td>
+                            </tr>
+                          </tfoot>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* SUB-TAB: INTEGRITY WEEKLY TIMESHEET (QUICKBOOKS) */}
+                  {accountingSubTab === 'integrity-sheet' && (
+                    <IntegrityWeeklyTimesheet currentUserRole={userRole} />
+                  )}
+
                   {/* SUB-TAB: TIMESHEET HISTORY (EDIT) */}
                   {accountingSubTab === 'history' && (
                     <div className="bg-surface-elevated border border-border-subtle p-6 sm:p-8 rounded-2xl flex flex-col gap-4 text-left">
@@ -6721,6 +7301,14 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                             <div className="flex flex-col gap-1"><label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Contact Email</label>
                               <input type="email" value={newCustomerContactEmail} onChange={(e) => setNewCustomerContactEmail(e.target.value)} placeholder="jc@autokabel.mx" className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary" />
                             </div>
+                            <div className="flex flex-col gap-1"><label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Invoice Schedule</label>
+                              <select value={newCustomerInvoiceSchedule} onChange={(e) => setNewCustomerInvoiceSchedule(e.target.value)} className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary">
+                                <option value="on-demand">⚡ On Demand / Manual (When Colleen Chooses)</option>
+                                <option value="weekly">📅 Weekly</option>
+                                <option value="bi-weekly">📅 Bi-Weekly</option>
+                                <option value="monthly">📅 Monthly</option>
+                              </select>
+                            </div>
                             <button type="submit" className="bg-[#3B82F6] text-text-primary font-bold py-2 rounded-xl text-[13.5px] mt-2">Onboard Customer</button>
                           </form>
 
@@ -6736,7 +7324,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                     <td className="py-2 text-text-primary font-bold">{s.name}</td>
                                     <td className="py-2 font-mono text-slate-450">{s.id?.toUpperCase()}</td>
                                     <td className="py-2">{s.contacts.map(c => c.name).join(", ")}</td>
-                                    <td className="py-2"><span className="px-2 py-1 rounded bg-amber-50 text-amber-600 text-[10.5px] font-bold uppercase">{s.invoice_schedule || 'weekly'}</span></td>
+                                    <td className="py-2"><span className={`px-2 py-1 rounded text-[10.5px] font-bold uppercase ${s.invoice_schedule === 'on-demand' ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-500/40' : 'bg-amber-50 text-amber-600'}`}>{s.invoice_schedule === 'on-demand' ? '⚡ ON DEMAND (MANUAL)' : (s.invoice_schedule || 'ON DEMAND')}</span></td>
                                   </tr>
                                 ))}
                               </tbody>
@@ -8173,266 +8761,290 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       {/* OVERLAY PANEL 1: INCIDENT DETAIL DRAWER */}
       {selectedIncident && (
         <div 
-          className="absolute inset-y-0 right-0 w-[420px] bg-surface border-l border-border-subtle shadow-2xl p-6 sm:p-8 flex flex-col z-40 animate-in slide-in-from-right duration-250"
-          onClick={() => setOpenTooltip(null)}
+          className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex justify-end animate-in fade-in duration-200"
+          onClick={() => setSelectedIncident(null)}
         >
-          {/* Drawer Header */}
-          <div className="flex items-center justify-between border-b border-border-subtle pb-3 mb-4 flex-shrink-0">
-            <div>
-              <h3 className="text-[14.5px] font-bold text-text-primary">Incident Details</h3>
-              <span className="text-[11.5px] text-text-secondary font-mono">{selectedIncident.id}</span>
-            </div>
-            <button 
-              onClick={() => setSelectedIncident(null)} 
-              className="text-text-secondary hover:text-text-primary p-1 hover:bg-surface-elevated rounded-lg cursor-pointer"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-
-          {/* Drawer Scrollable Middle Body */}
-          <div className="flex-1 overflow-y-auto pr-1 flex flex-col gap-3 min-h-0">
-            
-            {/* Photo Gallery with annotations */}
-            <div className="flex flex-col gap-2">
-              <span className="text-[11.5px] text-text-secondary uppercase font-bold tracking-wider">visual audit proofs</span>
-              <div className="grid grid-cols-3 gap-2">
-                {selectedIncident.photos.map(p => (
-                  <div key={p.id} className="aspect-square bg-surface-elevated border border-border-subtle rounded-lg overflow-hidden relative group">
-                    <img src={p.url} className="w-full h-full object-cover" alt="Audit" />
-                    <span className="absolute bottom-1 right-1 bg-surface text-[12.5px] px-1 py-1 rounded text-[#3B82F6] font-bold">{p.type}</span>
-                  </div>
-                ))}
+          <div 
+            className="w-full max-w-[480px] h-full bg-[#071325] dark:bg-[#071325] border-l border-slate-700/80 shadow-2xl p-6 sm:p-8 flex flex-col z-50 animate-in slide-in-from-right duration-250 text-left overflow-hidden modal-panel"
+            onClick={(e) => {
+              e.stopPropagation();
+              setOpenTooltip(null);
+            }}
+          >
+            {/* Drawer Header */}
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3 mb-4 flex-shrink-0">
+              <div>
+                <h3 className="text-[15px] font-extrabold text-slate-100 tracking-wide">Incident Details</h3>
+                <span className="text-[11.5px] text-sky-400 font-mono font-semibold">{selectedIncident.id}</span>
               </div>
+              <button 
+                onClick={() => setSelectedIncident(null)} 
+                className="text-slate-400 hover:text-white p-1 hover:bg-slate-800 rounded-lg cursor-pointer transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
 
-            {/* Defective Parts List */}
-            {selectedIncident.parts_list && selectedIncident.parts_list.length > 0 && (
-              <div className="bg-surface-elevated border border-slate-100 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-3 flex flex-col gap-2">
-                <span className="text-[11.5px] text-text-secondary uppercase font-bold tracking-wider">Affected Defective Parts ({selectedIncident.parts_list.length})</span>
-                <div className="flex flex-col gap-2">
-                  {selectedIncident.parts_list.map((item) => (
-                    <div key={item.id || item.part_number} className="bg-surface border border-border-subtle rounded-lg p-2 flex items-center justify-between gap-2 text-[13.5px] animate-in fade-in duration-200">
-                      <div className="min-w-0">
-                        <div className="font-bold text-text-primary flex items-center gap-1.5">
-                          <span>PN {item.part_number}</span>
-                          <span className="text-[10.5px] bg-emerald-50 text-emerald-600 border border-emerald-200 px-2 py-0.2 rounded-md font-medium">{item.bin}</span>
+            {/* Drawer Scrollable Middle Body */}
+            <div className="flex-1 overflow-y-auto pr-1 flex flex-col gap-4 min-h-0">
+              
+              {/* Photo Gallery with annotations */}
+              <div className="flex flex-col gap-2">
+                <span className="text-[11.5px] text-slate-400 uppercase font-bold tracking-wider">Visual Audit Proofs</span>
+                <div className="grid grid-cols-3 gap-2">
+                  {selectedIncident.photos.map(p => (
+                    <div key={p.id} className="aspect-square bg-slate-900 border border-slate-700/80 rounded-xl overflow-hidden relative group flex flex-col items-center justify-center p-1">
+                      {p.url && !p.url.includes('example.com') ? (
+                        <img 
+                          src={p.url} 
+                          className="w-full h-full object-cover rounded-lg" 
+                          alt="Audit Proof"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            if (e.currentTarget.nextElementSibling) e.currentTarget.nextElementSibling.classList.remove('hidden');
+                          }}
+                        />
+                      ) : null}
+                      <div className={`flex flex-col items-center justify-center text-center p-1 ${p.url && !p.url.includes('example.com') ? 'hidden' : ''}`}>
+                        <div className="w-7 h-7 rounded-full bg-sky-500/15 border border-sky-500/30 flex items-center justify-center mb-1 text-sky-400">
+                          <Camera className="w-3.5 h-3.5" />
                         </div>
-                        <span className="text-[11.5px] text-text-secondary block truncate">{item.description}</span>
+                        <span className="text-[9.5px] text-slate-300 font-bold uppercase tracking-wider">{p.type}</span>
+                        <span className="text-[8.5px] text-emerald-400 font-semibold">Logged</span>
                       </div>
-                      <div className="text-right flex-shrink-0">
-                        <span className="text-[11.5px] text-text-secondary block uppercase font-bold">qty</span>
-                        <span className="text-text-primary font-extrabold text-[14.5px]">{item.qty} pcs</span>
-                      </div>
+                      <span className="absolute bottom-1 right-1 bg-slate-950/90 border border-slate-700/80 text-[9.5px] px-1.5 py-0.5 rounded text-sky-300 font-bold uppercase tracking-wider">{p.type}</span>
                     </div>
                   ))}
                 </div>
               </div>
-            )}
 
-            {/* Defect description summary */}
-            <div className="bg-surface-elevated border border-slate-100 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-3 text-[13.5px] text-text-primary">
-              <p className="font-semibold text-text-secondary">Defect Narrative:</p>
-              <p className="mt-1 leading-relaxed">{selectedIncident.description}</p>
-              
-              <div className="mt-3 grid grid-cols-2 gap-2 text-[11.5px] border-t border-border-subtle pt-2 text-text-secondary">
-                <div><span className="font-bold">Rep Logged:</span> <span className="text-[#3B82F6] font-extrabold">{users.find(u => u.id === selectedIncident.rep_id)?.name || 'Clarence Kuiken'}</span></div>
-                <div><span className="font-bold">Part Affected:</span> <span className="text-text-primary font-semibold">{selectedIncident.parts_list && selectedIncident.parts_list.length > 0 ? selectedIncident.parts_list[0].part_number : selectedIncident.part_id}</span></div>
-                <div><span className="font-bold">Area Found:</span> <span className="text-text-primary font-semibold">{selectedIncident.area}</span></div>
-                <div><span className="font-bold">Action Taken:</span> <span className="text-text-primary font-semibold">{selectedIncident.action_taken}</span></div>
-                <div className="col-span-2"><span className="font-bold">Supplier Contact:</span> <span className="text-[#3B82F6] font-semibold">{selectedIncident.supplier_contact}</span></div>
-              </div>
-            </div>
-
-            {/* Defect Location Heatmap Placement Coordinates */}
-            {selectedIncident.defect_location_x !== undefined && selectedIncident.defect_location_x !== null && (
-              <div className="bg-surface-elevated border border-slate-100 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-3 flex flex-col gap-2">
-                <span className="text-[11.5px] text-text-secondary uppercase font-bold tracking-wider">Defect Matrix Coordinates</span>
-                <div className="relative bg-surface rounded-lg p-2 border border-border-subtle flex items-center justify-center h-28 overflow-hidden">
-                  <svg viewBox="0 0 100 100" className="w-full h-full max-h-24 object-contain">
-                    {(() => {
-                      const partNo = selectedIncident.parts_list && selectedIncident.parts_list.length > 0 ? selectedIncident.parts_list[0].part_number : selectedIncident.part_id;
-                      if (partNo === '86291945' || partNo === '86201945') {
-                        return (
-                          <g>
-                            <path d="M10,50 C10,25 40,20 90,40 C90,40 70,75 30,70 C15,68 10,60 10,50 Z" fill="#1E293B" stroke="#475569" strokeWidth="2" />
-                            <circle cx="45" cy="48" r="14" fill="#3B82F6" opacity="0.1" stroke="#38BDF8" strokeWidth="0.5" />
-                            <circle cx="75" cy="42" r="8" fill="#3B82F6" opacity="0.1" stroke="#38BDF8" strokeWidth="0.5" />
-                          </g>
-                        );
-                      } else {
-                        return (
-                          <g>
-                            <rect x="5" y="25" width="90" height="50" rx="10" fill="#1E293B" stroke="#475569" strokeWidth="2" />
-                            <rect x="10" y="30" width="35" height="40" rx="4" fill="#991B1B" opacity="0.1" stroke="#DC2626" strokeWidth="0.5" />
-                            <rect x="55" y="30" width="35" height="40" rx="4" fill="#991B1B" opacity="0.1" stroke="#DC2626" strokeWidth="0.5" />
-                          </g>
-                        );
-                      }
-                    })()}
-                    
-                    <circle 
-                      cx={selectedIncident.defect_location_x * 100} 
-                      cy={selectedIncident.defect_location_y * 100} 
-                      r="4.5" 
-                      fill="#EF4444" 
-                      stroke="#FFFFFF" 
-                      strokeWidth="0.8" 
-                      className="animate-pulse"
-                    />
-                  </svg>
-                  <div className="absolute bottom-1 right-2 bg-surface text-[11.5px] text-[#3B82F6] font-mono px-1 py-1 rounded">
-                    X: {selectedIncident.defect_location_x} | Y: {selectedIncident.defect_location_y}
+              {/* Defective Parts List */}
+              {selectedIncident.parts_list && selectedIncident.parts_list.length > 0 && (
+                <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-3.5 flex flex-col gap-2">
+                  <span className="text-[11px] text-slate-400 uppercase font-bold tracking-wider">Affected Defective Parts ({selectedIncident.parts_list.length})</span>
+                  <div className="flex flex-col gap-2">
+                    {selectedIncident.parts_list.map((item) => (
+                      <div key={item.id || item.part_number} className="bg-slate-950 border border-slate-800 rounded-xl p-2.5 flex items-center justify-between gap-2 text-[13px]">
+                        <div className="min-w-0">
+                          <div className="font-bold text-slate-100 flex items-center gap-1.5">
+                            <span>PN {item.part_number}</span>
+                            <span className="text-[10px] bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-md font-semibold">{item.bin}</span>
+                          </div>
+                          <span className="text-[11px] text-slate-400 block truncate mt-0.5">{item.description}</span>
+                        </div>
+                        <div className="text-right flex-shrink-0">
+                          <span className="text-[10px] text-slate-400 block uppercase font-bold">Qty</span>
+                          <span className="text-sky-300 font-extrabold text-[14px]">{item.qty} pcs</span>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {/* Status Update & Severity controls */}
-            <div className="flex flex-col gap-2 bg-surface-elevated p-3 rounded-xl border border-border-subtle">
-              <span className="text-[11.5px] text-text-secondary uppercase font-bold tracking-wider">resolution tracking</span>
-              <div className="flex justify-between items-center text-[13.5px]">
-                <span className="text-text-secondary">Review Status:</span>
-                <select 
-                  value={selectedIncident.status}
-                  onChange={(e) => handleUpdateStatus(selectedIncident.id, e.target.value)}
-                  className="h-8 bg-surface border border-border-subtle hover:border-border-subtle rounded-xl px-3.5 text-[13.5px] text-text-primary focus:outline-none focus:ring-1 focus:ring-[#3B82F6]/20 transition-all"
-                >
-                  <option value="Open">Open</option>
-                  <option value="Acknowledged">Acknowledged</option>
-                  <option value="Closed">Closed</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Audit Pipeline Timeline */}
-            <div className="flex flex-col gap-2">
-              <span className="text-[11.5px] text-text-secondary uppercase font-bold tracking-wider">incident timeline</span>
-              <div className="flex flex-col gap-3 pl-3 border-l-2 border-border-subtle text-[12.5px] text-text-secondary">
-                <div className="relative">
-                  <div className="absolute -left-[18px] top-1 w-2.5 h-2.5 rounded-full bg-[#3B82F6]"></div>
-                  <p className="font-bold text-text-primary">Incident Logged & Dispatched</p>
-                  <p className="text-[11.5px] text-text-secondary">{new Date(selectedIncident.created_at).toLocaleTimeString()}</p>
-                </div>
-                <div className="relative">
-                  <div className="absolute -left-[18px] top-1 w-2.5 h-2.5 rounded-full bg-indigo-500"></div>
-                  <p className="font-bold text-text-primary">Transactional Email Delivered</p>
-                  <p className="text-[11.5px] text-text-secondary">Martin & Shahroz notified</p>
-                </div>
-                <div className="relative">
-                  <div className={`absolute -left-[18px] top-1 w-2.5 h-2.5 rounded-full ${selectedIncident.status !== 'Open' ? 'bg-emerald-500' : 'bg-surface-elevated'}`}></div>
-                  <p className="font-bold text-text-primary">Acknowledged status check</p>
-                  <p className="text-[11.5px] text-text-secondary">Status marked: {selectedIncident.status}</p>
-                </div>
-              </div>
-            </div>
-
-          </div>
-
-          {/* Drawer Footer Buttons (Repositioned Export Panel at the bottom!) */}
-          <div className="mt-4 pt-4 border-t border-border-subtle flex-shrink-0 flex flex-col gap-3">
-            
-            {/* Export & Actions Box (Locked to bottom, tooltip triggers only on the ? circle) */}
-            <div className="flex flex-col gap-2 bg-[#3B82F6]/20 p-3 rounded-xl border border-[#3B82F6]/15" onClick={(e) => e.stopPropagation()}>
-              <span className="text-[10.5px] text-[#3B82F6] font-bold uppercase tracking-wider pl-0.5">Export & Share Audit</span>
-              <div className="grid grid-cols-3 gap-2">
+              {/* Defect description summary */}
+              <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-3.5 text-[13px] text-slate-200">
+                <p className="font-bold text-slate-400 uppercase tracking-wider text-[11px]">Defect Narrative:</p>
+                <p className="mt-1.5 leading-relaxed text-slate-200">{selectedIncident.description}</p>
                 
-                {/* Download PDF */}
-                <div className="relative">
-                  <button 
-                    onClick={() => handleDownloadReport(selectedIncident)}
-                    className="w-full bg-surface border border-border-subtle hover:bg-surface-elevated text-text-primary hover:text-text-primary py-2 rounded-lg text-[10.5px] font-bold transition-colors cursor-pointer text-center"
-                  >
-                    Download PDF
-                  </button>
-                  <div className="absolute -top-1.5 -right-1.5 group flex items-center justify-center">
-                    <button 
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setOpenTooltip(openTooltip === 'download' ? null : 'download');
-                      }}
-                      className="w-3.5 h-3.5 bg-surface-elevated hover:bg-surface-elevated text-[12.5px] text-text-secondary hover:text-text-primary rounded-full flex items-center justify-center font-bold border border-border-subtle cursor-pointer"
-                    >
-                      ?
-                    </button>
-                    <div className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-44 p-2 bg-surface border border-border-subtle text-[10.5px] text-text-primary rounded-lg shadow-xl transition-all duration-200 z-50 leading-normal pointer-events-none group-hover:opacity-100 group-hover:scale-100 group-hover:translate-y-0 ${
-                      openTooltip === 'download' 
-                        ? 'opacity-100 scale-100 translate-y-0' 
-                        : 'opacity-0 scale-95 translate-y-1'
-                    }`}>
-                      Generates and downloads a formatted PDF document containing full audit details and narrative.
-                    </div>
-                  </div>
+                <div className="mt-3 grid grid-cols-2 gap-2 text-[11.5px] border-t border-slate-800 pt-2.5 text-slate-400">
+                  <div><span className="font-bold text-slate-400">Rep Logged:</span> <span className="text-sky-400 font-extrabold">{users.find(u => u.id === selectedIncident.rep_id)?.name || 'Clarence Kuiken'}</span></div>
+                  <div><span className="font-bold text-slate-400">Part Affected:</span> <span className="text-slate-200 font-semibold">{selectedIncident.parts_list && selectedIncident.parts_list.length > 0 ? selectedIncident.parts_list[0].part_number : selectedIncident.part_id}</span></div>
+                  <div><span className="font-bold text-slate-400">Area Found:</span> <span className="text-slate-200 font-semibold">{selectedIncident.area}</span></div>
+                  <div><span className="font-bold text-slate-400">Action Taken:</span> <span className="text-slate-200 font-semibold">{selectedIncident.action_taken}</span></div>
+                  <div className="col-span-2"><span className="font-bold text-slate-400">Supplier Contact:</span> <span className="text-sky-400 font-semibold">{selectedIncident.supplier_contact}</span></div>
                 </div>
-
-                {/* Print */}
-                <div className="relative">
-                  <button 
-                    onClick={() => handlePrintReport(selectedIncident)}
-                    className="w-full bg-surface border border-border-subtle hover:bg-surface-elevated text-text-primary hover:text-text-primary py-2 rounded-lg text-[10.5px] font-bold transition-colors cursor-pointer text-center"
-                  >
-                    Print
-                  </button>
-                  <div className="absolute -top-1.5 -right-1.5 group flex items-center justify-center">
-                    <button 
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setOpenTooltip(openTooltip === 'print' ? null : 'print');
-                      }}
-                      className="w-3.5 h-3.5 bg-surface-elevated hover:bg-surface-elevated text-[12.5px] text-text-secondary hover:text-text-primary rounded-full flex items-center justify-center font-bold border border-border-subtle cursor-pointer"
-                    >
-                      ?
-                    </button>
-                    <div className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-44 p-2 bg-surface border border-border-subtle text-[10.5px] text-text-primary rounded-lg shadow-xl transition-all duration-200 z-50 leading-normal pointer-events-none group-hover:opacity-100 group-hover:scale-100 group-hover:translate-y-0 ${
-                      openTooltip === 'print' 
-                        ? 'opacity-100 scale-100 translate-y-0' 
-                        : 'opacity-0 scale-95 translate-y-1'
-                    }`}>
-                      Opens print preview to print or save a PDF copy of this audit.
-                    </div>
-                  </div>
-                </div>
-
-                {/* Resend Email */}
-                <div className="relative">
-                  <button 
-                    onClick={() => handleResendSupplierEmail(selectedIncident)}
-                    className="w-full bg-[#3B82F6] hover:bg-[#3B82F6]/90 text-[#3B82F6] border border-[#3B82F6]/25 py-2 rounded-lg text-[10.5px] font-bold transition-colors cursor-pointer text-center"
-                  >
-                    Resend Email
-                  </button>
-                  <div className="absolute -top-1.5 -right-1.5 group flex items-center justify-center">
-                    <button 
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setOpenTooltip(openTooltip === 'resend' ? null : 'resend');
-                      }}
-                      className="w-3.5 h-3.5 bg-surface-elevated hover:bg-surface-elevated text-[12.5px] text-text-secondary hover:text-text-primary rounded-full flex items-center justify-center font-bold border border-border-subtle cursor-pointer"
-                    >
-                      ?
-                    </button>
-                    <div className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-44 p-2 bg-surface border border-border-subtle text-[10.5px] text-text-primary rounded-lg shadow-xl transition-all duration-200 z-50 leading-normal pointer-events-none group-hover:opacity-100 group-hover:scale-100 group-hover:translate-y-0 ${
-                      openTooltip === 'resend' 
-                        ? 'opacity-100 scale-100 translate-y-0' 
-                        : 'opacity-0 scale-95 translate-y-1'
-                    }`}>
-                      Resends transactional report email to the supplier QM team.
-                    </div>
-                  </div>
-                </div>
-
               </div>
+
+              {/* Defect Location Heatmap Placement Coordinates */}
+              {selectedIncident.defect_location_x !== undefined && selectedIncident.defect_location_x !== null && (
+                <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-3.5 flex flex-col gap-2">
+                  <span className="text-[11px] text-slate-400 uppercase font-bold tracking-wider">Defect Matrix Coordinates</span>
+                  <div className="relative bg-slate-950 rounded-xl p-2 border border-slate-800 flex items-center justify-center h-28 overflow-hidden">
+                    <svg viewBox="0 0 100 100" className="w-full h-full max-h-24 object-contain">
+                      {(() => {
+                        const partNo = selectedIncident.parts_list && selectedIncident.parts_list.length > 0 ? selectedIncident.parts_list[0].part_number : selectedIncident.part_id;
+                        if (partNo === '86291945' || partNo === '86201945') {
+                          return (
+                            <g>
+                              <path d="M10,50 C10,25 40,20 90,40 C90,40 70,75 30,70 C15,68 10,60 10,50 Z" fill="#0F172A" stroke="#334155" strokeWidth="2" />
+                              <circle cx="45" cy="48" r="14" fill="#3B82F6" opacity="0.15" stroke="#38BDF8" strokeWidth="0.5" />
+                              <circle cx="75" cy="42" r="8" fill="#3B82F6" opacity="0.15" stroke="#38BDF8" strokeWidth="0.5" />
+                            </g>
+                          );
+                        } else {
+                          return (
+                            <g>
+                              <rect x="5" y="25" width="90" height="50" rx="10" fill="#0F172A" stroke="#334155" strokeWidth="2" />
+                              <rect x="10" y="30" width="35" height="40" rx="4" fill="#991B1B" opacity="0.15" stroke="#DC2626" strokeWidth="0.5" />
+                              <rect x="55" y="30" width="35" height="40" rx="4" fill="#991B1B" opacity="0.15" stroke="#DC2626" strokeWidth="0.5" />
+                            </g>
+                          );
+                        }
+                      })()}
+                      
+                      <circle 
+                        cx={selectedIncident.defect_location_x * 100} 
+                        cy={selectedIncident.defect_location_y * 100} 
+                        r="4.5" 
+                        fill="#EF4444" 
+                        stroke="#FFFFFF" 
+                        strokeWidth="0.8" 
+                        className="animate-pulse"
+                      />
+                    </svg>
+                    <div className="absolute bottom-1.5 right-2 bg-slate-900 border border-slate-700/80 text-[10.5px] text-sky-400 font-mono px-2 py-0.5 rounded-lg shadow-sm">
+                      X: {selectedIncident.defect_location_x} | Y: {selectedIncident.defect_location_y}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Status Update & Severity controls */}
+              <div className="flex flex-col gap-2 bg-slate-900/90 p-3.5 rounded-2xl border border-slate-800">
+                <span className="text-[11px] text-slate-400 uppercase font-bold tracking-wider">Resolution Tracking</span>
+                <div className="flex justify-between items-center text-[13px]">
+                  <span className="text-slate-300 font-medium">Review Status:</span>
+                  <select 
+                    value={selectedIncident.status}
+                    onChange={(e) => handleUpdateStatus(selectedIncident.id, e.target.value)}
+                    className="h-8.5 bg-slate-950 border border-slate-700 rounded-xl px-3 text-[13px] text-slate-100 font-semibold focus:outline-none focus:border-sky-500 transition-colors"
+                  >
+                    <option value="Open">Open</option>
+                    <option value="Acknowledged">Acknowledged</option>
+                    <option value="Closed">Closed</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Audit Pipeline Timeline */}
+              <div className="flex flex-col gap-2">
+                <span className="text-[11px] text-slate-400 uppercase font-bold tracking-wider">Incident Timeline</span>
+                <div className="flex flex-col gap-3 pl-3 border-l-2 border-slate-800 text-[12px] text-slate-400">
+                  <div className="relative">
+                    <div className="absolute -left-[17px] top-1 w-2.5 h-2.5 rounded-full bg-sky-400"></div>
+                    <p className="font-bold text-slate-200">Incident Logged & Dispatched</p>
+                    <p className="text-[11px] text-slate-400">{new Date(selectedIncident.created_at).toLocaleTimeString()}</p>
+                  </div>
+                  <div className="relative">
+                    <div className="absolute -left-[18px] top-1 w-2.5 h-2.5 rounded-full bg-indigo-500"></div>
+                    <p className="font-bold text-slate-200">Transactional Email Delivered</p>
+                    <p className="text-[11px] text-slate-400">Martin & Shahroz notified</p>
+                  </div>
+                  <div className="relative">
+                    <div className={`absolute -left-[18px] top-1 w-2.5 h-2.5 rounded-full ${selectedIncident.status !== 'Open' ? 'bg-emerald-400' : 'bg-slate-700'}`}></div>
+                    <p className="font-bold text-slate-200">Acknowledged Status Check</p>
+                    <p className="text-[11px] text-slate-400">Status marked: {selectedIncident.status}</p>
+                  </div>
+                </div>
+              </div>
+
             </div>
 
-            <button 
-              onClick={() => setSelectedIncident(null)}
-              className="w-full bg-surface-elevated border border-border-subtle text-text-primary font-bold py-2.5 rounded-xl text-[13.5px] hover:text-text-primary transition-colors cursor-pointer"
-            >
-              Close Details
-            </button>
+            {/* Drawer Footer Buttons */}
+            <div className="mt-4 pt-4 border-t border-slate-800 flex-shrink-0 flex flex-col gap-3">
+              
+              <div className="flex flex-col gap-2 bg-sky-500/10 p-3 rounded-2xl border border-sky-500/20" onClick={(e) => e.stopPropagation()}>
+                <span className="text-[10.5px] text-sky-400 font-bold uppercase tracking-wider pl-0.5">Export & Share Audit</span>
+                <div className="grid grid-cols-3 gap-2">
+                  
+                  {/* Download PDF */}
+                  <div className="relative">
+                    <button 
+                      onClick={() => handleDownloadReport(selectedIncident)}
+                      className="w-full bg-slate-900 border border-slate-700 hover:bg-slate-800 text-slate-200 py-2 rounded-xl text-[10.5px] font-bold transition-colors cursor-pointer text-center"
+                    >
+                      Download PDF
+                    </button>
+                    <div className="absolute -top-1.5 -right-1.5 group flex items-center justify-center">
+                      <button 
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setOpenTooltip(openTooltip === 'download' ? null : 'download');
+                        }}
+                        className="w-4 h-4 bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 hover:text-white rounded-full flex items-center justify-center font-bold border border-slate-600 cursor-pointer"
+                      >
+                        ?
+                      </button>
+                      <div className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-44 p-2 bg-slate-900 border border-slate-700 text-[10.5px] text-slate-200 rounded-xl shadow-xl transition-all duration-200 z-50 leading-normal pointer-events-none group-hover:opacity-100 group-hover:scale-100 group-hover:translate-y-0 ${
+                        openTooltip === 'download' 
+                          ? 'opacity-100 scale-100 translate-y-0' 
+                          : 'opacity-0 scale-95 translate-y-1'
+                      }`}>
+                        Generates and downloads a formatted PDF document containing full audit details and narrative.
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Print */}
+                  <div className="relative">
+                    <button 
+                      onClick={() => handlePrintReport(selectedIncident)}
+                      className="w-full bg-slate-900 border border-slate-700 hover:bg-slate-800 text-slate-200 py-2 rounded-xl text-[10.5px] font-bold transition-colors cursor-pointer text-center"
+                    >
+                      Print
+                    </button>
+                    <div className="absolute -top-1.5 -right-1.5 group flex items-center justify-center">
+                      <button 
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setOpenTooltip(openTooltip === 'print' ? null : 'print');
+                        }}
+                        className="w-4 h-4 bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 hover:text-white rounded-full flex items-center justify-center font-bold border border-slate-600 cursor-pointer"
+                      >
+                        ?
+                      </button>
+                      <div className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-44 p-2 bg-slate-900 border border-slate-700 text-[10.5px] text-slate-200 rounded-xl shadow-xl transition-all duration-200 z-50 leading-normal pointer-events-none group-hover:opacity-100 group-hover:scale-100 group-hover:translate-y-0 ${
+                        openTooltip === 'print' 
+                          ? 'opacity-100 scale-100 translate-y-0' 
+                          : 'opacity-0 scale-95 translate-y-1'
+                      }`}>
+                        Opens print preview to print or save a PDF copy of this audit.
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Resend Email */}
+                  <div className="relative">
+                    <button 
+                      onClick={() => handleResendSupplierEmail(selectedIncident)}
+                      className="w-full bg-sky-600 hover:bg-sky-500 text-white font-bold py-2 rounded-xl text-[10.5px] transition-colors cursor-pointer text-center shadow-md shadow-sky-900/40"
+                    >
+                      Resend Email
+                    </button>
+                    <div className="absolute -top-1.5 -right-1.5 group flex items-center justify-center">
+                      <button 
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setOpenTooltip(openTooltip === 'resend' ? null : 'resend');
+                        }}
+                        className="w-4 h-4 bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 hover:text-white rounded-full flex items-center justify-center font-bold border border-slate-600 cursor-pointer"
+                      >
+                        ?
+                      </button>
+                      <div className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-44 p-2 bg-slate-900 border border-slate-700 text-[10.5px] text-slate-200 rounded-xl shadow-xl transition-all duration-200 z-50 leading-normal pointer-events-none group-hover:opacity-100 group-hover:scale-100 group-hover:translate-y-0 ${
+                        openTooltip === 'resend' 
+                          ? 'opacity-100 scale-100 translate-y-0' 
+                          : 'opacity-0 scale-95 translate-y-1'
+                      }`}>
+                        Resends transactional report email to the supplier QM team.
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+
+              <button 
+                onClick={() => setSelectedIncident(null)}
+                className="w-full bg-slate-900 border border-slate-700 hover:bg-slate-800 text-slate-200 font-bold py-2.5 rounded-xl text-[13px] transition-colors cursor-pointer"
+              >
+                Close Details
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -9208,6 +9820,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   onChange={(e) => setQuickClientSchedule(e.target.value)} 
                   className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary focus:outline-none"
                 >
+                  <option value="on-demand">⚡ On Demand / Manual (When Colleen Chooses)</option>
                   <option value="weekly">Weekly</option>
                   <option value="bi-weekly">Bi-Weekly</option>
                   <option value="monthly">Monthly</option>

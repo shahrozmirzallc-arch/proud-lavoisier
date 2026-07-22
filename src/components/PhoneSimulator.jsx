@@ -127,6 +127,33 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
     setDailyTasks(repTasks);
   }, [dbUpdateTrigger]);
 
+  const getActiveClientForPlant = () => {
+    if (!currentUser) return 'Magna AutoSystems';
+    const dbProjects = getEntities('projects') || [];
+    const dbSuppliers = getEntities('suppliers') || [];
+    const dbRates = getEntities('rates') || [];
+
+    // 1. Direct project match for this rep and plant
+    const proj = dbProjects.find(p => p && p.plant_id === selectedPlant && (p.rep_id === currentUser.id || p.rep_id === '1'));
+    if (proj) {
+      const sup = dbSuppliers.find(s => s.id === proj.client_id);
+      if (sup) return sup.name;
+    }
+
+    // 2. Check rate assignment match
+    const rate = dbRates.find(r => r.rep_id === currentUser.id && (r.plant_id === selectedPlant || !r.plant_id));
+    if (rate) {
+      const sup = dbSuppliers.find(s => s.id === rate.supplier_id);
+      if (sup) return sup.name;
+    }
+
+    // 3. Fallback to supplier serving this plant
+    const supServed = dbSuppliers.find(s => s.plants_served && s.plants_served.includes(selectedPlant));
+    if (supServed) return supServed.name;
+
+    return 'Magna AutoSystems';
+  };
+
   const playBeep = (type = 'success') => {
     try {
       const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -1126,6 +1153,25 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                             <option key={p.id} value={p.id}>{p.name}</option>
                           ))}
                         </select>
+                      </div>
+                    </div>
+
+                    {/* Client / Supplier Represented Box (Prominently placed right below Plant Location) */}
+                    <div className="mt-1 bg-gradient-to-r from-blue-50 to-slate-50 border border-blue-200/90 rounded-md p-2.5 shadow-xs flex flex-col gap-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-black text-blue-900 uppercase tracking-wider flex items-center gap-1.5">
+                          <Shield className="w-3.5 h-3.5 text-blue-600" />
+                          <span>Client / Supplier Represented:</span>
+                        </span>
+                        <span className="text-[8.5px] bg-blue-600 text-white font-extrabold px-1.5 py-0.5 rounded uppercase tracking-wider">
+                          Assigned Client
+                        </span>
+                      </div>
+                      <div className="text-[13px] font-black text-slate-900 flex items-center justify-between mt-0.5">
+                        <span className="text-blue-950 tracking-tight">{getActiveClientForPlant()}</span>
+                        <span className="text-[9.5px] font-extrabold text-blue-700 bg-white px-2 py-0.5 rounded border border-blue-200 shadow-2xs">
+                          Admin Managed
+                        </span>
                       </div>
                     </div>
                     <button 

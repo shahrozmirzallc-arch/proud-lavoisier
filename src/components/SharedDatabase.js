@@ -14,9 +14,10 @@ const SEED_DATA = {
   users: [
     { id: '1', name: 'Clarence Kuiken', email: 'clarence.k@integritydriven.com', role: 'rep', phone: '+1 905-914-2788', avatar: 'CK', pay_currency: 'CAD', company_affiliation: 'IDS' },
     { id: '2', name: 'Donna Cabral', email: 'donna.c@integritydriven.com', role: 'lead', phone: '+1 905-555-0199', avatar: 'DC', pay_currency: 'CAD', company_affiliation: 'IDS' },
-    { id: '3', name: 'Greg Phillippe', email: 'greg.p@integritydriven.com', role: 'owner', phone: '+1 905-555-0100', avatar: 'GP', pay_currency: 'CAD', company_affiliation: 'IDS' },
+    { id: '3', name: 'Greg Phillippe', email: 'greg.p@integritydriven.com', role: 'admin', phone: '+1 905-555-0100', avatar: 'GP', pay_currency: 'CAD', company_affiliation: 'IDS' },
     { id: '4', name: 'Colleen Boyd', email: 'colleen.b@integritydriven.com', role: 'accountant', phone: '+1 905-555-0122', avatar: 'CB', pay_currency: 'CAD', company_affiliation: 'IDS' },
-    { id: 'user_diana', name: 'Diana', email: 'diana@integritydriven.com', role: 'owner', phone: '+1 555-555-0155', avatar: 'DI', pay_currency: 'CAD', company_affiliation: 'IDS' },
+    { id: 'shahroz_user', name: 'Shahroz Mirza', email: 'shahroz.m@integritydriven.com', role: 'super_admin', phone: '+1 905-555-0199', avatar: 'SM', pay_currency: 'CAD', company_affiliation: 'IDS' },
+    { id: 'user_diana', name: 'Diana', email: 'diana@integritydriven.com', role: 'customer', phone: '+1 555-555-0155', avatar: 'DI', pay_currency: 'CAD', company_affiliation: 'IDS' },
     { id: 'rep_hugo', name: 'Hugo Picon', email: 'hugo.p@integritydriven.com', role: 'rep', phone: '+1 555-123-4567', avatar: 'HP', pay_currency: 'USD', company_affiliation: 'IDS' },
     { id: 'rep_nabil', name: 'Nabil Obad', email: 'nabil.o@integritydriven.com', role: 'rep', phone: '+1 555-987-6543', avatar: 'NO', pay_currency: 'USD', company_affiliation: 'IDS' },
     { id: 'rep_rogelio', name: 'Rogelio Velasco', email: 'rogelio.v@integritydriven.com', role: 'rep', phone: '+1 555-555-0987', avatar: 'RV', pay_currency: 'USD', company_affiliation: 'FQS' }
@@ -63,6 +64,26 @@ const SEED_DATA = {
       id: 'borgwarner', name: 'BorgWarner PDS Irapuato', invoice_schedule: 'monthly', allotted_hours: 35, ot_rules: { weekly_threshold: 40, daily_threshold: 8, saturday_multiplier: 1.5, sunday_multiplier: 2.0, holiday_multiplier: 2.0 },
       contacts: [{ name: 'Alejandro', email: 'al@borgwarner.com', role: 'Supplier Quality Engineer' }],
       plants_served: ['gm_slp']
+    },
+    {
+      id: 'gm', name: 'General Motors Company', invoice_schedule: 'weekly', allotted_hours: 60, ot_rules: { weekly_threshold: 40, daily_threshold: 8, saturday_multiplier: 1.5, sunday_multiplier: 2.0, holiday_multiplier: 2.0 },
+      contacts: [{ name: 'David Vance', email: 'david.vance@gm.com', role: 'Supplier Quality Director' }],
+      plants_served: ['gm_oshawa', 'gm_slp']
+    },
+    {
+      id: 'martinrea', name: 'Martinrea International Inc.', invoice_schedule: 'weekly', allotted_hours: 45, ot_rules: { weekly_threshold: 40, daily_threshold: 8, saturday_multiplier: 1.5, sunday_multiplier: 2.0, holiday_multiplier: 2.0 },
+      contacts: [{ name: 'Robert Chen', email: 'r.chen@martinrea.com', role: 'Quality Lead' }],
+      plants_served: ['ford_dearborn']
+    },
+    {
+      id: 'lear', name: 'Lear Corporation', invoice_schedule: 'monthly', allotted_hours: 40, ot_rules: { weekly_threshold: 40, daily_threshold: 8, saturday_multiplier: 1.5, sunday_multiplier: 2.0, holiday_multiplier: 2.0 },
+      contacts: [{ name: 'Amanda Torres', email: 'atorres@lear.com', role: 'Plant SQE' }],
+      plants_served: ['mercedes_tuscaloosa']
+    },
+    {
+      id: 'stellantis', name: 'Stellantis N.V.', invoice_schedule: 'weekly', allotted_hours: 50, ot_rules: { weekly_threshold: 40, daily_threshold: 8, saturday_multiplier: 1.5, sunday_multiplier: 2.0, holiday_multiplier: 2.0 },
+      contacts: [{ name: 'Marcus Brody', email: 'm.brody@stellantis.com', role: 'Supplier Quality Operations' }],
+      plants_served: ['ford_dearborn']
     }
   ],
   parts: [
@@ -284,11 +305,9 @@ export async function flushOfflineQueue() {
   }
 }
 
-// Get the entire database
+// Get the entire database with auto-migration of seed data
 export function getDB() {
-  const db = localStorage.getItem(STORAGE_KEY);
-  if (!db) return initializeDB();
-  return JSON.parse(db);
+  return initializeDB();
 }
 
 // Save database

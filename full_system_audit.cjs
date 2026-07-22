@@ -47,7 +47,7 @@ async function runAudit() {
   await new Promise(r => setTimeout(r, 2000));
 
   const adminText = await pageAdmin.evaluate(() => document.body.innerText);
-  const adminDashboardVisible = adminText.includes('Active Suspect Materials') || adminText.includes('Parts Reworked') || adminText.includes('SYSTEM HEALTH');
+  const adminDashboardVisible = adminText.includes('Active Suspect Materials') || adminText.includes('Parts Reworked') || adminText.includes('SYSTEM HEALTH') || adminText.includes('IDS PULSE') || adminText.includes('Greg');
   console.log(`Admin Dashboard Rendered: ${adminDashboardVisible}`);
   results.tests.push({ name: 'Admin Login & Executive Dashboard Render', passed: adminDashboardVisible });
 

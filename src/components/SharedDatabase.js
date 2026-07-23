@@ -220,8 +220,18 @@ export function initializeDB() {
   return data;
 }
 
+let isSyncing = false;
+
 // Supabase Async Sync Engine
 export async function syncWithSupabase() {
+  if (isSyncing) return;
+
+  if (!supabaseUrl || !supabaseAnonKey || supabaseUrl === 'YOUR_SUPABASE_URL' || String(supabaseUrl).includes('placeholder')) {
+    console.log("[Supabase Sync] Cloud sync skipped (local-first mode active).");
+    return;
+  }
+
+  isSyncing = true;
   console.log("Starting Supabase Sync...");
   const collections = [
     'users',
@@ -240,40 +250,45 @@ export async function syncWithSupabase() {
     'shiftReports'
   ];
 
-  const db = getDB();
-  let updated = false;
+  try {
+    const db = getDB();
+    let updated = false;
 
-  for (const col of collections) {
-    try {
-      const { data, error } = await supabase.from(col).select('*');
-      if (error) {
-        console.error(`[Supabase Pull Error] table "${col}":`, error.message);
-        continue;
-      }
-
-      if (!data || data.length === 0) {
-        const localItems = db[col] || [];
-        if (localItems.length > 0) {
-          console.log(`[Supabase Seeding] table "${col}": uploading ${localItems.length} items...`);
-          const { error: upsertError } = await supabase.from(col).upsert(localItems);
-          if (upsertError) {
-            console.error(`[Supabase Seed Error] table "${col}":`, upsertError.message);
-          }
+    for (const col of collections) {
+      try {
+        const { data, error } = await supabase.from(col).select('*');
+        if (error) {
+          console.warn(`[Supabase Pull Info] table "${col}":`, error.message);
+          continue;
         }
-      } else {
-        db[col] = data;
-        updated = true;
-      }
-    } catch (err) {
-      console.error(`[Supabase Sync Exception] table "${col}":`, err);
-    }
-  }
 
-  if (updated) {
-    console.log("[Supabase Sync Success] Local cache refreshed with live cloud data.");
-    saveDB(db);
-  } else {
-    console.log("[Supabase Sync Checked] Cache matches cloud.");
+        if (!data || data.length === 0) {
+          const localItems = db[col] || [];
+          if (localItems.length > 0) {
+            console.log(`[Supabase Seeding] table "${col}": uploading ${localItems.length} items...`);
+            const { error: upsertError } = await supabase.from(col).upsert(localItems);
+            if (upsertError) {
+              console.warn(`[Supabase Seed Info] table "${col}":`, upsertError.message);
+            }
+          }
+        } else {
+          db[col] = data;
+          updated = true;
+        }
+      } catch (err) {
+        console.warn(`[Supabase Sync Info] table "${col}":`, err.message || err);
+      }
+    }
+
+    if (updated) {
+      console.log("[Supabase Sync Success] Local cache refreshed with live cloud data.");
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
+      window.dispatchEvent(new Event('ids_pulse_db_update'));
+    } else {
+      console.log("[Supabase Sync Checked] Cache matches cloud.");
+    }
+  } finally {
+    isSyncing = false;
   }
 }
 

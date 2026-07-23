@@ -390,7 +390,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   // Dynamic Rate Override Resolver with Plant/Location scoping and active session role protection
   const getRepSupplierRates = (rep_id, supplier_id, plant_id = '') => {
     const role = sessionStorage.getItem('ids_pulse_role') || 'rep';
-    const isAdmin = ['admin', 'owner', 'accountant', 'lead', 'shahroz']?.includes(role);
+    const isAdmin = ['admin', 'owner', 'super_admin', 'accountant', 'lead', 'shahroz', 'donna', 'idspulse']?.includes(role);
     if (!isAdmin) {
       return { billing_rate: 0, pay_rate: 0, currency: 'USD' };
     }

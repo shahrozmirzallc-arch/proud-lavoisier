@@ -1,0 +1,24 @@
+{
+  "short_name": "IDS Pulse",
+  "name": "IDS Pulse Operations Suite",
+  "description": "IDS Pulse Portal by Integrity Driven Solutions Inc. (IDS). Mobile quality audit tracking and CRM platform.",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#031d37",
+  "theme_color": "#0969dc",
+  "display": "standalone",
+  "orientation": "portrait"
+}

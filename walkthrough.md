@@ -202,3 +202,27 @@ We have successfully audited, verified, and deployed a series of UI and logic up
 - Compile-verified with `npm run build` (3.72s, zero errors).
 - Committed `a08bd23` and pushed to GitHub master for live Vercel auto-deployment.
 
+---
+
+## 2026-07-23 - Gemini - Financial Workspace Audit & Defect Resolution
+
+**Task:** Audit and fix the 5 critical financial workspace defects (Supabase sync storm, stall on navigation, invoice handler structural malformation, un-integrated invoice modal, CER & Integrity weekly sheet non-persistence).
+
+**Done:**
+1. **Supabase Sync Engine & Loop Protection ([SharedDatabase.js](file:///C:/Users/Sharoz/Documents/antigravity/proud-lavoisier/src/components/SharedDatabase.js)):**
+   - Added re-entrancy guard `isSyncing` to block concurrent/recursive `syncWithSupabase()` execution loops.
+   - Added explicit validation for `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` to prevent unconfigured credential loops.
+   - Replaced loud exception spam with graceful warning logs to keep database reads smooth and instant.
+2. **Invoice Modal & PDF Generator Integration ([WebDashboard.jsx](file:///C:/Users/Sharoz/Documents/antigravity/proud-lavoisier/src/components/WebDashboard.jsx)):**
+   - Created `handleOpenInvoicePreview()` to consolidate active client entries, mileage, and expenses into standard invoice line items.
+   - Integrated `<InvoiceModal>` directly into the dashboard DOM tree.
+   - Re-wired the **PDF Invoice** button to launch the integrated `InvoiceModal` with print and PDF download capabilities.
+3. **CER & Integrity Weekly Sheet Persistence:**
+   - Implemented `handleSaveWeeklyGrid()` to persist grid records under localStorage key `ids_pulse_cer_weekly_grid_[Person]`.
+   - Wired `useEffect()` to automatically re-hydrate saved weekly sheet data whenever the target person is selected.
+   - Added audit event logging via `logSystemEvent('payroll', 'cer_grid_save', ...)` to write real audit records to `systemLogs`.
+4. **Verification & Deployment:**
+   - Compile-verified with `npm run build` (3.35s, 0 errors).
+   - Committed `8ace981` and pushed to `origin/master` for live Vercel deployment.
+
+

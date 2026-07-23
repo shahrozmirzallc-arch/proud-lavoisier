@@ -184,3 +184,21 @@ We have successfully audited, verified, and deployed a series of UI and logic up
 - Designed and executed e2e_qre.cjs which launches a headless Puppeteer browser, passes the Gateway login, utilizes Fast Auth inside the PhoneSimulator, clicks New Suspect Material, and verifies the reporting pipeline successfully.
 - Prevented a silent UI freeze and substring() TypeError across WebDashboard.jsx by implementing optional chaining system-wide during data parses.
 - Audited production deployment via https://proud-lavoisier.vercel.app and confirmed total system stability.
+
+---
+
+## 2026-07-23 - Gemini - Phone Simulator Text Readability & Contrast Fix
+
+**Task:** Fix low contrast readability issues on Phone Simulator screens (such as Shift Summary Log daily area walks) where input text, placeholders, and unselected toggle buttons were hard to read inside white card containers.
+
+**Done:**
+- Diagnosed the root cause in `src/index.css` where `.phone-input`, `.phone-textarea`, `.phone-select`, `.phone-toggle-group`, and `.phone-toggle-btn` used hardcoded low-contrast dark slate backgrounds with dark slate text/placeholders.
+- Upgraded `.phone-input` and `.phone-textarea` placeholder text to Slate-400 (`#94a3b8`) for crisp high-contrast readability in Dark Mode.
+- Created explicit `body.mode-light`, `.bg-white`, and `.bg-slate-50` CSS overrides:
+  - Input fields now render with clean `#ffffff` background, `#cbd5e1` border, `#0f172a` primary text, and `#64748b` high-contrast placeholder text (WCAG AAA compliant).
+  - Toggle groups (`.phone-toggle-group`) now render with `#f1f5f9` container background and `#cbd5e1` borders.
+  - Unselected toggle buttons (`.phone-toggle-btn`) now render with `#475569` text (Slate-600) with `#e2e8f0` hover background for clear visibility.
+  - Active toggle button states (`active-emerald`, `active-rose`, `active-blue`, `active-navy`) render with high contrast bold white text.
+- Compile-verified with `npm run build` (3.72s, zero errors).
+- Committed `a08bd23` and pushed to GitHub master for live Vercel auto-deployment.
+

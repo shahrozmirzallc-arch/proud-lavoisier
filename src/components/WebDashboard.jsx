@@ -281,6 +281,25 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     'Sunday 7/12/2026': { location: '', miles: '0', billable_hours: '0', shift: '', non_billable_hours: '0', per_diem: '0', piece_count: '0', warehouse: '0', hilo: '0', gas: '0', trucking: '0', bonus: '0', other_expenses: '0', paid_by_cer: '0', description: '', attached: false }
   });
 
+  // Load Persisted CER Grid Data
+  useEffect(() => {
+    try {
+      const storageKey = `ids_pulse_cer_weekly_grid_${weeklyGridPerson.replace(/\s+/g, '_')}`;
+      const saved = localStorage.getItem(storageKey);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.gridData) {
+          setWeeklyGridData(parsed.gridData);
+        }
+        if (parsed.date) {
+          setWeeklyGridDate(parsed.date);
+        }
+      }
+    } catch (err) {
+      console.error("Error loading persisted CER grid:", err);
+    }
+  }, [weeklyGridPerson]);
+
   // Log Hours Form Inputs
   const [logHoursRepId, setLogHoursRepId] = useState('rep_hugo');
   const [logHoursSupplierId, setLogHoursSupplierId] = useState('autokabel');
@@ -635,6 +654,114 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  // Open Integrated Invoice Modal & PDF Generator
+  const handleOpenInvoicePreview = (clientObj, includedEntries = [], includedExpenses = []) => {
+    const dates = (includedEntries || []).filter(e => e && e.date).map(e => e.date).sort();
+    const dRange = dates.length > 0 ? `From ${dates[0]} to ${dates[dates.length - 1]}` : 'Current Period';
+
+    const totalHours = (includedEntries || []).reduce((acc, curr) => acc + (curr.hours || 0), 0);
+    const totalMileage = (includedEntries || []).reduce((acc, curr) => acc + (curr.mileage_km || 0), 0);
+    const totalExpenses = (includedExpenses || []).reduce((acc, curr) => acc + parseFloat(curr.amount || 0), 0);
+
+    const items = [];
+    if (totalHours > 0) {
+      const avgRate = (includedEntries || []).length > 0
+        ? ((includedEntries || []).reduce((acc, curr) => acc + (getRepSupplierRates(curr.rep_id, curr.supplier_id, curr.plant_id).billing_rate || 28), 0) / includedEntries.length)
+        : 28;
+      items.push({
+        quantity: totalHours,
+        item: 'Contractor Hours',
+        description: `Liaison Quality Audit & On-Demand Representation at ${clientObj?.name || 'Client Facility'}\nPeriod: ${dRange}`,
+        um: 'hr',
+        priceEach: avgRate,
+        amount: totalHours * avgRate
+      });
+    }
+
+    if (totalMileage > 0) {
+      items.push({
+        quantity: totalMileage,
+        item: 'Travel Mileage',
+        description: `Authorized Travel Mileage Reimbursement @ $0.73/km`,
+        um: 'km',
+        priceEach: 0.73,
+        amount: totalMileage * 0.73
+      });
+    }
+
+    if (totalExpenses > 0) {
+      items.push({
+        quantity: 1,
+        item: 'Reimbursable Expenses',
+        description: `Approved Field Expense Claims & Direct Supplier Receipts`,
+        um: 'ea',
+        priceEach: totalExpenses,
+        amount: totalExpenses
+      });
+    }
+
+    if (items.length === 0) {
+      items.push({
+        quantity: 1,
+        item: 'Quality Services',
+        description: `IDS Quality Auditing Services for ${clientObj?.name || 'Client'}`,
+        um: 'ea',
+        priceEach: 0,
+        amount: 0
+      });
+    }
+
+    const payload = {
+      client: clientObj,
+      invoiceNum: `INV-${(clientObj?.id || 'IDS').toUpperCase()}-${Date.now().toString().slice(-4)}`,
+      invoiceDate: new Date().toLocaleDateString('en-US'),
+      poNumber: invoicePONumber || 'PO-32268',
+      terms: 'Net 30',
+      repName: users.find(u => u.id === currentUser?.id)?.name || 'Integrity Lead',
+      shipDate: new Date().toLocaleDateString('en-US'),
+      via: 'Direct',
+      fob: 'FOB Origin',
+      projectName: clientObj?.name || 'Quality Operations',
+      shipToText: `Liaison Quality Lead at\n${clientObj?.name || 'Client Facility'}`,
+      invoiceToLines: [
+        clientObj?.name || 'Client Company',
+        clientObj?.contacts?.[0]?.name ? `Attn: ${clientObj.contacts[0].name}` : 'Accounts Payable',
+        clientObj?.contacts?.[0]?.email || 'billing@client.com',
+        'Paseo De Los Ind Pte Lote 15-19',
+        'CP 36100'
+      ],
+      items,
+      taxAmount: 0.00,
+      currency: selectedInvoiceCurrency === 'USD' ? 'USD' : (selectedInvoiceCurrency === 'CAD' ? 'CAD' : 'CAD'),
+      gstHstNo: '853120236'
+    };
+
+    setPreviewInvoiceData(payload);
+    setShowInvoiceModal(true);
+  };
+
+  // Persist CER & Integrity Weekly Sheet
+  const handleSaveWeeklyGrid = () => {
+    try {
+      const storageKey = `ids_pulse_cer_weekly_grid_${weeklyGridPerson.replace(/\s+/g, '_')}`;
+      localStorage.setItem(storageKey, JSON.stringify({
+        person: weeklyGridPerson,
+        date: weeklyGridDate,
+        gridData: weeklyGridData,
+        updatedAt: new Date().toISOString()
+      }));
+
+      const actor = users.find(u => u && u.id === currentUser?.id)?.name || currentUser?.name || 'Accountant';
+      logSystemEvent('payroll', 'cer_grid_save', `${actor} saved and persisted Weekly CER Audit & Timesheet Report for ${weeklyGridPerson} (Date: ${weeklyGridDate}).`);
+
+      setWeeklyGridSaveMessage(true);
+      setTimeout(() => setWeeklyGridSaveMessage(false), 3000);
+    } catch (err) {
+      console.error("Error persisting CER grid:", err);
+      alert("Failed to persist CER grid: " + err.message);
+    }
   };
 
   const handleBatchGenerateAllClientInvoices = () => {
@@ -6721,7 +6848,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                             </div>
                           </div>
                           <div className="flex gap-2 flex-wrap">
-                            <button onClick={() => handleGenerateClientInvoicePDF(client, dateRangeStr, includedEntries, includedExpenses)} disabled={includedEntries.length === 0 && includedExpenses.length === 0} className="flex items-center gap-1.5 bg-[#3B82F6] disabled:opacity-40 hover:bg-[#3B82F6]/90 text-text-primary font-bold py-2 px-3.5 rounded-xl text-[13px] transition-colors cursor-pointer" title="Generate PDF invoice for current client"><Printer className="w-4 h-4" /> PDF Invoice ({client?.name})</button>
+                            <button onClick={() => handleOpenInvoicePreview(client, includedEntries, includedExpenses)} disabled={includedEntries.length === 0 && includedExpenses.length === 0} className="flex items-center gap-1.5 bg-[#3B82F6] disabled:opacity-40 hover:bg-[#3B82F6]/90 text-text-primary font-bold py-2 px-3.5 rounded-xl text-[13px] transition-colors cursor-pointer" title="Preview & generate PDF invoice for current client"><Printer className="w-4 h-4" /> PDF Invoice ({client?.name})</button>
                             <button onClick={handleBatchGenerateAllClientInvoices} className="flex items-center gap-1.5 bg-purple-600 hover:bg-purple-500 text-white font-bold py-2 px-3.5 rounded-xl text-[13px] transition-colors cursor-pointer" title="Generate individual PDF invoices for all clients with pending entries"><Zap className="w-4 h-4 text-yellow-300 fill-yellow-300" /> Batch All Invoices</button>
                             <button onClick={() => handleExportClientQuickBooks(includedEntries)} disabled={includedEntries.length === 0} className="flex items-center gap-1.5 bg-[#10B981] disabled:opacity-40 hover:bg-[#10B981]/90 text-text-primary font-bold py-2 px-3.5 rounded-xl text-[13px] transition-colors cursor-pointer"><FileSpreadsheet className="w-4 h-4" /> QuickBooks CSV</button>
                             <button onClick={() => handleMarkAsInvoiced(includedEntries, includedExpenses)} disabled={includedEntries.length === 0 && includedExpenses.length === 0} className="flex items-center gap-1.5 bg-surface border border-border-subtle disabled:opacity-40 text-text-primary font-bold py-2 px-3.5 rounded-xl text-[13px] cursor-pointer"><CheckCircle2 className="w-4 h-4" /> Mark Invoiced</button>
@@ -7004,10 +7131,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                             <span>Generate CER Weekly Report</span>
                           </button>
                           <button
-                            onClick={() => {
-                              setWeeklyGridSaveMessage(true);
-                              setTimeout(() => setWeeklyGridSaveMessage(false), 3000);
-                            }}
+                            onClick={handleSaveWeeklyGrid}
                             className="bg-surface-elevated hover:bg-surface border border-border-subtle text-text-primary font-bold px-4 py-1.5 rounded-lg text-[13px] shadow-sm transition-all cursor-pointer border-b-2 active:translate-y-0.5"
                           >
                             Saves Changes
@@ -9909,6 +10033,15 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
             </form>
           </div>
         </div>
+      )}
+
+      {/* Integrated Client Invoice Modal */}
+      {showInvoiceModal && (
+        <InvoiceModal
+          isOpen={showInvoiceModal}
+          onClose={() => setShowInvoiceModal(false)}
+          invoiceData={previewInvoiceData}
+        />
       )}
     </div>
   );

@@ -96,14 +96,15 @@ export const InvoiceModal = ({
             
             {/* Top Left: Logo & Company Address */}
             <div className="flex items-start gap-4">
-              <img 
-                src={LOGO_BASE64} 
-                alt="Integrity Driven Solutions Inc." 
-                className="h-14 w-auto object-contain flex-shrink-0 mt-0.5" 
-                style={{ filter: 'brightness(0.2)' }}
-              />
-              <div className="flex flex-col text-[11px] text-black font-normal space-y-0.5 mt-1">
-                <p className="font-bold text-slate-900">Integrity Driven Solutions Inc.</p>
+              <div className="bg-[#031d37] px-3 py-2 rounded-xl flex items-center shadow-md">
+                <img 
+                  src={LOGO_BASE64} 
+                  alt="Integrity Driven Solutions Inc." 
+                  className="h-10 w-auto object-contain flex-shrink-0" 
+                />
+              </div>
+              <div className="flex flex-col text-[11px] text-black font-normal space-y-0.5 mt-0.5">
+                <p className="font-extrabold text-slate-900 text-[12px]">Integrity Driven Solutions Inc.</p>
                 <p>P.O. Box 505</p>
                 <p>5900 Main Street</p>
                 <p>Orono, ON L0B 1M0</p>

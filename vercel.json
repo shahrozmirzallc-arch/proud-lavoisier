@@ -1,23 +1,19 @@
 {
   "version": 2,
   "cleanUrls": true,
+  "redirects": [
+    {
+      "source": "/idspulse-app.apk",
+      "destination": "https://github.com/shahrozmirzallc-arch/proud-lavoisier/releases/download/v1.0.1/idspulse-app.apk",
+      "permanent": false
+    },
+    {
+      "source": "/idspulse-app.zip",
+      "destination": "https://github.com/shahrozmirzallc-arch/proud-lavoisier/releases/download/v1.0.1/idspulse-app.apk",
+      "permanent": false
+    }
+  ],
   "routes": [
-    {
-      "src": "/idspulse-app.zip",
-      "dest": "/idspulse-app.zip",
-      "headers": {
-        "Content-Type": "application/zip",
-        "Content-Disposition": "attachment; filename=idspulse-app.zip"
-      }
-    },
-    {
-      "src": "/idspulse-app.apk",
-      "dest": "/idspulse-app.apk",
-      "headers": {
-        "Content-Type": "application/vnd.android.package-archive",
-        "Content-Disposition": "attachment; filename=idspulse-app.apk"
-      }
-    },
     {
       "handle": "filesystem"
     },

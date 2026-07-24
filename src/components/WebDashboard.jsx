@@ -392,7 +392,21 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
     const handleOpenInvoice = (e) => {
       if (e.detail) {
-        setPreviewInvoiceData(e.detail);
+        const invData = { ...e.detail };
+        const addressText = JSON.stringify(invData).toLowerCase();
+        const isCanadian = addressText.includes('on ') || addressText.includes('ontario') || addressText.includes('oakville') || addressText.includes('oshawa') || addressText.includes('canada');
+
+        const subtotal = (invData.items || []).reduce((acc, item) => acc + (parseFloat(item.amount) || 0), 0);
+        
+        if (isCanadian) {
+          invData.taxAmount = (subtotal * 0.13).toFixed(2);
+          invData.gstHstNo = '853120236 (13% HST)';
+        } else {
+          invData.taxAmount = 0.00;
+          invData.gstHstNo = 'TAX EXEMPT (0% VAT)';
+        }
+
+        setPreviewInvoiceData(invData);
         setShowInvoiceModal(true);
       }
     };
@@ -1633,6 +1647,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   const handleToggleTaskStatus = (task) => {
     const updated = { ...task, status: task.status === 'completed' ? 'pending' : 'completed' };
     saveEntity('dailyTasks', updated);
+    setDailyTasks(getEntities('dailyTasks') || []);
+    window.dispatchEvent(new Event('ids_pulse_db_update'));
   };
 
   const handleAddTask = (text, assignedRepId = selectedDispatchRepId) => {
@@ -1645,7 +1661,9 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       status: 'pending'
     };
     saveEntity('dailyTasks', newTask);
+    setDailyTasks(getEntities('dailyTasks') || []);
     setNewTaskText('');
+    window.dispatchEvent(new Event('ids_pulse_db_update'));
   };
   // Date Formatting Helper
   const formatReadableDate = (dateStr) => {

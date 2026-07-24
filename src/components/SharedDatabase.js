@@ -157,7 +157,7 @@ export function initializeDB() {
 
   // Fix migration missing collections
   const collections = ['users', 'rates', 'plants', 'suppliers', 'parts', 'incidents', 'reworkLogs', 'timeEntries', 'expenseEntries', 'extraHoursRequests', 'systemLogs', 'projects', 'dailyTasks', 'shiftReports',
-    'assignments',
+    'assignments', 'payroll',
     'repActivities', 'emailLogs', 'assignments', 'repActivities'];
   collections.forEach(col => {
     if (!data[col]) {
@@ -486,14 +486,54 @@ export function addReworkLog(log) {
   return saveEntity('reworkLogs', newLog);
 }
 
-// Add time entry
+// Add time entry with automated Rep Payroll ledger synchronization
 export function addTimeEntry(entry) {
   const newEntry = {
     ...entry,
     id: entry.id || `te_${Date.now()}_${Math.random().toString(36)?.substring(2, 7)}`,
     created_at: new Date().toISOString()
   };
-  return saveEntity('timeEntries', newEntry);
+
+  const saved = saveEntity('timeEntries', newEntry);
+
+  // Auto-sync Rep Payroll Ledger
+  try {
+    const dbUsers = getEntities('users') || [];
+    const dbRates = getEntities('rates') || [];
+    const rep = dbUsers.find(u => u.id === newEntry.rep_id);
+    const rate = dbRates.find(r => r.rep_id === newEntry.rep_id && (r.supplier_id === newEntry.supplier_id || !r.supplier_id));
+
+    const billRate = rate ? parseFloat(rate.billing_rate) : 34.00;
+    const payRate = rate ? parseFloat(rate.pay_rate) : 25.00;
+    const hrs = parseFloat(newEntry.hours || 0);
+
+    const grossRevenue = hrs * billRate;
+    const repExpense = hrs * payRate;
+    const netProfit = grossRevenue - repExpense;
+
+    const payrollRecord = {
+      id: `pr_${newEntry.id}`,
+      time_entry_id: newEntry.id,
+      rep_id: newEntry.rep_id,
+      rep_name: rep ? rep.name : (newEntry.rep_name || 'Hugo Picon'),
+      date: newEntry.date || new Date().toISOString().split('T')[0],
+      hours: hrs,
+      pay_rate: payRate,
+      bill_rate: billRate,
+      rep_expense: repExpense,
+      gross_revenue: grossRevenue,
+      net_profit: netProfit,
+      margin_percent: grossRevenue > 0 ? ((netProfit / grossRevenue) * 100).toFixed(1) : '0.0',
+      status: newEntry.status || 'approved',
+      created_at: new Date().toISOString()
+    };
+
+    saveEntity('payroll', payrollRecord);
+  } catch (err) {
+    console.warn("Could not auto-sync payroll record:", err);
+  }
+
+  return saved;
 }
 
 // Add email log

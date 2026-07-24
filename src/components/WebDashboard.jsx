@@ -9226,7 +9226,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
       {/* OVERLAY PANEL 2: EMAIL LOG INSPECTOR */}
       {selectedEmailLog && (
-        <div className="absolute inset-0 bg-surface backdrop-blur-xs flex items-center justify-center p-3 z-50 animate-in fade-in duration-200">
+        <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-3 z-50 animate-in fade-in duration-200">
           <div className="bg-surface-elevated border border-border-subtle rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col max-h-[600px] text-left">
             <div className="bg-surface px-5 py-4 border-b border-border-subtle flex items-center justify-between">
               <div>
@@ -9256,7 +9256,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
       {/* OVERLAY PANEL 3: DAILY SHIFT WALKTHROUGH DETAILS (Donna's Review Panel) */}
       {selectedShiftReport && (
-        <div className="absolute inset-0 bg-surface backdrop-blur-xs flex items-center justify-center p-3 z-50 animate-in fade-in duration-200">
+        <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-3 z-50 animate-in fade-in duration-200">
           <div className="bg-surface-elevated border border-border-subtle rounded-3xl w-full max-w-3xl overflow-hidden shadow-2xl flex flex-col max-h-[700px] text-left">
             <div className="bg-surface px-5 py-4 border-b border-border-subtle flex items-center justify-between">
               <div>
@@ -9385,7 +9385,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
       {/* OVERLAY PANEL 3.5: DEFECT REWORK LOG DETAILS (Rework Inspector Modal) */}
       {selectedReworkLog && (
-        <div className="absolute inset-0 bg-surface backdrop-blur-xs flex items-center justify-center p-3 z-50 animate-in fade-in duration-200">
+        <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-3 z-50 animate-in fade-in duration-200">
           <div className="bg-surface-elevated border border-border-subtle rounded-3xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col max-h-[600px] text-left">
             <div className="bg-surface px-5 py-4 border-b border-border-subtle flex items-center justify-between">
               <div>
@@ -9514,7 +9514,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
       {/* QUICK ASSIGN REP DISPATCH MODAL ( Donna requested for daily assignment ) */}
       {showAssignRepModal && (
-        <div className="absolute inset-0 bg-surface backdrop-blur-xs flex items-center justify-center p-3 z-50 animate-in fade-in duration-200">
+        <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-3 z-50 animate-in fade-in duration-200">
           <form onSubmit={handleAssignRepSubmit} className="bg-surface-elevated border border-border-subtle rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl flex flex-col text-left">
             <div className="bg-surface px-5 py-4 border-b border-border-subtle flex items-center justify-between">
               <h3 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider">Assign Rep Dispatch</h3>
@@ -9570,7 +9570,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       {/* RECEIPT LIGHTBOX MODAL */}
       {selectedReceiptPhoto && (
         <div 
-          className="absolute inset-0 bg-surface backdrop-blur-xs flex items-center justify-center p-3 z-50 animate-in fade-in duration-200" 
+          className="absolute inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-3 z-50 animate-in fade-in duration-200" 
           onClick={() => setSelectedReceiptPhoto(null)}
         >
           <div 
@@ -9623,7 +9623,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       {/* 1. VISUAL CALENDAR PICKER MODAL */}
       {showCalendarModal && (
         <div 
-          className="absolute inset-0 bg-surface backdrop-blur-xs flex items-center justify-center p-3 z-50 animate-in fade-in duration-200" 
+          className="absolute inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-3 z-50 animate-in fade-in duration-200" 
           onClick={() => setShowCalendarModal(false)}
         >
           <div 
@@ -9767,7 +9767,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
       {/* 2. INTERACTIVE USER GUIDE SLIDE-OUT DRAWER */}
       {showHelpDrawer && (
-        <div className="absolute inset-0 bg-surface backdrop-blur-2xs flex justify-end z-50 animate-in fade-in duration-200" onClick={() => setShowHelpDrawer(false)}>
+        <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-md flex justify-end z-50 animate-in fade-in duration-200" onClick={() => setShowHelpDrawer(false)}>
           <div 
             className="w-full max-w-sm bg-surface-elevated border-l border-border-subtle h-full shadow-2xl p-6 sm:p-8 flex flex-col overflow-hidden text-left"
             onClick={(e) => e.stopPropagation()}

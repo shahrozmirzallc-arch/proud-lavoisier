@@ -55,7 +55,7 @@ export const generateIntegrityInvoicePDF = ({
   // ================= 1. HEADER SECTION =================
   // Top Left: Logo Image 2 (Inside Red Box Area)
   try {
-    doc.addImage(LOGO_BASE64, 'PNG', marginX, y, 56, 16);
+    doc.addImage(LOGO_BASE64, 'JPEG', marginX, y, 54, 14);
   } catch (err) {
     console.warn("Could not embed PDF logo image:", err);
   }

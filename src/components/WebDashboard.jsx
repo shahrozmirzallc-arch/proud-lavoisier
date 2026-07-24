@@ -365,6 +365,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   const [newCustomerContactEmail, setNewCustomerContactEmail] = useState('');
   const [newCustomerContactRole, setNewCustomerContactRole] = useState('Quality Manager');
   const [newCustomerInvoiceSchedule, setNewCustomerInvoiceSchedule] = useState('on-demand');
+  const [newCustomerAllottedHours, setNewCustomerAllottedHours] = useState('20');
 
   const [newLocationName, setNewLocationName] = useState('');
   const [newLocationAddress, setNewLocationAddress] = useState('');
@@ -926,6 +927,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       id: newId,
       name: newCustomerName,
       invoice_schedule: newCustomerInvoiceSchedule || 'on-demand',
+      allotted_hours: Number(newCustomerAllottedHours) || 20,
       contacts: [
         { name: newCustomerContactName, email: newCustomerContactEmail, role: newCustomerContactRole }
       ],
@@ -7425,6 +7427,9 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                             <div className="flex flex-col gap-1"><label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Contact Email</label>
                               <input type="email" value={newCustomerContactEmail} onChange={(e) => setNewCustomerContactEmail(e.target.value)} placeholder="jc@autokabel.mx" className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary" />
                             </div>
+                            <div className="flex flex-col gap-1"><label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Allotted Project Hours (Budget Limit)</label>
+                              <input type="number" step="0.5" value={newCustomerAllottedHours} onChange={(e) => setNewCustomerAllottedHours(e.target.value)} placeholder="e.g. 20 (Approved Job Hours)" className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary" />
+                            </div>
                             <div className="flex flex-col gap-1"><label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Invoice Schedule</label>
                               <select value={newCustomerInvoiceSchedule} onChange={(e) => setNewCustomerInvoiceSchedule(e.target.value)} className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary">
                                 <option value="on-demand">⚡ On Demand / Manual (When Colleen Chooses)</option>
@@ -7440,13 +7445,14 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                             <h4 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider border-b border-border-subtle pb-2">Active Customers List</h4>
                             <div className="overflow-x-auto w-full"><table className="w-full text-[13.5px] text-left">
                               <thead>
-                                <tr className="border-b border-border-subtle text-text-secondary font-bold uppercase text-[10.5px]"><th>Client Name</th><th>Invoicing</th><th>Contacts</th><th>Schedule</th></tr>
+                                <tr className="border-b border-border-subtle text-text-secondary font-bold uppercase text-[10.5px]"><th>Client Name</th><th>Invoicing</th><th>Job Budget</th><th>Contacts</th><th>Schedule</th></tr>
                               </thead>
                               <tbody className="divide-y divide-slate-850 text-text-primary">
                                 {suppliers.map(s => (
                                   <tr key={s.id}>
                                     <td className="py-2 text-text-primary font-bold">{s.name}</td>
                                     <td className="py-2 font-mono text-slate-450">{s.id?.toUpperCase()}</td>
+                                    <td className="py-2 font-bold text-cyan-400">{s.allotted_hours ? `${s.allotted_hours} hrs` : '20 hrs'}</td>
                                     <td className="py-2">{s.contacts.map(c => c.name).join(", ")}</td>
                                     <td className="py-2"><span className={`px-2 py-1 rounded text-[10.5px] font-bold uppercase ${s.invoice_schedule === 'on-demand' ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-500/40' : 'bg-amber-50 text-amber-600'}`}>{s.invoice_schedule === 'on-demand' ? '⚡ ON DEMAND (MANUAL)' : (s.invoice_schedule || 'ON DEMAND')}</span></td>
                                   </tr>

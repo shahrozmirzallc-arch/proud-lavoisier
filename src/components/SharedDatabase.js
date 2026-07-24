@@ -144,8 +144,15 @@ const SEED_DATA = {
   repActivities: []
 };
 
-// Initialize database in localStorage
+// Initialize database in localStorage with automatic version cache invalidation
 export function initializeDB() {
+  const storedVersion = localStorage.getItem(DB_VERSION_KEY);
+  if (storedVersion !== CURRENT_DB_VERSION) {
+    console.log(`[IDS PULSE] Updating DB Schema version from ${storedVersion} to ${CURRENT_DB_VERSION}...`);
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.setItem(DB_VERSION_KEY, CURRENT_DB_VERSION);
+  }
+
   const existing = localStorage.getItem(STORAGE_KEY);
   if (!existing) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(SEED_DATA));

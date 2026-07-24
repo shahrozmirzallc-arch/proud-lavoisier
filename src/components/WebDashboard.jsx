@@ -250,8 +250,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSupplierFilter, setSelectedSupplierFilter] = useState('all');
   const [selectedStatusFilter, setSelectedStatusFilter] = useState('all');
-  const [selectedDate, setSelectedDate] = useState('2026-06-01');
-  const [showAllDates, setShowAllDates] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [showAllDates, setShowAllDates] = useState(true);
   
   // Accounting Sub-tab Navigation
   const [accountingSubTab, setAccountingSubTab] = useState('log-hours');

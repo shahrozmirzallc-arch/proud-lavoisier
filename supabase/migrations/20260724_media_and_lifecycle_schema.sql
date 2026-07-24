@@ -1,7 +1,7 @@
 -- ============================================================================
 -- IDS PULSE - MEDIA & QUALITY INCIDENT LIFECYCLE MIGRATION
 -- Target Project: https://supabase.com/dashboard/project/wuqqrcowznrmmuokfxlk
--- Description: Creates 7 media & publication tables with RLS Policies & Audit Triggers
+-- Description: Creates 7 media & publication tables with Multi-Tenant RLS Policies
 -- ============================================================================
 
 -- 1. MEDIA ASSETS TABLE
@@ -92,7 +92,7 @@ CREATE TABLE IF NOT EXISTS public.media_audit_events (
 );
 
 -- ============================================================================
--- RLS POLICIES FOR MEDIA & LIFECYCLE TABLES
+-- STRICT MULTI-TENANT RLS POLICIES FOR MEDIA & LIFECYCLE TABLES
 -- ============================================================================
 ALTER TABLE public.media_assets ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.media_variants ENABLE ROW LEVEL SECURITY;
@@ -102,19 +102,56 @@ ALTER TABLE public.media_publications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.media_retention_policies ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.media_audit_events ENABLE ROW LEVEL SECURITY;
 
--- Read Policies
-DROP POLICY IF EXISTS "Rep Own Media Read" ON public.media_assets;
-CREATE POLICY "Rep Own Media Read" ON public.media_assets FOR SELECT USING (true);
+-- 1. MEDIA ASSETS RLS (No Receipt Access for Customers/Leads, No Cross-Rep Evidence Access)
+DROP POLICY IF EXISTS "Media Asset Select RLS" ON public.media_assets;
+CREATE POLICY "Media Asset Select RLS" ON public.media_assets
+FOR SELECT USING (
+    (auth.role() = 'service_role') OR
+    (rep_id = auth.uid()::text) OR
+    (expense_id IS NULL AND EXISTS (
+        SELECT 1 FROM public.users u 
+        WHERE u.id = auth.uid()::text AND u.role IN ('admin', 'super_admin', 'lead')
+    )) OR
+    (expense_id IS NOT NULL AND EXISTS (
+        SELECT 1 FROM public.users u 
+        WHERE u.id = auth.uid()::text AND u.role IN ('admin', 'super_admin', 'accountant')
+    ))
+);
 
-DROP POLICY IF EXISTS "Public Read Media Variants" ON public.media_variants;
-CREATE POLICY "Public Read Media Variants" ON public.media_variants FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Media Asset Insert RLS" ON public.media_assets;
+CREATE POLICY "Media Asset Insert RLS" ON public.media_assets
+FOR INSERT WITH CHECK (
+    (auth.role() = 'service_role') OR
+    (rep_id = auth.uid()::text)
+);
 
-DROP POLICY IF EXISTS "Customer Published Bundles Read" ON public.media_publications;
-CREATE POLICY "Customer Published Bundles Read" ON public.media_publications FOR SELECT USING (publication_status = 'published');
+-- 2. MEDIA PUBLICATIONS RLS (Customer Portal Access to Published Bundles Only)
+DROP POLICY IF EXISTS "Customer Publication Read RLS" ON public.media_publications;
+CREATE POLICY "Customer Publication Read RLS" ON public.media_publications
+FOR SELECT USING (
+    (publication_status = 'published') AND (
+        (auth.role() = 'service_role') OR
+        EXISTS (
+            SELECT 1 FROM public.users u
+            JOIN public.incidents inc ON inc.id = media_publications.incident_id
+            WHERE u.id = auth.uid()::text AND (
+                u.role IN ('admin', 'super_admin', 'lead') OR 
+                (u.role = 'customer' AND inc.supplier_id = u.company_affiliation)
+            )
+        )
+    )
+);
 
--- Insert Policies
-DROP POLICY IF EXISTS "Public Insert Media Assets" ON public.media_assets;
-CREATE POLICY "Public Insert Media Assets" ON public.media_assets FOR INSERT WITH CHECK (true);
+-- 3. MEDIA UPLOAD SESSIONS RLS (Rep Only Upload Reservations)
+DROP POLICY IF EXISTS "Upload Session RLS" ON public.media_upload_sessions;
+CREATE POLICY "Upload Session RLS" ON public.media_upload_sessions
+FOR ALL USING (
+    (auth.role() = 'service_role') OR (rep_id = auth.uid()::text)
+);
 
-DROP POLICY IF EXISTS "Public Insert Media Audit" ON public.media_audit_events;
-CREATE POLICY "Public Insert Media Audit" ON public.media_audit_events FOR INSERT WITH CHECK (true);
+-- 4. MEDIA AUDIT EVENTS RLS (Immutable Append Only)
+DROP POLICY IF EXISTS "Audit Event Insert RLS" ON public.media_audit_events;
+CREATE POLICY "Audit Event Insert RLS" ON public.media_audit_events
+FOR INSERT WITH CHECK (
+    (auth.role() = 'service_role') OR (actor_id = auth.uid()::text)
+);

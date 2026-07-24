@@ -76,7 +76,7 @@ export function validateMediaFile(fileOrBase64) {
 }
 
 /**
- * Uploads any validated media asset (Image, Video, Audio or PDF) directly to Cloudinary.
+ * Uploads any validated media asset (Image, Video, Audio or PDF) directly to Cloudinary using server-signed parameters.
  * @param {File|Blob|string} fileOrBase64 - File object, Blob, or Data URL to upload
  * @param {string} folder - Destination subfolder inside ids_pulse/ ('incidents' | 'expenses' | 'videos' | 'audio' | 'documents')
  * @returns {Promise<{success: boolean, url: string, public_id: string, resource_type?: string, bytes?: number, error?: string}>}
@@ -90,10 +90,51 @@ export async function uploadToCloudinary(fileOrBase64, folder = 'incidents') {
 
     const resourceEndpoint = (val.fileType === 'video' || val.fileType === 'audio') ? 'video' : (val.fileType === 'pdf' ? 'auto' : 'image');
 
+    // 1. Fetch server-signed upload parameters from reserve-media-upload Edge Function
+    let signedParams = null;
+    try {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://wuqqrcowznrmmuokfxlk.supabase.co';
+      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_S7Qpf1lJ6OCYbYrE-_5iLQ_lN9iEdNe';
+
+      const reserveRes = await fetch(`${supabaseUrl}/functions/v1/reserve-media-upload`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${supabaseAnonKey}`,
+          'apikey': supabaseAnonKey
+        },
+        body: JSON.stringify({
+          resourceType: resourceEndpoint,
+          mimeType: val.fileType === 'image' ? 'image/jpeg' : (val.fileType === 'video' ? 'video/mp4' : 'application/pdf'),
+          fileSize: typeof fileOrBase64 === 'string' ? Math.round(fileOrBase64.length * 0.75) : (fileOrBase64.size || 1024),
+          folder: `ids_pulse/${folder}`
+        })
+      });
+
+      if (reserveRes.ok) {
+        const reserveData = await reserveRes.json();
+        if (reserveData?.signedParams) {
+          signedParams = reserveData.signedParams;
+        }
+      }
+    } catch (e) {
+      console.warn('[Cloudinary] Edge Function reservation fallback to client signature:', e.message);
+    }
+
+    // 2. Perform authenticated upload to Cloudinary
     const formData = new FormData();
     formData.append('file', fileOrBase64);
-    formData.append('upload_preset', UPLOAD_PRESET);
-    formData.append('folder', `ids_pulse/${folder}`);
+
+    if (signedParams) {
+      formData.append('api_key', signedParams.apiKey);
+      formData.append('timestamp', signedParams.timestamp);
+      formData.append('signature', signedParams.signature);
+      formData.append('public_id', signedParams.publicId);
+      formData.append('folder', signedParams.folder);
+    } else {
+      formData.append('upload_preset', UPLOAD_PRESET);
+      formData.append('folder', `ids_pulse/${folder}`);
+    }
 
     const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${resourceEndpoint}/upload`, {
       method: 'POST',

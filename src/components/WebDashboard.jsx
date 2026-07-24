@@ -77,6 +77,9 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
   // Quick Add Client Form State
   const [quickClientName, setQuickClientName] = useState('');
+  const [quickClientContactName, setQuickClientContactName] = useState('');
+  const [quickClientContactEmail, setQuickClientContactEmail] = useState('');
+  const [quickClientAllottedHours, setQuickClientAllottedHours] = useState('20');
   const [quickClientSchedule, setQuickClientSchedule] = useState('on-demand');
 
   // Quick Add Plant Form State
@@ -1060,13 +1063,19 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     const newCust = {
       id: newId,
       name: quickClientName,
+      contact_name: quickClientContactName,
+      contact_email: quickClientContactEmail,
+      allotted_hours: quickClientAllottedHours || '20',
       invoice_schedule: quickClientSchedule,
-      contacts: [],
+      contacts: quickClientContactName ? [quickClientContactName] : [],
       plants_served: []
     };
     saveEntity('suppliers', newCust);
     setSuppliers(getEntities('suppliers'));
     setQuickClientName('');
+    setQuickClientContactName('');
+    setQuickClientContactEmail('');
+    setQuickClientAllottedHours('20');
     setQuickClientSchedule('on-demand');
     setShowQuickAddClient(false);
 
@@ -1075,7 +1084,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     setConfigSupplierId(newId);
     setSelectedInvoiceSupplier(newId);
     
-    alert(`Client ${quickClientName} added successfully!`);
+    alert(`Company ${quickClientName} onboarded successfully with ${quickClientAllottedHours || '20'} hrs budget!`);
   };
 
   const handleQuickAddPlantSubmit = (e) => {
@@ -4072,6 +4081,15 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
               );
             })()}
           </div>
+
+          <button 
+            onClick={() => setShowQuickAddClient(true)}
+            className="h-9 flex items-center gap-1.5 bg-[#3B82F6] hover:bg-[#3B82F6]/90 text-white font-bold px-3.5 rounded-xl text-[13.5px] cursor-pointer transition-all shadow-md shadow-blue-500/20 hover:scale-102"
+            title="Fast 1-Click Company & Budget Onboarding"
+          >
+            <UserPlus className="w-4 h-4" />
+            <span>➕ Onboard Company & Hours</span>
+          </button>
 
           <button 
             onClick={() => setShowHelpDrawer(true)}
@@ -9850,7 +9868,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
       {/* QUICK ADD REPRESENTATIVE MODAL */}
       {showQuickAddRep && (
-        <div className="fixed inset-0 bg-surface backdrop-blur-sm z-[999] flex items-center justify-center p-3">
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[999] flex items-center justify-center p-3">
           <div className="bg-surface-elevated border border-border-subtle p-3 rounded-2xl w-full max-w-sm flex flex-col gap-3 text-left shadow-2xl animate-in fade-in zoom-in duration-200">
             <div className="flex justify-between items-center border-b border-border-subtle pb-2">
               <h4 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider flex items-center gap-1.5">
@@ -9923,52 +9941,91 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
       {/* QUICK ADD CLIENT / SUPPLIER MODAL */}
       {showQuickAddClient && (
-        <div className="fixed inset-0 bg-surface backdrop-blur-sm z-[999] flex items-center justify-center p-3">
-          <div className="bg-surface-elevated border border-border-subtle p-3 rounded-2xl w-full max-w-sm flex flex-col gap-3 text-left shadow-2xl animate-in fade-in zoom-in duration-200">
-            <div className="flex justify-between items-center border-b border-border-subtle pb-2">
-              <h4 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider flex items-center gap-1.5">
-                <PlusCircle className="w-4.5 h-4.5 text-cyan-600" /> Quick Add Client / Supplier
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[999] flex items-center justify-center p-3">
+          <div className="bg-surface-elevated border border-border-subtle p-6 rounded-2xl w-full max-w-md flex flex-col gap-4 text-left shadow-2xl animate-in fade-in zoom-in duration-200">
+            <div className="flex justify-between items-center border-b border-border-subtle pb-3">
+              <h4 className="text-[14.5px] font-bold text-text-primary uppercase tracking-wider flex items-center gap-2">
+                <PlusCircle className="w-5 h-5 text-cyan-500" /> Fast Company & Budget Onboarding
               </h4>
-              <button onClick={() => setShowQuickAddClient(false)} className="text-text-secondary hover:text-text-primary text-[14.5px]">✕</button>
+              <button onClick={() => setShowQuickAddClient(false)} className="text-text-secondary hover:text-text-primary text-[16px] font-bold">✕</button>
             </div>
-            <form onSubmit={handleQuickAddClientSubmit} className="flex flex-col gap-3">
+            <form onSubmit={handleQuickAddClientSubmit} className="flex flex-col gap-3.5">
               <div className="flex flex-col gap-1">
-                <label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Client Name</label>
+                <label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Company Name *</label>
                 <input 
                   type="text" 
                   value={quickClientName} 
                   onChange={(e) => setQuickClientName(e.target.value)} 
-                  placeholder="e.g. Brose Automotive" 
-                  className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary placeholder-text-secondary focus:outline-none focus:border-cyan-500"
+                  placeholder="e.g. Abc123 Ltd" 
+                  className="bg-surface border border-border-subtle rounded-xl px-3.5 py-2 text-[13.5px] text-text-primary placeholder-text-secondary focus:outline-none focus:border-cyan-500"
                   required
                 />
               </div>
-              <div className="flex flex-col gap-1">
-                <label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Invoice Schedule</label>
-                <select 
-                  value={quickClientSchedule} 
-                  onChange={(e) => setQuickClientSchedule(e.target.value)} 
-                  className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary focus:outline-none"
-                >
-                  <option value="on-demand">⚡ On Demand / Manual (When Colleen Chooses)</option>
-                  <option value="weekly">Weekly</option>
-                  <option value="bi-weekly">Bi-Weekly</option>
-                  <option value="monthly">Monthly</option>
-                </select>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Representative Name</label>
+                  <input 
+                    type="text" 
+                    value={quickClientContactName} 
+                    onChange={(e) => setQuickClientContactName(e.target.value)} 
+                    placeholder="e.g. Mike Johnson" 
+                    className="bg-surface border border-border-subtle rounded-xl px-3.5 py-2 text-[13.5px] text-text-primary placeholder-text-secondary focus:outline-none focus:border-cyan-500"
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Contact Email</label>
+                  <input 
+                    type="email" 
+                    value={quickClientContactEmail} 
+                    onChange={(e) => setQuickClientContactEmail(e.target.value)} 
+                    placeholder="mike@abc123.com" 
+                    className="bg-surface border border-border-subtle rounded-xl px-3.5 py-2 text-[13.5px] text-text-primary placeholder-text-secondary focus:outline-none focus:border-cyan-500"
+                  />
+                </div>
               </div>
-              <div className="flex gap-3 mt-2">
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10.5px] font-bold text-cyan-400 uppercase tracking-wider">Allotted Hours Budget *</label>
+                  <input 
+                    type="number" 
+                    step="0.5"
+                    value={quickClientAllottedHours} 
+                    onChange={(e) => setQuickClientAllottedHours(e.target.value)} 
+                    placeholder="20" 
+                    className="bg-surface border border-cyan-500/50 rounded-xl px-3.5 py-2 text-[13.5px] text-text-primary font-bold focus:outline-none focus:border-cyan-500"
+                    required
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Invoice Schedule</label>
+                  <select 
+                    value={quickClientSchedule} 
+                    onChange={(e) => setQuickClientSchedule(e.target.value)} 
+                    className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary focus:outline-none"
+                  >
+                    <option value="on-demand">⚡ On Demand</option>
+                    <option value="weekly">📅 Weekly</option>
+                    <option value="bi-weekly">📅 Bi-Weekly</option>
+                    <option value="monthly">📅 Monthly</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex gap-3 mt-3">
                 <button 
                   type="button" 
                   onClick={() => setShowQuickAddClient(false)}
-                  className="flex-1 bg-surface border border-border-subtle hover:bg-surface-elevated text-text-secondary hover:text-text-primary py-2 rounded-xl text-[13.5px] font-bold transition-colors cursor-pointer"
+                  className="flex-1 bg-surface border border-border-subtle hover:bg-surface-elevated text-text-secondary hover:text-text-primary py-2.5 rounded-xl text-[13.5px] font-bold transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button 
                   type="submit"
-                  className="flex-1 bg-cyan-500 hover:bg-cyan-600 text-text-primary py-2 rounded-xl text-[13.5px] font-bold transition-colors cursor-pointer"
+                  className="flex-1 bg-[#3B82F6] hover:bg-[#3B82F6]/90 text-white font-bold py-2.5 rounded-xl text-[13.5px] shadow-lg shadow-blue-500/20 transition-all cursor-pointer"
                 >
-                  Save Client
+                  Onboard Company Now
                 </button>
               </div>
             </form>
@@ -9978,7 +10035,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
       {/* QUICK ADD PLANT / LOCATION MODAL */}
       {showQuickAddPlant && (
-        <div className="fixed inset-0 bg-surface backdrop-blur-sm z-[999] flex items-center justify-center p-3">
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[999] flex items-center justify-center p-3">
           <div className="bg-surface-elevated border border-border-subtle p-3 rounded-2xl w-full max-w-sm flex flex-col gap-3 text-left shadow-2xl animate-in fade-in zoom-in duration-200">
             <div className="flex justify-between items-center border-b border-border-subtle pb-2">
               <h4 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider flex items-center gap-1.5">

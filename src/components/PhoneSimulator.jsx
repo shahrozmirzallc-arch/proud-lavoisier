@@ -7,7 +7,14 @@ import {
 } from 'lucide-react';
 import { getEntities, addIncident, addEmailLog, addReworkLog, saveEntity, addExpenseEntry, logSystemEvent } from './SharedDatabase';
 
-export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigger }) {
+export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigger, isNativeMobile }) {
+  const isNative = isNativeMobile ?? (typeof window !== 'undefined' && (
+    window.Capacitor?.isNativePlatform?.() ||
+    window.Capacitor?.getPlatform?.() === 'android' ||
+    window.Capacitor?.getPlatform?.() === 'ios' ||
+    /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+    window.innerWidth <= 768
+  ));
   // Authentication & Shift States
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [email, setEmail] = useState('clarence.k@integritydriven.com');
@@ -960,14 +967,16 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
   };
 
   return (
-    <div className="relative mx-auto w-[380px] h-[780px] bg-slate-50 rounded-md p-2 shadow-sm border border-slate-300 flex flex-col overflow-hidden select-none">
-      {/* Rugged Top Bar */}
-      <div className="w-full h-4 bg-slate-200 border-b border-slate-300 flex items-center justify-center">
-        <div className="w-20 h-1 bg-slate-400 rounded-none"></div>
-      </div>
+    <div className={`relative mx-auto flex flex-col overflow-hidden select-none ${isNative ? 'w-full h-full min-h-screen max-w-full bg-slate-50 p-0 border-none rounded-none shadow-none flex-1' : 'w-[380px] h-[780px] bg-slate-50 rounded-md p-2 shadow-sm border border-slate-300'}`}>
+      {/* Rugged Top Bar - Only on desktop simulator */}
+      {!isNative && (
+        <div className="w-full h-4 bg-slate-200 border-b border-slate-300 flex items-center justify-center">
+          <div className="w-20 h-1 bg-slate-400 rounded-none"></div>
+        </div>
+      )}
 
       {/* Screen Top Status Bar */}
-      <div className="flex justify-between items-center px-4 py-2 text-[12px] font-bold text-slate-700 z-40 bg-white border-b border-slate-100 border-slate-300 select-none">
+      <div className="flex justify-between items-center px-4 py-2 text-[12px] font-bold text-slate-700 z-40 bg-white border-b border-slate-300 select-none">
         <span>18:19 PM</span>
         <div className="flex items-center gap-2">
           {/* Offline Toggle Indicator */}
@@ -1000,7 +1009,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
       </div>
 
       {/* Phone Screen Container */}
-      <div className="flex-1 overflow-hidden bg-slate-50 flex flex-col relative text-slate-900 border-x border-slate-300">
+      <div className={`flex-1 overflow-hidden bg-slate-50 flex flex-col relative text-slate-900 ${isNative ? 'border-none w-full min-h-screen' : 'border-x border-slate-300'}`}>
         
         {/* SCREEN 1: LOGIN */}
         {activeScreen === 'login' && (

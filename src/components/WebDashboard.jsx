@@ -4516,6 +4516,17 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
             {/* ADMIN / MANAGEMENT GROUPED SIDEBAR BUTTONS */}
             {['admin', 'owner', 'accountant', 'lead', 'shahroz']?.includes(userRole) && (
               <div className="flex flex-col gap-3">
+                <button 
+                  onClick={() => setShowQuickAddClient(true)}
+                  className="w-full h-11 px-3.5 rounded-xl font-bold text-[13.5px] bg-[#3B82F6] hover:bg-[#3B82F6]/90 text-white shadow-lg shadow-blue-500/20 transition-all cursor-pointer flex items-center justify-between border border-blue-400/40"
+                  title="Fast 1-Click Company & Budget Onboarding"
+                >
+                  <div className="flex items-center gap-2">
+                    <UserPlus className="w-4.5 h-4.5 text-white" />
+                    <span>➕ Onboard Company & Hours</span>
+                  </div>
+                  <span className="bg-white/20 text-white text-[10.5px] px-1.5 py-0.5 rounded font-extrabold uppercase">1-Click</span>
+                </button>
                 
                 {/* GROUP 1: AI INTELLIGENCE */}
                 <div className="p-2.5 rounded-2xl bg-slate-900/50 border border-slate-800/70 shadow-sm flex flex-col gap-1.5">

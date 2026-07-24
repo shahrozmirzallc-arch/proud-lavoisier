@@ -94,17 +94,14 @@ export const InvoiceModal = ({
           {/* TOP HEADER ROW */}
           <div className="flex justify-between items-start mb-6">
             
-            {/* Top Left: Logo & Company Address */}
-            <div className="flex items-start gap-4">
-              <div className="bg-[#031d37] px-3 py-2 rounded-xl flex items-center shadow-md">
-                <img 
-                  src={LOGO_BASE64} 
-                  alt="Integrity Driven Solutions Inc." 
-                  className="h-10 w-auto object-contain flex-shrink-0" 
-                />
-              </div>
-              <div className="flex flex-col text-[11px] text-black font-normal space-y-0.5 mt-0.5">
-                <p className="font-extrabold text-slate-900 text-[12px]">Integrity Driven Solutions Inc.</p>
+            {/* Top Left: Transparent Logo & Company Address */}
+            <div className="flex flex-col items-start">
+              <img 
+                src={LOGO_BASE64} 
+                alt="Integrity Driven Solutions Inc." 
+                className="h-14 w-auto object-contain flex-shrink-0 mb-2 -ml-1" 
+              />
+              <div className="flex flex-col text-[11px] text-black font-normal space-y-0.5 ml-0.5">
                 <p>P.O. Box 505</p>
                 <p>5900 Main Street</p>
                 <p>Orono, ON L0B 1M0</p>

@@ -53,23 +53,19 @@ export const generateIntegrityInvoicePDF = ({
   doc.setDrawColor(0, 0, 0);
 
   // ================= 1. HEADER SECTION =================
-  // Top Left: Official Brand Title & Address
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(14);
-  doc.setTextColor(3, 29, 55); // Brand dark navy
-  doc.text('INTEGRITY', marginX, y + 5);
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(8);
-  doc.setTextColor(80, 80, 80);
-  doc.text('DRIVEN SOLUTIONS INC.', marginX + 30, y + 5);
+  // Top Left: Logo Image 2 (Inside Red Box Area)
+  try {
+    doc.addImage(LOGO_BASE64, 'PNG', marginX, y, 56, 16);
+  } catch (err) {
+    console.warn("Could not embed PDF logo image:", err);
+  }
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
   doc.setTextColor(0, 0, 0);
-  doc.text('P.O. Box 505', marginX, y + 14);
-  doc.text('5900 Main Street', marginX, y + 19);
-  doc.text('Orono, ON L0B 1M0', marginX, y + 24);
+  doc.text('P.O. Box 505', marginX, y + 20);
+  doc.text('5900 Main Street', marginX, y + 25);
+  doc.text('Orono, ON L0B 1M0', marginX, y + 30);
 
   // Top Right: Title "Invoice"
   doc.setFont('helvetica', 'bold');
@@ -101,7 +97,7 @@ export const generateIntegrityInvoicePDF = ({
   doc.text(String(invoiceDate), invBoxX + 14, invBoxY + 11, { align: 'center' });
   doc.text(invStr, invBoxX + 44, invBoxY + 11, { align: 'center' });
 
-  y += 32;
+  y += 36;
 
   // ================= 2. ADDRESSES SECTION =================
   const addrBoxW = (contentW - 6) / 2; // 88mm each

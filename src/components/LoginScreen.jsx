@@ -10,13 +10,19 @@ import {
   WarningCircle,
 } from '@phosphor-icons/react';
 
-export function Logo() {
+import { LOGO_BASE64 } from './LogoBase64';
+
+export function Logo({ light = false }) {
   return (
-    <div className="brand">
-      <img src="/ids-pulse-shield.png" alt="" />
-      <div>
-        <strong>IDS PULSE</strong>
-        <span>Industrial Quality Operations</span>
+    <div className="brand flex items-center gap-3">
+      <img src={LOGO_BASE64} alt="Integrity Logo" className="h-10 w-auto object-contain flex-shrink-0" />
+      <div className="flex flex-col text-left leading-none">
+        <strong className={light ? "text-slate-900 font-extrabold text-base tracking-tight" : "text-white font-extrabold text-base tracking-tight"}>
+          INTEGRITY
+        </strong>
+        <span className={light ? "text-slate-600 font-semibold text-[9.5px] uppercase tracking-wider mt-0.5" : "text-cyan-300 font-semibold text-[9.5px] uppercase tracking-wider mt-0.5"}>
+          DRIVEN SOLUTIONS INC.
+        </span>
       </div>
     </div>
   );

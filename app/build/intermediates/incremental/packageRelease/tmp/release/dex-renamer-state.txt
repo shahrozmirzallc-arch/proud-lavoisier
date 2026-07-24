@@ -1,0 +1,4 @@
+#Thu Jul 23 17:50:22 EDT 2026
+base.0=C\:\\Users\\Sharoz\\Documents\\antigravity\\proud-lavoisier\\app\\build\\intermediates\\dex\\release\\minifyReleaseWithR8\\classes.dex
+renamed.0=classes.dex
+path.0=classes.dex

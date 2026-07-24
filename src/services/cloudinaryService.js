@@ -1,24 +1,101 @@
 // src/services/cloudinaryService.js
-// Enterprise Cloudinary Upload Service for IDS Pulse Media Plane (Images, Videos & Audio)
+// Enterprise Cloudinary Upload Service for IDS Pulse Media Plane (Images, Videos, Audio & PDFs)
 
-const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || 'demo';
-const UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || 'unsigned_preset';
+const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || 'olbzwhrw';
+const UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || 'unsigned_uploads';
 
 /**
- * Uploads any media asset (Image, Video, or Audio Voice Note) directly to Cloudinary.
- * @param {File|Blob|string} fileOrBase64 - File object, Blob, or Data URL to upload
- * @param {string} folder - Destination subfolder inside ids_pulse/ ('incidents' | 'expenses' | 'videos' | 'audio')
- * @param {'auto'|'image'|'video'|'raw'} resourceType - Cloudinary resource type
- * @returns {Promise<{success: boolean, url: string, public_id: string, resource_type?: string, error?: string}>}
+ * Validates a file against IDS Pulse Quality evidence restrictions.
+ * @param {File|Blob|string} fileOrBase64 - File object or Base64 string to validate
+ * @returns {{valid: boolean, error?: string, fileType: 'image'|'video'|'audio'|'pdf'}}
  */
-export async function uploadToCloudinary(fileOrBase64, folder = 'incidents', resourceType = 'auto') {
+export function validateMediaFile(fileOrBase64) {
+  if (!fileOrBase64) {
+    return { valid: false, error: 'No media file provided.' };
+  }
+
+  // Base64 Data URL validation
+  if (typeof fileOrBase64 === 'string') {
+    if (fileOrBase64.includes('image/svg+xml')) {
+      return { valid: false, error: 'SVG vector files are explicitly prohibited.' };
+    }
+    if (fileOrBase64.startsWith('data:image/')) {
+      return { valid: true, fileType: 'image' };
+    }
+    if (fileOrBase64.startsWith('data:video/')) {
+      return { valid: true, fileType: 'video' };
+    }
+    if (fileOrBase64.startsWith('data:audio/')) {
+      return { valid: true, fileType: 'audio' };
+    }
+    if (fileOrBase64.startsWith('data:application/pdf')) {
+      return { valid: true, fileType: 'pdf' };
+    }
+    return { valid: true, fileType: 'image' };
+  }
+
+  // File object validation
+  const fileName = (fileOrBase64.name || '').toLowerCase();
+  const fileType = fileOrBase64.type || '';
+  const fileSizeMB = fileOrBase64.size / (1024 * 1024);
+
+  // Prohibited extensions check
+  const prohibitedExts = ['.svg', '.exe', '.bat', '.sh', '.apk', '.doc', '.docx', '.xls', '.xlsx', '.zip', '.tar', '.gz', '.rar'];
+  if (prohibitedExts.some(ext => fileName.endsWith(ext))) {
+    return { valid: false, error: `File type ${fileName} is explicitly prohibited for industrial quality evidence.` };
+  }
+
+  // Image validation
+  const imageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/heic', 'image/heif', 'image/webp'];
+  if (imageTypes.includes(fileType) || /\.(jpe?g|png|heic|heif|webp)$/i.test(fileName)) {
+    if (fileSizeMB > 20) return { valid: false, error: 'Image exceeds maximum size limit of 20 MB.' };
+    return { valid: true, fileType: 'image' };
+  }
+
+  // Video validation
+  const videoTypes = ['video/mp4', 'video/quicktime', 'video/x-m4v'];
+  if (videoTypes.includes(fileType) || /\.(mp4|mov|m4v)$/i.test(fileName)) {
+    if (fileSizeMB > 150) return { valid: false, error: 'Video evidence exceeds maximum size limit of 150 MB.' };
+    return { valid: true, fileType: 'video' };
+  }
+
+  // Audio validation
+  const audioTypes = ['audio/m4a', 'audio/aac', 'audio/mp3', 'audio/wav', 'audio/x-wav', 'audio/mpeg'];
+  if (audioTypes.includes(fileType) || /\.(m4a|aac|mp3|wav)$/i.test(fileName)) {
+    if (fileSizeMB > 25) return { valid: false, error: 'Audio recording exceeds maximum size limit of 25 MB.' };
+    return { valid: true, fileType: 'audio' };
+  }
+
+  // PDF validation
+  if (fileType === 'application/pdf' || fileName.endsWith('.pdf')) {
+    if (fileSizeMB > 20) return { valid: false, error: 'PDF evidence document exceeds maximum size limit of 20 MB.' };
+    return { valid: true, fileType: 'pdf' };
+  }
+
+  return { valid: false, error: 'Unsupported media format. Please upload JPEG, PNG, HEIC, MP4, MOV, MP3, WAV or PDF files.' };
+}
+
+/**
+ * Uploads any validated media asset (Image, Video, Audio or PDF) directly to Cloudinary.
+ * @param {File|Blob|string} fileOrBase64 - File object, Blob, or Data URL to upload
+ * @param {string} folder - Destination subfolder inside ids_pulse/ ('incidents' | 'expenses' | 'videos' | 'audio' | 'documents')
+ * @returns {Promise<{success: boolean, url: string, public_id: string, resource_type?: string, bytes?: number, error?: string}>}
+ */
+export async function uploadToCloudinary(fileOrBase64, folder = 'incidents') {
   try {
+    const val = validateMediaFile(fileOrBase64);
+    if (!val.valid) {
+      throw new Error(val.error);
+    }
+
+    const resourceEndpoint = (val.fileType === 'video' || val.fileType === 'audio') ? 'video' : (val.fileType === 'pdf' ? 'auto' : 'image');
+
     const formData = new FormData();
     formData.append('file', fileOrBase64);
     formData.append('upload_preset', UPLOAD_PRESET);
     formData.append('folder', `ids_pulse/${folder}`);
 
-    const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${resourceType}/upload`, {
+    const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${resourceEndpoint}/upload`, {
       method: 'POST',
       body: formData
     });

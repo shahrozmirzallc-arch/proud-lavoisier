@@ -23,4 +23,25 @@ dist-ssr
 *.sln
 *.sw?
 
+# Large binaries & SDK archives
+*.zip
+*.apk
+*.aab
+jdk17_extracted/
+android.keystore
+app/build/
+.gradle/
+
+# Screenshots & Local Test Scripts
+*.png
+*.jpg
+verify_*.cjs
+test_*.cjs
+capture_*.cjs
+run_*.cjs
+render_*.cjs
+take_*.cjs
+update_*.cjs
+populate_*.cjs
+
 .vercel

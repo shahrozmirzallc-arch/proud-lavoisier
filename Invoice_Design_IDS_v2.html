@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Invoice INV-AKG-2026-20HRS</title>
+<style>
+  @page { size: Letter; margin: 0; }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  html, body { width: 8.5in; height: 11in; font-family: Arial, Helvetica, sans-serif; color: #1a2332; background: #ffffff; }
+  .page { width: 8.5in; height: 11in; position: relative; display: flex; flex-direction: column; }
+
+  /* ===== Slim header band ===== */
+  .band { background: #0b1f3a; color: #ffffff; padding: 14px 44px; display: flex; justify-content: space-between; align-items: center; }
+  .band .left img { height: 34px; display: block; }
+  .band .left .addr1 { font-size: 8.5px; color: #9db8dd; margin-top: 5px; letter-spacing: 0.3px; }
+  .band .inv-title { text-align: right; }
+  .band .inv-title h1 { font-size: 22px; letter-spacing: 4px; font-weight: 700; color: #ffffff; }
+  .band .inv-title .num { font-size: 10.5px; color: #9db8dd; margin-top: 3px; letter-spacing: 1px; }
+  .accent { height: 3px; background: linear-gradient(90deg, #2e86de 0%, #7fc3f7 100%); }
+
+  .body { padding: 18px 44px 0 44px; flex: 1; display: flex; flex-direction: column; }
+
+  /* ===== 3-column top: Invoice To | Service Location | Invoice Details ===== */
+  .addr { display: flex; gap: 16px; }
+  .box { flex: 1; border: 1px solid #d5dce6; border-radius: 4px; overflow: hidden; }
+  .box .hd { background: #0b1f3a; color: #ffffff; font-size: 9px; font-weight: 700; letter-spacing: 1.4px; padding: 5px 12px; text-transform: uppercase; }
+  .box .bd { padding: 9px 12px 10px 12px; font-size: 10px; line-height: 1.55; color: #3c4a5d; }
+  .box .bd .nm { font-weight: 700; color: #1a2332; }
+  .box table.kv { border-collapse: collapse; width: 100%; }
+  .box table.kv td { font-size: 10px; padding: 5px 12px; border-bottom: 1px solid #e4e9f0; }
+  .box table.kv tr:last-child td { border-bottom: none; }
+  .box table.kv td.k { background: #f2f5f9; font-weight: 700; color: #0b1f3a; width: 44%; }
+  .box table.kv td.v { text-align: right; color: #1a2332; }
+
+  /* ===== PO info strip ===== */
+  .strip { margin-top: 14px; border: 1px solid #d5dce6; border-radius: 4px; overflow: hidden; }
+  .strip table { border-collapse: collapse; width: 100%; table-layout: fixed; }
+  .strip th { background: #f2f5f9; color: #0b1f3a; font-size: 8.5px; letter-spacing: 1px; text-transform: uppercase; padding: 5px 10px; text-align: left; border-right: 1px solid #e4e9f0; border-bottom: 1px solid #e4e9f0; }
+  .strip td { font-size: 10px; padding: 6px 10px; color: #1a2332; border-right: 1px solid #e4e9f0; vertical-align: top; }
+  .strip th:last-child, .strip td:last-child { border-right: none; }
+
+  /* ===== Items table ===== */
+  .items { margin-top: 14px; border: 1px solid #d5dce6; border-radius: 4px; overflow: hidden; }
+  .items table { border-collapse: collapse; width: 100%; table-layout: fixed; }
+  .items th { background: #0b1f3a; color: #ffffff; font-size: 9px; letter-spacing: 1px; text-transform: uppercase; padding: 7px 12px; text-align: left; }
+  .items th.r, .items td.r { text-align: right; }
+  .items th.c, .items td.c { text-align: center; }
+  .items tr:nth-child(odd) td { background: #f7f9fc; }
+  .items td { font-size: 10.5px; padding: 10px 12px; color: #1a2332; border-bottom: 1px solid #e4e9f0; vertical-align: top; }
+  .items .desc .t { font-weight: 700; color: #0b1f3a; margin-bottom: 3px; }
+  .items .desc .s { font-size: 9.5px; color: #3c4a5d; line-height: 1.5; }
+
+  /* ===== Totals ===== */
+  .totrow { display: flex; justify-content: flex-end; margin-top: 14px; }
+  .totals { min-width: 270px; }
+  .totals table { border-collapse: collapse; width: 100%; }
+  .totals td { font-size: 11px; padding: 6px 14px; }
+  .totals td.k { color: #55627a; }
+  .totals td.v { text-align: right; color: #1a2332; }
+  .totals tr.line td { border-top: 1px solid #e4e9f0; }
+  .totals tr.grand td { background: #0b1f3a; color: #ffffff; font-size: 13px; font-weight: 700; padding: 10px 14px; }
+  .totals tr.grand td.v { color: #ffffff; }
+  .totals tr.grand td:first-child { border-radius: 4px 0 0 4px; }
+  .totals tr.grand td:last-child { border-radius: 0 4px 4px 0; }
+  .taxnote { text-align: right; font-size: 8.5px; color: #8494ab; margin-top: 5px; }
+
+  /* ===== Payment + Notes + Sign-off ===== */
+  .bottom { display: flex; gap: 16px; margin-top: 16px; }
+  .bottom .box .bd { font-size: 9.5px; }
+  .bottom .box .bd .row { display: flex; margin-bottom: 3px; }
+  .bottom .box .bd .row .k { width: 108px; font-weight: 700; color: #0b1f3a; flex-shrink: 0; }
+  .bottom .box .bd .row .v { color: #3c4a5d; }
+  .signoff { margin-top: 14px; display: flex; gap: 40px; }
+  .signoff .sig { flex: 1; }
+  .signoff .sig .ln { border-bottom: 1px solid #b9c4d4; height: 26px; }
+  .signoff .sig .lb { font-size: 8.5px; color: #8494ab; margin-top: 4px; letter-spacing: 0.5px; }
+
+  /* ===== Footer ===== */
+  .foot { margin-top: auto; padding: 12px 44px 16px 44px; border-top: 2px solid #0b1f3a; display: flex; justify-content: space-between; align-items: flex-end; }
+  .foot .l { font-size: 9px; color: #55627a; line-height: 1.7; }
+  .foot .l b { color: #0b1f3a; }
+  .foot .r { font-size: 9.5px; color: #0b1f3a; font-weight: 700; letter-spacing: 0.5px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="band">
+    <div class="left">
+      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMEAAAAvCAYAAABaDK5uAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA+hpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDYuMC1jMDAyIDc5LjE2NDQ2MCwgMjAyMC8wNS8xMi0xNjowNDoxNyAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczpkYz0iaHR0cDovL3B1cmwub3JnL2RjL2VsZW1lbnRzLzEuMS8iIHhtbG5zOnhtcE1NPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvbW0vIiB4bWxuczpzdFJlZj0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL3NUeXBlL1Jlc291cmNlUmVmIyIgeG1wOkNyZWF0b3JUb29sPSJBZG9iZSBQaG90b3Nob3AgMjEuMiAoV2luZG93cykiIHhtcDpDcmVhdGVEYXRlPSIyMDI1LTA0LTAyVDE2OjAwOjUzLTA2OjAwIiB4bXA6TW9kaWZ5RGF0ZT0iMjAyNS0wNC0wMlQxNjowMjowMS0wNjowMCIgeG1wOk1ldGFkYXRhRGF0ZT0iMjAyNS0wNC0wMlQxNjowMjowMS0wNjowMCIgZGM6Zm9ybWF0PSJpbWFnZS9wbmciIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6MUFCOUNGRUIxMDBFMTFGMEE5QzlFRjQ2MTc0MUFBMEEiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6MUFCOUNGRUMxMDBFMTFGMEE5QzlFRjQ2MTc0MUFBMEEiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6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" alt="Integrity Driven Solutions">
+      <div class="addr1">P.O. Box 505, 5900 Main Street, Orono, ON L0B 1M0, Canada &nbsp;|&nbsp; GST/HST No. 853120236 RT0001</div>
+    </div>
+    <div class="inv-title">
+      <h1>INVOICE</h1>
+      <div class="num">INV-AKG-2026-20HRS</div>
+    </div>
+  </div>
+  <div class="accent"></div>
+
+  <div class="body">
+
+    <div class="addr">
+      <div class="box">
+        <div class="hd">Invoice To</div>
+        <div class="bd">
+          <div class="nm">Auto-Kabel Management GmbH &amp; Co. KG</div>
+          <div>Attn: Accounts Payable &amp; Quality Purchasing</div>
+          <div>47800 Anchor Court</div>
+          <div>Plymouth, MI 48170, USA</div>
+          <div>Tax ID: US-982400192</div>
+        </div>
+      </div>
+      <div class="box">
+        <div class="hd">Service Location</div>
+        <div class="bd">
+          <div class="nm">Ford Oakville Assembly Plant</div>
+          <div>Gate 4 Sorting Bay</div>
+          <div>Oakville, ON, Canada</div>
+          <div>Attn: Liaison QA Lead</div>
+        </div>
+      </div>
+      <div class="box">
+        <div class="hd">Invoice Details</div>
+        <table class="kv">
+          <tr><td class="k">Invoice Date</td><td class="v">July 24, 2026</td></tr>
+          <tr><td class="k">Due Date</td><td class="v">August 23, 2026</td></tr>
+          <tr><td class="k">Terms</td><td class="v">Net 30</td></tr>
+          <tr><td class="k">Currency</td><td class="v">USD</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="strip">
+      <table>
+        <colgroup>
+          <col style="width:17%"><col style="width:22%"><col style="width:14%"><col style="width:14%"><col style="width:33%">
+        </colgroup>
+        <tr>
+          <th>P.O. Number</th><th>Rep</th><th>Service Date</th><th>Service Type</th><th>Project</th>
+        </tr>
+        <tr>
+          <td>PO-AKG-984210</td>
+          <td>Hugo V. (QRE Specialist)</td>
+          <td>7/24/2026</td>
+          <td>Direct Quality Audit</td>
+          <td>Ford Oakville Line 2 Wire Harness Containment</td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="items">
+      <table>
+        <colgroup>
+          <col style="width:8%"><col style="width:52%"><col style="width:10%"><col style="width:14%"><col style="width:16%">
+        </colgroup>
+        <tr>
+          <th class="c">Qty</th><th>Description</th><th class="c">U/M</th><th class="r">Rate</th><th class="r">Amount</th>
+        </tr>
+        <tr>
+          <td class="c">20</td>
+          <td class="desc">
+            <div class="t">Contractor Quality Audit Hours</div>
+            <div class="s">Liaison Quality Inspection &amp; Sorting Services by Integrity Driven Solutions.<br>
+            Field Rep: Hugo V. | 20.0 billable hours @ $34.00/hr<br>
+            Containment Project: Ford Oakville Line 2 Main Harness Defect Audit</div>
+          </td>
+          <td class="c">hr</td>
+          <td class="r">34.00</td>
+          <td class="r">680.00</td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="totrow">
+      <div class="totals">
+        <table>
+          <tr><td class="k">Subtotal</td><td class="v">680.00</td></tr>
+          <tr class="line"><td class="k">GST/HST</td><td class="v">0.00</td></tr>
+          <tr class="grand"><td>Total Due</td><td class="v">USD 680.00</td></tr>
+        </table>
+        <div class="taxnote">Tax treatment as per client purchase order. GST/HST No. 853120236 RT0001.</div>
+      </div>
+    </div>
+
+    <div class="bottom">
+      <div class="box">
+        <div class="hd">Payment Details</div>
+        <div class="bd">
+          <div class="row"><div class="k">Wire / EFT</div><div class="v">[Bank Name] | Transit [#####] | Institution [###] | Account [#######]</div></div>
+          <div class="row"><div class="k">E-Transfer</div><div class="v">[payments email address]</div></div>
+          <div class="row"><div class="k">Cheque</div><div class="v">Payable to Integrity Driven Solutions, mail to P.O. Box 505, Orono, ON L0B 1M0</div></div>
+          <div class="row"><div class="k">Reference</div><div class="v">Quote invoice number INV-AKG-2026-20HRS on all payments</div></div>
+        </div>
+      </div>
+      <div class="box">
+        <div class="hd">Notes &amp; Service Verification</div>
+        <div class="bd">
+          <div style="margin-bottom:6px; color:#3c4a5d;">Hours verified against daily sign-in sheets at Gate 4 Sorting Bay. Late payments subject to 1.5% monthly interest. Questions: [billing phone] | [billing email].</div>
+          <div class="signoff">
+            <div class="sig"><div class="ln"></div><div class="lb">CUSTOMER AUTHORIZATION (NAME / DATE)</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="foot">
+    <div class="l">
+      <b>Integrity Driven Solutions</b> &nbsp;|&nbsp; P.O. Box 505, 5900 Main Street, Orono, ON L0B 1M0, Canada &nbsp;|&nbsp; GST/HST No. 853120236 RT0001<br>
+      [phone] &nbsp;|&nbsp; [email] &nbsp;|&nbsp; goto-ids.com
+    </div>
+    <div class="r">Thank you for your business.</div>
+  </div>
+
+</div>
+</body>
+</html>

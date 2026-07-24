@@ -104,12 +104,12 @@ const sleep = (ms) => new Promise(r => setTimeout(r, ms));
   const pdfFile = files.find(f => f.endsWith('.pdf'));
   if (pdfFile) {
     const srcPdf = path.join(downloadPath, pdfFile);
-    const targetPdf = path.join(__dirname, 'Invoice_INV-AKG-2026-20HRS.pdf');
+    const targetPdf = path.join(__dirname, 'Invoice_INV-AKG-2026-20HRS_v5.pdf');
     fs.copyFileSync(srcPdf, targetPdf);
 
     const artifactDir = 'C:\\Users\\Sharoz\\.gemini\\antigravity\\brain\\db8c5851-2fbb-4e2e-a61d-b7dfddf9f71f';
     if (fs.existsSync(artifactDir)) {
-      fs.copyFileSync(srcPdf, path.join(artifactDir, 'Invoice_INV-AKG-2026-20HRS.pdf'));
+      fs.copyFileSync(srcPdf, path.join(artifactDir, 'Invoice_INV-AKG-2026-20HRS_v5.pdf'));
     }
     console.log("Successfully exported downloadable PDF to:", targetPdf);
   }

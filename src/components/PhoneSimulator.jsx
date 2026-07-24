@@ -7,6 +7,8 @@ import {
 } from 'lucide-react';
 import { getEntities, addIncident, addEmailLog, addReworkLog, saveEntity, addExpenseEntry, logSystemEvent } from './SharedDatabase';
 import { uploadToCloudinary } from '../services/cloudinaryService';
+import { stageIncidentLocally, getLocalOutbox } from '../services/nativeStorageService';
+import { getRepStatusConfig, sanitizeCustomerDerivativeUrl } from '../services/mediaSecurityService';
 
 export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigger, isNativeMobile }) {
   const isNative = isNativeMobile ?? (typeof window !== 'undefined' && (
@@ -80,6 +82,12 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
   const [isSendingIncident, setIsSendingIncident] = useState(false);
   const [incidentSentConfirmation, setIncidentSentConfirmation] = useState(false);
   const [sentIncidentId, setSentIncidentId] = useState(null);
+
+  // Offline Confirmation Modal & Media Help state
+  const [showOfflineModal, setShowOfflineModal] = useState(false);
+  const [offlineModalTrackingRef, setOfflineModalTrackingRef] = useState('');
+  const [showMediaHelpPanel, setShowMediaHelpPanel] = useState(false);
+  const [approvedCellularAssets, setApprovedCellularAssets] = useState([]);
 
   // REWORK LOG STATE
   const [reworkPN, setReworkPN] = useState('86286761');
@@ -615,6 +623,16 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
           defect_location_y: defectLocationY,
           part_view: 'top'
         };
+
+        // Handle offline durable outbox staging if connectivity is absent
+        if (isOffline) {
+          const staged = stageIncidentLocally(newInc);
+          setIsSendingIncident(false);
+          setOfflineModalTrackingRef(staged.tracking_ref);
+          setShowOfflineModal(true);
+          window.dispatchEvent(new Event('ids_pulse_db_update'));
+          return;
+        }
 
         // Commit database writes inside the try-catch block
         savedIncident = addIncident(newInc);
@@ -1907,6 +1925,35 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
               {/* STEP 3: DESCRIBE & CONTEXT (FIELDS WITH COUNTER AND AUTOCOMPLETE) */}
               {incStep === 3 && (
                 <div className="flex flex-col gap-3">
+                  {/* Media Route Security Help Panel */}
+                  <div className="bg-blue-50/90 border border-blue-200 rounded-xl p-2.5 text-[11px] text-blue-900 shadow-sm mb-1 text-left">
+                    <button 
+                      type="button"
+                      onClick={() => setShowMediaHelpPanel(!showMediaHelpPanel)}
+                      className="w-full flex items-center justify-between font-bold text-[11.5px] text-blue-800 cursor-pointer"
+                    >
+                      <span className="flex items-center gap-1.5">
+                        <Shield className="w-3.5 h-3.5 text-blue-600" />
+                        <span>Media Route & Data Flow Info</span>
+                      </span>
+                      <span className="text-[10px] text-blue-600 font-extrabold uppercase">{showMediaHelpPanel ? 'Hide' : 'Explain'}</span>
+                    </button>
+                    
+                    {showMediaHelpPanel && (
+                      <div className="mt-2 pt-2 border-t border-blue-200/70 flex flex-col gap-2 text-left leading-relaxed">
+                        <div>
+                          <strong className="text-blue-950 font-bold block mb-0.5">Incident Evidence Route:</strong>
+                          <span className="font-mono text-[10px] bg-blue-100/70 px-1.5 py-0.5 rounded text-blue-900 block border border-blue-200">This phone → IDS secure media → Lead review → Customer after approval</span>
+                        </div>
+                        <div>
+                          <strong className="text-blue-950 font-bold block mb-0.5">Expense Receipt Route:</strong>
+                          <span className="font-mono text-[10px] bg-blue-100/70 px-1.5 py-0.5 rounded text-blue-900 block border border-blue-200">This phone → IDS secure media → Authorized expense review</span>
+                          <span className="text-[9.5px] italic text-slate-500 block mt-1">*Note: Customers cannot view receipt media under company privacy policy.</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
                   <span className="text-[11.5px] text-blue-700 font-bold uppercase tracking-wider">Step 3: Suspect Material Metadata</span>
 
                   {/* Area Found */}
@@ -2925,6 +2972,55 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                     );
                   })
               )}
+            </div>
+          </div>
+        )}
+
+        {/* OFFLINE CONFIRMATION POPUP MODAL */}
+        {showOfflineModal && (
+          <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-2xl flex flex-col gap-3.5 text-left w-full max-w-[320px]">
+              <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
+                <div className="w-10 h-10 rounded-full bg-emerald-100 border border-emerald-300 flex items-center justify-center text-emerald-600 font-black text-lg">
+                  ✓
+                </div>
+                <div>
+                  <h3 className="text-[15px] font-black text-slate-900 leading-tight">Report safely saved</h3>
+                  <span className="inline-block mt-1 text-[10px] font-extrabold bg-amber-100 text-amber-800 border border-amber-300 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+                    Waiting for internet
+                  </span>
+                </div>
+              </div>
+
+              <p className="text-[12px] text-slate-600 leading-relaxed font-medium">
+                Your report and evidence are safely saved on this phone. You can close the app. As soon as an internet connection is available, IDS Pulse will securely send all report data and media automatically.
+              </p>
+
+              <div className="bg-slate-50 border border-slate-200 p-2.5 rounded-xl flex items-center justify-between text-[11.5px]">
+                <span className="text-slate-500 font-semibold">Tracking Ref:</span>
+                <span className="font-mono font-extrabold text-slate-900 bg-slate-200/70 px-2 py-0.5 rounded text-[11px]">{offlineModalTrackingRef}</span>
+              </div>
+
+              <div className="flex flex-col gap-2 mt-1">
+                <button
+                  onClick={() => {
+                    setShowOfflineModal(false);
+                    setActiveScreen('home');
+                  }}
+                  className="w-full h-11 bg-[#3B82F6] hover:bg-blue-600 text-white font-extrabold text-[13.5px] rounded-xl shadow-md transition-all cursor-pointer flex items-center justify-center border border-blue-400/30"
+                >
+                  Done
+                </button>
+                <button
+                  onClick={() => {
+                    setShowOfflineModal(false);
+                    setActiveScreen('history');
+                  }}
+                  className="w-full h-9 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[12px] rounded-xl transition-all cursor-pointer flex items-center justify-center border border-slate-200"
+                >
+                  View saved report
+                </button>
+              </div>
             </div>
           </div>
         )}

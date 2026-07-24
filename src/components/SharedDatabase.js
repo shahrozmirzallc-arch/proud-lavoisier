@@ -9,6 +9,8 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 const STORAGE_KEY = 'ids_pulse_db';
+const DB_VERSION_KEY = 'ids_pulse_db_version';
+const CURRENT_DB_VERSION = 'v1.0.5_transparent_logo_v5';
 
 const SEED_DATA = {
   users: [

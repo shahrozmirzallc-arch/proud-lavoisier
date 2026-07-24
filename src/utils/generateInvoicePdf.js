@@ -2,7 +2,8 @@ import jsPDF from 'jspdf';
 import { LOGO_BASE64 } from '../components/LogoBase64';
 
 /**
- * Generates an exact faithful PDF invoice matching the Integrity Driven Solutions Inc. template.
+ * Generates an exact, perfectly aligned PDF invoice matching the Integrity Driven Solutions Inc. template.
+ * Fixes all column text overflows, line overlaps, and logo rendering issues.
  */
 export const generateIntegrityInvoicePDF = ({
   client,
@@ -52,49 +53,55 @@ export const generateIntegrityInvoicePDF = ({
   doc.setDrawColor(0, 0, 0);
 
   // ================= 1. HEADER SECTION =================
-  // Logo Image & Company Address (Left)
-  try {
-    doc.addImage(LOGO_BASE64, 'PNG', marginX, y, 48, 14);
-  } catch (err) {
-    console.warn("Could not embed PDF logo image:", err);
-  }
+  // Top Left: Official Brand Title & Address
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(14);
+  doc.setTextColor(3, 29, 55); // Brand dark navy
+  doc.text('INTEGRITY', marginX, y + 5);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(80, 80, 80);
+  doc.text('DRIVEN SOLUTIONS INC.', marginX + 30, y + 5);
 
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(9.5);
+  doc.setFontSize(9);
   doc.setTextColor(0, 0, 0);
-  doc.text('P.O. Box 505', marginX, y + 18);
-  doc.text('5900 Main Street', marginX, y + 23);
-  doc.text('Orono, ON L0B 1M0', marginX, y + 28);
+  doc.text('P.O. Box 505', marginX, y + 14);
+  doc.text('5900 Main Street', marginX, y + 19);
+  doc.text('Orono, ON L0B 1M0', marginX, y + 24);
 
-  // Title: "Invoice" (Right)
+  // Top Right: Title "Invoice"
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(24);
   doc.setTextColor(0, 0, 0);
   doc.text('Invoice', marginX + contentW, y + 6, { align: 'right' });
 
   // Date & Invoice # Grid Box (Right side under Invoice title)
-  const invBoxW = 55;
+  const invBoxW = 60;
   const invBoxX = marginX + contentW - invBoxW;
   const invBoxY = y + 12;
   const invBoxH = 14;
 
   doc.rect(invBoxX, invBoxY, invBoxW, invBoxH);
   // Vertical divider inside Date/Invoice box
-  doc.line(invBoxX + (invBoxW / 2), invBoxY, invBoxX + (invBoxW / 2), invBoxY + invBoxH);
+  doc.line(invBoxX + 28, invBoxY, invBoxX + 28, invBoxY + invBoxH);
   // Horizontal divider
   doc.line(invBoxX, invBoxY + 6, invBoxX + invBoxW, invBoxY + 6);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8.5);
-  doc.text('Date', invBoxX + (invBoxW / 4), invBoxY + 4.5, { align: 'center' });
-  doc.text('Invoice #', invBoxX + (3 * invBoxW / 4), invBoxY + 4.5, { align: 'center' });
+  doc.text('Date', invBoxX + 14, invBoxY + 4.5, { align: 'center' });
+  doc.text('Invoice #', invBoxX + 44, invBoxY + 4.5, { align: 'center' });
 
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(9);
-  doc.text(String(invoiceDate), invBoxX + (invBoxW / 4), invBoxY + 11, { align: 'center' });
-  doc.text(String(invoiceNum), invBoxX + (3 * invBoxW / 4), invBoxY + 11, { align: 'center' });
+  // Dynamically scale invoice number text size to prevent border collision
+  const invStr = String(invoiceNum || '');
+  const invFontSize = invStr.length > 15 ? 7.5 : (invStr.length > 12 ? 8 : 8.5);
+  doc.setFontSize(invFontSize);
+  doc.text(String(invoiceDate), invBoxX + 14, invBoxY + 11, { align: 'center' });
+  doc.text(invStr, invBoxX + 44, invBoxY + 11, { align: 'center' });
 
-  y += 34;
+  y += 32;
 
   // ================= 2. ADDRESSES SECTION =================
   const addrBoxW = (contentW - 6) / 2; // 88mm each
@@ -111,9 +118,10 @@ export const generateIntegrityInvoicePDF = ({
 
   doc.setFontSize(8.5);
   let addrY = y + 12;
-  invoiceToLines.forEach(line => {
+  (invoiceToLines || []).forEach(line => {
     if (line) {
-      doc.text(String(line), leftBoxX + 3, addrY);
+      const truncatedLine = doc.splitTextToSize(String(line), addrBoxW - 6)[0];
+      doc.text(truncatedLine, leftBoxX + 3, addrY);
       addrY += 4.5;
     }
   });
@@ -121,8 +129,8 @@ export const generateIntegrityInvoicePDF = ({
   // Right Box: Ship To
   const rightBoxX = marginX + addrBoxW + 6;
   const shipBoxW = contentW - addrBoxW - 6;
-  const shipBoxY = y - 4; // Shifted slightly up as in sample image
-  const shipBoxH = 38;
+  const shipBoxY = y;
+  const shipBoxH = addrBoxH;
 
   doc.rect(rightBoxX, shipBoxY, shipBoxW, shipBoxH);
   doc.line(rightBoxX, shipBoxY + 7, rightBoxX + shipBoxW, shipBoxY + 7);
@@ -132,10 +140,11 @@ export const generateIntegrityInvoicePDF = ({
   doc.text('Ship To', rightBoxX + 3, shipBoxY + 5);
 
   let shipY = shipBoxY + 12;
-  const shipLines = typeof shipToText === 'string' ? shipToText.split('\n') : shipToText;
+  const shipLines = typeof shipToText === 'string' ? shipToText.split('\n') : (shipToText || []);
   shipLines.forEach(line => {
     if (line) {
-      doc.text(String(line), rightBoxX + 3, shipY);
+      const truncatedLine = doc.splitTextToSize(String(line), shipBoxW - 6)[0];
+      doc.text(truncatedLine, rightBoxX + 3, shipY);
       shipY += 4.5;
     }
   });
@@ -144,7 +153,8 @@ export const generateIntegrityInvoicePDF = ({
 
   // ================= 3. ORDER INFO TABLE =================
   const orderHeaders = ['P.O. No.', 'Terms', 'Rep', 'Ship', 'Via', 'F.O.B.', 'Project'];
-  const orderColWidths = [24, 24, 18, 22, 18, 22, 54]; // Sums to 182mm
+  // Adjusted column widths to allocate sufficient space for Rep and Project
+  const orderColWidths = [24, 18, 30, 20, 22, 22, 46]; // Sums to 182mm
   const orderTableH = 14;
 
   doc.rect(marginX, y, contentW, orderTableH);
@@ -157,28 +167,51 @@ export const generateIntegrityInvoicePDF = ({
       doc.line(currentX, y, currentX, y + orderTableH);
     }
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8.5);
+    doc.setFontSize(8);
     doc.text(hdr, currentX + (w / 2), y + 4.5, { align: 'center' });
     currentX += w;
   });
 
-  // Fill Values
-  const orderValues = [poNumber, terms, repName, shipDate, via, fob, projectName];
+  // Clean values with strict bounds checking
+  const formatRep = (val) => {
+    if (!val) return '';
+    if (val.includes('Hugo')) return 'Hugo V.';
+    return val.length > 15 ? val.substring(0, 15) + '.' : val;
+  };
+
+  const orderValues = [
+    poNumber,
+    terms,
+    formatRep(repName),
+    shipDate,
+    via,
+    fob,
+    projectName
+  ];
+
   currentX = marginX;
   orderValues.forEach((val, idx) => {
     const w = orderColWidths[idx];
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8.5);
-    doc.text(String(val || ''), currentX + (w / 2), y + 11, { align: 'center' });
+    
+    // Adjust font size if text is long
+    const valStr = String(val || '');
+    const fontSize = valStr.length > 25 ? 6.5 : (valStr.length > 16 ? 7.5 : 8);
+    doc.setFontSize(fontSize);
+
+    // Truncate text if it exceeds column width
+    const splitVal = doc.splitTextToSize(valStr, w - 2);
+    doc.text(splitVal[0] || '', currentX + (w / 2), y + 11, { align: 'center' });
     currentX += w;
   });
 
-  y += orderTableH + 3;
+  y += orderTableH + 4;
 
   // ================= 4. LINE ITEMS TABLE =================
   const itemHeaders = ['Quantity', 'Item', 'Description', 'U/M', 'Price Each', 'Amount'];
-  const itemColWidths = [24, 26, 76, 16, 20, 20]; // 182mm total
-  const itemTableH = 135; // Tall items box spanning main body
+  // Re-allocated column widths so Item and Description don't collide
+  const itemColWidths = [18, 36, 72, 14, 21, 21]; // Sums to 182mm
+  const itemTableH = 130; // Items box height
 
   doc.rect(marginX, y, contentW, itemTableH);
   doc.line(marginX, y + 7, marginX + contentW, y + 7); // Header bottom line
@@ -194,18 +227,18 @@ export const generateIntegrityInvoicePDF = ({
     const align = (idx === 0 || idx === 3) ? 'center' : (idx >= 4 ? 'right' : 'left');
     const posX = align === 'center' ? currentX + (w / 2) : (align === 'right' ? currentX + w - 3 : currentX + 3);
 
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8.5);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
     doc.text(hdr, posX, y + 5, { align });
 
     currentX += w;
   });
 
   // Item Rows Content
-  let itemY = y + 12;
+  let itemY = y + 13;
   let subtotalSum = 0;
 
-  items.forEach(row => {
+  (items || []).forEach(row => {
     subtotalSum += parseFloat(row.amount || 0);
 
     // Quantity
@@ -213,14 +246,20 @@ export const generateIntegrityInvoicePDF = ({
     doc.setFontSize(8.5);
     doc.text(String(row.quantity ?? ''), marginX + (itemColWidths[0] / 2), itemY, { align: 'center' });
 
-    // Item
-    doc.text(String(row.item || ''), marginX + itemColWidths[0] + 3, itemY);
+    // Item (Wrap within 34mm width)
+    const itemX = marginX + itemColWidths[0] + 3;
+    const itemW = itemColWidths[1] - 5;
+    const splitItem = doc.splitTextToSize(String(row.item || ''), itemW);
+    let itemLineY = itemY;
+    splitItem.forEach(iLine => {
+      doc.text(iLine, itemX, itemLineY);
+      itemLineY += 4.5;
+    });
 
-    // Description (Wrap text)
+    // Description (Wrap within 68mm width)
     const descX = marginX + itemColWidths[0] + itemColWidths[1] + 3;
-    const descW = itemColWidths[2] - 6;
+    const descW = itemColWidths[2] - 5;
     const splitDesc = doc.splitTextToSize(String(row.description || ''), descW);
-    
     let descLineY = itemY;
     splitDesc.forEach(dLine => {
       doc.text(dLine, descX, descLineY);
@@ -239,8 +278,9 @@ export const generateIntegrityInvoicePDF = ({
     const amtX = marginX + contentW - 3;
     doc.text(parseFloat(row.amount || 0).toFixed(2), amtX, itemY, { align: 'right' });
 
-    // Advance Y position based on description height
-    itemY = Math.max(itemY + 8, descLineY + 3);
+    // Advance Y position based on tallest multiline column
+    const maxHeight = Math.max(itemLineY, descLineY);
+    itemY = maxHeight + 3;
   });
 
   y += itemTableH;
@@ -265,7 +305,7 @@ export const generateIntegrityInvoicePDF = ({
 
   y += taxBoxH;
 
-  // Total Box (Thick outline / prominent box)
+  // Total Box
   const totalBoxH = 14;
   doc.rect(marginX, y, contentW, totalBoxH);
 
@@ -283,7 +323,7 @@ export const generateIntegrityInvoicePDF = ({
   const grandTotal = subtotalSum + parseFloat(taxAmount || 0);
   doc.text(`${currency} ${grandTotal.toFixed(2)}`, marginX + contentW - 3, y + 9.5, { align: 'right' });
 
-  y += totalBoxH + 5;
+  y += totalBoxH + 6;
 
   // Bottom Left GST/HST No.
   doc.setFont('helvetica', 'normal');

@@ -192,7 +192,14 @@ export default function LoginScreen({ onSignedIn }) {
                 onClick={() => onSignedIn({ username: 'greg', password: 'Greg2026!' })}
                 className="bg-blue-600/20 hover:bg-blue-600/40 border border-blue-500/40 text-blue-300 font-bold py-2 px-2.5 rounded-xl text-[12px] flex items-center gap-1.5 transition-all cursor-pointer"
               >
-                <span>👑 Admin (Greg)</span>
+                <span>👑 Owner (Greg)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => onSignedIn({ username: 'admin', password: 'Admin2026!' })}
+                className="bg-sky-600/20 hover:bg-sky-600/40 border border-sky-500/40 text-sky-300 font-bold py-2 px-2.5 rounded-xl text-[12px] flex items-center gap-1.5 transition-all cursor-pointer"
+              >
+                <span>👑 Admin (Donna)</span>
               </button>
               <button
                 type="button"

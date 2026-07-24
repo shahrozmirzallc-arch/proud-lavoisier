@@ -258,8 +258,7 @@ function App() {
         const adminName = targetUser;
         setDayNight('day');
         const reactRole = (adminName === 'shahroz' || adminName === 'idspulse') ? 'shahroz' : 
-                          (adminName === 'colleen' ? 'accountant' : 
-                          (adminName === 'donna' ? 'lead' : 'owner'));
+                          (adminName === 'colleen' ? 'accountant' : 'admin');
         setUserRole(reactRole);
         setLayoutMode('dashboard-only');
         sessionStorage.setItem('ids_pulse_unlocked', 'true');

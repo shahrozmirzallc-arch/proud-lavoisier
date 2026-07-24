@@ -1,4 +1,5 @@
 import jsPDF from 'jspdf';
+import { LOGO_BASE64 } from '../components/LogoBase64';
 
 /**
  * Generates an exact faithful PDF invoice matching the Integrity Driven Solutions Inc. template.
@@ -51,22 +52,28 @@ export const generateIntegrityInvoicePDF = ({
   doc.setDrawColor(0, 0, 0);
 
   // ================= 1. HEADER SECTION =================
-  // Logo & Company Address (Left)
+  // Logo Image & Company Address (Left)
+  try {
+    doc.addImage(LOGO_BASE64, 'PNG', marginX, y, 16, 16);
+  } catch (err) {
+    console.warn("Could not embed PDF logo image:", err);
+  }
+
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(14);
   doc.setTextColor(3, 29, 55); // Brand dark blue
-  doc.text('INTEGRITY', marginX, y + 5);
+  doc.text('INTEGRITY', marginX + 19, y + 5);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8);
   doc.setTextColor(80, 80, 80);
-  doc.text('DRIVEN SOLUTIONS INC.', marginX + 32, y + 5);
+  doc.text('DRIVEN SOLUTIONS INC.', marginX + 51, y + 5);
 
   doc.setFontSize(9.5);
   doc.setTextColor(0, 0, 0);
-  doc.text('P.O. Box 505', marginX + 30, y + 16);
-  doc.text('5900 Main Street', marginX + 30, y + 21);
-  doc.text('Orono, ON L0B 1M0', marginX + 30, y + 26);
+  doc.text('P.O. Box 505', marginX + 19, y + 14);
+  doc.text('5900 Main Street', marginX + 19, y + 19);
+  doc.text('Orono, ON L0B 1M0', marginX + 19, y + 24);
 
   // Title: "Invoice" (Right)
   doc.setFont('helvetica', 'bold');

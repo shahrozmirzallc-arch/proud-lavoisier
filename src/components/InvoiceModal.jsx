@@ -1,6 +1,7 @@
 import React from 'react';
 import { X, Printer, Download } from 'lucide-react';
 import { generateIntegrityInvoicePDF } from '../utils/generateInvoicePdf';
+import { LOGO_BASE64 } from './LogoBase64';
 
 export const InvoiceModal = ({
   isOpen,
@@ -95,12 +96,17 @@ export const InvoiceModal = ({
             
             {/* Top Left: Logo & Company Address */}
             <div className="flex items-start gap-4">
+              <img 
+                src={LOGO_BASE64} 
+                alt="Integrity Driven Solutions Inc." 
+                className="h-12 w-auto object-contain flex-shrink-0 mt-0.5" 
+              />
               <div className="flex flex-col">
                 <div className="flex items-center gap-1">
                   <span className="font-extrabold text-xl tracking-tight text-[#031d37]">INTEGRITY</span>
                   <span className="text-[10px] text-slate-600 font-semibold tracking-wider uppercase">DRIVEN SOLUTIONS INC.</span>
                 </div>
-                <div className="mt-3 text-[11px] text-black font-normal space-y-0.5 ml-14">
+                <div className="mt-1.5 text-[11px] text-black font-normal space-y-0.5">
                   <p>P.O. Box 505</p>
                   <p>5900 Main Street</p>
                   <p>Orono, ON L0B 1M0</p>

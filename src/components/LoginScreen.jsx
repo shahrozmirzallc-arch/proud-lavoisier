@@ -182,6 +182,13 @@ export default function LoginScreen({ onSignedIn }) {
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
+                onClick={() => onSignedIn({ username: 'shahroz', password: 'Shahroz123$' })}
+                className="bg-indigo-600/30 hover:bg-indigo-600/50 border border-indigo-400/50 text-indigo-200 font-extrabold py-2 px-2.5 rounded-xl text-[12px] flex items-center gap-1.5 transition-all cursor-pointer shadow-md col-span-2 justify-center"
+              >
+                <span>⚡ Super Admin (Shahroz Mirza)</span>
+              </button>
+              <button
+                type="button"
                 onClick={() => onSignedIn({ username: 'greg', password: 'Greg2026!' })}
                 className="bg-blue-600/20 hover:bg-blue-600/40 border border-blue-500/40 text-blue-300 font-bold py-2 px-2.5 rounded-xl text-[12px] flex items-center gap-1.5 transition-all cursor-pointer"
               >

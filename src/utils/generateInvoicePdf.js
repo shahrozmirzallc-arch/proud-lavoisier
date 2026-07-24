@@ -54,26 +54,17 @@ export const generateIntegrityInvoicePDF = ({
   // ================= 1. HEADER SECTION =================
   // Logo Image & Company Address (Left)
   try {
-    doc.addImage(LOGO_BASE64, 'PNG', marginX, y, 16, 16);
+    doc.addImage(LOGO_BASE64, 'PNG', marginX, y, 48, 14);
   } catch (err) {
     console.warn("Could not embed PDF logo image:", err);
   }
 
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(14);
-  doc.setTextColor(3, 29, 55); // Brand dark blue
-  doc.text('INTEGRITY', marginX + 19, y + 5);
-
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8);
-  doc.setTextColor(80, 80, 80);
-  doc.text('DRIVEN SOLUTIONS INC.', marginX + 51, y + 5);
-
   doc.setFontSize(9.5);
   doc.setTextColor(0, 0, 0);
-  doc.text('P.O. Box 505', marginX + 19, y + 14);
-  doc.text('5900 Main Street', marginX + 19, y + 19);
-  doc.text('Orono, ON L0B 1M0', marginX + 19, y + 24);
+  doc.text('P.O. Box 505', marginX, y + 18);
+  doc.text('5900 Main Street', marginX, y + 23);
+  doc.text('Orono, ON L0B 1M0', marginX, y + 28);
 
   // Title: "Invoice" (Right)
   doc.setFont('helvetica', 'bold');

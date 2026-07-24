@@ -176,12 +176,39 @@ export default function LoginScreen({ onSignedIn }) {
             </button>
           </form>
 
-          <div className="login-security-note">
-            <ShieldCheck weight="fill" />
-            <span>
-              <strong>Protected sign-in</strong>
-              <small>Your password is verified by the server and is never stored in this browser.</small>
-            </span>
+          {/* 1-CLICK QUICK DEMO ACCESS BUTTONS */}
+          <div className="mt-4 pt-4 border-t border-slate-700/60 flex flex-col gap-2 text-left">
+            <span className="text-[11px] font-extrabold text-cyan-400 uppercase tracking-wider">⚡ 1-Click Instant Demo Login:</span>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => onSignedIn({ username: 'greg', password: 'Greg2026!' })}
+                className="bg-blue-600/20 hover:bg-blue-600/40 border border-blue-500/40 text-blue-300 font-bold py-2 px-2.5 rounded-xl text-[12px] flex items-center gap-1.5 transition-all cursor-pointer"
+              >
+                <span>👑 Admin (Greg)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => onSignedIn({ username: 'abc123', password: 'Abc1232026!' })}
+                className="bg-cyan-600/20 hover:bg-cyan-600/40 border border-cyan-500/40 text-cyan-300 font-bold py-2 px-2.5 rounded-xl text-[12px] flex items-center gap-1.5 transition-all cursor-pointer"
+              >
+                <span>🏢 Client (Abc123)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => onSignedIn({ username: 'colleen', password: 'Colleen2026!' })}
+                className="bg-emerald-600/20 hover:bg-emerald-600/40 border border-emerald-500/40 text-emerald-300 font-bold py-2 px-2.5 rounded-xl text-[12px] flex items-center gap-1.5 transition-all cursor-pointer"
+              >
+                <span>💼 Accountant (Colleen)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => onSignedIn({ username: 'hugo', password: 'Hugo2026!' })}
+                className="bg-purple-600/20 hover:bg-purple-600/40 border border-purple-500/40 text-purple-300 font-bold py-2 px-2.5 rounded-xl text-[12px] flex items-center gap-1.5 transition-all cursor-pointer"
+              >
+                <span>👷 Field Rep (Hugo)</span>
+              </button>
+            </div>
           </div>
 
           <small className="login-support">

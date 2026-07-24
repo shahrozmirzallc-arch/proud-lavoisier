@@ -3,6 +3,14 @@
   "cleanUrls": true,
   "routes": [
     {
+      "src": "/idspulse-app.zip",
+      "dest": "/idspulse-app.zip",
+      "headers": {
+        "Content-Type": "application/zip",
+        "Content-Disposition": "attachment; filename=idspulse-app.zip"
+      }
+    },
+    {
       "src": "/idspulse-app.apk",
       "dest": "/idspulse-app.apk",
       "headers": {

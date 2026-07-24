@@ -746,7 +746,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       invoiceDate: new Date().toLocaleDateString('en-US'),
       poNumber: invoicePONumber || 'PO-32268',
       terms: 'Net 30',
-      repName: users.find(u => u.id === currentUser?.id)?.name || 'Integrity Lead',
+      repName: users.find(u => u && u.id === (currentUserRepId || currentUserCustomerId))?.name || 'Integrity Lead',
       shipDate: new Date().toLocaleDateString('en-US'),
       via: 'Direct',
       fob: 'FOB Origin',
@@ -780,7 +780,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
         updatedAt: new Date().toISOString()
       }));
 
-      const actor = users.find(u => u && u.id === currentUser?.id)?.name || currentUser?.name || 'Accountant';
+      const actor = users.find(u => u && u.id === (currentUserRepId || currentUserCustomerId))?.name || sessionStorage.getItem('ids_pulse_admin_user') || 'Accountant';
       logSystemEvent('payroll', 'cer_grid_save', `${actor} saved and persisted Weekly CER Audit & Timesheet Report for ${weeklyGridPerson} (Date: ${weeklyGridDate}).`);
 
       setWeeklyGridSaveMessage(true);
@@ -2241,9 +2241,11 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     const conf = getConfidentiality(inc, "incident");
     const doc = new jsPDF();
     
-    // Draw Dark Blue background container for the logo image to make the white text pop
-    doc.setFillColor(30, 58, 95);
-    doc.roundedRect(20, 13, 50, 13, 2, 2, "F");
+    // Draw Clean Light background container for the dark text logo image
+    doc.setFillColor(248, 250, 252);
+    doc.setDrawColor(203, 213, 225);
+    doc.setLineWidth(0.5);
+    doc.roundedRect(20, 13, 50, 13, 2, 2, "FD");
     doc.addImage(LOGO_BASE64, 'PNG', 22, 14, 46, 11);
     
     // Confidentiality Badge in top right corner
@@ -2276,10 +2278,12 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       ? `${firstPN} (+${inc.parts_list.length - 1} others)`
       : firstPN;
 
+    const formattedDate = inc.date || (inc.created_at ? new Date(inc.created_at).toLocaleDateString() : new Date().toLocaleDateString());
+
     const fields = [
       { label: "Incident ID:", val: inc.id },
       { label: "Logged By (Rep):", val: users.find(u => u.id === inc.rep_id)?.name || 'Clarence Kuiken' },
-      { label: "Report Date:", val: new Date(inc.created_at).toLocaleDateString() },
+      { label: "Report Date:", val: formattedDate },
       { label: "Affected Part Number:", val: partSubject },
       { label: "Area Discovered:", val: inc.area },
       { label: "Defect Coordinates:", val: inc.defect_location_x !== undefined && inc.defect_location_x !== null ? `X: ${inc.defect_location_x} | Y: ${inc.defect_location_y}` : 'N/A' },
@@ -2332,7 +2336,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
         
         doc.setFont("helvetica", "normal");
         doc.setTextColor(51, 65, 85);
-        doc.text(`- ${p.description} (Qty: ${p.qty}, Bin: ${p.bin})`, 60, y);
+        const binText = p.bin ? `, Bin: ${p.bin}` : '';
+        doc.text(`- ${p.description} (Qty: ${p.qty}${binText})`, 60, y);
         y += 8;
       });
     } else {
@@ -2381,8 +2386,10 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     const conf = getConfidentiality(sr, "shift");
     const doc = new jsPDF();
     
-    doc.setFillColor(30, 58, 95);
-    doc.roundedRect(20, 13, 50, 13, 2, 2, "F");
+    doc.setFillColor(248, 250, 252);
+    doc.setDrawColor(203, 213, 225);
+    doc.setLineWidth(0.5);
+    doc.roundedRect(20, 13, 50, 13, 2, 2, "FD");
     doc.addImage(LOGO_BASE64, 'PNG', 22, 14, 46, 11);
     
     doc.setDrawColor(conf.colorRGB[0], conf.colorRGB[1], conf.colorRGB[2]);
@@ -2643,31 +2650,37 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     const conf = getConfidentiality(null, "suppliers");
     const doc = new jsPDF();
     
-    doc.setFillColor(30, 58, 95);
-    doc.roundedRect(20, 13, 50, 13, 2, 2, "F");
-    doc.addImage(LOGO_BASE64, 'PNG', 22, 14, 46, 11);
-    
-    doc.setDrawColor(conf.colorRGB[0], conf.colorRGB[1], conf.colorRGB[2]);
-    doc.setFillColor(conf.bgRGB[0], conf.bgRGB[1], conf.bgRGB[2]);
-    doc.rect(130, 14, 60, 11, "FD");
-    
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(8);
-    doc.setTextColor(conf.colorRGB[0], conf.colorRGB[1], conf.colorRGB[2]);
-    doc.text(conf.level, 160, 19.5, { align: "center" });
-    
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(5.5);
-    doc.text(conf.sub, 160, 23, { align: "center" });
+    const renderHeader = () => {
+      doc.setFillColor(248, 250, 252);
+      doc.setDrawColor(203, 213, 225);
+      doc.setLineWidth(0.5);
+      doc.roundedRect(20, 13, 50, 13, 2, 2, "FD");
+      doc.addImage(LOGO_BASE64, 'PNG', 22, 14, 46, 11);
+      
+      doc.setDrawColor(conf.colorRGB[0], conf.colorRGB[1], conf.colorRGB[2]);
+      doc.setFillColor(conf.bgRGB[0], conf.bgRGB[1], conf.bgRGB[2]);
+      doc.rect(130, 14, 60, 11, "FD");
+      
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8);
+      doc.setTextColor(conf.colorRGB[0], conf.colorRGB[1], conf.colorRGB[2]);
+      doc.text(conf.level, 160, 19.5, { align: "center" });
+      
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(5.5);
+      doc.text(conf.sub, 160, 23, { align: "center" });
+
+      doc.setDrawColor(30, 58, 95); 
+      doc.setLineWidth(1.2);
+      doc.line(20, 33, 190, 33);
+    };
+
+    renderHeader();
 
     doc.setFont("helvetica", "bold");
     doc.setFontSize(26);
     doc.setTextColor(248, 250, 252);
     doc.text(`IDS ${conf.level}`, 25, 140, { angle: 45 });
-
-    doc.setDrawColor(30, 58, 95); 
-    doc.setLineWidth(1.2);
-    doc.line(20, 33, 190, 33);
 
     doc.setFont("helvetica", "bold");
     doc.setFontSize(14);
@@ -2676,6 +2689,12 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
     let y = 54;
     suppliers.forEach((sup) => {
+      if (y + 44 > 260) {
+        doc.addPage();
+        renderHeader();
+        y = 44;
+      }
+
       doc.setFillColor(248, 250, 252);
       doc.rect(20, y, 170, 42, "F");
       doc.setDrawColor(226, 232, 240);
@@ -2698,32 +2717,36 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       doc.text("Quality Management Contacts:", 25, y + 16);
 
       let cy = y + 24;
-      sup.contacts.forEach((c) => {
+      (sup.contacts || []).forEach((c) => {
         doc.setFont("helvetica", "bold");
         doc.setFontSize(9);
         doc.setTextColor(30, 58, 95);
-        doc.text(`${c.name} (${c.role})`, 30, cy);
+        doc.text(`${c.name} (${c.role || 'QM'})`, 30, cy);
 
         doc.setFont("helvetica", "normal");
         doc.setFontSize(9);
         doc.setTextColor(14, 165, 233);
-        doc.text(c.email, 120, cy);
+        doc.text(c.email || '', 120, cy);
         cy += 8;
       });
 
       y += 48;
     });
 
-    doc.setDrawColor(226, 232, 240);
-    doc.setLineWidth(0.5);
-    doc.line(20, 274, 190, 274);
-    
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(8);
-    doc.setTextColor(148, 163, 184);
-    doc.text("Generated by IDS Supplier Intelligence | Date: " + new Date().toLocaleDateString(), 20, 281);
-    doc.text("Page 1 of 1", 190, 281, { align: "right" });
-    doc.text(`CLASSIFICATION: ${conf.level} / ${conf.sub}`, 105, 286, { align: "center" });
+    const totalPages = doc.getNumberOfPages();
+    for (let i = 1; i <= totalPages; i++) {
+      doc.setPage(i);
+      doc.setDrawColor(226, 232, 240);
+      doc.setLineWidth(0.5);
+      doc.line(20, 274, 190, 274);
+      
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      doc.setTextColor(148, 163, 184);
+      doc.text("Generated by IDS Supplier Intelligence | Date: " + new Date().toLocaleDateString(), 20, 281);
+      doc.text(`Page ${i} of ${totalPages}`, 190, 281, { align: "right" });
+      doc.text(`CLASSIFICATION: ${conf.level} / ${conf.sub}`, 105, 286, { align: "center" });
+    }
 
     doc.save(`IDS_Supplier_Contacts_Directory.pdf`);
   };
@@ -2810,8 +2833,10 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     const conf = getConfidentiality(timeEntries, "payroll");
     const doc = new jsPDF();
     
-    doc.setFillColor(30, 58, 95);
-    doc.roundedRect(20, 13, 50, 13, 2, 2, "F");
+    doc.setFillColor(248, 250, 252);
+    doc.setDrawColor(203, 213, 225);
+    doc.setLineWidth(0.5);
+    doc.roundedRect(20, 13, 50, 13, 2, 2, "FD");
     doc.addImage(LOGO_BASE64, 'PNG', 22, 14, 46, 11);
     
     doc.setDrawColor(conf.colorRGB[0], conf.colorRGB[1], conf.colorRGB[2]);
@@ -3036,8 +3061,10 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     const conf = getConfidentiality(null, "rework");
     const doc = new jsPDF();
     
-    doc.setFillColor(30, 58, 95);
-    doc.roundedRect(20, 13, 50, 13, 2, 2, "F");
+    doc.setFillColor(248, 250, 252);
+    doc.setDrawColor(203, 213, 225);
+    doc.setLineWidth(0.5);
+    doc.roundedRect(20, 13, 50, 13, 2, 2, "FD");
     doc.addImage(LOGO_BASE64, 'PNG', 22, 14, 46, 11);
     
     doc.setDrawColor(conf.colorRGB[0], conf.colorRGB[1], conf.colorRGB[2]);
@@ -3228,8 +3255,10 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     const conf = getConfidentiality(rw, "rework");
     const doc = new jsPDF();
     
-    doc.setFillColor(30, 58, 95);
-    doc.roundedRect(20, 13, 50, 13, 2, 2, "F");
+    doc.setFillColor(248, 250, 252);
+    doc.setDrawColor(203, 213, 225);
+    doc.setLineWidth(0.5);
+    doc.roundedRect(20, 13, 50, 13, 2, 2, "FD");
     doc.addImage(LOGO_BASE64, 'PNG', 22, 14, 46, 11);
     
     doc.setDrawColor(conf.colorRGB[0], conf.colorRGB[1], conf.colorRGB[2]);
@@ -3921,7 +3950,17 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     }
 
     // 3. Process commands
-    if (lowerText?.includes('audit') || lowerText?.includes('error') || lowerText?.includes('mistake') || lowerText?.includes('number') || lowerText?.includes('defect') || lowerText?.includes('duplicate')) {
+    if (lowerText?.includes('excel') || lowerText?.includes('xlsx')) {
+      action = 'excel';
+      responseText = "🟢 Generating and downloading the styled Excel payroll and audit spreadsheet...";
+    } else if (lowerText?.includes('csv') || lowerText?.includes('quickbooks') || lowerText?.includes('qb')) {
+      action = 'csv';
+      responseText = "🟢 Generating and exporting QuickBooks IIF/CSV formatted timesheets...";
+    } else if (lowerText?.includes('report') || lowerText?.includes('pdf') || lowerText?.includes('download') || lowerText?.includes('timesheet')) {
+      action = 'pdf';
+      responseText = "🟢 Generating and downloading the formal PDF Timesheet & Audit Report...";
+    } else if (lowerText?.includes('audit') || lowerText?.includes('error') || lowerText?.includes('mistake') || lowerText?.includes('number') || lowerText?.includes('defect') || lowerText?.includes('duplicate')) {
+      action = 'audit';
       const logs = runPulseAiAudit();
       const count = logs.length;
       if (userRole === 'lead') {
@@ -3930,6 +3969,17 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
           : "I have successfully audited the Quality Defect logs. 🟢 All entries are complete, and no duplicate defects or missing supplier QM contacts were found!";
       } else if (userRole === 'accountant') {
         responseText = count > 0 
+          ? `I have audited the timesheets and expense verification logs. ⚠️ Found ${count} potential discrepancy entries in the system.`
+          : "I have successfully audited all active timesheet records. 🟢 All entries have verified rates and zero missing fields!";
+      } else {
+        responseText = count > 0
+          ? `I have completed the full system audit. ⚠️ Found ${count} potential data anomalies or missing fields in the database.`
+          : "I have completed the full system audit. 🟢 All database records, supplier rates, and incident logs are clean!";
+      }
+    } else {
+      if (userRole === 'lead') {
+        responseText = "I'm not sure how to process that request. As Quality Lead, you can ask me to: \n1. 'Audit the database for defect mistakes' \n2. 'Download the Timesheet PDF report'";
+      } else if (userRole === 'accountant') {
         responseText = "I'm not sure how to process that request. As Accountant, you can ask me to: \n1. 'Audit timesheets and receipts' \n2. 'Download the styled Excel payroll sheet' \n3. 'Export QuickBooks CSV timesheets'";
       } else {
         responseText = "I'm not sure how to process that request. You can ask me to: \n1. 'Audit the database for mistakes' \n2. 'Download the styled Excel payroll sheet' \n3. 'Export QuickBooks CSV timesheets'\n4. 'Download the Timesheet PDF report'";

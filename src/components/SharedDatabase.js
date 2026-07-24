@@ -82,11 +82,11 @@ const SEED_DATA = {
       contacts: [{ name: 'Amanda Torres', email: 'atorres@lear.com', role: 'Plant SQE' }],
       plants_served: ['mercedes_tuscaloosa']
     },
-    {
-      id: 'stellantis', name: 'Stellantis N.V.', invoice_schedule: 'weekly', allotted_hours: 50, ot_rules: { weekly_threshold: 40, daily_threshold: 8, saturday_multiplier: 1.5, sunday_multiplier: 2.0, holiday_multiplier: 2.0 },
-      contacts: [{ name: 'Marcus Brody', email: 'm.brody@stellantis.com', role: 'Supplier Quality Operations' }],
-      plants_served: ['ford_dearborn']
-    }
+    { id: 'magna', name: 'Magna AutoSystems', contacts: [{ name: 'Martin S', email: 'martin.s@magna.com' }], ot_rules: { after_8h_daily: true, after_40h_weekly: true } },
+    { id: 'hutchinson', name: 'Hutchinson Fluid', contacts: [{ name: 'S Jenkins', email: 'sjenkins@hutchinson.ca' }], ot_rules: { after_8h_daily: true, after_40h_weekly: true } },
+    { id: 'autokabel', name: 'Auto-Kabel North America', contacts: [{ name: 'Juan Carlos', email: 'jcarlos@autokabel.de' }], ot_rules: { after_8h_daily: false, after_40h_weekly: true } },
+    { id: 'brose', name: 'Brose Mexico S.A.', contacts: [{ name: 'Maria Gomez', email: 'mgomez@brose.com' }], ot_rules: { after_8h_daily: true, after_40h_weekly: true } },
+    { id: 'borgwarner', name: 'BorgWarner Transmission', contacts: [{ name: 'Alejandro R', email: 'aromo@borgwarner.com' }], ot_rules: { after_8h_daily: true, after_40h_weekly: true } }
   ],
   parts: [
     { id: '86286761', part_number: '86286761', supplier_id: 'magna', description: 'Tail Light Assembly' },
@@ -97,11 +97,11 @@ const SEED_DATA = {
     { id: 'BW-SOL-119', part_number: 'BW-SOL-119', supplier_id: 'borgwarner', description: 'Transmission Solenoid Valve' }
   ],
   incidents: [
-    { id: 'inc_1', rep_id: '1', plant_id: 'gm_oshawa', supplier_id: 'magna', part_id: '86286761', area: 'Sequence Area', description: 'Spare bulb rattling inside housing.', action_taken: 'Removed bulb', supplier_contact: 'Martin', status: 'Closed', concern_classification: 'PRR', defect_location_x: 0.30, defect_location_y: 0.50, parts_list: [{ id: 'sp_1', part_number: '86286761', description: 'Tail Light', supplier_id: 'magna', qty: 1 }], photos: [] },
-    { id: 'inc_8', rep_id: 'rep_hugo', plant_id: 'mercedes_tuscaloosa', supplier_id: 'autokabel', part_id: 'AK-BAT-001', area: 'Assembly Line 4', description: 'Insulation gap on primary battery cable sheath. Standard gauge wire exposed.', action_taken: 'Placed parts in containment bin, flagged Mercedes quality auditor.', supplier_contact: 'Juan Carlos', status: 'Open', concern_classification: 'PRR', defect_location_x: 0.45, defect_location_y: 0.60, parts_list: [{ id: 'sp_8', part_number: 'AK-BAT-001', description: 'Battery Cable', supplier_id: 'autokabel', qty: 1 }], photos: [] },
-    { id: 'inc_9', rep_id: 'rep_nabil', plant_id: 'ford_dearborn', supplier_id: 'autokabel', part_id: 'AK-HAR-294', area: 'Harness Sequencing', description: 'Bent electrical connector pins on wiring harnesses preventing positive locking.', action_taken: 'Rejected 6 bad harnesses.', supplier_contact: 'Juan Carlos', status: 'Closed', concern_classification: 'QR', defect_location_x: 0.55, defect_location_y: 0.40, parts_list: [{ id: 'sp_9', part_number: 'AK-HAR-294', description: 'Wiring Harness', supplier_id: 'autokabel', qty: 6 }], photos: [] },
-    { id: 'inc_10', rep_id: 'rep_rogelio', plant_id: 'gm_slp', supplier_id: 'brose', part_id: 'BR-REG-502', area: 'Body Shop Line 2', description: 'Mounting hole tolerance on door regulator bracket exceeded specification (+0.5mm).', action_taken: 'Contained 120 parts. Initiated 100% sort.', supplier_contact: 'Maria Gomez', status: 'Open', concern_classification: 'PRR', defect_location_x: 0.20, defect_location_y: 0.80, parts_list: [{ id: 'sp_10', part_number: 'BR-REG-502', description: 'Door Bracket', supplier_id: 'brose', qty: 14 }], photos: [] },
-    { id: 'inc_11', rep_id: 'rep_rogelio', plant_id: 'gm_slp', supplier_id: 'borgwarner', part_id: 'BW-SOL-119', area: 'Powertrain Assembly', description: 'Solenoid valve failing air leak test during transmission mating process.', action_taken: 'Quarantined pallet. Replaced with certified stock.', supplier_contact: 'Alejandro', status: 'Open', concern_classification: 'PRR', defect_location_x: 0.70, defect_location_y: 0.30, parts_list: [{ id: 'sp_11', part_number: 'BW-SOL-119', description: 'Solenoid Valve', supplier_id: 'borgwarner', qty: 3 }], photos: [] }
+    { id: 'inc_1', rep_id: '1', plant_id: 'gm_oshawa', supplier_id: 'magna', part_id: '86286761', date: '2026-07-06', created_at: '2026-07-06T10:00:00.000Z', area: 'Sequence Area', description: 'Spare bulb rattling inside housing.', action_taken: 'Removed bulb', supplier_contact: 'Martin', status: 'Closed', concern_classification: 'PRR', defect_location_x: 0.30, defect_location_y: 0.50, parts_list: [{ id: 'sp_1', part_number: '86286761', description: 'Tail Light', supplier_id: 'magna', bin: 'BIN-01', qty: 1 }], photos: [] },
+    { id: 'inc_8', rep_id: 'rep_hugo', plant_id: 'mercedes_tuscaloosa', supplier_id: 'autokabel', part_id: 'AK-BAT-001', date: '2026-07-06', created_at: '2026-07-06T11:00:00.000Z', area: 'Assembly Line 4', description: 'Insulation gap on primary battery cable sheath. Standard gauge wire exposed.', action_taken: 'Placed parts in containment bin, flagged Mercedes quality auditor.', supplier_contact: 'Juan Carlos', status: 'Open', concern_classification: 'PRR', defect_location_x: 0.45, defect_location_y: 0.60, parts_list: [{ id: 'sp_8', part_number: 'AK-BAT-001', description: 'Battery Cable', supplier_id: 'autokabel', bin: 'BIN-02', qty: 1 }], photos: [] },
+    { id: 'inc_9', rep_id: 'rep_nabil', plant_id: 'ford_dearborn', supplier_id: 'autokabel', part_id: 'AK-HAR-294', date: '2026-07-06', created_at: '2026-07-06T12:00:00.000Z', area: 'Harness Sequencing', description: 'Bent electrical connector pins on wiring harnesses preventing positive locking.', action_taken: 'Rejected 6 bad harnesses.', supplier_contact: 'Juan Carlos', status: 'Closed', concern_classification: 'QR', defect_location_x: 0.55, defect_location_y: 0.40, parts_list: [{ id: 'sp_9', part_number: 'AK-HAR-294', description: 'Wiring Harness', supplier_id: 'autokabel', bin: 'BIN-03', qty: 6 }], photos: [] },
+    { id: 'inc_10', rep_id: 'rep_rogelio', plant_id: 'gm_slp', supplier_id: 'brose', part_id: 'BR-REG-502', date: '2026-07-06', created_at: '2026-07-06T13:00:00.000Z', area: 'Body Shop Line 2', description: 'Mounting hole tolerance on door regulator bracket exceeded specification (+0.5mm).', action_taken: 'Contained 120 parts. Initiated 100% sort.', supplier_contact: 'Maria Gomez', status: 'Open', concern_classification: 'PRR', defect_location_x: 0.20, defect_location_y: 0.80, parts_list: [{ id: 'sp_10', part_number: 'BR-REG-502', description: 'Door Bracket', supplier_id: 'brose', bin: 'BIN-04', qty: 14 }], photos: [] },
+    { id: 'inc_11', rep_id: 'rep_rogelio', plant_id: 'gm_slp', supplier_id: 'borgwarner', part_id: 'BW-SOL-119', date: '2026-07-06', created_at: '2026-07-06T14:00:00.000Z', area: 'Powertrain Assembly', description: 'Solenoid valve failing air leak test during transmission mating process.', action_taken: 'Quarantined pallet. Replaced with certified stock.', supplier_contact: 'Alejandro', status: 'Open', concern_classification: 'PRR', defect_location_x: 0.70, defect_location_y: 0.30, parts_list: [{ id: 'sp_11', part_number: 'BW-SOL-119', description: 'Solenoid Valve', supplier_id: 'borgwarner', bin: 'BIN-05', qty: 3 }], photos: [] }
   ],
   shiftReports: [
     { id: 'sr_1', rep_id: '1', plant_id: 'gm_oshawa', date: '2026-07-06', areas_walked: [{ name: 'Sequence area', status: 'issues' }], incidents_count: 1, status: 'Sent' },
@@ -109,9 +109,9 @@ const SEED_DATA = {
     { id: 'sr_3', rep_id: 'rep_rogelio', plant_id: 'gm_slp', date: '2026-07-06', areas_walked: [{ name: 'Body Shop', status: 'issues' }, { name: 'Powertrain', status: 'issues' }], incidents_count: 2, status: 'Sent' }
   ],
   reworkLogs: [
-    { id: 'rw_1', rep_id: 'rep_hugo', plant_id: 'mercedes_tuscaloosa', supplier_id: 'autokabel', part_id: 'AK-BAT-001', qty: 45, time_spent_minutes: 180, notes: 'Reworked copper connectors.' },
-    { id: 'rw_2', rep_id: 'rep_rogelio', plant_id: 'gm_slp', supplier_id: 'brose', part_id: 'BR-REG-502', qty: 120, time_spent_minutes: 240, notes: 'Full sort of door brackets.' },
-    { id: 'rw_3', rep_id: 'rep_rogelio', plant_id: 'gm_slp', supplier_id: 'borgwarner', part_id: 'BW-SOL-119', qty: 50, time_spent_minutes: 120, notes: 'Air leak testing on quarantined pallet.' }
+    { id: 'rw_1', rep_id: 'rep_hugo', plant_id: 'mercedes_tuscaloosa', supplier_id: 'autokabel', part_id: 'AK-BAT-001', date: '2026-07-06', created_at: '2026-07-06T15:00:00.000Z', qty: 45, time_spent_minutes: 180, notes: 'Reworked copper connectors.' },
+    { id: 'rw_2', rep_id: 'rep_rogelio', plant_id: 'gm_slp', supplier_id: 'brose', part_id: 'BR-REG-502', date: '2026-07-06', created_at: '2026-07-06T16:00:00.000Z', qty: 120, time_spent_minutes: 240, notes: 'Full sort of door brackets.' },
+    { id: 'rw_3', rep_id: 'rep_rogelio', plant_id: 'gm_slp', supplier_id: 'borgwarner', part_id: 'BW-SOL-119', date: '2026-07-06', created_at: '2026-07-06T17:00:00.000Z', qty: 50, time_spent_minutes: 120, notes: 'Air leak testing on quarantined pallet.' }
   ],
   timeEntries: [
     { id: 'te_1', rep_id: '1', plant_id: 'gm_oshawa', supplier_id: 'magna', date: '2026-07-06', hours: 8.5, mileage_km: 45, invoiced: false, sent_to_payroll: false, status: 'approved', tracking_code: 'LEGACY-000', ot_hours: 0, audit_trail: [] },
@@ -468,8 +468,9 @@ export function addIncident(incident) {
   const newIncident = {
     ...incident,
     id: incident.id || `inc_${Date.now()}_${Math.random().toString(36)?.substring(2, 7)}`,
+    date: incident.date || new Date().toISOString().split('T')[0],
     status: incident.status || 'Open',
-    created_at: new Date().toISOString()
+    created_at: incident.created_at || new Date().toISOString()
   };
   return saveEntity('incidents', newIncident);
 }
@@ -479,8 +480,9 @@ export function addShiftReport(report) {
   const newReport = {
     ...report,
     id: report.id || `sr_${Date.now()}_${Math.random().toString(36)?.substring(2, 7)}`,
+    date: report.date || new Date().toISOString().split('T')[0],
     status: report.status || 'Draft',
-    created_at: new Date().toISOString()
+    created_at: report.created_at || new Date().toISOString()
   };
   return saveEntity('shiftReports', newReport);
 }
@@ -490,7 +492,8 @@ export function addReworkLog(log) {
   const newLog = {
     ...log,
     id: log.id || `rw_${Date.now()}_${Math.random().toString(36)?.substring(2, 7)}`,
-    created_at: new Date().toISOString()
+    date: log.date || new Date().toISOString().split('T')[0],
+    created_at: log.created_at || new Date().toISOString()
   };
   return saveEntity('reworkLogs', newLog);
 }

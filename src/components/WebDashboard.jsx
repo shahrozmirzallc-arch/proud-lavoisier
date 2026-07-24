@@ -389,6 +389,15 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   useEffect(() => {
     setRates(getEntities('rates') || []);
     setExtraHoursRequests(getEntities('extraHoursRequests') || []);
+
+    const handleOpenInvoice = (e) => {
+      if (e.detail) {
+        setPreviewInvoiceData(e.detail);
+        setShowInvoiceModal(true);
+      }
+    };
+    window.addEventListener('ids_pulse_open_invoice', handleOpenInvoice);
+    return () => window.removeEventListener('ids_pulse_open_invoice', handleOpenInvoice);
   }, [dbUpdateTrigger]);
 
   // Dynamic Rate Override Resolver with Plant/Location scoping and active session role protection

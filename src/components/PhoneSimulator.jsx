@@ -6,6 +6,7 @@ import {
   Receipt, DollarSign, FileText
 } from 'lucide-react';
 import { getEntities, addIncident, addEmailLog, addReworkLog, saveEntity, addExpenseEntry, logSystemEvent } from './SharedDatabase';
+import { uploadToCloudinary } from '../services/cloudinaryService';
 
 export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigger, isNativeMobile }) {
   const isNative = isNativeMobile ?? (typeof window !== 'undefined' && (
@@ -857,8 +858,8 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
     setExpenseReceiptPhoto('https://images.unsplash.com/photo-1554415707-6e8cfc93fe23?auto=format&fit=crop&w=800&q=80');
   };
 
-  // SUBMIT EXPENSE LOG
-  const handleExpenseSubmit = (e) => {
+  // SUBMIT EXPENSE LOG WITH CLOUDINARY UPLOAD
+  const handleExpenseSubmit = async (e) => {
     e.preventDefault();
     if (!expenseAmount || isNaN(parseFloat(expenseAmount)) || parseFloat(expenseAmount) <= 0) {
       alert('Please enter a valid expense amount.');
@@ -870,17 +871,25 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
       return;
     }
 
+    let finalReceiptUrl = expenseReceiptPhoto;
+    if (expenseReceiptPhoto && (expenseReceiptPhoto.startsWith('data:') || expenseReceiptPhoto.startsWith('blob:'))) {
+      const cldRes = await uploadToCloudinary(expenseReceiptPhoto, 'expenses');
+      if (cldRes.success) {
+        finalReceiptUrl = cldRes.url;
+      }
+    }
+
     addExpenseEntry({
       rep_id: currentUser ? currentUser.id : '1',
       date: new Date().toISOString()?.split('T')[0],
       category: expenseCategory,
       amount: parseFloat(expenseAmount),
-      receipt_photo: expenseReceiptPhoto,
+      receipt_photo: finalReceiptUrl,
       notes: expenseNotes
     });
     logSystemEvent('payroll', 'expense_create', `${currentUser.name} logged $${expenseAmount} expense claim for ${expenseCategory}.`);
 
-    alert('Expense claim submitted successfully!');
+    alert('Expense claim submitted successfully & saved to Cloudinary!');
     setExpenseAmount('');
     setExpenseCategory('Fuel');
     setExpenseReceiptPhoto(null);

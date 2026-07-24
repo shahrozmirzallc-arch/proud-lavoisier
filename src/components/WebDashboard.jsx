@@ -102,7 +102,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   const [newProjCurrency, setNewProjCurrency] = useState('USD');
   
   // Navigation & Date Navigation Filtering
-  const [activeTab, setActiveTab] = useState('projects');
+  const [activeTab, setActiveTab] = useState('command-center');
+  const [selectedDispatchRep, setSelectedDispatchRep] = useState(null);
   const [collapsedGroups, setCollapsedGroups] = useState({
     ai: false,
     quality: false,
@@ -4419,10 +4420,28 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
                 {/* QUALITY & FIELD OPERATIONS */}
                 <div className="p-2.5 rounded-2xl bg-slate-900/50 border border-slate-800/70 shadow-sm flex flex-col gap-1.5">
-                  <div className="text-[11px] font-extrabold text-sky-400 uppercase tracking-wider px-2 py-0.5 flex items-center gap-2">
-                    <FileText className="w-3.5 h-3.5 text-sky-400" />
-                    <span>Quality & Field Operations</span>
+                  <div className="text-[11px] font-extrabold text-sky-400 uppercase tracking-wider px-2 py-0.5 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Activity className="w-3.5 h-3.5 text-sky-400 animate-pulse" />
+                      <span>Quality & Field Operations</span>
+                    </div>
+                    <span className="text-[9px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-1.5 py-0.5 rounded font-black tracking-widest">LIVE</span>
                   </div>
+
+                  <button 
+                    onClick={() => setActiveTab('command-center')}
+                    className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14.5px] transition-all cursor-pointer flex items-center justify-between border ${
+                      activeTab === 'command-center' 
+                        ? 'bg-blue-950/80 text-blue-300 border-blue-500/60 shadow-lg shadow-blue-500/30 font-black' 
+                        : 'bg-surface-elevated text-text-secondary hover:bg-surface hover:text-text-primary border-border-subtle/70'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <Activity className="w-4.5 h-4.5 text-[#3B82F6] animate-pulse" />
+                      <span>Live Command Center</span>
+                    </div>
+                    {activeTab === 'command-center' && <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399] animate-ping"></div>}
+                  </button>
 
                   <button 
                     onClick={() => setActiveTab('incidents')}
@@ -4942,7 +4961,311 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
         )}
 
         <div className="flex-1 bg-surface-elevated border border-border-subtle rounded-2xl p-6 sm:p-8 flex flex-col min-h-0">
-{/* TAB 0: PULSE AI (Conversational Database Auditor & Copilot) */}
+          {/* TAB 0.5: LIVE REP OPERATIONS & PROJECT COMMAND CENTER */}
+          {activeTab === 'command-center' && (
+            <div className="flex-1 flex flex-col gap-6 min-h-0 text-left overflow-y-auto pr-1">
+              
+              {/* TOP EXECUTIVE BANNER */}
+              <div className="bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 border border-blue-500/30 rounded-2xl p-6 shadow-xl relative overflow-hidden flex-shrink-0">
+                <div className="absolute right-0 top-0 translate-x-4 -translate-y-4 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 relative z-10">
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="bg-blue-500/20 text-blue-300 border border-blue-400/30 text-[11px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                        Live Dispatch Command
+                      </span>
+                      <span className="text-slate-400 text-xs font-semibold">Integrity Driven Solutions Inc.</span>
+                    </div>
+                    <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+                      Live Rep Operations & Project Command Center
+                    </h2>
+                    <p className="text-slate-300 text-sm mt-1 max-w-3xl">
+                      Real-time single-pane operational transparency. Track active Rep deployments, plant locations, part numbers affected, shift hours, and quality output in one live workspace.
+                    </p>
+                  </div>
+
+                  {/* Top Summary Badges */}
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <div className="bg-slate-950/60 border border-slate-800 px-4 py-2.5 rounded-xl flex flex-col items-center">
+                      <span className="text-[10.5px] font-bold text-slate-400 uppercase tracking-wider">Active Field Reps</span>
+                      <span className="text-xl font-black text-emerald-400 mt-0.5">4 On-Site</span>
+                    </div>
+                    <div className="bg-slate-950/60 border border-slate-800 px-4 py-2.5 rounded-xl flex flex-col items-center">
+                      <span className="text-[10.5px] font-bold text-slate-400 uppercase tracking-wider">Today's Inspection</span>
+                      <span className="text-xl font-black text-cyan-400 mt-0.5">1,240 Pcs</span>
+                    </div>
+                    <div className="bg-slate-950/60 border border-slate-800 px-4 py-2.5 rounded-xl flex flex-col items-center">
+                      <span className="text-[10.5px] font-bold text-slate-400 uppercase tracking-wider">Quality Pass Rate</span>
+                      <span className="text-xl font-black text-emerald-300 mt-0.5">97.6%</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* SECTION 1 & 2: LIVE REP DEPLOYMENT CARDS & PART TRACEABILITY */}
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-base font-extrabold text-white tracking-wide flex items-center gap-2">
+                    <Activity className="w-5 h-5 text-blue-400" />
+                    <span>Live Rep Deployment & Active Project Cards</span>
+                  </h3>
+                  <span className="text-xs font-semibold text-slate-400">4 Active Operatives Synchronized</span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+                  {[
+                    {
+                      name: 'Clarence Kuiken',
+                      role: 'Lead Senior Quality Inspector',
+                      status: 'ON-SITE / CLOCKED IN',
+                      statusColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
+                      dotColor: 'bg-emerald-400',
+                      plant: 'Magna AutoSystems',
+                      location: 'Oshawa, ON (Plant 4)',
+                      project: 'GM Tail Light Assembly Audit',
+                      parts: ['PN 86286761', 'PN 86291945'],
+                      shiftTime: '6.5 hrs active',
+                      inspected: '450 pcs',
+                      defects: '12 logged',
+                      avatarBg: 'bg-blue-600'
+                    },
+                    {
+                      name: 'Hugo Ramos',
+                      role: 'Quality Resident Engineer (QRE)',
+                      status: 'ON-SITE / CLOCKED IN',
+                      statusColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
+                      dotColor: 'bg-emerald-400',
+                      plant: 'Auto-Kabel North America',
+                      location: 'Dearborn, MI (Line 2)',
+                      project: 'Ford Battery Sheath Quality Audit',
+                      parts: ['AK-BAT-001', 'AK-HAR-294'],
+                      shiftTime: '7.0 hrs active',
+                      inspected: '380 pcs',
+                      defects: '8 logged',
+                      avatarBg: 'bg-cyan-600'
+                    },
+                    {
+                      name: 'Nabil El-Sabagh',
+                      role: 'Quality Resident Engineer (QRE)',
+                      status: 'ON-SITE / CLOCKED IN',
+                      statusColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
+                      dotColor: 'bg-emerald-400',
+                      plant: 'Brose Mexico S.A.',
+                      location: 'Queretaro, MX (Assembly B)',
+                      project: 'Door Regulator Bracket Inspection',
+                      parts: ['BR-REG-502'],
+                      shiftTime: '5.2 hrs active',
+                      inspected: '290 pcs',
+                      defects: '5 logged',
+                      avatarBg: 'bg-indigo-600'
+                    },
+                    {
+                      name: 'Rogelio Gutierrez',
+                      role: 'Quality Resident Engineer (QRE)',
+                      status: 'STANDBY / READY DISPATCH',
+                      statusColor: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
+                      dotColor: 'bg-amber-400',
+                      plant: 'Lear Corporation',
+                      location: 'Tuscaloosa, AL',
+                      project: 'Mercedes Seat Frame Containment',
+                      parts: ['BW-SOL-119'],
+                      shiftTime: '3.0 hrs logged',
+                      inspected: '120 pcs',
+                      defects: '2 logged',
+                      avatarBg: 'bg-purple-600'
+                    }
+                  ].map((rep, idx) => (
+                    <div key={idx} className="bg-slate-900/80 border border-slate-800 hover:border-blue-500/50 rounded-2xl p-4 flex flex-col justify-between gap-3 shadow-lg hover:shadow-blue-500/10 transition-all group">
+                      
+                      {/* Rep Header */}
+                      <div>
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <div className="flex items-center gap-2.5">
+                            <div className={`w-9 h-9 rounded-xl ${rep.avatarBg} text-white font-black text-xs flex items-center justify-center shadow-md`}>
+                              {rep.name.split(' ').map(n=>n[0]).join('')}
+                            </div>
+                            <div>
+                              <h4 className="text-sm font-extrabold text-white group-hover:text-blue-300 transition-colors leading-tight">{rep.name}</h4>
+                              <span className="text-[11px] text-slate-400 font-semibold">{rep.role}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Status Badge */}
+                        <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[10.5px] font-black tracking-wider uppercase mb-3 ${rep.statusColor}`}>
+                          <span className={`w-2 h-2 rounded-full ${rep.dotColor} animate-ping`}></span>
+                          <span>{rep.status}</span>
+                        </div>
+
+                        {/* Plant & Location */}
+                        <div className="bg-slate-950/70 border border-slate-800/80 rounded-xl p-2.5 mb-3">
+                          <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block mb-0.5">Assigned Plant & Location</span>
+                          <strong className="text-xs font-bold text-slate-200 block">{rep.plant}</strong>
+                          <span className="text-[11px] text-blue-400 font-semibold block mt-0.5">{rep.location}</span>
+                        </div>
+
+                        {/* Active Project & Parts */}
+                        <div className="space-y-2">
+                          <div>
+                            <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block mb-0.5">Active Project</span>
+                            <span className="text-xs font-semibold text-slate-300">{rep.project}</span>
+                          </div>
+                          <div>
+                            <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block mb-1">Parts Traceability</span>
+                            <div className="flex gap-1.5 flex-wrap">
+                              {rep.parts.map((p, pIdx) => (
+                                <span key={pIdx} className="bg-blue-950/80 text-blue-300 border border-blue-500/40 text-[10.5px] font-black px-2 py-0.5 rounded-md">
+                                  {p}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Metrics & Quick Action */}
+                      <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between">
+                        <div className="text-[11px] text-slate-300 space-y-0.5">
+                          <div>⏱️ <strong>{rep.shiftTime}</strong></div>
+                          <div>📊 Inspected: <strong className="text-emerald-400">{rep.inspected}</strong></div>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => setSelectedDispatchRep(rep)}
+                          className="bg-blue-600/20 hover:bg-blue-600 border border-blue-500/40 hover:border-blue-500 text-blue-300 hover:text-white font-bold text-xs px-3 py-1.5 rounded-xl transition-all cursor-pointer shadow-sm"
+                        >
+                          Quick Dispatch
+                        </button>
+                      </div>
+
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* SECTION 3 & 4: LIVE SHIFT METRICS & ACTIVE QUALITY ALERTS */}
+              <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                
+                {/* Shift Progress & Output Metrics (Span 2) */}
+                <div className="xl:col-span-2 bg-slate-900/80 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between shadow-lg">
+                  <div className="flex items-center justify-between mb-4 border-b border-slate-800 pb-3">
+                    <h3 className="text-base font-extrabold text-white tracking-wide flex items-center gap-2">
+                      <Activity className="w-5 h-5 text-emerald-400" />
+                      <span>Shift Output & Operations Metrics</span>
+                    </h3>
+                    <span className="text-xs bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded font-bold uppercase">Live Progress</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="bg-slate-950/80 border border-slate-800 p-4 rounded-xl flex flex-col justify-between">
+                      <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Active Hours Today</span>
+                      <div className="text-3xl font-black text-blue-400 mt-2">21.7 hrs</div>
+                      <span className="text-[11px] text-slate-400 mt-1">Across 4 deployed Reps</span>
+                    </div>
+
+                    <div className="bg-slate-950/80 border border-slate-800 p-4 rounded-xl flex flex-col justify-between">
+                      <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Pieces Inspected</span>
+                      <div className="text-3xl font-black text-emerald-400 mt-2">1,240 pcs</div>
+                      <span className="text-[11px] text-emerald-400/80 font-semibold mt-1">✓ On target for shift quota</span>
+                    </div>
+
+                    <div className="bg-slate-950/80 border border-slate-800 p-4 rounded-xl flex flex-col justify-between">
+                      <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Quality Defect Containments</span>
+                      <div className="text-3xl font-black text-amber-400 mt-2">27 logged</div>
+                      <span className="text-[11px] text-amber-300 font-semibold mt-1">⚠ 100% contained on-site</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Live Quality Alerts & Containment Stream */}
+                <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 shadow-lg flex flex-col">
+                  <div className="flex items-center justify-between mb-4 border-b border-slate-800 pb-3">
+                    <h3 className="text-base font-extrabold text-white tracking-wide flex items-center gap-2">
+                      <Shield className="w-5 h-5 text-amber-400" />
+                      <span>Active Quality Containment Alerts</span>
+                    </h3>
+                  </div>
+
+                  <div className="space-y-3 flex-1 overflow-y-auto">
+                    <div className="p-3 rounded-xl bg-amber-950/30 border border-amber-500/30 flex items-start gap-2.5">
+                      <div className="w-2 h-2 rounded-full bg-amber-400 mt-1.5 flex-shrink-0 animate-ping"></div>
+                      <div>
+                        <strong className="text-xs font-bold text-amber-200 block">Magna Oshawa — PN 86286761 Hold</strong>
+                        <p className="text-[11.5px] text-slate-300 mt-0.5">Clarence Kuiken logged 12 tail light housing hairline cracks. Quality Lead notified.</p>
+                        <span className="text-[10px] text-slate-400 font-semibold mt-1 block">15 mins ago</span>
+                      </div>
+                    </div>
+
+                    <div className="p-3 rounded-xl bg-blue-950/30 border border-blue-500/30 flex items-start gap-2.5">
+                      <div className="w-2 h-2 rounded-full bg-blue-400 mt-1.5 flex-shrink-0"></div>
+                      <div>
+                        <strong className="text-xs font-bold text-blue-200 block">Auto-Kabel Dearborn — Shift Handover</strong>
+                        <p className="text-[11.5px] text-slate-300 mt-0.5">Hugo Ramos resumed Line 2 battery sheath inspection session.</p>
+                        <span className="text-[10px] text-slate-400 font-semibold mt-1 block">42 mins ago</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+
+              {/* DISPATCH / RE-ASSIGNMENT MODAL */}
+              {selectedDispatchRep && (
+                <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-in fade-in duration-200" onClick={() => setSelectedDispatchRep(null)}>
+                  <div className="bg-slate-900 border border-blue-500/40 rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4 text-left" onClick={e => e.stopPropagation()}>
+                    <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                      <h3 className="text-lg font-black text-white flex items-center gap-2">
+                        <Activity className="w-5 h-5 text-blue-400" />
+                        <span>Quick Dispatch / Re-Assign Rep</span>
+                      </h3>
+                      <button type="button" onClick={() => setSelectedDispatchRep(null)} className="text-slate-400 hover:text-white font-bold text-lg cursor-pointer">&times;</button>
+                    </div>
+
+                    <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-1">
+                      <div className="text-xs text-slate-400 font-bold uppercase">Rep Name</div>
+                      <strong className="text-base text-white block">{selectedDispatchRep.name}</strong>
+                      <div className="text-xs text-blue-400 font-semibold">Currently at: {selectedDispatchRep.plant} ({selectedDispatchRep.location})</div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block">Target Plant & Location</label>
+                      <select className="w-full h-11 bg-slate-950 border border-slate-800 rounded-xl px-3 text-xs font-bold text-white focus:outline-none focus:border-blue-500">
+                        <option value="magna">Magna AutoSystems — Oshawa, ON</option>
+                        <option value="autokabel">Auto-Kabel North America — Dearborn, MI</option>
+                        <option value="brose">Brose Mexico S.A. — Queretaro, MX</option>
+                        <option value="lear">Lear Corporation — Tuscaloosa, AL</option>
+                      </select>
+                    </div>
+
+                    <div className="flex gap-3 pt-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          alert(`Dispatch command sent! ${selectedDispatchRep.name} has been re-assigned.`);
+                          setSelectedDispatchRep(null);
+                        }}
+                        className="flex-1 h-11 bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl cursor-pointer shadow-lg transition-all"
+                      >
+                        Confirm Dispatch
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedDispatchRep(null)}
+                        className="h-11 px-4 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs uppercase rounded-xl cursor-pointer transition-all"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+            </div>
+          )}
+
+          {/* TAB 0: PULSE AI (Conversational Database Auditor & Copilot) */}
           {activeTab === 'pulse-ai' && (
             <div className="flex-1 flex gap-6 sm:p-8 min-h-0">
               {/* Left Side: Chat Console */}

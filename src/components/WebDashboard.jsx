@@ -1448,8 +1448,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   const [showCalendarModal, setShowCalendarModal] = useState(false);
   const [showHelpDrawer, setShowHelpDrawer] = useState(false);
   const [newTaskText, setNewTaskText] = useState('');
-  const [calendarMonthIndex, setCalendarMonthIndex] = useState(5); // 0-11
-  const [calendarYear, setCalendarYear] = useState(2026);
+  const [calendarMonthIndex, setCalendarMonthIndex] = useState(() => new Date().getMonth()); // 0-11
+  const [calendarYear, setCalendarYear] = useState(() => new Date().getFullYear());
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -9786,29 +9786,29 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
             {/* Quick Demo Date Presets & Cancel Action */}
             <div className="bg-surface p-3 border-t border-border-subtle flex flex-col gap-2 calendar-modal-footer">
-              <span className="text-[12.5px] text-text-secondary font-bold uppercase tracking-wider block">Demo Quick Pick:</span>
+              <span className="text-[12.5px] text-text-secondary font-bold uppercase tracking-wider block">Quick Pick & Filter:</span>
               <div className="flex gap-2">
                 <button
                   type="button"
                   onClick={() => {
-                    setSelectedDate('2026-05-28');
+                    const todayStr = new Date().toISOString().split('T')[0];
+                    setSelectedDate(todayStr);
                     setShowAllDates(false);
                     setShowCalendarModal(false);
                   }}
                   className="h-8 bg-surface-elevated border border-border-subtle hover:bg-surface-elevated text-[#3B82F6] hover:text-[#3B82F6] font-bold text-[10.5px] rounded-xl flex-1 cursor-pointer text-center transition-colors"
                 >
-                  May 28 (Incident Demo)
+                  Today ({new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })})
                 </button>
                 <button
                   type="button"
                   onClick={() => {
-                    setSelectedDate('2026-06-01');
-                    setShowAllDates(false);
+                    setShowAllDates(true);
                     setShowCalendarModal(false);
                   }}
-                  className="h-8 bg-surface-elevated border border-border-subtle hover:bg-surface-elevated text-text-primary hover:text-text-primary font-bold text-[10.5px] rounded-xl flex-1 cursor-pointer text-center transition-colors"
+                  className="h-8 bg-[#3B82F6]/20 border border-[#3B82F6]/30 text-[#3B82F6] font-bold text-[10.5px] rounded-xl flex-1 cursor-pointer text-center transition-colors"
                 >
-                  June 1 (Today's Logs)
+                  Show All Dates (All History)
                 </button>
               </div>
               <button

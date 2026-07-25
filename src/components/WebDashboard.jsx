@@ -4273,15 +4273,6 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
             <UserPlus className="w-4 h-4 text-white" />
             <span>Onboard Company & Project</span>
           </button>
-
-          <button 
-            onClick={handleReset}
-            className="h-9 flex items-center gap-1.5 bg-surface-elevated border border-border-subtle hover:bg-surface-elevated text-slate-450 hover:text-text-primary px-3 rounded-xl text-[13.5px] font-bold cursor-pointer transition-colors"
-            title="Restore local browser sandbox seeds"
-          >
-            <Database className="w-3.5 h-3.5" />
-            <span>Restore Demo Seeds</span>
-          </button>
         </div>
       </div>
 

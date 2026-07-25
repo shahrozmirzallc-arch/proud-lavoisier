@@ -10570,10 +10570,18 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                       onChange={(e) => setNewProjRep(e.target.value)}
                       className="stitch-input px-3 py-2 text-[13px] text-white"
                     >
-                      <option value="clarence">Clarence Kuiken (Lead Senior Inspector)</option>
-                      <option value="hugo">Hugo Ramos (Quality Resident Engineer)</option>
-                      <option value="nabil">Nabil El-Sabagh (Quality Resident Engineer)</option>
-                      <option value="rogelio">Rogelio Gutierrez (Quality Inspector)</option>
+                      {users && users.filter(u => u.role === 'rep' || u.title?.includes('Inspector') || u.title?.includes('Engineer')).length > 0 ? (
+                        users.filter(u => u.role === 'rep' || u.title?.includes('Inspector') || u.title?.includes('Engineer')).map(u => (
+                          <option key={u.id} value={u.id}>{u.name} ({u.title || 'Field Rep'})</option>
+                        ))
+                      ) : (
+                        <>
+                          <option value="1">Clarence Kuiken (Lead Senior Inspector)</option>
+                          <option value="2">Hugo Ramos (Quality Resident Engineer)</option>
+                          <option value="3">Nabil El-Sabagh (Quality Resident Engineer)</option>
+                          <option value="4">Rogelio Gutierrez (Quality Inspector)</option>
+                        </>
+                      )}
                     </select>
                   </div>
 

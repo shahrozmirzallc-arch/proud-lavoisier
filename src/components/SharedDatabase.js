@@ -202,6 +202,16 @@ export async function syncWithSupabase(force = false, roleOverride = null, repId
           error = defaultErr;
         }
 
+        if (col === 'users') {
+          data = (data || []).map(u => {
+            if (!isAdmin) {
+              const { password_hash, hourly_rate, billing_rate, pay_currency, ...safeUser } = u;
+              return { ...safeUser, passcode: 'auth_managed' };
+            }
+            return { ...u, passcode: 'auth_managed' };
+          });
+        }
+
         if (error) {
           console.warn(`[Supabase Pull Info] table "${targetTable}":`, error.message);
           continue;
@@ -332,8 +342,8 @@ export function getEntities(type) {
       
       if (type === 'users') {
         return entities.map(u => {
-          const { pay_currency, ...cleanUser } = u;
-          return cleanUser;
+          const { pay_currency, passcode, password_hash, hourly_rate, billing_rate, ...cleanUser } = u;
+          return { ...cleanUser, passcode: 'auth_managed' };
         });
       }
 

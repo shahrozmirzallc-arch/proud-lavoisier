@@ -68,35 +68,45 @@ body {
   transform: translateY(-4px);
 }
 
-/* Google Stitch specific premium UI classes */
+/* Google Stitch Design System Tokens & Precision Aesthetics */
 .stitch-btn {
-  background: linear-gradient(135deg, #0EA5E9 0%, #3B82F6 100%);
+  background: linear-gradient(135deg, #0056D2 0%, #3B82F6 100%);
   border: none;
   border-radius: 9999px;
   color: white;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 14px 0 rgba(14, 165, 233, 0.39);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 14px 0 rgba(0, 86, 210, 0.39);
 }
 .stitch-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(14, 165, 233, 0.5);
+  box-shadow: 0 8px 24px rgba(0, 86, 210, 0.5);
 }
 
 .stitch-panel {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 20px;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
   backdrop-filter: blur(20px);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
-  transition: all 0.3s ease;
+  box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.35);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.stitch-panel:hover {
+  border-color: rgba(59, 130, 246, 0.4);
+  box-shadow: 0 16px 48px rgba(59, 130, 246, 0.15);
 }
 
 .stitch-input {
-  background: rgba(15, 23, 42, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 12px;
   color: #fff;
   transition: all 0.2s ease;
+}
+.stitch-input:focus {
+  border-color: #3B82F6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+  outline: none;
 }
 .stitch-input:focus {
   border-color: #0EA5E9;

@@ -5,7 +5,7 @@ import {
   Camera, Scan, Plus, ChevronRight, Mail, Send, RotateCcw, Volume2, Video, ArrowLeft, Trash2,
   Receipt, DollarSign, FileText
 } from 'lucide-react';
-import { getEntities, addIncident, addEmailLog, addReworkLog, saveEntity, addExpenseEntry, logSystemEvent } from './SharedDatabase';
+import { getEntities, addIncident, addEmailLog, addReworkLog, saveEntity, addExpenseEntry, logSystemEvent, supabase, syncWithSupabase } from './SharedDatabase';
 import { uploadToCloudinary } from '../services/cloudinaryService';
 import { stageIncidentLocally, getLocalOutbox } from '../services/nativeStorageService';
 import { getRepStatusConfig, sanitizeCustomerDerivativeUrl } from '../services/mediaSecurityService';
@@ -20,8 +20,10 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
   ));
   // Authentication & Shift States
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [email, setEmail] = useState('clarence.k@integritydriven.com');
-  const [password, setPassword] = useState('password123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [authError, setAuthError] = useState('');
+  const [submittingAuth, setSubmittingAuth] = useState(false);
   const [rememberDevice, setRememberDevice] = useState(true);
   const [currentUser, setCurrentUser] = useState(null);
   
@@ -129,12 +131,13 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
     setPlants(allPlants);
     
     const savedUser = localStorage.getItem('ids_pulse_saved_user');
-    if (savedUser) {
+    const activeToken = sessionStorage.getItem('ids_pulse_session_token') || localStorage.getItem('ids_pulse_session_token');
+    if (savedUser && activeToken) {
       const dbUsers = getEntities('users');
       const found = dbUsers.find(u => u.id === savedUser);
       if (found) {
         setCurrentUser(found);
-        setEmail(found.email);
+        setEmail(found.email || '');
       }
     }
 
@@ -268,52 +271,85 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
     window.dispatchEvent(new Event('ids_pulse_db_update'));
   };
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     if (e) e.preventDefault();
-    const dbUsers = getEntities('users');
-    
-    // Auto-login bypass for admin shortcut
-    const isMasterBypass = email?.toLowerCase()?.includes('shahroz') || 
-                           email?.toLowerCase()?.includes('colleen');
-                           
-    if (isMasterBypass) {
-      const defaultRep = dbUsers.find(u => u.role === 'rep') || dbUsers[0];
-      if (defaultRep) {
-        performAuthLogin(defaultRep);
+    setAuthError('');
+
+    const inputUser = email.trim();
+    const rawPw = password.trim();
+
+    if (!inputUser || !rawPw) {
+      setAuthError('Operator ID and Access Code are required.');
+      return;
+    }
+
+    setSubmittingAuth(true);
+
+    try {
+      // 1. Digest SHA-256 hash of provided password
+      const msgBuffer = new TextEncoder().encode(rawPw);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+      const hashHex = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+
+      // Clean space fallback
+      const cleanBuffer = new TextEncoder().encode(rawPw.replace(/\s+/g, ''));
+      const cleanHashHex = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', cleanBuffer))).map(b => b.toString(16).padStart(2, '0')).join('');
+
+      // Capitalized fallback (e.g. clarence2026! -> Clarence2026!)
+      const capPw = rawPw.charAt(0).toUpperCase() + rawPw.slice(1);
+      const capHashHex = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(capPw)))).map(b => b.toString(16).padStart(2, '0')).join('');
+
+      // 2. Call Supabase RPC verify_credentials
+      let authRes = null;
+      const { data, error } = await supabase.rpc('verify_credentials', { p_username: inputUser, p_hash: hashHex });
+      if (!error && data && data.length > 0 && data[0].is_valid) {
+        authRes = data[0];
+      } else {
+        const { data: cleanData } = await supabase.rpc('verify_credentials', { p_username: inputUser, p_hash: cleanHashHex });
+        if (cleanData && cleanData.length > 0 && cleanData[0].is_valid) {
+          authRes = cleanData[0];
+        } else {
+          const { data: capData } = await supabase.rpc('verify_credentials', { p_username: inputUser, p_hash: capHashHex });
+          if (capData && capData.length > 0 && capData[0].is_valid) {
+            authRes = capData[0];
+          }
+        }
+      }
+
+      if (!authRes || !authRes.is_valid) {
+        setAuthError('Operator ID or Access Code is incorrect.');
+        setSubmittingAuth(false);
         return;
       }
-    }
-    
-    const found = dbUsers.find(u => u.email?.toLowerCase() === email?.toLowerCase());
-    if (found) {
-      performAuthLogin(found);
-    } else {
-      alert('Invalid credentials. For testing, use the preset email or click "Quick Demo Login".');
-    }
-  };
 
-  const handleQuickLogin = () => {
-    const dbUsers = getEntities('users');
-    const clarence = dbUsers.find(u => u.name?.includes('Clarence')) || dbUsers[0];
-    if (clarence) {
-      setEmail(clarence.email);
-      performAuthLogin(clarence);
-    }
-  };
+      // Store server session token & authenticated role
+      if (authRes.session_token) {
+        sessionStorage.setItem('ids_pulse_session_token', authRes.session_token);
+        sessionStorage.setItem('ids_pulse_authenticated_role', authRes.role);
+        localStorage.setItem('ids_pulse_session_token', authRes.session_token);
+        localStorage.setItem('ids_pulse_authenticated_role', authRes.role);
+      }
 
-  const handleQuickLoginAs = (role) => {
-    const dbUsers = getEntities('users');
-    const user = dbUsers.find(u => {
-      if (role === 'Clarence') return u.name?.includes('Clarence');
-      if (role === 'Donna') return u.name?.includes('Donna');
-      if (role === 'Hugo') return u.name?.includes('Hugo');
-      if (role === 'Nabil') return u.name?.includes('Nabil');
-      if (role === 'Rogelio') return u.name?.includes('Rogelio');
-      return false;
-    });
-    if (user) {
-      setEmail(user.email);
-      performAuthLogin(user);
+      // Sync Supabase entities with server session token
+      const repId = authRes.user_id || (authRes.username === 'clarence' ? '1' : `rep_${authRes.username}`);
+      sessionStorage.setItem('ids_pulse_rep_id', repId);
+      await syncWithSupabase(true, authRes.role, repId, '', authRes.session_token);
+
+      const dbUsers = getEntities('users');
+      const foundUser = dbUsers.find(u => u.id === repId || u.name?.toLowerCase().includes(authRes.username?.toLowerCase())) || {
+        id: repId,
+        name: authRes.username,
+        email: email,
+        role: authRes.role
+      };
+
+      performAuthLogin(foundUser);
+      setPassword('');
+    } catch (err) {
+      console.error('[PhoneSimulator Auth Error]:', err);
+      setAuthError('Authentication failed. Check network connection.');
+    } finally {
+      setSubmittingAuth(false);
     }
   };
 
@@ -322,6 +358,11 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
     setCurrentUser(null);
     setShiftActive(false);
     setActiveScreen('login');
+    sessionStorage.removeItem('ids_pulse_session_token');
+    sessionStorage.removeItem('ids_pulse_authenticated_role');
+    sessionStorage.removeItem('ids_pulse_rep_id');
+    localStorage.removeItem('ids_pulse_session_token');
+    localStorage.removeItem('ids_pulse_authenticated_role');
     localStorage.removeItem('ids_pulse_saved_user');
   };
 
@@ -1077,24 +1118,21 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                 </div>
               </div>
 
+              {authError && (
+                <div className="p-2.5 bg-red-50 border border-red-200 rounded-md text-[11px] font-bold text-red-600 flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+                  <span>{authError}</span>
+                </div>
+              )}
+
               <button 
                 type="submit" 
-                className="phone-btn-primary mt-4"
+                disabled={submittingAuth}
+                className="phone-btn-primary mt-4 cursor-pointer disabled:opacity-50"
               >
-                Authenticate
+                {submittingAuth ? 'Authenticating…' : 'Authenticate'}
               </button>
             </form>
-
-            <div className="flex flex-col gap-2 pt-4 border-t border-slate-200 mt-8">
-              <span className="text-[10px] text-text-secondary font-bold uppercase tracking-wider text-center">Fast Auth Profiles</span>
-              <div className="flex flex-wrap gap-2 justify-center">
-                <button type="button" onClick={() => handleQuickLoginAs('Clarence')} className="px-3 py-1.5 rounded-sm bg-white border border-slate-300 shadow-sm text-[11px] font-bold text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-colors cursor-pointer">Clarence</button>
-                <button type="button" onClick={() => handleQuickLoginAs('Hugo')} className="px-3 py-1.5 rounded-sm bg-blue-50 border border-blue-200 shadow-sm text-[11px] font-bold text-blue-700 hover:bg-blue-100 hover:border-blue-300 transition-colors cursor-pointer">Hugo (QRE)</button>
-                <button type="button" onClick={() => handleQuickLoginAs('Nabil')} className="px-3 py-1.5 rounded-sm bg-blue-50 border border-blue-200 shadow-sm text-[11px] font-bold text-blue-700 hover:bg-blue-100 hover:border-blue-300 transition-colors cursor-pointer">Nabil (QRE)</button>
-                <button type="button" onClick={() => handleQuickLoginAs('Rogelio')} className="px-3 py-1.5 rounded-sm bg-blue-50 border border-blue-200 shadow-sm text-[11px] font-bold text-blue-700 hover:bg-blue-100 hover:border-blue-300 transition-colors cursor-pointer">Rogelio (QRE)</button>
-                <button type="button" onClick={() => handleQuickLoginAs('Donna')} className="px-3 py-1.5 rounded-sm bg-white border border-slate-300 shadow-sm text-[11px] font-bold text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-colors cursor-pointer">Donna</button>
-              </div>
-            </div>
           </div>
         )}
 

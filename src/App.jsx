@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import PhoneSimulator from './components/PhoneSimulator';
 import WebDashboard from './components/WebDashboard';
-import { initializeDB, syncWithSupabase } from './components/SharedDatabase';
+import { initializeDB, syncWithSupabase, supabase } from './components/SharedDatabase';
 import LoginScreen from './components/LoginScreen';
 import { SpinnerGap } from '@phosphor-icons/react';
 import { Shield, Activity, Monitor, Smartphone, RefreshCw, Laptop, Milestone, Lock, Key, Sun, Moon, User } from 'lucide-react';
@@ -189,112 +189,84 @@ function App() {
     const inputUser = username.trim().toLowerCase().replace(/\s+/g, '');
     const rawPw = password.trim();
 
-    // Verify raw input hash
+    // Verify input hashes via Supabase Server RPC (zero passwords/hashes in client bundle)
     const msgBuffer = new TextEncoder().encode(rawPw);
     const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 
-    // Verify space-removed raw input hash for tolerance
     const spaceRemovedRaw = rawPw.replace(/\s+/g, '');
     const cleanBuffer = new TextEncoder().encode(spaceRemovedRaw);
     const cleanHashBuffer = await crypto.subtle.digest('SHA-256', cleanBuffer);
     const cleanHashHex = Array.from(new Uint8Array(cleanHashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
 
-    // Admin Specific Password Hashes
-    const adminHashes = {
-      greg: 'e6e0bc2e0084fd9a105a96352b19bc17e1133c305d71b95ea8ee34d4ab02b5ee', // Greg2026!
-      colleen: 'ccd752abe030dc31bc9ae49e24a4dd23372253615a5ec6a390fe47ba6878abc3', // Colleen2026!
-      monica: '9556d2e682b19a2e62f4b4ba8638b17bbd128a9d8da20f567a49d6fce6e42e9b', // Monica2026!
-      iris: '224277d14561475a8bc9aba23aaeb0cbf89c6238640419be87feb4d35d653ca6', // Iris2026!
-      donna: '30e94cd242d100d9f98f7455f3729a261e8adbef1be6068d56f2ca8906f02ddf', // Donna2026!
-      miriam: '8570ccf94f2ed3e87fe169f26abfed781fcfd0a78bed27aab58d9de07fc0467c', // Miriam2026!
-      idspulse: '9a92a6d1cf6ec2949a7ee59160e25dbc16948a10c5d8d805456c1b788da3ac51', // Pulse2026!
-      diana: 'fbb9c06c0bb8db5f7eef5fd346791577e8abe77c668167fb3f0035b34a759d9b', // DianaPulse2026!
-      shahroz: '3dc913cc6d99a4f6fa13c07c646c8efa8b9410d323c484dfc1fef45322782131' // Shahroz123$
-    };
-
-    const repHashes = {
-      hugo: 'c64af887d9674ca8412b190b24d2f6832f26bd793741b8950ee0fdef607ecf29', // Hugo2026!
-      nabil: 'fa7bd90019d53e79275df8cfbdb2c1aa0452cd5014a61bc33a00762c0a1c6758', // Nabil2026!
-      rogelio: 'e61e93bbc830f459760753dc939561ff6f7803265ab3558b528fee3cae768666', // Rogelio2026!
-      clarence: 'f53f71f14ab8ec71d37880f364626c078b44ebb0c2ab0bfd725f0d82f93d00c0' // Clarence2026!
-    };
-
-    const customerHashes = {
-      autokabel: '6f43cfa01465d7148ff27a7937b1a0c423c270d0021bc96c13077cc97fc7e59a', // Autokabel2026!
-      magna: '012a4330d67f32ea9a514c8941cb068d2fcdb1600e6bc7699790e606fbe96559', // Magna2026!
-      hutchinson: 'aeb399a87fbb23ee6a65017fd465aa284dc6ee406334b9d5544d6ecf0d125677', // Hutchinson2026!
-      brose: '314ac53360d6111f3be1678d7a96aa6d3886921327a04bc488d0ead1eb930373' // Brose2026!
-    };
-
-    const isValidSpecificAdmin = adminHashes[inputUser] && (hashHex === adminHashes[inputUser] || cleanHashHex === adminHashes[inputUser]);
-    const isValidSpecificRep = repHashes[inputUser] && (hashHex === repHashes[inputUser] || cleanHashHex === repHashes[inputUser]);
-    const isValidSpecificCustomer = customerHashes[inputUser] && (hashHex === customerHashes[inputUser] || cleanHashHex === customerHashes[inputUser]);
-
-    let targetUser = inputUser;
-    let isAuthorized = false;
-    let loginType = '';
-
-    const admins = Object.keys(adminHashes);
-    const reps = Object.keys(repHashes);
-    const customers = Object.keys(customerHashes);
-
-    if (admins.includes(targetUser) && isValidSpecificAdmin) {
-      isAuthorized = true;
-      loginType = 'admin';
-    } else if (reps.includes(targetUser) && isValidSpecificRep) {
-      isAuthorized = true;
-      loginType = 'rep';
-    } else if (customers.includes(targetUser) && isValidSpecificCustomer) {
-      isAuthorized = true;
-      loginType = 'customer';
+    // Server-side credential verification call via RPC
+    let authRes = null;
+    try {
+      const { data, error } = await supabase.rpc('verify_credentials', { p_username: inputUser, p_hash: hashHex });
+      if (!error && data && data.length > 0 && data[0].is_valid) {
+        authRes = data[0];
+      } else {
+        // Try clean hash for space tolerance fallback
+        const { data: cleanData } = await supabase.rpc('verify_credentials', { p_username: inputUser, p_hash: cleanHashHex });
+        if (cleanData && cleanData.length > 0 && cleanData[0].is_valid) {
+          authRes = cleanData[0];
+        }
+      }
+    } catch (err) {
+      console.error("[Auth RPC Error]:", err);
     }
 
-    if (isAuthorized) {
-      syncWithSupabase();
-      setIsUnlocked(true);
-      if (loginType === 'admin') {
-        const adminName = targetUser;
-        setDayNight('day');
-        const reactRole = (adminName === 'shahroz' || adminName === 'idspulse') ? 'shahroz' : 
-                          (adminName === 'colleen' ? 'accountant' : 
-                          (adminName === 'donna' ? 'lead' : 
-                          (adminName === 'greg' ? 'owner' : 'admin')));
-        setUserRole(reactRole);
-        setLayoutMode('dashboard-only');
-        sessionStorage.setItem('ids_pulse_unlocked', 'true');
-        sessionStorage.setItem('ids_pulse_role', reactRole);
-        sessionStorage.setItem('ids_pulse_admin_user', adminName);
-        setAuthError(false);
-      } else if (loginType === 'rep') {
-        setDayNight('day');
-        setUserRole('rep');
-        const repId = targetUser === 'clarence' ? '1' : `rep_${targetUser}`;
-        setCurrentUserRepId(repId);
-        setLayoutMode('phone-only');
-        sessionStorage.setItem('ids_pulse_unlocked', 'true');
-        sessionStorage.setItem('ids_pulse_role', 'rep');
-        sessionStorage.setItem('ids_pulse_rep_id', repId);
-        sessionStorage.removeItem('ids_pulse_admin_user');
-        setAuthError(false);
-      } else if (loginType === 'customer') {
-        setDayNight('day');
-        setUserRole('customer');
-        setCurrentUserCustomerId(targetUser);
-        setLayoutMode('dashboard-only');
-        sessionStorage.setItem('ids_pulse_unlocked', 'true');
-        sessionStorage.setItem('ids_pulse_role', 'customer');
-        sessionStorage.setItem('ids_pulse_customer_id', targetUser);
-        sessionStorage.removeItem('ids_pulse_admin_user');
-        setAuthError(false);
-      }
-      return true;
-    } else {
+    if (!authRes || !authRes.is_valid) {
       setAuthError(true);
       setSystemPassword('');
       return false;
     }
+
+    const targetUser = authRes.username || inputUser;
+    const loginType = authRes.role;
+
+    setIsUnlocked(true);
+    if (loginType === 'admin') {
+      const adminName = targetUser;
+      setDayNight('day');
+      const reactRole = (adminName === 'shahroz' || adminName === 'idspulse') ? 'shahroz' : 
+                        (adminName === 'colleen' ? 'accountant' : 
+                        (adminName === 'donna' ? 'lead' : 
+                        (adminName === 'greg' ? 'owner' : 'admin')));
+      setUserRole(reactRole);
+      setLayoutMode('dashboard-only');
+      sessionStorage.setItem('ids_pulse_unlocked', 'true');
+      sessionStorage.setItem('ids_pulse_role', reactRole);
+      sessionStorage.setItem('ids_pulse_admin_user', adminName);
+      setAuthError(false);
+      syncWithSupabase(true, reactRole, '', '');
+    } else if (loginType === 'rep') {
+      setDayNight('day');
+      setUserRole('rep');
+      const repId = authRes.user_id || (targetUser === 'clarence' ? '1' : `rep_${targetUser}`);
+      setCurrentUserRepId(repId);
+      setLayoutMode('phone-only');
+      sessionStorage.setItem('ids_pulse_unlocked', 'true');
+      sessionStorage.setItem('ids_pulse_role', 'rep');
+      sessionStorage.setItem('ids_pulse_rep_id', repId);
+      sessionStorage.removeItem('ids_pulse_admin_user');
+      setAuthError(false);
+      syncWithSupabase(true, 'rep', repId, '');
+    } else if (loginType === 'customer') {
+      setDayNight('day');
+      setUserRole('customer');
+      const custId = authRes.customer_id || targetUser;
+      setCurrentUserCustomerId(custId);
+      setLayoutMode('dashboard-only');
+      sessionStorage.setItem('ids_pulse_unlocked', 'true');
+      sessionStorage.setItem('ids_pulse_role', 'customer');
+      sessionStorage.setItem('ids_pulse_customer_id', custId);
+      sessionStorage.removeItem('ids_pulse_admin_user');
+      setAuthError(false);
+      syncWithSupabase(true, 'customer', '', custId);
+    }
+    return true;
   };
 
   if (authChecking) {

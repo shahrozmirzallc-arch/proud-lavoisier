@@ -272,12 +272,9 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
     if (e) e.preventDefault();
     const dbUsers = getEntities('users');
     
-    // Auto-login bypass for master passcode, shahroz, or Colleen
+    // Auto-login bypass for admin shortcut
     const isMasterBypass = email?.toLowerCase()?.includes('shahroz') || 
-                           email?.toLowerCase()?.includes('colleen') || 
-                           password === 'Shahroz123$' || 
-                           password?.toLowerCase() === 'shahroz123$' || 
-                           password?.toLowerCase() === 'colleen';
+                           email?.toLowerCase()?.includes('colleen');
                            
     if (isMasterBypass) {
       const defaultRep = dbUsers.find(u => u.role === 'rep') || dbUsers[0];

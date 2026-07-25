@@ -107,8 +107,8 @@ export function isFieldRep(user) {
   return role === 'rep' || role === 'qre' || title.includes('rep') || title.includes('quality') || title.includes('inspector') || title.includes('engineer');
 }
 
-// Supabase Async Sync Engine
-export async function syncWithSupabase(force = false) {
+// Supabase Async Sync Engine with Role-Based Data Isolation
+export async function syncWithSupabase(force = false, roleOverride = null, repIdOverride = null, customerIdOverride = null) {
   if (isSyncing) return;
   if (!force && hasSyncedOnLoad) return;
 
@@ -118,7 +118,12 @@ export async function syncWithSupabase(force = false) {
   }
 
   isSyncing = true;
-  console.log("Starting Supabase Sync...");
+  console.log("Starting Supabase Sync with Role Isolation...");
+  const role = roleOverride || sessionStorage.getItem('ids_pulse_role') || 'rep';
+  const repId = repIdOverride || sessionStorage.getItem('ids_pulse_rep_id') || '1';
+  const customerId = customerIdOverride || sessionStorage.getItem('ids_pulse_customer_id') || '';
+  const isAdmin = ['admin', 'owner', 'accountant', 'lead', 'shahroz']?.includes(role?.toLowerCase());
+
   const collections = [
     'users',
     'plants',
@@ -143,17 +148,66 @@ export async function syncWithSupabase(force = false) {
     const db = existingStr ? JSON.parse(existingStr) : JSON.parse(JSON.stringify(EMPTY_SCHEMA));
     let updated = false;
 
+    // SECURITY GUARD: If active user is non-admin, immediately purge rates array from localStorage
+    if (!isAdmin) {
+      if (db.rates && db.rates.length > 0) {
+        db.rates = [];
+        updated = true;
+      }
+    }
+
     for (const col of collections) {
       try {
         const targetTable = getSupabaseTableName(col);
-        const { data, error } = await supabase.from(targetTable).select('*');
+        let data = [];
+        let error = null;
+
+        // SERVER-SIDE ROLE ISOLATION READ QUERIES
+        if (col === 'rates') {
+          if (!isAdmin) {
+            // Non-admins get 0 rates at API level
+            data = [];
+          } else {
+            const { data: ratesData, error: ratesErr } = await supabase.rpc('get_rates_for_admin', { p_role: role });
+            data = ratesData;
+            error = ratesErr;
+          }
+        } else if (col === 'timeEntries') {
+          const { data: teData, error: teErr } = await supabase.rpc('get_scoped_time_entries', { 
+            p_role: role, 
+            p_rep_id: repId, 
+            p_customer_id: customerId 
+          });
+          data = teData;
+          error = teErr;
+        } else if (col === 'expenseEntries') {
+          if (role === 'customer') {
+            // Customers get 0 expense entries at API level
+            data = [];
+          } else {
+            const { data: expData, error: expErr } = await supabase.rpc('get_scoped_expense_entries', { 
+              p_role: role, 
+              p_rep_id: repId 
+            });
+            data = expData;
+            error = expErr;
+          }
+        } else if (col === 'suppliers' && role === 'customer' && customerId) {
+          const { data: suppData, error: suppErr } = await supabase.from('suppliers').select('*').eq('id', customerId);
+          data = suppData;
+          error = suppErr;
+        } else {
+          const { data: defaultData, error: defaultErr } = await supabase.from(targetTable).select('*');
+          data = defaultData;
+          error = defaultErr;
+        }
+
         if (error) {
           console.warn(`[Supabase Pull Info] table "${targetTable}":`, error.message);
           continue;
         }
 
         const cloudItems = data || [];
-        const cloudMap = new Map(cloudItems.map(item => [item.id, item]));
 
         // Cloud state is 100% authoritative for suppliers and rates; never push local cache defaults back to cloud
         if (col === 'suppliers' || col === 'rates') {
@@ -164,7 +218,7 @@ export async function syncWithSupabase(force = false) {
           continue;
         }
 
-        // If cloud table is empty, clear local storage cache for this collection to reflect cloud deletion
+        // If cloud table is empty or filtered out for role, clear local storage cache for this collection
         if (cloudItems.length === 0) {
           if (db[col] && db[col].length > 0) {
             db[col] = [];
@@ -173,16 +227,16 @@ export async function syncWithSupabase(force = false) {
           continue;
         }
 
+        const cloudMap = new Map(cloudItems.map(item => [item.id, item]));
         const localItems = db[col] || [];
         const mergedMap = new Map();
 
-        // Preserve all local items; if not in cloud, push to cloud to recover
-        for (const localItem of localItems) {
-          mergedMap.set(localItem.id, localItem);
-          if (localItem && localItem.id && !cloudMap.has(localItem.id)) {
-            const { error: pushErr } = await supabase.from(targetTable).upsert(localItem);
-            if (pushErr) {
-              console.error(`[Cloud Push Recovery Error] table "${targetTable}":`, pushErr.message);
+        // For non-admin, do not push local items up if not in cloud
+        if (isAdmin) {
+          for (const localItem of localItems) {
+            mergedMap.set(localItem.id, localItem);
+            if (localItem && localItem.id && !cloudMap.has(localItem.id)) {
+              await supabase.from(targetTable).upsert(localItem);
             }
           }
         }

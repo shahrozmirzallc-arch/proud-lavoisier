@@ -259,7 +259,9 @@ function App() {
         const adminName = targetUser;
         setDayNight('day');
         const reactRole = (adminName === 'shahroz' || adminName === 'idspulse') ? 'shahroz' : 
-                          (adminName === 'colleen' ? 'accountant' : 'admin');
+                          (adminName === 'colleen' ? 'accountant' : 
+                          (adminName === 'donna' ? 'lead' : 
+                          (adminName === 'greg' ? 'owner' : 'admin')));
         setUserRole(reactRole);
         setLayoutMode('dashboard-only');
         sessionStorage.setItem('ids_pulse_unlocked', 'true');
@@ -350,6 +352,7 @@ function App() {
                         <option value="owner" className="bg-surface text-text-primary">Greg (Admin)</option>
                         <option value="accountant" className="bg-surface text-text-primary">Colleen (Finance)</option>
                         <option value="lead" className="bg-surface text-text-primary">Donna (Shift Lead)</option>
+                        <option value="admin" className="bg-surface text-text-primary">Admin</option>
                         {(sessionStorage.getItem('ids_pulse_admin_user') === 'shahroz' || sessionStorage.getItem('ids_pulse_admin_user') === 'idspulse') && (
                           <option value="shahroz" className="bg-surface text-text-primary">Shahroz (Super Admin)</option>
                         )}

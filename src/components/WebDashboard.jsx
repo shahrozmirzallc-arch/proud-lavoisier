@@ -1163,10 +1163,31 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       return;
     }
     const newId = quickClientName?.toLowerCase()?.replace(/[^a-z0-9]/g, '_');
+    
+    // Create/Reuse Plant Record & Store Plant ID (ISSUE 3)
+    let targetPlantId = newProjPlant ? newProjPlant.toLowerCase().replace(/[^a-z0-9]/g, '_') : 'oshawa_on';
+    const existingPlantObj = (plants || []).find(p => p.id === targetPlantId || p.name === newProjPlant);
+    if (existingPlantObj) {
+      targetPlantId = existingPlantObj.id;
+      if (!existingPlantObj.supplier_ids?.includes(newId)) {
+        const updatedPlant = { ...existingPlantObj, supplier_ids: [...(existingPlantObj.supplier_ids || []), newId] };
+        saveEntity('plants', updatedPlant);
+      }
+    } else if (newProjPlant) {
+      const newPlantObj = {
+        id: targetPlantId,
+        name: newProjPlant,
+        address: quickClientAddress || 'Quality Audit Facility',
+        supplier_ids: [newId]
+      };
+      saveEntity('plants', newPlantObj);
+      setPlants(getEntities('plants'));
+    }
+
     const existingSupplier = (suppliers || []).find(s => s.id === newId);
     const existingPlants = existingSupplier?.plants_served || [];
-    const updatedPlantsServed = (newProjPlant && !existingPlants.includes(newProjPlant))
-      ? [...existingPlants, newProjPlant]
+    const updatedPlantsServed = (!existingPlants.includes(targetPlantId))
+      ? [...existingPlants, targetPlantId]
       : existingPlants;
 
     const contactsArr = quickClientContactName ? [{
@@ -1215,20 +1236,38 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     // If project assignment fields are filled, register project assignment seamlessly
     if (newProjDesc || finalRepId || newProjPlant) {
       const projId = 'proj_' + Date.now();
+      const bRate = parseFloat(newProjBilling) || 85.0;
+      const pRate = parseFloat(newProjPay) || 45.0;
+      const assignedRepId = (finalRepId && finalRepId !== '__new__') ? finalRepId : '1';
+
       const newProjObj = {
         id: projId,
         name: newProjDesc || `${quickClientName} Quality Audit`,
         client_id: newId,
-        plant_id: newProjPlant || 'Oshawa, ON',
-        rep_id: (finalRepId && finalRepId !== '__new__') ? finalRepId : '1',
+        supplier_id: newId,
+        plant_id: targetPlantId,
+        rep_id: assignedRepId,
         start_date: newProjStartDate || new Date().toISOString().split('T')[0],
-        billing_rate: parseFloat(newProjBilling) || 85.0,
-        pay_rate: parseFloat(newProjPay) || 45.0,
+        billing_rate: bRate,
+        pay_rate: pRate,
         currency: newProjCurrency || 'USD',
         status: 'Active'
       };
       addProject(newProjObj);
       setProjects(getEntities('projects'));
+
+      // Write rate to rates table (Single Source of Truth - ISSUE 2)
+      const newRateObj = {
+        id: `rate_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+        rep_id: assignedRepId,
+        supplier_id: newId,
+        plant_id: targetPlantId,
+        project_id: projId,
+        billing_rate: String(bRate),
+        pay_rate: String(pRate),
+        currency: newProjCurrency || 'USD'
+      };
+      saveEntity('rates', newRateObj);
     }
 
     setQuickClientName('');

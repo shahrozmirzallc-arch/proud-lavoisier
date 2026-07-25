@@ -196,6 +196,10 @@ export async function syncWithSupabase(force = false, roleOverride = null, repId
           const { data: suppData, error: suppErr } = await supabase.from('suppliers').select('*').eq('id', customerId);
           data = suppData;
           error = suppErr;
+        } else if (col === 'projects') {
+          const { data: projData, error: projErr } = await supabase.rpc('get_scoped_projects', { p_role: role });
+          data = projData;
+          error = projErr;
         } else {
           const { data: defaultData, error: defaultErr } = await supabase.from(targetTable).select('*');
           data = defaultData;
@@ -209,6 +213,16 @@ export async function syncWithSupabase(force = false, roleOverride = null, repId
               return { ...safeUser, passcode: 'auth_managed' };
             }
             return { ...u, passcode: 'auth_managed' };
+          });
+        }
+
+        if (col === 'projects') {
+          data = (data || []).map(p => {
+            if (!isAdmin) {
+              const { billing_rate, pay_rate, ...cleanProj } = p;
+              return cleanProj;
+            }
+            return p;
           });
         }
 
@@ -344,6 +358,13 @@ export function getEntities(type) {
         return entities.map(u => {
           const { pay_currency, passcode, password_hash, hourly_rate, billing_rate, ...cleanUser } = u;
           return { ...cleanUser, passcode: 'auth_managed' };
+        });
+      }
+
+      if (type === 'projects') {
+        return entities.map(p => {
+          const { billing_rate, pay_rate, ...cleanProj } = p;
+          return cleanProj;
         });
       }
 

@@ -108,7 +108,7 @@ export function isFieldRep(user) {
 }
 
 // Supabase Async Sync Engine with Role-Based Data Isolation
-export async function syncWithSupabase(force = false, roleOverride = null, repIdOverride = null, customerIdOverride = null) {
+export async function syncWithSupabase(force = false, roleOverride = null, repIdOverride = null, customerIdOverride = null, sessionTokenOverride = null) {
   if (isSyncing) return;
   if (!force && hasSyncedOnLoad) return;
 
@@ -168,7 +168,7 @@ export async function syncWithSupabase(force = false, roleOverride = null, repId
             // Non-admins get 0 rates at API level
             data = [];
           } else {
-            const { data: ratesData, error: ratesErr } = await supabase.rpc('get_rates_for_admin', { p_role: role });
+            const { data: ratesData, error: ratesErr } = await supabase.rpc('get_rates_for_admin', { p_role: role, p_token: token });
             data = ratesData;
             error = ratesErr;
           }
@@ -176,7 +176,8 @@ export async function syncWithSupabase(force = false, roleOverride = null, repId
           const { data: teData, error: teErr } = await supabase.rpc('get_scoped_time_entries', { 
             p_role: role, 
             p_rep_id: repId, 
-            p_customer_id: customerId 
+            p_customer_id: customerId,
+            p_token: token
           });
           data = teData;
           error = teErr;
@@ -187,7 +188,8 @@ export async function syncWithSupabase(force = false, roleOverride = null, repId
           } else {
             const { data: expData, error: expErr } = await supabase.rpc('get_scoped_expense_entries', { 
               p_role: role, 
-              p_rep_id: repId 
+              p_rep_id: repId,
+              p_token: token 
             });
             data = expData;
             error = expErr;
@@ -197,7 +199,7 @@ export async function syncWithSupabase(force = false, roleOverride = null, repId
           data = suppData;
           error = suppErr;
         } else if (col === 'projects') {
-          const { data: projData, error: projErr } = await supabase.rpc('get_scoped_projects', { p_role: role });
+          const { data: projData, error: projErr } = await supabase.rpc('get_scoped_projects', { p_role: role, p_token: token });
           data = projData;
           error = projErr;
         } else {

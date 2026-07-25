@@ -228,19 +228,15 @@ function App() {
 
     setIsUnlocked(true);
     if (loginType === 'admin') {
-      const adminName = targetUser;
-      setDayNight('day');
-      const reactRole = (adminName === 'shahroz' || adminName === 'idspulse') ? 'shahroz' : 
-                        (adminName === 'colleen' ? 'accountant' : 
-                        (adminName === 'donna' ? 'lead' : 
-                        (adminName === 'greg' ? 'owner' : 'admin')));
+      const reactRole = targetUser === 'greg' ? 'owner' : (targetUser === 'colleen' ? 'accountant' : (targetUser === 'shahroz' ? 'shahroz' : 'admin'));
+      const adminName = targetUser === 'shahroz' ? 'Shahroz Mirza' : (targetUser === 'greg' ? 'Greg Phillippe' : (targetUser === 'colleen' ? 'Colleen Boyd' : targetUser));
       setUserRole(reactRole);
       setLayoutMode('dashboard-only');
       sessionStorage.setItem('ids_pulse_unlocked', 'true');
       sessionStorage.setItem('ids_pulse_role', reactRole);
       sessionStorage.setItem('ids_pulse_admin_user', adminName);
       setAuthError(false);
-      syncWithSupabase(true, reactRole, '', '');
+      syncWithSupabase(true, reactRole, '', '', authRes.session_token);
     } else if (loginType === 'rep') {
       setDayNight('day');
       setUserRole('rep');
@@ -252,7 +248,7 @@ function App() {
       sessionStorage.setItem('ids_pulse_rep_id', repId);
       sessionStorage.removeItem('ids_pulse_admin_user');
       setAuthError(false);
-      syncWithSupabase(true, 'rep', repId, '');
+      syncWithSupabase(true, 'rep', repId, '', authRes.session_token);
     } else if (loginType === 'customer') {
       setDayNight('day');
       setUserRole('customer');
@@ -264,7 +260,7 @@ function App() {
       sessionStorage.setItem('ids_pulse_customer_id', custId);
       sessionStorage.removeItem('ids_pulse_admin_user');
       setAuthError(false);
-      syncWithSupabase(true, 'customer', '', custId);
+      syncWithSupabase(true, 'customer', '', custId, authRes.session_token);
     }
     return true;
   };
@@ -303,8 +299,8 @@ function App() {
                     Active
                   </span>
 
-                  {/* Super Admin / Multi-Role Switcher */}
-                  {isUnlocked && (
+                  {/* Dev-only Admin Role Switcher (Disabled in Production & Non-Admin sessions) */}
+                  {isUnlocked && import.meta.env.DEV && ['admin', 'owner', 'accountant', 'lead', 'shahroz'].includes(sessionStorage.getItem('ids_pulse_authenticated_role') || userRole) && (
                     <div className="flex items-center gap-1.5 bg-surface-elevated px-2.5 py-1 rounded-lg border border-border-subtle ml-1 shadow-xs">
                       <User className="w-3.5 h-3.5 text-primary" />
                       <select 

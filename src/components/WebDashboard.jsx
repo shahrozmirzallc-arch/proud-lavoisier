@@ -4352,18 +4352,33 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
           <div className="flex items-center gap-2 px-2.5 h-9 bg-surface-elevated border border-slate-100 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
             {(() => {
               const uRole = sessionStorage.getItem('ids_pulse_role') || 'admin';
-              const uUser = sessionStorage.getItem('ids_pulse_admin_user') || 'donna';
+              const uUser = sessionStorage.getItem('ids_pulse_admin_user');
+              const uCustId = sessionStorage.getItem('ids_pulse_customer_id');
+              const uRepId = sessionStorage.getItem('ids_pulse_rep_id');
+              
               let initials = 'DC';
               let fullName = 'Donna Cabral';
               let title = 'QA Supervisor';
               
-              if (uRole === 'accountant' || uUser === 'colleen') { initials = 'CB'; fullName = 'Colleen B.'; title = 'Accountant'; }
-              else if (uRole === 'shahroz' || uUser === 'shahroz') { initials = 'SM'; fullName = 'Shahroz Mirza'; title = 'Super Admin'; }
-              else if (uUser === 'greg') { initials = 'GP'; fullName = 'Greg Phillippe'; title = 'Director of Quality'; }
-              else if (uUser === 'monica') { initials = 'MV'; fullName = 'Monica Vargas'; title = 'Executive Assistant'; }
-              else if (uUser === 'diana') { initials = 'DP'; fullName = 'Diana Pulse'; title = 'Executive Admin'; }
-              else if (uUser === 'iris') { initials = 'IR'; fullName = 'Iris R.'; title = 'QA Admin'; }
-              else if (uUser === 'miriam') { initials = 'MB'; fullName = 'Miriam B.'; title = 'QA Coordinator'; }
+              if (uRole === 'customer') {
+                const supp = (suppliers || []).find(s => s.id === uCustId);
+                fullName = supp?.name || uCustId || 'Client Portal';
+                title = 'Verified Client';
+                initials = fullName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) || 'CP';
+              } else if (uRole === 'rep') {
+                const repObj = (users || []).find(u => u.id === uRepId);
+                fullName = repObj?.name || 'Field Inspector';
+                title = repObj?.title || 'Quality Inspector';
+                initials = fullName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) || 'QI';
+              } else {
+                if (uRole === 'accountant' || uUser === 'colleen') { initials = 'CB'; fullName = 'Colleen B.'; title = 'Accountant'; }
+                else if (uRole === 'shahroz' || uUser === 'shahroz') { initials = 'SM'; fullName = 'Shahroz Mirza'; title = 'Super Admin'; }
+                else if (uUser === 'greg') { initials = 'GP'; fullName = 'Greg Phillippe'; title = 'Director of Quality'; }
+                else if (uUser === 'monica') { initials = 'MV'; fullName = 'Monica Vargas'; title = 'Executive Assistant'; }
+                else if (uUser === 'diana') { initials = 'DP'; fullName = 'Diana Pulse'; title = 'Executive Admin'; }
+                else if (uUser === 'iris') { initials = 'IR'; fullName = 'Iris R.'; title = 'QA Admin'; }
+                else if (uUser === 'miriam') { initials = 'MB'; fullName = 'Miriam B.'; title = 'QA Coordinator'; }
+              }
               
               return (
                 <>
@@ -4379,33 +4394,46 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
             })()}
           </div>
 
-          {/* Ergonomic Mode Switcher for Non-Tech Operatives */}
-          <div className="flex items-center gap-1 bg-surface-elevated border border-border-subtle p-1 rounded-xl shadow-inner">
-            <button 
-              type="button"
-              onClick={() => setUiMode('inspector')}
-              className={`px-3 py-1.5 rounded-lg font-extrabold text-[12.5px] transition-all cursor-pointer flex items-center gap-1.5 ${
-                uiMode === 'inspector' 
-                  ? 'bg-[#3B82F6] text-white shadow-md shadow-blue-500/25 scale-[1.02]' 
-                  : 'text-text-secondary hover:text-text-primary'
-              }`}
-              title="Switch to Ultra-Simplified Inspector Interface"
-            >
-              <span>👷 Field Inspector View</span>
-            </button>
-            <button 
-              type="button"
-              onClick={() => setUiMode('admin')}
-              className={`px-3 py-1.5 rounded-lg font-extrabold text-[12.5px] transition-all cursor-pointer flex items-center gap-1.5 ${
-                uiMode === 'admin' 
-                  ? 'bg-purple-600 text-white shadow-md shadow-purple-500/25 scale-[1.02]' 
-                  : 'text-text-secondary hover:text-text-primary'
-              }`}
-              title="Switch to Full Super Admin Command Center"
-            >
-              <span>🎛️ Super Admin Mode</span>
-            </button>
-          </div>
+          {/* Admin-Only Header Controls (Hidden for Reps and Customers) */}
+          {['admin', 'owner', 'accountant', 'lead', 'shahroz'].includes(sessionStorage.getItem('ids_pulse_authenticated_role') || sessionStorage.getItem('ids_pulse_role')) && (
+            <>
+              <div className="flex items-center gap-1 bg-surface-elevated border border-border-subtle p-1 rounded-xl shadow-inner">
+                <button 
+                  type="button"
+                  onClick={() => setUiMode('inspector')}
+                  className={`px-3 py-1.5 rounded-lg font-extrabold text-[12.5px] transition-all cursor-pointer flex items-center gap-1.5 ${
+                    uiMode === 'inspector' 
+                      ? 'bg-[#3B82F6] text-white shadow-md shadow-blue-500/25 scale-[1.02]' 
+                      : 'text-text-secondary hover:text-text-primary'
+                  }`}
+                  title="Switch to Ultra-Simplified Inspector Interface"
+                >
+                  <span>👷 Field Inspector View</span>
+                </button>
+                <button 
+                  type="button"
+                  onClick={() => setUiMode('admin')}
+                  className={`px-3 py-1.5 rounded-lg font-extrabold text-[12.5px] transition-all cursor-pointer flex items-center gap-1.5 ${
+                    uiMode === 'admin' 
+                      ? 'bg-purple-600 text-white shadow-md shadow-purple-500/25 scale-[1.02]' 
+                      : 'text-text-secondary hover:text-text-primary'
+                  }`}
+                  title="Switch to Full Super Admin Command Center"
+                >
+                  <span>🎛️ Super Admin Mode</span>
+                </button>
+              </div>
+
+              <button 
+                onClick={() => setShowQuickAddClient(true)}
+                className="h-9 flex items-center gap-1.5 bg-[#0056D2] hover:bg-[#3B82F6] text-white px-3.5 rounded-xl text-[13.5px] font-extrabold shadow-lg shadow-blue-500/20 cursor-pointer transition-all hover:scale-105"
+                title="Fast Company & Project Onboarding Hub"
+              >
+                <UserPlus className="w-4 h-4 text-white" />
+                <span>Onboard Company & Project</span>
+              </button>
+            </>
+          )}
 
           <button 
             onClick={() => setShowHelpDrawer(true)}
@@ -4413,15 +4441,6 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
             title="Open Interactive Guide"
           >
             <span>❓ How to use this Portal</span>
-          </button>
-
-          <button 
-            onClick={() => setShowQuickAddClient(true)}
-            className="h-9 flex items-center gap-1.5 bg-[#0056D2] hover:bg-[#3B82F6] text-white px-3.5 rounded-xl text-[13.5px] font-extrabold shadow-lg shadow-blue-500/20 cursor-pointer transition-all hover:scale-105"
-            title="Fast Company & Project Onboarding Hub"
-          >
-            <UserPlus className="w-4 h-4 text-white" />
-            <span>Onboard Company & Project</span>
           </button>
         </div>
       </div>

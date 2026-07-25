@@ -101,7 +101,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   const [newProjPay, setNewProjPay] = useState('');
   const [newProjCurrency, setNewProjCurrency] = useState('USD');
   
-  // Navigation & Date Navigation Filtering
+  // Navigation & UI Ergonomics Mode ('inspector' vs 'admin')
+  const [uiMode, setUiMode] = useState('inspector');
   const [activeTab, setActiveTab] = useState('command-center');
   const [selectedDispatchRep, setSelectedDispatchRep] = useState(null);
   const [collapsedGroups, setCollapsedGroups] = useState({
@@ -4160,7 +4161,33 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
             })()}
           </div>
 
-          {/* Top header navigation actions */}
+          {/* Ergonomic Mode Switcher for Non-Tech Operatives */}
+          <div className="flex items-center gap-1 bg-surface-elevated border border-border-subtle p-1 rounded-xl shadow-inner">
+            <button 
+              type="button"
+              onClick={() => setUiMode('inspector')}
+              className={`px-3 py-1.5 rounded-lg font-extrabold text-[12.5px] transition-all cursor-pointer flex items-center gap-1.5 ${
+                uiMode === 'inspector' 
+                  ? 'bg-[#3B82F6] text-white shadow-md shadow-blue-500/25 scale-[1.02]' 
+                  : 'text-text-secondary hover:text-text-primary'
+              }`}
+              title="Switch to Ultra-Simplified Inspector Interface"
+            >
+              <span>👷 Field Inspector View</span>
+            </button>
+            <button 
+              type="button"
+              onClick={() => setUiMode('admin')}
+              className={`px-3 py-1.5 rounded-lg font-extrabold text-[12.5px] transition-all cursor-pointer flex items-center gap-1.5 ${
+                uiMode === 'admin' 
+                  ? 'bg-purple-600 text-white shadow-md shadow-purple-500/25 scale-[1.02]' 
+                  : 'text-text-secondary hover:text-text-primary'
+              }`}
+              title="Switch to Full Super Admin Command Center"
+            >
+              <span>🎛️ Super Admin Mode</span>
+            </button>
+          </div>
 
           <button 
             onClick={() => setShowHelpDrawer(true)}
@@ -4999,6 +5026,56 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   </div>
                 </div>
               </div>
+
+              {/* FIELD INSPECTOR ERGONOMIC GIANT ACTION TILES */}
+              {uiMode === 'inspector' && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 my-1">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('time-tracking')}
+                    className="bg-gradient-to-br from-blue-950/90 via-slate-900 to-slate-950 border-2 border-blue-500/60 hover:border-blue-400 p-5 rounded-2xl flex items-center gap-4 cursor-pointer transition-all hover:scale-[1.02] shadow-xl shadow-blue-500/20 group text-left"
+                  >
+                    <div className="w-14 h-14 rounded-2xl bg-blue-600 flex items-center justify-center text-white shadow-md flex-shrink-0 group-hover:scale-110 transition-transform">
+                      <Clock className="w-7 h-7 text-white" />
+                    </div>
+                    <div className="flex flex-col text-left">
+                      <span className="text-xs font-black text-blue-400 uppercase tracking-widest">Step 1: Daily Hours</span>
+                      <span className="text-base sm:text-lg font-black text-white mt-0.5 leading-tight">➕ Log Shift & Hours</span>
+                      <span className="text-xs text-slate-300 mt-1 font-medium">Timesheet, plant location & breaks</span>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('incidents')}
+                    className="bg-gradient-to-br from-red-950/90 via-slate-900 to-slate-950 border-2 border-red-500/60 hover:border-red-400 p-5 rounded-2xl flex items-center gap-4 cursor-pointer transition-all hover:scale-[1.02] shadow-xl shadow-red-500/20 group text-left"
+                  >
+                    <div className="w-14 h-14 rounded-2xl bg-red-600 flex items-center justify-center text-white shadow-md flex-shrink-0 group-hover:scale-110 transition-transform">
+                      <AlertTriangle className="w-7 h-7 text-white" />
+                    </div>
+                    <div className="flex flex-col text-left">
+                      <span className="text-xs font-black text-red-400 uppercase tracking-widest">Step 2: Quality Hold</span>
+                      <span className="text-base sm:text-lg font-black text-white mt-0.5 leading-tight">🚨 Report Defect Hold</span>
+                      <span className="text-xs text-slate-300 mt-1 font-medium">Log defect photos & Part Number</span>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => exportShiftLogsPDF()}
+                    className="bg-gradient-to-br from-emerald-950/90 via-slate-900 to-slate-950 border-2 border-emerald-500/60 hover:border-emerald-400 p-5 rounded-2xl flex items-center gap-4 cursor-pointer transition-all hover:scale-[1.02] shadow-xl shadow-emerald-500/20 group text-left"
+                  >
+                    <div className="w-14 h-14 rounded-2xl bg-emerald-600 flex items-center justify-center text-white shadow-md flex-shrink-0 group-hover:scale-110 transition-transform">
+                      <FileText className="w-7 h-7 text-white" />
+                    </div>
+                    <div className="flex flex-col text-left">
+                      <span className="text-xs font-black text-emerald-400 uppercase tracking-widest">Step 3: Daily Summary</span>
+                      <span className="text-base sm:text-lg font-black text-white mt-0.5 leading-tight">📄 Download Daily PDF</span>
+                      <span className="text-xs text-slate-300 mt-1 font-medium">Export official quality report</span>
+                    </div>
+                  </button>
+                </div>
+              )}
 
               {/* SECTION 1 & 2: LIVE REP DEPLOYMENT CARDS & PART TRACEABILITY */}
               <div>

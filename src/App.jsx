@@ -463,18 +463,6 @@ function App() {
                 <button 
                   type="button"
                   onClick={() => {
-                    localStorage.removeItem('ids_pulse_db');
-                    initializeDB();
-                    window.dispatchEvent(new Event('ids_pulse_db_update'));
-                  }}
-                  className="flex items-center gap-1.5 text-text-secondary hover:text-text-primary bg-surface-elevated border border-border-subtle py-1.5 px-2.5 rounded-lg text-sm cursor-pointer transition-colors"
-                  title="Clear and reset local database"
-                >
-                  <RefreshCw className="w-3.5 h-3.5" />
-                </button>
-                <button 
-                  type="button"
-                  onClick={() => {
                     sessionStorage.removeItem('ids_pulse_unlocked');
                     sessionStorage.removeItem('ids_pulse_role');
                     sessionStorage.removeItem('ids_pulse_rep_id');

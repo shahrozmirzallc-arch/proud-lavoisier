@@ -152,7 +152,27 @@ export async function syncWithSupabase(force = false) {
           continue;
         }
 
-        const cloudMap = new Map((data || []).map(item => [item.id, item]));
+        const cloudItems = data || [];
+        const cloudMap = new Map(cloudItems.map(item => [item.id, item]));
+
+        // Cloud state is 100% authoritative for suppliers and rates; never push local cache defaults back to cloud
+        if (col === 'suppliers' || col === 'rates') {
+          if (JSON.stringify(db[col] || []) !== JSON.stringify(cloudItems)) {
+            db[col] = cloudItems;
+            updated = true;
+          }
+          continue;
+        }
+
+        // If cloud table is empty, clear local storage cache for this collection to reflect cloud deletion
+        if (cloudItems.length === 0) {
+          if (db[col] && db[col].length > 0) {
+            db[col] = [];
+            updated = true;
+          }
+          continue;
+        }
+
         const localItems = db[col] || [];
         const mergedMap = new Map();
 
@@ -163,13 +183,12 @@ export async function syncWithSupabase(force = false) {
             const { error: pushErr } = await supabase.from(targetTable).upsert(localItem);
             if (pushErr) {
               console.error(`[Cloud Push Recovery Error] table "${targetTable}":`, pushErr.message);
-              window.dispatchEvent(new CustomEvent('ids_pulse_sync_error', { detail: { table: targetTable, message: pushErr.message } }));
             }
           }
         }
 
         // Overlay cloud items over local items
-        for (const cloudItem of (data || [])) {
+        for (const cloudItem of cloudItems) {
           if (cloudItem && cloudItem.id) {
             const existingLocal = mergedMap.get(cloudItem.id);
             mergedMap.set(cloudItem.id, existingLocal ? { ...existingLocal, ...cloudItem } : cloudItem);

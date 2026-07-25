@@ -81,6 +81,11 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   const [quickClientContactEmail, setQuickClientContactEmail] = useState('');
   const [quickClientAllottedHours, setQuickClientAllottedHours] = useState('20');
   const [quickClientSchedule, setQuickClientSchedule] = useState('on-demand');
+  const [isInlineNewRep, setIsInlineNewRep] = useState(false);
+  const [inlineRepName, setInlineRepName] = useState('');
+  const [inlineRepEmail, setInlineRepEmail] = useState('');
+  const [inlineRepPhone, setInlineRepPhone] = useState('');
+  const [inlineRepTitle, setInlineRepTitle] = useState('Quality Inspector');
 
   // Quick Add Plant Form State
   const [quickPlantName, setQuickPlantName] = useState('');
@@ -1098,15 +1103,37 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     saveEntity('suppliers', newCust);
     setSuppliers(getEntities('suppliers'));
 
+    // Handle Inline New Field Inspector Creation
+    let finalRepId = newProjRep;
+    if (isInlineNewRep || newProjRep === '__new__') {
+      if (!inlineRepName) {
+        alert("New Field Inspector Name is required.");
+        return;
+      }
+      finalRepId = 'rep_' + Date.now();
+      const newRepObj = {
+        id: finalRepId,
+        name: inlineRepName,
+        email: inlineRepEmail || `${inlineRepName.toLowerCase().replace(/[^a-z0-9]/g, '.')}@integritydriven.com`,
+        phone: inlineRepPhone || '+1 905-555-0100',
+        title: inlineRepTitle || 'Quality Inspector',
+        role: 'rep',
+        avatar: inlineRepName.split(' ').map(n => n[0]).join('').toUpperCase() || 'QI',
+        pay_currency: newProjCurrency || 'USD'
+      };
+      saveEntity('users', newRepObj);
+      setUsers(getEntities('users'));
+    }
+
     // If project assignment fields are filled, register project assignment seamlessly
-    if (newProjDesc || newProjRep || newProjPlant) {
+    if (newProjDesc || finalRepId || newProjPlant) {
       const projId = 'proj_' + Date.now();
       const newProjObj = {
         id: projId,
         name: newProjDesc || `${quickClientName} Quality Audit`,
         client_id: newId,
         plant_id: newProjPlant || 'Oshawa, ON',
-        rep_id: newProjRep || 'clarence',
+        rep_id: (finalRepId && finalRepId !== '__new__') ? finalRepId : '1',
         start_date: newProjStartDate || new Date().toISOString().split('T')[0],
         billing_rate: parseFloat(newProjBilling) || 85.0,
         pay_rate: parseFloat(newProjPay) || 45.0,
@@ -1122,6 +1149,11 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     setQuickClientContactEmail('');
     setQuickClientAllottedHours('20');
     setQuickClientSchedule('on-demand');
+    setIsInlineNewRep(false);
+    setInlineRepName('');
+    setInlineRepEmail('');
+    setInlineRepPhone('');
+    setInlineRepTitle('Quality Inspector');
     setShowQuickAddClient(false);
 
     // Auto-select
@@ -10564,26 +10596,118 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   <div className="flex flex-col gap-1">
-                    <label className="text-[10.5px] font-bold text-slate-300 uppercase tracking-wider">Assign Field Rep</label>
-                    <select 
-                      value={newProjRep} 
-                      onChange={(e) => setNewProjRep(e.target.value)}
-                      className="stitch-input px-3 py-2 text-[13px] text-white"
-                    >
-                      {users && users.filter(u => u.role === 'rep' || u.title?.includes('Inspector') || u.title?.includes('Engineer')).length > 0 ? (
-                        users.filter(u => u.role === 'rep' || u.title?.includes('Inspector') || u.title?.includes('Engineer')).map(u => (
-                          <option key={u.id} value={u.id}>{u.name} ({u.title || 'Field Rep'})</option>
-                        ))
-                      ) : (
-                        <>
-                          <option value="1">Clarence Kuiken (Lead Senior Inspector)</option>
-                          <option value="2">Hugo Ramos (Quality Resident Engineer)</option>
-                          <option value="3">Nabil El-Sabagh (Quality Resident Engineer)</option>
-                          <option value="4">Rogelio Gutierrez (Quality Inspector)</option>
-                        </>
-                      )}
-                    </select>
+                    <div className="flex justify-between items-center">
+                      <label className="text-[10.5px] font-bold text-slate-300 uppercase tracking-wider">Assign Field Rep</label>
+                      <button 
+                        type="button" 
+                        onClick={() => {
+                          const nextState = !isInlineNewRep;
+                          setIsInlineNewRep(nextState);
+                          if (nextState) setNewProjRep('__new__');
+                          else setNewProjRep('1');
+                        }} 
+                        className="text-[10px] font-extrabold text-[#3B82F6] hover:text-blue-300 underline cursor-pointer"
+                      >
+                        {isInlineNewRep ? '← Choose Existing Rep' : '+ Create New Rep'}
+                      </button>
+                    </div>
+
+                    {!(isInlineNewRep || newProjRep === '__new__') && (
+                      <select 
+                        value={newProjRep} 
+                        onChange={(e) => {
+                          if (e.target.value === '__new__') {
+                            setIsInlineNewRep(true);
+                          } else {
+                            setIsInlineNewRep(false);
+                          }
+                          setNewProjRep(e.target.value);
+                        }}
+                        className="stitch-input px-3 py-2 text-[13px] text-white"
+                      >
+                        <option value="__new__">➕ Create New Field Inspector...</option>
+                        {users && users.filter(u => u.role === 'rep' || u.title?.includes('Inspector') || u.title?.includes('Engineer')).length > 0 ? (
+                          users.filter(u => u.role === 'rep' || u.title?.includes('Inspector') || u.title?.includes('Engineer')).map(u => (
+                            <option key={u.id} value={u.id}>{u.name} ({u.title || 'Field Rep'})</option>
+                          ))
+                        ) : (
+                          <>
+                            <option value="1">Clarence Kuiken (Lead Senior Inspector)</option>
+                            <option value="2">Hugo Ramos (Quality Resident Engineer)</option>
+                            <option value="3">Nabil El-Sabagh (Quality Resident Engineer)</option>
+                            <option value="4">Rogelio Gutierrez (Quality Inspector)</option>
+                          </>
+                        )}
+                      </select>
+                    )}
                   </div>
+
+                  {/* INLINE NEW FIELD REP EXPANDABLE CARD */}
+                  {(isInlineNewRep || newProjRep === '__new__') && (
+                    <div className="p-3 bg-blue-950/60 border border-blue-500/50 rounded-xl flex flex-col gap-2.5 col-span-1 sm:col-span-2 shadow-inner">
+                      <div className="flex justify-between items-center border-b border-blue-800/60 pb-1.5">
+                        <span className="text-[11px] font-black text-sky-300 uppercase tracking-wider flex items-center gap-1.5">
+                          <UserPlus className="w-3.5 h-3.5 text-sky-400" /> 👤 New Field Inspector Details
+                        </span>
+                        <button 
+                          type="button" 
+                          onClick={() => { setIsInlineNewRep(false); setNewProjRep('1'); }}
+                          className="text-[10px] font-bold text-slate-400 hover:text-white"
+                        >
+                          ✕ Cancel Inline Rep
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[10px] font-bold text-slate-300 uppercase">Inspector Name *</label>
+                          <input 
+                            type="text" 
+                            value={inlineRepName} 
+                            onChange={(e) => setInlineRepName(e.target.value)} 
+                            placeholder="e.g. Alex Tremblay" 
+                            className="stitch-input px-2.5 py-1.5 text-xs text-white"
+                            required={isInlineNewRep}
+                          />
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[10px] font-bold text-slate-300 uppercase">Email Address</label>
+                          <input 
+                            type="email" 
+                            value={inlineRepEmail} 
+                            onChange={(e) => setInlineRepEmail(e.target.value)} 
+                            placeholder="alex.t@integritydriven.com" 
+                            className="stitch-input px-2.5 py-1.5 text-xs text-white"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[10px] font-bold text-slate-300 uppercase">Phone Number</label>
+                          <input 
+                            type="text" 
+                            value={inlineRepPhone} 
+                            onChange={(e) => setInlineRepPhone(e.target.value)} 
+                            placeholder="+1 905-555-0199" 
+                            className="stitch-input px-2.5 py-1.5 text-xs text-white"
+                          />
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[10px] font-bold text-slate-300 uppercase">Title / Role</label>
+                          <select 
+                            value={inlineRepTitle} 
+                            onChange={(e) => setInlineRepTitle(e.target.value)} 
+                            className="stitch-input px-2.5 py-1.5 text-xs text-white"
+                          >
+                            <option value="Quality Inspector">Quality Inspector</option>
+                            <option value="Quality Resident Engineer">Quality Resident Engineer</option>
+                            <option value="Lead Senior Inspector">Lead Senior Inspector</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   <div className="flex flex-col gap-1">
                     <label className="text-[10.5px] font-bold text-slate-300 uppercase tracking-wider">Plant Location</label>

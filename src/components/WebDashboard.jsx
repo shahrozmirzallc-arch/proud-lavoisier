@@ -81,6 +81,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   const [quickClientContactEmail, setQuickClientContactEmail] = useState('');
   const [quickClientAllottedHours, setQuickClientAllottedHours] = useState('20');
   const [quickClientSchedule, setQuickClientSchedule] = useState('on-demand');
+  const [quickClientAddress, setQuickClientAddress] = useState('');
   const [isInlineNewRep, setIsInlineNewRep] = useState(false);
   const [inlineRepName, setInlineRepName] = useState('');
   const [inlineRepEmail, setInlineRepEmail] = useState('');
@@ -1162,21 +1163,29 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       return;
     }
     const newId = quickClientName?.toLowerCase()?.replace(/[^a-z0-9]/g, '_');
+    const existingSupplier = (suppliers || []).find(s => s.id === newId);
+    const existingPlants = existingSupplier?.plants_served || [];
+    const updatedPlantsServed = (newProjPlant && !existingPlants.includes(newProjPlant))
+      ? [...existingPlants, newProjPlant]
+      : existingPlants;
+
     const contactsArr = quickClientContactName ? [{
       name: quickClientContactName,
       email: quickClientContactEmail || '',
       role: 'Quality Manager'
-    }] : [];
+    }] : (existingSupplier?.contacts || []);
+
     const newCust = {
+      ...(existingSupplier || {}),
       id: newId,
       name: quickClientName,
-      contact_name: quickClientContactName,
-      contact_email: quickClientContactEmail,
-      address: quickClientAddress || '',
-      allotted_hours: quickClientAllottedHours || '20',
-      invoice_schedule: quickClientSchedule,
+      contact_name: quickClientContactName || existingSupplier?.contact_name || '',
+      contact_email: quickClientContactEmail || existingSupplier?.contact_email || '',
+      address: quickClientAddress || existingSupplier?.address || '',
+      allotted_hours: quickClientAllottedHours || existingSupplier?.allotted_hours || '20',
+      invoice_schedule: quickClientSchedule || existingSupplier?.invoice_schedule || 'on-demand',
       contacts: contactsArr,
-      plants_served: []
+      plants_served: updatedPlantsServed
     };
     saveEntity('suppliers', newCust);
     setSuppliers(getEntities('suppliers'));
@@ -1225,6 +1234,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     setQuickClientName('');
     setQuickClientContactName('');
     setQuickClientContactEmail('');
+    setQuickClientAddress('');
     setQuickClientAllottedHours('20');
     setQuickClientSchedule('on-demand');
     setIsInlineNewRep(false);
@@ -10689,6 +10699,17 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                       className="stitch-input px-3 py-2 text-[13px] text-white placeholder-slate-500"
                     />
                   </div>
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10.5px] font-bold text-slate-300 uppercase tracking-wider">Company / Billing Address</label>
+                  <input 
+                    type="text" 
+                    value={quickClientAddress} 
+                    onChange={(e) => setQuickClientAddress(e.target.value)} 
+                    placeholder="e.g. 100 Industrial Pkwy, Windsor, ON N9A 6J3" 
+                    className="stitch-input px-3 py-2 text-[13px] text-white placeholder-slate-500"
+                  />
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">

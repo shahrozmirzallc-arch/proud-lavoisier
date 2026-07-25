@@ -6195,7 +6195,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     className="h-8 bg-surface border border-border-subtle hover:border-border-subtle rounded-xl px-3.5 text-[13.5px] text-text-primary focus:outline-none focus:ring-1 focus:ring-[#3B82F6]/20 transition-all"
                   >
                     <option value="all">All Suppliers</option>
-                    {(suppliers && suppliers.length > 0 ? suppliers : SEED_DATA.suppliers).map(s => (
+                    {(suppliers || []).map(s => (
                       <option key={s.id} value={s.id}>{s.name}</option>
                     ))}
                   </select>

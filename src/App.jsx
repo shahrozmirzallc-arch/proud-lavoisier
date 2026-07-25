@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import PhoneSimulator from './components/PhoneSimulator';
 import WebDashboard from './components/WebDashboard';
-import { initializeDB } from './components/SharedDatabase';
+import { initializeDB, syncWithSupabase } from './components/SharedDatabase';
 import LoginScreen from './components/LoginScreen';
 import { SpinnerGap } from '@phosphor-icons/react';
 import { Shield, Activity, Monitor, Smartphone, RefreshCw, Laptop, Milestone, Lock, Key, Sun, Moon, User } from 'lucide-react';
@@ -253,6 +253,7 @@ function App() {
     }
 
     if (isAuthorized) {
+      syncWithSupabase();
       setIsUnlocked(true);
       if (loginType === 'admin') {
         const adminName = targetUser;

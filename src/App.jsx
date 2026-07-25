@@ -313,61 +313,58 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen text-text-primary flex flex-col font-sans" style={{ backgroundColor: 'var(--bg-color)' }}>
+    <div className="min-h-screen text-text-primary flex flex-col font-sans bg-bg transition-colors duration-300">
       
       {/* Desktop Navigation Header */}
       {!isMobileDevice && (
-        <header className="bg-surface/85 backdrop-blur-md border-b border-border-subtle sticky top-0 z-30 px-4 py-2.5 lg:px-6 shadow-sm">
+        <header className="bg-surface/95 backdrop-blur-md border-b border-border-subtle sticky top-0 z-30 px-4 py-2.5 lg:px-6 shadow-sm transition-colors duration-300">
           <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
             
             {/* System Title */}
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl shadow-lg shadow-blue-500/20 text-white">
+              <div className="p-2 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl shadow-md shadow-blue-500/20 text-white flex-shrink-0">
                 <Shield className="w-5 h-5" />
               </div>
               <div>
-                <div className="flex items-center gap-2">
-                  <h1 className="text-base font-black tracking-tight text-text-primary uppercase">IDS Pulse Operations Suite</h1>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h1 className="text-sm sm:text-base font-black tracking-tight text-text-primary uppercase">IDS Pulse Operations Suite</h1>
                   <span className="px-2 py-0.5 text-[9px] font-extrabold uppercase bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 rounded-full">
                     Active
                   </span>
 
                   {/* Super Admin / Multi-Role Switcher */}
                   {isUnlocked && (
-                    <div className="flex items-center gap-1.5 bg-surface-elevated px-2 py-0.5 rounded-lg border border-border-subtle ml-2">
-                      <User className="w-3 h-3 text-[#22D3EE]" />
+                    <div className="flex items-center gap-1.5 bg-surface-elevated px-2.5 py-1 rounded-lg border border-border-subtle ml-1 shadow-xs">
+                      <User className="w-3.5 h-3.5 text-primary" />
                       <select 
                         value={userRole}
                         onChange={(e) => {
                           const newRole = e.target.value;
-                          const currentUser = sessionStorage.getItem('ids_pulse_admin_user');
-                          if (newRole === 'shahroz' && currentUser !== 'shahroz' && currentUser !== 'idspulse') {
-                            return; // Block unauthorized switch
-                          }
                           setUserRole(newRole);
+                          sessionStorage.setItem('ids_pulse_role', newRole);
                           setDbUpdateTrigger(prev => prev + 1);
                         }}
-                        className="bg-transparent border-none text-[9.5px] font-bold text-[#22D3EE] focus:outline-none cursor-pointer p-0.5"
+                        className="bg-transparent border-none text-[10.5px] font-extrabold text-text-primary focus:outline-none cursor-pointer p-0"
                       >
-                        <option value="owner" className="bg-surface text-text-primary">Greg (Admin)</option>
+                        <option value="shahroz" className="bg-surface text-text-primary">Shahroz (Super Admin)</option>
+                        <option value="owner" className="bg-surface text-text-primary">Greg (Owner)</option>
                         <option value="accountant" className="bg-surface text-text-primary">Colleen (Finance)</option>
                         <option value="lead" className="bg-surface text-text-primary">Donna (Shift Lead)</option>
                         <option value="admin" className="bg-surface text-text-primary">Admin</option>
-                        {(sessionStorage.getItem('ids_pulse_admin_user') === 'shahroz' || sessionStorage.getItem('ids_pulse_admin_user') === 'idspulse') && (
-                          <option value="shahroz" className="bg-surface text-text-primary">Shahroz (Super Admin)</option>
-                        )}
+                        <option value="rep" className="bg-surface text-text-primary">Rep View</option>
+                        <option value="customer" className="bg-surface text-text-primary">Customer View</option>
                       </select>
                     </div>
                   )}
                 </div>
-                <p className="text-[10px] text-text-secondary">Enterprise quality tracking, audit metrics, and field dispatch operations.</p>
+                <p className="text-[10px] text-text-secondary font-medium">Enterprise quality tracking, audit metrics, and field dispatch operations.</p>
               </div>
             </div>
 
             {/* View Mode Controls */}
-            <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end">
+            <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end flex-wrap">
               {/* Dynamic Theme Switcher */}
-              <div className="flex items-center gap-1.5 bg-surface-elevated p-1.5 rounded-lg border border-border-subtle">
+              <div className="flex items-center gap-1.5 bg-surface-elevated p-1.5 rounded-lg border border-border-subtle shadow-xs">
                 <span className="text-[8px] text-text-secondary font-black uppercase px-1">Theme:</span>
                 <button 
                   type="button"
@@ -400,20 +397,20 @@ function App() {
                 type="button"
                 onClick={() => setDayNight(prev => prev === 'day' ? 'night' : 'day')}
                 title={dayNight === 'day' ? "Switch to Light Mode" : "Switch to Dark Mode"}
-                className={`w-[220px] px-3 py-1.5 rounded-xl font-bold flex items-center justify-between transition-all cursor-pointer ${
+                className={`px-3 py-1.5 rounded-xl font-bold flex items-center gap-2 transition-all cursor-pointer border text-xs shadow-xs ${
                   dayNight === 'day' 
-                    ? 'bg-surface-elevated border-border-subtle text-amber-400 hover:bg-surface hover:text-amber-300 shadow-sm shadow-black/25' 
-                    : 'bg-surface-elevated border-border-subtle text-indigo-600 hover:bg-surface hover:text-indigo-700 shadow-sm'
+                    ? 'bg-amber-500/10 border-amber-500/30 text-amber-500 hover:bg-amber-500/20' 
+                    : 'bg-indigo-500/10 border-indigo-500/30 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-500/20'
                 }`}
               >
                 {dayNight === 'day' ? (
                   <>
-                    <Sun className="w-4 h-4 text-amber-400" />
+                    <Sun className="w-4 h-4 text-amber-500" />
                     <span>Switch to Light Mode</span>
                   </>
                 ) : (
                   <>
-                    <Moon className="w-3.5 h-3.5 text-indigo-500" />
+                    <Moon className="w-4 h-4 text-indigo-500" />
                     <span>Switch to Dark Mode</span>
                   </>
                 )}

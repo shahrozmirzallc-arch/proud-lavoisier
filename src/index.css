@@ -493,7 +493,7 @@ body, header, main, div, button, span, table, tr, td, h1, h2, h3, h4 {
 }
 
 body {
-  background-color: var(--bg-color) !important;
+  background-color: var(--bg) !important;
 }
 
 /* Class Overrides for Hardcoded Theme Hex Colors */

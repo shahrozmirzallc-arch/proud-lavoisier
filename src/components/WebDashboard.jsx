@@ -335,8 +335,12 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   const [configCurrency, setConfigCurrency] = useState('USD');
   const [rates, setRates] = useState([]);
 
-  // Invoicing States
-  const [selectedInvoiceSupplier, setSelectedInvoiceSupplier] = useState('autokabel');
+  const [selectedInvoiceSupplier, setSelectedInvoiceSupplier] = useState(() => {
+    const allSuppliers = getEntities('suppliers') || [];
+    const allTime = getEntities('timeEntries') || [];
+    const pendingTime = allTime.find(t => t && !t.invoiced);
+    return pendingTime?.supplier_id || allSuppliers[0]?.id || 'autokabel';
+  });
   const [selectedInvoiceCurrency, setSelectedInvoiceCurrency] = useState('all');
   const [invoicePONumber, setInvoicePONumber] = useState('');
   const [excludedInvoiceEntryIds, setExcludedInvoiceEntryIds] = useState([]);
@@ -710,8 +714,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     const items = [];
     if (totalHours > 0) {
       const avgRate = (includedEntries || []).length > 0
-        ? ((includedEntries || []).reduce((acc, curr) => acc + (getRepSupplierRates(curr.rep_id, curr.supplier_id, curr.plant_id).billing_rate || 28), 0) / includedEntries.length)
-        : 28;
+        ? ((includedEntries || []).reduce((acc, curr) => acc + (curr.billing_rate || getRepSupplierRates(curr.rep_id, curr.supplier_id, curr.plant_id).billing_rate || 32), 0) / includedEntries.length)
+        : 32;
       items.push({
         quantity: totalHours,
         item: 'Contractor Hours',
@@ -1174,13 +1178,13 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     setConfigSupplierId(newId);
     setSelectedInvoiceSupplier(newId);
     
-    alert(`Company ${quickClientName} onboarded and Project Assignment registered successfully!`);
+    addNotification("🏢 Company Onboarded", `Company ${quickClientName} onboarded and Project Assignment registered successfully!`, "shift");
   };
 
   const handleQuickAddPlantSubmit = (e) => {
     if (e) e.preventDefault();
     if (!quickPlantName) {
-      alert("Plant name is required.");
+      addNotification("⚠️ Plant Name Missing", "Plant name is required.", "defect");
       return;
     }
     const newId = quickPlantName?.toLowerCase()?.replace(/[^a-z0-9]/g, '_');
@@ -1212,13 +1216,13 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     // Auto-select
     setNewProjPlant(newId);
     
-    alert(`Plant ${quickPlantName} added successfully!`);
+    addNotification("🏭 Plant Registered", `Plant ${quickPlantName} added successfully!`, "shift");
   };
 
   const handleExtraHoursSubmit = (e) => {
     e.preventDefault();
     if (!extraHoursQty || parseFloat(extraHoursQty) <= 0) {
-      alert("Enter a valid number of extra hours.");
+      addNotification("⚠️ Invalid Hours", "Enter a valid number of extra hours.", "defect");
       return;
     }
 
@@ -6600,13 +6604,11 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                           <div className="flex items-center gap-2">
                             <button 
                               onClick={() => {
-                                const confirmReject = window.confirm('Are you sure you want to reject this request?');
-                                if (confirmReject) {
-                                  const updated = { ...req, status: 'rejected' };
-                                  saveEntity('expenseEntries', updated);
-                                  logSystemEvent('payroll', 'expense_reject', `Customer rejected overtime request ${req.id} for ${rep?.name}.`);
-                                  window.dispatchEvent(new Event('ids_pulse_db_update'));
-                                }
+                                const updated = { ...req, status: 'rejected' };
+                                saveEntity('expenseEntries', updated);
+                                logSystemEvent('payroll', 'expense_reject', `Customer rejected overtime request ${req.id} for ${rep?.name}.`);
+                                window.dispatchEvent(new Event('ids_pulse_db_update'));
+                                addNotification("🛑 Request Rejected", "Overtime request rejected.", "defect");
                               }}
                               className="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 hover:text-rose-600 border border-rose-200 font-bold text-[13.5px] rounded-lg transition-colors flex items-center gap-1.5"
                             >
@@ -6618,7 +6620,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                 saveEntity('expenseEntries', updated);
                                 logSystemEvent('payroll', 'expense_approve', `Customer approved overtime request ${req.id} for ${rep?.name}.`);
                                 window.dispatchEvent(new Event('ids_pulse_db_update'));
-                                alert('Request approved! It has been forwarded to the IDS Accountant.');
+                                addNotification("✅ Request Approved", "Request approved and forwarded to accounting!", "rework");
                               }}
                               className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-[13.5px] rounded-lg transition-colors flex items-center gap-1.5 shadow-[0_0_15px_rgba(16,185,129,0.3)]"
                             >
@@ -7606,7 +7608,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                               return (
                                 <tr key={`${rep.id}_${clientId}`} className="hover:bg-surface">
                                   {idx === 0 ? <td className="py-2 text-text-primary font-extrabold" rowSpan={clients.length}>{rep.name}</td> : null}
-                                  <td className="py-2 text-text-secondary">{suppliers.find(s => s.id === clientId)?.name || 'Client'}</td>
+                                  <td className="py-2 text-text-secondary">{suppliers.find(s => s && (s.id === clientId || s.name === clientId || s.id === clientId?.toLowerCase()?.replace(/[^a-z0-9]/g, '_')))?.name || (clientId && clientId !== 'unknown' ? clientId : 'Client')}</td>
                                   <td className="py-2 text-right">{clientHours} hrs</td>
                                   <td className="py-2 text-right font-mono text-text-secondary">${pay_rate.toFixed(2)}</td>
                                   <td className="py-2 text-right text-text-primary font-semibold">${hoursPay.toFixed(2)}</td>

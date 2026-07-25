@@ -310,17 +310,34 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     }
   }, [weeklyGridPerson]);
 
+  // Dynamic Select State Initializers (never hardcode static defaults)
+  const getInitialRepId = () => {
+    const allUsers = getEntities('users') || [];
+    const rep = allUsers.find(isFieldRep);
+    return rep?.id || '';
+  };
+
+  const getInitialSupplierId = () => {
+    const allSuppliers = getEntities('suppliers') || [];
+    return allSuppliers[0]?.id || '';
+  };
+
+  const getInitialPlantId = () => {
+    const allPlants = getEntities('plants') || [];
+    return allPlants[0]?.id || '';
+  };
+
   // Log Hours Form Inputs
-  const [logHoursRepId, setLogHoursRepId] = useState('rep_hugo');
-  const [logHoursSupplierId, setLogHoursSupplierId] = useState('autokabel');
+  const [logHoursRepId, setLogHoursRepId] = useState(getInitialRepId);
+  const [logHoursSupplierId, setLogHoursSupplierId] = useState(getInitialSupplierId);
   const [logHoursDate, setLogHoursDate] = useState(new Date().toISOString()?.substring(0, 10));
   const [logHoursQty, setLogHoursQty] = useState('');
   const [logHoursMileage, setLogHoursMileage] = useState('');
   const [logHoursNotes, setLogHoursNotes] = useState('');
 
   // Log Expense Form Inputs
-  const [logExpRepId, setLogExpRepId] = useState('rep_hugo');
-  const [logExpSupplierId, setLogExpSupplierId] = useState('autokabel');
+  const [logExpRepId, setLogExpRepId] = useState(getInitialRepId);
+  const [logExpSupplierId, setLogExpSupplierId] = useState(getInitialSupplierId);
   const [logExpDate, setLogExpDate] = useState(new Date().toISOString()?.substring(0, 10));
   const [logExpGroup, setLogExpGroup] = useState(EXPENSE_GROUPS.EXTERNAL);
   const [logExpCategory, setLogExpCategory] = useState(EXPENSE_CATEGORIES[0]);
@@ -328,8 +345,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   const [logExpNotes, setLogExpNotes] = useState('');
 
   // Rates Overrides State
-  const [configRepId, setConfigRepId] = useState('rep_hugo');
-  const [configSupplierId, setConfigSupplierId] = useState('autokabel');
+  const [configRepId, setConfigRepId] = useState(getInitialRepId);
+  const [configSupplierId, setConfigSupplierId] = useState(getInitialSupplierId);
   const [configPayRate, setConfigPayRate] = useState('25');
   const [configBillingRate, setConfigBillingRate] = useState('35');
   const [configCurrency, setConfigCurrency] = useState('USD');
@@ -339,7 +356,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     const allSuppliers = getEntities('suppliers') || [];
     const allTime = getEntities('timeEntries') || [];
     const pendingTime = allTime.find(t => t && !t.invoiced);
-    return pendingTime?.supplier_id || allSuppliers[0]?.id || 'autokabel';
+    return pendingTime?.supplier_id || allSuppliers[0]?.id || '';
   });
   const [selectedInvoiceCurrency, setSelectedInvoiceCurrency] = useState('all');
   const [invoicePONumber, setInvoicePONumber] = useState('');
@@ -347,17 +364,18 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   const [excludedInvoiceExpenseIds, setExcludedInvoiceExpenseIds] = useState([]);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [previewInvoiceData, setPreviewInvoiceData] = useState(null);
+  
   // Extra Hours Requests State
   const [extraHoursRequests, setExtraHoursRequests] = useState([]);
   const [extraHoursQty, setExtraHoursQty] = useState('8.0');
   const [extraHoursDate, setExtraHoursDate] = useState(new Date().toISOString()?.substring(0, 10));
   const [extraHoursReason, setExtraHoursReason] = useState('');
-  const [extraHoursSupplierId, setExtraHoursSupplierId] = useState('autokabel');
-  const [extraHoursPlantId, setExtraHoursPlantId] = useState('mercedes_tuscaloosa');
+  const [extraHoursSupplierId, setExtraHoursSupplierId] = useState(getInitialSupplierId);
+  const [extraHoursPlantId, setExtraHoursPlantId] = useState(getInitialPlantId);
   const [selectedEditingRequestId, setSelectedEditingRequestId] = useState(null);
   
   // Matrix Entry State
-  const [matrixRepId, setMatrixRepId] = useState('rep_hugo');
+  const [matrixRepId, setMatrixRepId] = useState(getInitialRepId);
   const [matrixWeekStart, setMatrixWeekStart] = useState(() => {
     const d = new Date();
     const day = d.getDay();
@@ -365,6 +383,32 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     return new Date(d.setDate(diff)).toISOString()?.substring(0, 10);
   });
   const [matrixData, setMatrixData] = useState({});
+
+  // Auto-sync select state variables whenever users/suppliers/plants load or change
+  useEffect(() => {
+    const firstRep = users.find(isFieldRep)?.id;
+    const firstSupplier = suppliers[0]?.id;
+    const firstPlant = plants[0]?.id;
+
+    if (firstRep) {
+      if (!logHoursRepId || !users.some(u => u.id === logHoursRepId)) setLogHoursRepId(firstRep);
+      if (!logExpRepId || !users.some(u => u.id === logExpRepId)) setLogExpRepId(firstRep);
+      if (!configRepId || !users.some(u => u.id === configRepId)) setConfigRepId(firstRep);
+      if (!matrixRepId || !users.some(u => u.id === matrixRepId)) setMatrixRepId(firstRep);
+    }
+
+    if (firstSupplier) {
+      if (!logHoursSupplierId || !suppliers.some(s => s.id === logHoursSupplierId)) setLogHoursSupplierId(firstSupplier);
+      if (!logExpSupplierId || !suppliers.some(s => s.id === logExpSupplierId)) setLogExpSupplierId(firstSupplier);
+      if (!configSupplierId || !suppliers.some(s => s.id === configSupplierId)) setConfigSupplierId(firstSupplier);
+      if (!extraHoursSupplierId || !suppliers.some(s => s.id === extraHoursSupplierId)) setExtraHoursSupplierId(firstSupplier);
+      if (!selectedInvoiceSupplier || !suppliers.some(s => s.id === selectedInvoiceSupplier)) setSelectedInvoiceSupplier(firstSupplier);
+    }
+
+    if (firstPlant) {
+      if (!extraHoursPlantId || !plants.some(p => p.id === extraHoursPlantId)) setExtraHoursPlantId(firstPlant);
+    }
+  }, [users, suppliers, plants]);
 
   // Comments for Approval workflows
   const [customerApprovalComment, setCustomerApprovalComment] = useState('');

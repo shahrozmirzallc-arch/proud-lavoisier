@@ -225,8 +225,7 @@ function App() {
       autokabel: '6f43cfa01465d7148ff27a7937b1a0c423c270d0021bc96c13077cc97fc7e59a', // Autokabel2026!
       magna: '012a4330d67f32ea9a514c8941cb068d2fcdb1600e6bc7699790e606fbe96559', // Magna2026!
       hutchinson: 'aeb399a87fbb23ee6a65017fd465aa284dc6ee406334b9d5544d6ecf0d125677', // Hutchinson2026!
-      brose: '314ac53360d6111f3be1678d7a96aa6d3886921327a04bc488d0ead1eb930373', // Brose2026!
-      abc123: '1b431fc447e54efd4aba29ca904126c95f4c5146fd9ba9a44269735826883f76' // Abc1232026!
+      brose: '314ac53360d6111f3be1678d7a96aa6d3886921327a04bc488d0ead1eb930373' // Brose2026!
     };
 
     const isValidSpecificAdmin = adminHashes[inputUser] && (hashHex === adminHashes[inputUser] || cleanHashHex === adminHashes[inputUser]);

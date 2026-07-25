@@ -6427,7 +6427,25 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
           )}
 
           {/* TAB 1.25: CUSTOMER QUALITY PARTNER PORTAL */}
-          {activeTab === 'customer-portal' && (
+          {activeTab === 'customer-portal' && !suppliers.some(s => s && (s.id === currentUserCustomerId || s.id === currentUserCustomerId?.toLowerCase()?.replace(/[^a-z0-9]/g, '_'))) && (
+            <div className="flex-1 flex flex-col items-center justify-center p-8 sm:p-12 text-center my-auto">
+              <div className="w-16 h-16 rounded-2xl bg-[#3B82F6]/10 border border-[#3B82F6]/30 flex items-center justify-center text-[#3B82F6] mb-4 shadow-[0_0_20px_rgba(59,130,246,0.15)]">
+                <Building2 className="w-8 h-8" />
+              </div>
+              <h3 className="text-xl font-bold text-text-primary mb-2">Company Onboarding Setup Pending</h3>
+              <p className="text-[13.5px] text-text-secondary max-w-md mb-6 leading-relaxed">
+                Your client portal login <span className="font-mono text-cyan-400 font-bold px-1.5 py-0.5 bg-cyan-950/40 border border-cyan-800/40 rounded">{currentUserCustomerId}</span> is active, but your company's supplier profile has not been set up in the Integrity Driven Solutions registry yet.
+              </p>
+              <div className="p-4 bg-surface-elevated border border-border-subtle rounded-2xl max-w-md text-left text-[12px] text-text-secondary space-y-2">
+                <div className="flex items-center gap-2 text-amber-500 font-bold uppercase tracking-wider text-[10.5px]">
+                  <AlertCircle className="w-4 h-4" /> Client Account Linking Instructions
+                </div>
+                <p className="text-text-primary font-medium">Please contact your Integrity Driven Solutions Account Representative (<span className="text-[#3B82F6] font-bold">shahroz@integritydrivensolutions.com</span>) to register your company profile, plant locations, and billing rates.</p>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'customer-portal' && suppliers.some(s => s && (s.id === currentUserCustomerId || s.id === currentUserCustomerId?.toLowerCase()?.replace(/[^a-z0-9]/g, '_'))) && (
             <div className="flex-1 flex flex-col gap-6 sm:p-8 min-h-0 text-left">
               {/* Header */}
               <div className="flex justify-between items-center pb-2 border-b border-border-subtle flex-shrink-0">

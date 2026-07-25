@@ -207,10 +207,19 @@ function App() {
       if (!error && data && data.length > 0 && data[0].is_valid) {
         authRes = data[0];
       } else {
-        // Try clean hash for space tolerance fallback
+        // Fallback 1: Space-removed hash
         const { data: cleanData } = await supabase.rpc('verify_credentials', { p_username: inputUser, p_hash: cleanHashHex });
         if (cleanData && cleanData.length > 0 && cleanData[0].is_valid) {
           authRes = cleanData[0];
+        } else {
+          // Fallback 2: Capitalized first-letter hash (e.g., autokabel2026! -> AutoKabel2026!)
+          const capPw = rawPw.charAt(0).toUpperCase() + rawPw.slice(1);
+          const capBuffer = new TextEncoder().encode(capPw);
+          const capHashHex = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', capBuffer))).map(b => b.toString(16).padStart(2, '0')).join('');
+          const { data: capData } = await supabase.rpc('verify_credentials', { p_username: inputUser, p_hash: capHashHex });
+          if (capData && capData.length > 0 && capData[0].is_valid) {
+            authRes = capData[0];
+          }
         }
       }
     } catch (err) {

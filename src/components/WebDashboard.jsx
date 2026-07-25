@@ -1345,7 +1345,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   };
 
   // Heat Map States
-  const [selectedHeatmapPart, setSelectedHeatmapPart] = useState('86286761');
+  const [selectedHeatmapPart, setSelectedHeatmapPart] = useState('');
   const [scrubIndex, setScrubIndex] = useState(0);
   const [hoveredDot, setHoveredDot] = useState(null);
   
@@ -5933,14 +5933,30 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
           {/* TAB 0.8: VISUAL HEAT MAPS */}
           {activeTab === 'heatmap' && (() => {
+            const todayIso = new Date().toISOString().substring(0, 10);
             const availDates = incidents.length > 0 
               ? Array.from(new Set(incidents.map(i => i.created_at?.substring(0, 10)))).sort()
-              : ['2026-05-28', '2026-06-01', '2026-06-02', '2026-06-03'];
+              : [todayIso];
             const targetScrubDate = availDates[Math.min(scrubIndex, availDates.length - 1)] || availDates[availDates.length - 1];
+
+            const registeredPartsMap = new Map();
+            (projects || []).forEach(p => {
+              if (p.part_number || p.id) {
+                registeredPartsMap.set(p.part_number || p.id, `${p.name || 'Part'} (PN ${p.part_number || p.id})`);
+              }
+            });
+            (incidents || []).forEach(i => {
+              const pNo = i.parts_list?.[0]?.part_number || i.part_id;
+              if (pNo && !registeredPartsMap.has(pNo)) {
+                registeredPartsMap.set(pNo, `Incident Part (PN ${pNo})`);
+              }
+            });
+            const registeredPartsList = Array.from(registeredPartsMap.entries()).map(([id, label]) => ({ id, label }));
+            const activeHeatmapPart = selectedHeatmapPart || (registeredPartsList[0]?.id || '');
 
             const currentFilteredList = incidents.filter(inc => {
               const incPartNo = inc.parts_list?.[0]?.part_number || inc.part_id;
-              const matchesPart = incPartNo === selectedHeatmapPart;
+              const matchesPart = activeHeatmapPart ? incPartNo === activeHeatmapPart : true;
               const matchesDate = inc.created_at?.substring(0, 10) <= targetScrubDate;
               const matchesSupplier = selectedSupplierFilter === 'all' || inc.supplier_id === selectedSupplierFilter;
               const matchesStatus = selectedStatusFilter === 'all' || inc.status === selectedStatusFilter;
@@ -5962,7 +5978,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
             };
 
             // Zone breakdown stats
-            const isHeadlight = selectedHeatmapPart === '86291945' || selectedHeatmapPart === '86201945';
+            const isHeadlight = activeHeatmapPart?.toLowerCase().includes('headlight');
             
             const zoneA = currentFilteredList.filter(i => i.defect_location_x !== undefined && (isHeadlight ? i.defect_location_x < 0.45 : i.defect_location_x < 0.40)).length;
             const zoneB = currentFilteredList.filter(i => i.defect_location_x !== undefined && (isHeadlight ? (i.defect_location_x >= 0.45 && i.defect_location_x <= 0.70) : (i.defect_location_x >= 0.40 && i.defect_location_x <= 0.60))).length;
@@ -5983,16 +5999,20 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   <div className="flex flex-col gap-1.5">
                     <label className="text-[10.5px] font-bold text-text-secondary uppercase">Audit Part Target</label>
                     <select 
-                      value={selectedHeatmapPart}
+                      value={activeHeatmapPart}
                       onChange={(e) => {
                         setSelectedHeatmapPart(e.target.value);
                         setHoveredDot(null);
                       }}
                       className="h-9 bg-surface border border-border-subtle hover:border-border-subtle rounded-xl px-3.5 text-[13.5px] text-text-primary focus:outline-none"
                     >
-                      <option value="86286761">Tail Light Assembly (PN 86286761)</option>
-                      <option value="86291945">Headlight Housing (PN 86291945)</option>
-                      <option value="86201945">Headlight Housing - Alt (PN 86201945)</option>
+                      {registeredPartsList.length > 0 ? (
+                        registeredPartsList.map(pt => (
+                          <option key={pt.id} value={pt.id}>{pt.label}</option>
+                        ))
+                      ) : (
+                        <option value="">No parts registered yet</option>
+                      )}
                     </select>
                   </div>
 

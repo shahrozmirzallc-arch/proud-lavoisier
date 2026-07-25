@@ -76,17 +76,26 @@ export function initializeDB() {
     window._offlineListenerAdded = true;
   }
 
-  // Trigger Supabase background sync asynchronously
-  setTimeout(() => syncWithSupabase(), 100);
+  // Trigger Supabase background sync ONCE on initial application load
+  if (!hasSyncedOnLoad && !isSyncing) {
+    setTimeout(() => syncWithSupabase(), 100);
+  }
 
   return data;
 }
 
 let isSyncing = false;
+let hasSyncedOnLoad = false;
+
+export function getSupabaseTableName(type) {
+  if (type === 'shiftReports') return 'shift_reports';
+  return type;
+}
 
 // Supabase Async Sync Engine
-export async function syncWithSupabase() {
+export async function syncWithSupabase(force = false) {
   if (isSyncing) return;
+  if (!force && hasSyncedOnLoad) return;
 
   if (!supabaseUrl || !supabaseAnonKey || supabaseUrl === 'YOUR_SUPABASE_URL' || String(supabaseUrl).includes('placeholder')) {
     console.log("[Supabase Sync] Cloud sync skipped (local-first mode active).");
@@ -113,24 +122,26 @@ export async function syncWithSupabase() {
   ];
 
   try {
-    const db = getDB();
+    const existingStr = localStorage.getItem(STORAGE_KEY);
+    const db = existingStr ? JSON.parse(existingStr) : JSON.parse(JSON.stringify(EMPTY_SCHEMA));
     let updated = false;
 
     for (const col of collections) {
       try {
-        const { data, error } = await supabase.from(col).select('*');
+        const targetTable = getSupabaseTableName(col);
+        const { data, error } = await supabase.from(targetTable).select('*');
         if (error) {
-          console.warn(`[Supabase Pull Info] table "${col}":`, error.message);
+          console.warn(`[Supabase Pull Info] table "${targetTable}":`, error.message);
           continue;
         }
 
         if (!data || data.length === 0) {
           const localItems = db[col] || [];
           if (localItems.length > 0) {
-            console.log(`[Supabase Seeding] table "${col}": uploading ${localItems.length} items...`);
-            const { error: upsertError } = await supabase.from(col).upsert(localItems);
+            console.log(`[Supabase Seeding] table "${targetTable}": uploading ${localItems.length} items...`);
+            const { error: upsertError } = await supabase.from(targetTable).upsert(localItems);
             if (upsertError) {
-              console.warn(`[Supabase Seed Info] table "${col}":`, upsertError.message);
+              console.warn(`[Supabase Seed Info] table "${targetTable}":`, upsertError.message);
             }
           }
         } else {
@@ -151,6 +162,7 @@ export async function syncWithSupabase() {
     }
   } finally {
     isSyncing = false;
+    hasSyncedOnLoad = true;
   }
 }
 
@@ -292,11 +304,11 @@ export function saveEntity(type, entity) {
     localStorage.setItem('ids_pulse_offline_queue', JSON.stringify(queue));
     console.log(`[Offline] Saved ${type} to offline queue.`);
   } else {
-    // Sync to Supabase in background
-    supabase.from(type).upsert(entity)
+    const targetTable = getSupabaseTableName(type);
+    supabase.from(targetTable).upsert(entity)
       .then(({ error }) => {
         if (error) {
-          console.error(`[Supabase Push Error] table "${type}":`, error.message);
+          console.error(`[Supabase Push Error] table "${targetTable}":`, error.message);
         }
       })
       .catch(err => {

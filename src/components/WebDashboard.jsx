@@ -1081,7 +1081,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   const handleQuickAddClientSubmit = (e) => {
     if (e) e.preventDefault();
     if (!quickClientName) {
-      alert("Client name is required.");
+      alert("Company name is required.");
       return;
     }
     const newId = quickClientName?.toLowerCase()?.replace(/[^a-z0-9]/g, '_');
@@ -1097,6 +1097,26 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     };
     saveEntity('suppliers', newCust);
     setSuppliers(getEntities('suppliers'));
+
+    // If project assignment fields are filled, register project assignment seamlessly
+    if (newProjDesc || newProjRep || newProjPlant) {
+      const projId = 'proj_' + Date.now();
+      const newProjObj = {
+        id: projId,
+        name: newProjDesc || `${quickClientName} Quality Audit`,
+        client_id: newId,
+        plant_id: newProjPlant || 'Oshawa, ON',
+        rep_id: newProjRep || 'clarence',
+        start_date: newProjStartDate || new Date().toISOString().split('T')[0],
+        billing_rate: parseFloat(newProjBilling) || 85.0,
+        pay_rate: parseFloat(newProjPay) || 45.0,
+        currency: newProjCurrency || 'USD',
+        status: 'Active'
+      };
+      addProject(newProjObj);
+      setProjects(getEntities('projects'));
+    }
+
     setQuickClientName('');
     setQuickClientContactName('');
     setQuickClientContactEmail('');
@@ -1109,7 +1129,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     setConfigSupplierId(newId);
     setSelectedInvoiceSupplier(newId);
     
-    alert(`Company ${quickClientName} onboarded successfully with ${quickClientAllottedHours || '20'} hrs budget!`);
+    alert(`Company ${quickClientName} onboarded and Project Assignment registered successfully!`);
   };
 
   const handleQuickAddPlantSubmit = (e) => {
@@ -9186,13 +9206,15 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         </div>
                       </div>
 
-                      <button 
-                        type="submit"
-                        className="mt-4 w-full bg-cyan-50 hover:bg-cyan-100 text-[#3B82F6] border border-cyan-200 font-bold py-2.5 rounded-xl text-[13.5px] cursor-pointer flex justify-center items-center gap-2"
-                      >
-                        <PlusCircle className="w-4.5 h-4" />
-                        <span>Register Project Assignment</span>
-                      </button>
+                      <div className="pt-4 mt-2 border-t border-slate-800">
+                        <button 
+                          type="submit"
+                          className="stitch-btn w-full h-12 text-sm font-extrabold uppercase tracking-wide cursor-pointer flex justify-center items-center gap-2 shadow-xl"
+                        >
+                          <PlusCircle className="w-5 h-5 text-white" />
+                          <span>Register Project Assignment</span>
+                        </button>
+                      </div>
                     </form>
                   </div>
                 </div>
@@ -10424,93 +10446,193 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
         </div>
       )}
 
-      {/* QUICK ADD CLIENT / SUPPLIER MODAL */}
+      {/* UNIFIED GOOGLE STITCH COMPANY & PROJECT ONBOARDING HUB MODAL */}
       {showQuickAddClient && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[999] flex items-center justify-center p-3">
-          <div className="bg-surface-elevated border border-border-subtle p-6 rounded-2xl w-full max-w-md flex flex-col gap-4 text-left shadow-2xl animate-in fade-in zoom-in duration-200">
-            <div className="flex justify-between items-center border-b border-border-subtle pb-3">
-              <h4 className="text-[14.5px] font-bold text-text-primary uppercase tracking-wider flex items-center gap-2">
-                <PlusCircle className="w-5 h-5 text-cyan-500" /> Fast Company & Budget Onboarding
-              </h4>
-              <button onClick={() => setShowQuickAddClient(false)} className="text-text-secondary hover:text-text-primary text-[16px] font-bold">✕</button>
-            </div>
-            <form onSubmit={handleQuickAddClientSubmit} className="flex flex-col gap-3.5">
-              <div className="flex flex-col gap-1">
-                <label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Company Name *</label>
-                <input 
-                  type="text" 
-                  value={quickClientName} 
-                  onChange={(e) => setQuickClientName(e.target.value)} 
-                  placeholder="e.g. Abc123 Ltd" 
-                  className="bg-surface border border-border-subtle rounded-xl px-3.5 py-2 text-[13.5px] text-text-primary placeholder-text-secondary focus:outline-none focus:border-cyan-500"
-                  required
-                />
+        <div className="fixed inset-0 bg-slate-950/85 backdrop-blur-xl z-[999] flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-slate-900/95 border border-slate-700/80 p-6 sm:p-8 rounded-2xl w-full max-w-2xl flex flex-col gap-5 text-left shadow-2xl animate-in fade-in zoom-in duration-200 my-auto">
+            <div className="flex justify-between items-center border-b border-slate-800 pb-4">
+              <div>
+                <h4 className="text-lg font-black text-white uppercase tracking-wide flex items-center gap-2">
+                  <UserPlus className="w-5 h-5 text-[#3B82F6]" /> Fast Company & Project Onboarding Hub
+                </h4>
+                <p className="text-xs text-slate-400 mt-0.5">Register new client company & assign field rep in one seamless workflow.</p>
               </div>
+              <button onClick={() => setShowQuickAddClient(false)} className="text-slate-400 hover:text-white text-lg font-bold p-1 cursor-pointer">✕</button>
+            </div>
 
-              <div className="grid grid-cols-2 gap-3">
+            <form onSubmit={handleQuickAddClientSubmit} className="flex flex-col gap-4">
+              {/* SECTION 1: COMPANY & BUDGET DETAILS (FROM IMAGE 1) */}
+              <div className="flex flex-col gap-3.5 bg-slate-950/60 p-4 rounded-xl border border-slate-800">
+                <span className="text-xs font-black text-[#3B82F6] uppercase tracking-wider flex items-center gap-1.5">
+                  <span>1. Company & Budget Setup</span>
+                </span>
+
                 <div className="flex flex-col gap-1">
-                  <label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Representative Name</label>
+                  <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider">Company Name *</label>
                   <input 
                     type="text" 
-                    value={quickClientContactName} 
-                    onChange={(e) => setQuickClientContactName(e.target.value)} 
-                    placeholder="e.g. Mike Johnson" 
-                    className="bg-surface border border-border-subtle rounded-xl px-3.5 py-2 text-[13.5px] text-text-primary placeholder-text-secondary focus:outline-none focus:border-cyan-500"
-                  />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Contact Email</label>
-                  <input 
-                    type="email" 
-                    value={quickClientContactEmail} 
-                    onChange={(e) => setQuickClientContactEmail(e.target.value)} 
-                    placeholder="mike@abc123.com" 
-                    className="bg-surface border border-border-subtle rounded-xl px-3.5 py-2 text-[13.5px] text-text-primary placeholder-text-secondary focus:outline-none focus:border-cyan-500"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="flex flex-col gap-1">
-                  <label className="text-[10.5px] font-bold text-cyan-400 uppercase tracking-wider">Allotted Hours Budget *</label>
-                  <input 
-                    type="number" 
-                    step="0.5"
-                    value={quickClientAllottedHours} 
-                    onChange={(e) => setQuickClientAllottedHours(e.target.value)} 
-                    placeholder="20" 
-                    className="bg-surface border border-cyan-500/50 rounded-xl px-3.5 py-2 text-[13.5px] text-text-primary font-bold focus:outline-none focus:border-cyan-500"
+                    value={quickClientName} 
+                    onChange={(e) => setQuickClientName(e.target.value)} 
+                    placeholder="e.g. Abc123 Ltd" 
+                    className="stitch-input px-3.5 py-2.5 text-sm text-white placeholder-slate-500"
                     required
                   />
                 </div>
-                <div className="flex flex-col gap-1">
-                  <label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Invoice Schedule</label>
-                  <select 
-                    value={quickClientSchedule} 
-                    onChange={(e) => setQuickClientSchedule(e.target.value)} 
-                    className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary focus:outline-none"
-                  >
-                    <option value="on-demand">⚡ On Demand</option>
-                    <option value="weekly">📅 Weekly</option>
-                    <option value="bi-weekly">📅 Bi-Weekly</option>
-                    <option value="monthly">📅 Monthly</option>
-                  </select>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider">Representative Name</label>
+                    <input 
+                      type="text" 
+                      value={quickClientContactName} 
+                      onChange={(e) => setQuickClientContactName(e.target.value)} 
+                      placeholder="e.g. Mike Johnson" 
+                      className="stitch-input px-3.5 py-2.5 text-sm text-white placeholder-slate-500"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider">Contact Email</label>
+                    <input 
+                      type="email" 
+                      value={quickClientContactEmail} 
+                      onChange={(e) => setQuickClientContactEmail(e.target.value)} 
+                      placeholder="mike@abc123.com" 
+                      className="stitch-input px-3.5 py-2.5 text-sm text-white placeholder-slate-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[11px] font-bold text-cyan-400 uppercase tracking-wider">Allotted Hours Budget *</label>
+                    <input 
+                      type="number" 
+                      step="0.5"
+                      value={quickClientAllottedHours} 
+                      onChange={(e) => setQuickClientAllottedHours(e.target.value)} 
+                      placeholder="20" 
+                      className="stitch-input px-3.5 py-2.5 text-sm text-white font-extrabold"
+                      required
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider">Invoice Schedule</label>
+                    <select 
+                      value={quickClientSchedule} 
+                      onChange={(e) => setQuickClientSchedule(e.target.value)} 
+                      className="stitch-input px-3 py-2.5 text-sm text-white"
+                    >
+                      <option value="on-demand">⚡ On Demand</option>
+                      <option value="weekly">📅 Weekly</option>
+                      <option value="bi-weekly">📅 Bi-Weekly</option>
+                      <option value="monthly">📅 Monthly</option>
+                    </select>
+                  </div>
                 </div>
               </div>
 
-              <div className="flex gap-3 mt-3">
+              {/* SECTION 2: REGISTER NEW PROJECT & REP ASSIGNMENT (FROM IMAGE 2) */}
+              <div className="flex flex-col gap-3.5 bg-slate-950/60 p-4 rounded-xl border border-slate-800">
+                <span className="text-xs font-black text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <span>2. Register New Project & Rep Assignment</span>
+                </span>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider">Assign Field Rep</label>
+                    <select 
+                      value={newProjRep} 
+                      onChange={(e) => setNewProjRep(e.target.value)}
+                      className="stitch-input px-3 py-2.5 text-sm text-white"
+                    >
+                      <option value="clarence">Clarence Kuiken (Lead Senior Inspector)</option>
+                      <option value="hugo">Hugo Ramos (Quality Resident Engineer)</option>
+                      <option value="nabil">Nabil El-Sabagh (Quality Resident Engineer)</option>
+                      <option value="rogelio">Rogelio Gutierrez (Quality Inspector)</option>
+                    </select>
+                  </div>
+
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider">Plant Location</label>
+                    <input 
+                      type="text" 
+                      value={newProjPlant} 
+                      onChange={(e) => setNewProjPlant(e.target.value)} 
+                      placeholder="e.g. Magna Oshawa Plant 4" 
+                      className="stitch-input px-3.5 py-2.5 text-sm text-white placeholder-slate-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider">Description / Scope</label>
+                    <input 
+                      type="text" 
+                      value={newProjDesc} 
+                      onChange={(e) => setNewProjDesc(e.target.value)} 
+                      placeholder="e.g. Line Quality Audit" 
+                      className="stitch-input px-3.5 py-2.5 text-sm text-white placeholder-slate-500"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider">Start Date</label>
+                    <input 
+                      type="date" 
+                      value={newProjStartDate} 
+                      onChange={(e) => setNewProjStartDate(e.target.value)} 
+                      className="stitch-input px-3.5 py-2.5 text-sm text-white"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider">Billing Rate / HR</label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-2.5 text-slate-400 text-xs font-mono">$</span>
+                      <input 
+                        type="number" 
+                        step="0.01" 
+                        value={newProjBilling} 
+                        onChange={(e) => setNewProjBilling(e.target.value)} 
+                        placeholder="85.00" 
+                        className="stitch-input pl-7 pr-3 py-2 text-sm text-white"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider">Pay Rate / HR</label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-2.5 text-slate-400 text-xs font-mono">$</span>
+                      <input 
+                        type="number" 
+                        step="0.01" 
+                        value={newProjPay} 
+                        onChange={(e) => setNewProjPay(e.target.value)} 
+                        placeholder="45.00" 
+                        className="stitch-input pl-7 pr-3 py-2 text-sm text-white"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* ACTION BUTTON MOVED TO THE BOTTOM BELOW ALL FIELDS WITH PROPER PADDING & GOOGLE STITCH STYLING */}
+              <div className="flex items-center gap-3 pt-2">
                 <button 
                   type="button" 
                   onClick={() => setShowQuickAddClient(false)}
-                  className="flex-1 bg-surface border border-border-subtle hover:bg-surface-elevated text-text-secondary hover:text-text-primary py-2.5 rounded-xl text-[13.5px] font-bold transition-colors cursor-pointer"
+                  className="px-5 py-3 rounded-xl border border-slate-700 hover:border-slate-500 text-slate-300 hover:text-white font-bold text-sm transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button 
                   type="submit"
-                  className="flex-1 bg-[#3B82F6] hover:bg-[#3B82F6]/90 text-white font-bold py-2.5 rounded-xl text-[13.5px] shadow-lg shadow-blue-500/20 transition-all cursor-pointer"
+                  className="stitch-btn flex-1 h-12 text-sm font-extrabold uppercase tracking-wide cursor-pointer flex items-center justify-center gap-2"
                 >
-                  Onboard Company Now
+                  <PlusCircle className="w-5 h-5 text-white" />
+                  <span>Onboard Company & Register Project Assignment</span>
                 </button>
               </div>
             </form>

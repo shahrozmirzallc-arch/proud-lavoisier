@@ -808,9 +808,11 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       });
     }
 
-    const clientPrefix = (clientObj?.name || clientObj?.id || 'IDS')
+    const cleanName = (clientObj?.name || clientObj?.id || 'IDS').replace(/[^a-zA-Z0-9\s_-]/g, '');
+    const clientPrefix = cleanName
       .split(/[\s_-]+/)
       .map(w => w[0])
+      .filter(Boolean)
       .join('')
       .toUpperCase()
       .slice(0, 6) || 'IDS';

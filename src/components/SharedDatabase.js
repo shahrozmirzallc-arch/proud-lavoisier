@@ -10,7 +10,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 const STORAGE_KEY = 'ids_pulse_db';
 const DB_VERSION_KEY = 'ids_pulse_db_version';
-const CURRENT_DB_VERSION = 'v2.0.0_real_data';
+const CURRENT_DB_VERSION = 'v2.1.0_clean_test_purge';
 
 const EMPTY_SCHEMA = {
   users: [],

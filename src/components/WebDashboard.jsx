@@ -10473,79 +10473,79 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
       {/* UNIFIED GOOGLE STITCH COMPANY & PROJECT ONBOARDING HUB MODAL */}
       {showQuickAddClient && (
-        <div className="fixed inset-0 bg-slate-950/85 backdrop-blur-xl z-[999] flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-slate-900/95 border border-slate-700/80 p-6 sm:p-8 rounded-2xl w-full max-w-2xl flex flex-col gap-5 text-left shadow-2xl animate-in fade-in zoom-in duration-200 my-auto">
-            <div className="flex justify-between items-center border-b border-slate-800 pb-4">
+        <div className="fixed inset-0 bg-slate-950/85 backdrop-blur-xl z-[999] flex items-center justify-center p-3 overflow-y-auto">
+          <div className="bg-slate-900/95 border border-slate-700/80 p-5 rounded-2xl w-full max-w-xl flex flex-col gap-3.5 text-left shadow-2xl animate-in fade-in zoom-in duration-200 my-auto">
+            <div className="flex justify-between items-center border-b border-slate-800 pb-2.5">
               <div>
-                <h4 className="text-lg font-black text-white uppercase tracking-wide flex items-center gap-2">
-                  <UserPlus className="w-5 h-5 text-[#3B82F6]" /> Fast Company & Project Onboarding Hub
+                <h4 className="text-[15px] font-black text-white uppercase tracking-wide flex items-center gap-2">
+                  <UserPlus className="w-4.5 h-4.5 text-[#3B82F6]" /> Fast Company & Project Onboarding Hub
                 </h4>
-                <p className="text-xs text-slate-400 mt-0.5">Register new client company & assign field rep in one seamless workflow.</p>
+                <p className="text-[11.5px] text-slate-400 mt-0.5">Register new client company & assign field rep in one seamless workflow.</p>
               </div>
-              <button onClick={() => setShowQuickAddClient(false)} className="text-slate-400 hover:text-white text-lg font-bold p-1 cursor-pointer">✕</button>
+              <button onClick={() => setShowQuickAddClient(false)} className="text-slate-400 hover:text-white text-base font-bold p-1 cursor-pointer">✕</button>
             </div>
 
-            <form onSubmit={handleQuickAddClientSubmit} className="flex flex-col gap-4">
+            <form onSubmit={handleQuickAddClientSubmit} className="flex flex-col gap-3">
               {/* SECTION 1: COMPANY & BUDGET DETAILS (FROM IMAGE 1) */}
-              <div className="flex flex-col gap-3.5 bg-slate-950/60 p-4 rounded-xl border border-slate-800">
-                <span className="text-xs font-black text-[#3B82F6] uppercase tracking-wider flex items-center gap-1.5">
+              <div className="flex flex-col gap-2.5 bg-slate-950/60 p-3.5 rounded-xl border border-slate-800">
+                <span className="text-[11px] font-black text-[#3B82F6] uppercase tracking-wider flex items-center gap-1.5">
                   <span>1. Company & Budget Setup</span>
                 </span>
 
                 <div className="flex flex-col gap-1">
-                  <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider">Company Name *</label>
+                  <label className="text-[10.5px] font-bold text-slate-300 uppercase tracking-wider">Company Name *</label>
                   <input 
                     type="text" 
                     value={quickClientName} 
                     onChange={(e) => setQuickClientName(e.target.value)} 
                     placeholder="e.g. Abc123 Ltd" 
-                    className="stitch-input px-3.5 py-2.5 text-sm text-white placeholder-slate-500"
+                    className="stitch-input px-3 py-2 text-[13px] text-white placeholder-slate-500"
                     required
                   />
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   <div className="flex flex-col gap-1">
-                    <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider">Representative Name</label>
+                    <label className="text-[10.5px] font-bold text-slate-300 uppercase tracking-wider">Representative Name</label>
                     <input 
                       type="text" 
                       value={quickClientContactName} 
                       onChange={(e) => setQuickClientContactName(e.target.value)} 
                       placeholder="e.g. Mike Johnson" 
-                      className="stitch-input px-3.5 py-2.5 text-sm text-white placeholder-slate-500"
+                      className="stitch-input px-3 py-2 text-[13px] text-white placeholder-slate-500"
                     />
                   </div>
                   <div className="flex flex-col gap-1">
-                    <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider">Contact Email</label>
+                    <label className="text-[10.5px] font-bold text-slate-300 uppercase tracking-wider">Contact Email</label>
                     <input 
                       type="email" 
                       value={quickClientContactEmail} 
                       onChange={(e) => setQuickClientContactEmail(e.target.value)} 
                       placeholder="mike@abc123.com" 
-                      className="stitch-input px-3.5 py-2.5 text-sm text-white placeholder-slate-500"
+                      className="stitch-input px-3 py-2 text-[13px] text-white placeholder-slate-500"
                     />
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   <div className="flex flex-col gap-1">
-                    <label className="text-[11px] font-bold text-cyan-400 uppercase tracking-wider">Allotted Hours Budget *</label>
+                    <label className="text-[10.5px] font-bold text-cyan-400 uppercase tracking-wider">Allotted Hours Budget *</label>
                     <input 
                       type="number" 
                       step="0.5"
                       value={quickClientAllottedHours} 
                       onChange={(e) => setQuickClientAllottedHours(e.target.value)} 
                       placeholder="20" 
-                      className="stitch-input px-3.5 py-2.5 text-sm text-white font-extrabold"
+                      className="stitch-input px-3 py-2 text-[13px] text-white font-extrabold"
                       required
                     />
                   </div>
                   <div className="flex flex-col gap-1">
-                    <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider">Invoice Schedule</label>
+                    <label className="text-[10.5px] font-bold text-slate-300 uppercase tracking-wider">Invoice Schedule</label>
                     <select 
                       value={quickClientSchedule} 
                       onChange={(e) => setQuickClientSchedule(e.target.value)} 
-                      className="stitch-input px-3 py-2.5 text-sm text-white"
+                      className="stitch-input px-3 py-2 text-[13px] text-white"
                     >
                       <option value="on-demand">⚡ On Demand</option>
                       <option value="weekly">📅 Weekly</option>
@@ -10557,18 +10557,18 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
               </div>
 
               {/* SECTION 2: REGISTER NEW PROJECT & REP ASSIGNMENT (FROM IMAGE 2) */}
-              <div className="flex flex-col gap-3.5 bg-slate-950/60 p-4 rounded-xl border border-slate-800">
-                <span className="text-xs font-black text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+              <div className="flex flex-col gap-2.5 bg-slate-950/60 p-3.5 rounded-xl border border-slate-800">
+                <span className="text-[11px] font-black text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
                   <span>2. Register New Project & Rep Assignment</span>
                 </span>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   <div className="flex flex-col gap-1">
-                    <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider">Assign Field Rep</label>
+                    <label className="text-[10.5px] font-bold text-slate-300 uppercase tracking-wider">Assign Field Rep</label>
                     <select 
                       value={newProjRep} 
                       onChange={(e) => setNewProjRep(e.target.value)}
-                      className="stitch-input px-3 py-2.5 text-sm text-white"
+                      className="stitch-input px-3 py-2 text-[13px] text-white"
                     >
                       <option value="clarence">Clarence Kuiken (Lead Senior Inspector)</option>
                       <option value="hugo">Hugo Ramos (Quality Resident Engineer)</option>
@@ -10578,65 +10578,65 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   </div>
 
                   <div className="flex flex-col gap-1">
-                    <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider">Plant Location</label>
+                    <label className="text-[10.5px] font-bold text-slate-300 uppercase tracking-wider">Plant Location</label>
                     <input 
                       type="text" 
                       value={newProjPlant} 
                       onChange={(e) => setNewProjPlant(e.target.value)} 
                       placeholder="e.g. Magna Oshawa Plant 4" 
-                      className="stitch-input px-3.5 py-2.5 text-sm text-white placeholder-slate-500"
+                      className="stitch-input px-3 py-2 text-[13px] text-white placeholder-slate-500"
                     />
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   <div className="flex flex-col gap-1">
-                    <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider">Description / Scope</label>
+                    <label className="text-[10.5px] font-bold text-slate-300 uppercase tracking-wider">Description / Scope</label>
                     <input 
                       type="text" 
                       value={newProjDesc} 
                       onChange={(e) => setNewProjDesc(e.target.value)} 
                       placeholder="e.g. Line Quality Audit" 
-                      className="stitch-input px-3.5 py-2.5 text-sm text-white placeholder-slate-500"
+                      className="stitch-input px-3 py-2 text-[13px] text-white placeholder-slate-500"
                     />
                   </div>
                   <div className="flex flex-col gap-1">
-                    <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider">Start Date</label>
+                    <label className="text-[10.5px] font-bold text-slate-300 uppercase tracking-wider">Start Date</label>
                     <input 
                       type="date" 
                       value={newProjStartDate} 
                       onChange={(e) => setNewProjStartDate(e.target.value)} 
-                      className="stitch-input px-3.5 py-2.5 text-sm text-white"
+                      className="stitch-input px-3 py-2 text-[13px] text-white"
                     />
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-2.5">
                   <div className="flex flex-col gap-1">
-                    <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider">Billing Rate / HR</label>
+                    <label className="text-[10.5px] font-bold text-slate-300 uppercase tracking-wider">Billing Rate / HR</label>
                     <div className="relative">
-                      <span className="absolute left-3 top-2.5 text-slate-400 text-xs font-mono">$</span>
+                      <span className="absolute left-3 top-2 text-slate-400 text-xs font-mono">$</span>
                       <input 
                         type="number" 
                         step="0.01" 
                         value={newProjBilling} 
                         onChange={(e) => setNewProjBilling(e.target.value)} 
                         placeholder="85.00" 
-                        className="stitch-input pl-7 pr-3 py-2 text-sm text-white"
+                        className="stitch-input pl-7 pr-3 py-1.5 text-[13px] text-white"
                       />
                     </div>
                   </div>
                   <div className="flex flex-col gap-1">
-                    <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider">Pay Rate / HR</label>
+                    <label className="text-[10.5px] font-bold text-slate-300 uppercase tracking-wider">Pay Rate / HR</label>
                     <div className="relative">
-                      <span className="absolute left-3 top-2.5 text-slate-400 text-xs font-mono">$</span>
+                      <span className="absolute left-3 top-2 text-slate-400 text-xs font-mono">$</span>
                       <input 
                         type="number" 
                         step="0.01" 
                         value={newProjPay} 
                         onChange={(e) => setNewProjPay(e.target.value)} 
                         placeholder="45.00" 
-                        className="stitch-input pl-7 pr-3 py-2 text-sm text-white"
+                        className="stitch-input pl-7 pr-3 py-1.5 text-[13px] text-white"
                       />
                     </div>
                   </div>
@@ -10644,19 +10644,19 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
               </div>
 
               {/* ACTION BUTTON MOVED TO THE BOTTOM BELOW ALL FIELDS WITH PROPER PADDING & GOOGLE STITCH STYLING */}
-              <div className="flex items-center gap-3 pt-2">
+              <div className="flex items-center gap-3 pt-1">
                 <button 
                   type="button" 
                   onClick={() => setShowQuickAddClient(false)}
-                  className="px-5 py-3 rounded-xl border border-slate-700 hover:border-slate-500 text-slate-300 hover:text-white font-bold text-sm transition-colors cursor-pointer"
+                  className="px-4 py-2.5 rounded-xl border border-slate-700 hover:border-slate-500 text-slate-300 hover:text-white font-bold text-xs transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button 
                   type="submit"
-                  className="stitch-btn flex-1 h-12 text-sm font-extrabold uppercase tracking-wide cursor-pointer flex items-center justify-center gap-2"
+                  className="stitch-btn flex-1 h-11 text-xs font-extrabold uppercase tracking-wide cursor-pointer flex items-center justify-center gap-2 shadow-lg"
                 >
-                  <PlusCircle className="w-5 h-5 text-white" />
+                  <PlusCircle className="w-4 h-4 text-white" />
                   <span>Onboard Company & Register Project Assignment</span>
                 </button>
               </div>

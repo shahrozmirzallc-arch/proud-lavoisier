@@ -4160,14 +4160,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
             })()}
           </div>
 
-          <button 
-            onClick={() => setShowQuickAddClient(true)}
-            className="h-9 flex items-center gap-1.5 bg-[#3B82F6] hover:bg-[#3B82F6]/90 text-white font-bold px-3.5 rounded-xl text-[13.5px] cursor-pointer transition-all shadow-md shadow-blue-500/20 hover:scale-102"
-            title="Fast Company & Budget Onboarding"
-          >
-            <UserPlus className="w-4 h-4" />
-            <span>➕ Onboard Company & Hours</span>
-          </button>
+          {/* Top header navigation actions */}
 
           <button 
             onClick={() => setShowHelpDrawer(true)}
@@ -4670,14 +4663,6 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
                     {!collapsedGroups?.quality && (
                       <>
-                        <button 
-                          onClick={() => setShowQuickAddClient(true)}
-                          className="w-full h-11 px-3.5 mb-1 rounded-xl font-extrabold text-[13.5px] bg-[#3B82F6] hover:bg-[#3B82F6]/90 text-white shadow-lg shadow-blue-500/25 transition-all cursor-pointer flex items-center gap-2.5 border border-blue-400/40 hover:scale-[1.01]"
-                          title="Fast Company & Budget Onboarding"
-                        >
-                          <UserPlus className="w-4.5 h-4.5 text-white" />
-                          <span>Onboard Company & Hours</span>
-                        </button>
 
                         <button
                           onClick={() => setActiveTab('incidents')}
@@ -4888,6 +4873,18 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
                   {!collapsedGroups?.system && (
                     <>
+                      <button 
+                        onClick={() => setShowQuickAddClient(true)}
+                        className="w-full h-10 px-3 rounded-xl font-extrabold text-[13px] bg-[#3B82F6] hover:bg-[#3B82F6]/90 text-white shadow-md transition-all cursor-pointer flex items-center justify-between border border-blue-400/40"
+                        title="Fast Company & Budget Onboarding"
+                      >
+                        <div className="flex items-center gap-2">
+                          <UserPlus className="w-4 h-4 text-white" />
+                          <span>Onboard Client & Hours</span>
+                        </div>
+                        <span className="text-[10px] bg-white/20 px-1.5 py-0.5 rounded font-black">+NEW</span>
+                      </button>
+
                       <button 
                         onClick={() => setActiveTab('projects')}
                         className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14.5px] transition-all cursor-pointer flex items-center justify-between border ${
@@ -6081,7 +6078,9 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                       <tbody className="divide-y divide-slate-850">
                         {filteredIncidents.map(inc => (
                           <tr key={inc.id} className="hover:bg-surface-elevated text-text-primary transition-colors">
-                            <td className="py-2 px-2 font-medium">{new Date(inc.created_at).toLocaleDateString()}</td>
+                            <td className="py-2 px-2 font-medium">
+                              {formatReadableDate(inc.created_at || inc.date || new Date().toISOString().split('T')[0])}
+                            </td>
                              <td className="py-2 px-2 font-semibold text-text-primary">
                                {inc.parts_list && inc.parts_list.length > 0 ? (
                                  <span>

@@ -226,6 +226,11 @@ function App() {
     const targetUser = authRes.username || inputUser;
     const loginType = authRes.role;
 
+    if (authRes.session_token) {
+      sessionStorage.setItem('ids_pulse_session_token', authRes.session_token);
+      sessionStorage.setItem('ids_pulse_authenticated_role', loginType);
+    }
+
     setIsUnlocked(true);
     if (loginType === 'admin') {
       const reactRole = targetUser === 'greg' ? 'owner' : (targetUser === 'colleen' ? 'accountant' : (targetUser === 'shahroz' ? 'shahroz' : 'admin'));

@@ -118,11 +118,11 @@ export async function syncWithSupabase(force = false, roleOverride = null, repId
   }
 
   isSyncing = true;
-  console.log("Starting Supabase Sync with Role Isolation...");
+  const authRole = sessionStorage.getItem('ids_pulse_authenticated_role') || roleOverride || sessionStorage.getItem('ids_pulse_role') || 'rep';
   const role = roleOverride || sessionStorage.getItem('ids_pulse_role') || 'rep';
   const repId = repIdOverride || sessionStorage.getItem('ids_pulse_rep_id') || '1';
   const customerId = customerIdOverride || sessionStorage.getItem('ids_pulse_customer_id') || '';
-  const isAdmin = ['admin', 'owner', 'accountant', 'lead', 'shahroz']?.includes(role?.toLowerCase());
+  const isAdmin = ['admin', 'owner', 'accountant', 'lead', 'shahroz']?.includes(authRole?.toLowerCase());
 
   const collections = [
     'users',
@@ -349,7 +349,8 @@ export function getEntities(type) {
   const repId = sessionStorage.getItem('ids_pulse_rep_id') || '';
 
   if (isUnlocked) {
-    const isAdmin = ['admin', 'owner', 'accountant', 'lead', 'shahroz']?.includes(role);
+    const authRole = sessionStorage.getItem('ids_pulse_authenticated_role') || role;
+    const isAdmin = ['admin', 'owner', 'accountant', 'lead', 'shahroz']?.includes(authRole);
 
     if (!isAdmin) {
       if (type === 'rates') {

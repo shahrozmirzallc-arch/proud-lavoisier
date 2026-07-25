@@ -8096,10 +8096,10 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                           <form onSubmit={handleCreateRep} className="bg-surface-elevated border border-border-subtle p-6 sm:p-8 rounded-2xl flex flex-col gap-3">
                             <h4 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider border-b border-border-subtle pb-2 flex items-center gap-1.5"><UserPlus className="w-4.5 h-4.5 text-purple-600" /> Onboard QRE Representative</h4>
                             <div className="flex flex-col gap-1"><label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Full Name</label>
-                              <input type="text" value={newRepName} onChange={(e) => setNewRepName(e.target.value)} placeholder="Hugo Picon" className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary" />
+                              <input type="text" value={newRepName} onChange={(e) => setNewRepName(e.target.value)} placeholder="Rep full name" className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary" />
                             </div>
                             <div className="flex flex-col gap-1"><label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Email Address</label>
-                              <input type="email" value={newRepEmail} onChange={(e) => setNewRepEmail(e.target.value)} placeholder="hugo.p@integritydriven.com" className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary" />
+                              <input type="email" value={newRepEmail} onChange={(e) => setNewRepEmail(e.target.value)} placeholder="rep@integritydriven.com" className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary" />
                             </div>
                             <div className="flex flex-col gap-1"><label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Phone Contact</label>
                               <input type="text" value={newRepPhone} onChange={(e) => setNewRepPhone(e.target.value)} placeholder="+1 555-123-4567" className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary" />
@@ -10438,7 +10438,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   type="text" 
                   value={quickRepName} 
                   onChange={(e) => setQuickRepName(e.target.value)} 
-                  placeholder="e.g. Hugo Picon" 
+                  placeholder="e.g. Rep full name" 
                   className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary placeholder-text-secondary focus:outline-none focus:border-purple-500"
                   required
                 />

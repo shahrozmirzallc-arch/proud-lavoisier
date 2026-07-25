@@ -94,14 +94,14 @@ export default function LoginScreen({ onSignedIn }) {
               <ShieldCheck weight="fill" />
               <span>
                 <strong>Visible action receipts</strong>
-                <small>Saved, queued and demo-synced states are never hidden.</small>
+                <small>Saved, queued and synced states are never hidden.</small>
               </span>
             </div>
             <div>
               <Database weight="fill" />
               <span>
                 <strong>Traceable sources</strong>
-                <small>Reports identify the exact fictional device records used.</small>
+                <small>Reports identify the exact device records used.</small>
               </span>
             </div>
           </div>

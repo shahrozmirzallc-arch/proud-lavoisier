@@ -380,7 +380,7 @@ export function addTimeEntry(entry) {
       id: `pr_${newEntry.id}`,
       time_entry_id: newEntry.id,
       rep_id: newEntry.rep_id,
-      rep_name: rep ? rep.name : (newEntry.rep_name || 'Hugo Picon'),
+      rep_name: rep ? rep.name : (newEntry.rep_name || 'Unknown Rep'),
       date: newEntry.date || new Date().toISOString().split('T')[0],
       hours: hrs,
       pay_rate: payRate,

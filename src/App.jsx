@@ -135,9 +135,12 @@ function App() {
     return 'day'; // Default is Dark Theme
   });
 
-  // Password Lock State
+  // Password Lock & Effective Role State (Strictly Gated by Server Token Authenticated Role)
+  const authenticatedRole = sessionStorage.getItem('ids_pulse_authenticated_role') || localStorage.getItem('ids_pulse_authenticated_role') || '';
+  const isAdminAuthenticated = ['admin', 'owner', 'accountant', 'lead', 'shahroz'].includes(authenticatedRole?.toLowerCase());
+  
   const [isUnlocked, setIsUnlocked] = useState(() => localStorage.getItem('ids_pulse_unlocked') === 'true' || sessionStorage.getItem('ids_pulse_unlocked') === 'true');
-  const [userRole, setUserRole] = useState(() => localStorage.getItem('ids_pulse_role') || sessionStorage.getItem('ids_pulse_role') || 'admin');
+  const [userRole, setUserRole] = useState(() => isAdminAuthenticated ? (sessionStorage.getItem('ids_pulse_role') || authenticatedRole) : (authenticatedRole || 'customer'));
   const [currentUserRepId, setCurrentUserRepId] = useState(() => sessionStorage.getItem('ids_pulse_rep_id') || '');
   const [currentUserCustomerId, setCurrentUserCustomerId] = useState(() => sessionStorage.getItem('ids_pulse_customer_id') || '');
   const [systemUsername, setSystemUsername] = useState('');
@@ -448,6 +451,10 @@ function App() {
                     sessionStorage.removeItem('ids_pulse_role');
                     sessionStorage.removeItem('ids_pulse_rep_id');
                     sessionStorage.removeItem('ids_pulse_customer_id');
+                    sessionStorage.removeItem('ids_pulse_session_token');
+                    sessionStorage.removeItem('ids_pulse_authenticated_role');
+                    localStorage.removeItem('ids_pulse_session_token');
+                    localStorage.removeItem('ids_pulse_authenticated_role');
                     window.location.reload();
                   }}
                   className="flex items-center gap-1.5 text-text-secondary hover:text-red-400 bg-surface-elevated border border-border-subtle py-1.5 px-2.5 rounded-lg text-sm cursor-pointer transition-colors"
@@ -489,14 +496,14 @@ function App() {
           {(!isMobileDevice && (layoutMode === 'side-by-side' || layoutMode === 'dashboard-only')) && (
             <div className="flex-1 w-full flex flex-col min-h-0">
               <span className="text-[10px] text-text-secondary font-bold uppercase tracking-wider mb-2 pl-2">
-                {userRole === 'accountant' ? "Colleen's Dashboard (Web CRM Portal)" :
+                {(!isAdminAuthenticated || userRole === 'customer') ? "Customer Quality Portal" :
+                 userRole === 'rep' ? "QRE Representative Portal" :
+                 userRole === 'accountant' ? "Colleen's Dashboard (Web CRM Portal)" :
                  userRole === 'lead' ? "Donna's Dashboard (Web CRM Portal)" :
                  userRole === 'shahroz' ? "Shahroz's Super Admin Dashboard (Web CRM Portal)" :
-                 userRole === 'rep' ? "QRE Representative Portal" :
-                 userRole === 'customer' ? "Customer Quality Portal" :
                  "Greg's Admin Dashboard (Web CRM Portal)"}
               </span>
-              <ErrorBoundary><WebDashboard dbUpdateTrigger={dbUpdateTrigger} userRole={userRole} currentUserRepId={currentUserRepId} currentUserCustomerId={currentUserCustomerId} layoutMode={layoutMode} /></ErrorBoundary>
+              <ErrorBoundary><WebDashboard dbUpdateTrigger={dbUpdateTrigger} userRole={isAdminAuthenticated ? userRole : (authenticatedRole || 'customer')} currentUserRepId={currentUserRepId} currentUserCustomerId={currentUserCustomerId} layoutMode={layoutMode} /></ErrorBoundary>
             </div>
           )}
 

@@ -194,8 +194,8 @@ export async function syncWithSupabase(force = false, roleOverride = null, repId
             data = expData;
             error = expErr;
           }
-        } else if (col === 'suppliers' && role === 'customer' && customerId) {
-          const { data: suppData, error: suppErr } = await supabase.from('suppliers').select('*').eq('id', customerId);
+        } else if (col === 'suppliers') {
+          const { data: suppData, error: suppErr } = await supabase.rpc('get_scoped_suppliers', { p_token: token });
           data = suppData;
           error = suppErr;
         } else if (col === 'projects') {

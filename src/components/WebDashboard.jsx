@@ -428,9 +428,9 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   const [newLocationName, setNewLocationName] = useState('');
   const [newLocationAddress, setNewLocationAddress] = useState('');
   const [newLocationHours, setNewLocationHours] = useState('10');
-  const [newLocationRepId, setNewLocationRepId] = useState('rep_hugo');
+  const [newLocationRepId, setNewLocationRepId] = useState(getInitialRepId);
   const [newLocationBillRate, setNewLocationBillRate] = useState('35');
-  const [newLocationSupplierId, setNewLocationSupplierId] = useState('autokabel');
+  const [newLocationSupplierId, setNewLocationSupplierId] = useState(getInitialSupplierId);
 
   const [newRepName, setNewRepName] = useState('');
   const [newRepEmail, setNewRepEmail] = useState('');
@@ -477,6 +477,20 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       return { billing_rate: 0, pay_rate: 0, currency: 'USD' };
     }
 
+    // 1. Explicit Custom Rate Overrides (highest priority)
+    const dbRates = getEntities('rates') || [];
+    const rateMatch = dbRates.find(r => r && (r.supplier_id === supplier_id || r.client_id === supplier_id || (r.rep_id && r.rep_id === rep_id)) && (!plant_id || r.plant_id === plant_id));
+    if (rateMatch && rateMatch.billing_rate) {
+      const bRate = parseFloat(rateMatch.billing_rate);
+      const pRate = parseFloat(rateMatch.pay_rate);
+      return {
+        billing_rate: isNaN(bRate) ? 32.00 : bRate,
+        pay_rate: isNaN(pRate) ? 22.00 : pRate,
+        currency: rateMatch.currency || 'USD'
+      };
+    }
+
+    // 2. Project Rate Specifics
     const dbProjects = getEntities('projects') || [];
     const projMatch = dbProjects.find(p => p && (p.rep_id === rep_id || !rep_id) && (p.supplier_id === supplier_id || p.client_id === supplier_id) && (!plant_id || p.plant_id === plant_id));
     if (projMatch && projMatch.billing_rate) {
@@ -494,17 +508,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
         currency: suppProjMatch.currency || 'USD'
       };
     }
-    const dbRates = getEntities('rates') || [];
-    const match = dbRates.find(r => r && (r.supplier_id === supplier_id || r.rep_id === rep_id) && (!plant_id || r.plant_id === plant_id));
-    if (match) {
-      const bRate = parseFloat(match.billing_rate);
-      const pRate = parseFloat(match.pay_rate);
-      return {
-        billing_rate: isNaN(bRate) ? 32.00 : bRate,
-        pay_rate: isNaN(pRate) ? 22.00 : pRate,
-        currency: match.currency || 'USD'
-      };
-    }
+
+    // 3. Fallback standard client rate
     return { billing_rate: 32.00, pay_rate: 22.00, currency: 'USD' };
   };
 
@@ -803,9 +808,24 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       });
     }
 
+    const clientPrefix = (clientObj?.name || clientObj?.id || 'IDS')
+      .split(/[\s_-]+/)
+      .map(w => w[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 6) || 'IDS';
+    const invoiceNum = `INV-${clientPrefix}-${Date.now().toString().slice(-4)}`;
+
+    const invoiceToLines = [
+      clientObj?.name || 'Client Company',
+      clientObj?.contacts?.[0]?.name ? `Attn: ${clientObj.contacts[0].name}` : (clientObj?.contact_name ? `Attn: ${clientObj.contact_name}` : 'Accounts Payable'),
+      clientObj?.address ? clientObj.address : '',
+      clientObj?.contacts?.[0]?.email || clientObj?.contact_email || ''
+    ].filter(Boolean);
+
     const payload = {
       client: clientObj,
-      invoiceNum: `INV-${(clientObj?.id || 'IDS').toUpperCase()}-${Date.now().toString().slice(-4)}`,
+      invoiceNum,
       invoiceDate: new Date().toLocaleDateString('en-US'),
       poNumber: invoicePONumber || 'PO-32268',
       terms: 'Net 30',
@@ -815,13 +835,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       fob: 'FOB Origin',
       projectName: clientObj?.name || 'Quality Operations',
       shipToText: `Liaison Quality Lead at\n${clientObj?.name || 'Client Facility'}`,
-      invoiceToLines: [
-        clientObj?.name || 'Client Company',
-        clientObj?.contacts?.[0]?.name ? `Attn: ${clientObj.contacts[0].name}` : 'Accounts Payable',
-        clientObj?.contacts?.[0]?.email || 'billing@client.com',
-        'Paseo De Los Ind Pte Lote 15-19',
-        'CP 36100'
-      ],
+      invoiceToLines,
       items,
       taxAmount: 0.00,
       currency: selectedInvoiceCurrency === 'USD' ? 'USD' : (selectedInvoiceCurrency === 'CAD' ? 'CAD' : 'CAD'),
@@ -1156,6 +1170,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       name: quickClientName,
       contact_name: quickClientContactName,
       contact_email: quickClientContactEmail,
+      address: quickClientAddress || '',
       allotted_hours: quickClientAllottedHours || '20',
       invoice_schedule: quickClientSchedule,
       contacts: contactsArr,

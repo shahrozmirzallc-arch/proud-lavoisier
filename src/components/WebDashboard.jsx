@@ -5,7 +5,7 @@ import {
   FileSpreadsheet, Calendar, ArrowRight, UserPlus, MapPin, Printer, Download, Eye, Sparkles,
   Milestone, TrendingUp, FolderKanban, PlusCircle, ArrowLeft, Camera, ClipboardCheck, Zap
 } from 'lucide-react';
-import { getEntities, saveEntity, resetDB, logSystemEvent, addProject, deleteRate } from './SharedDatabase';
+import { getEntities, saveEntity, resetDB, logSystemEvent, addProject, deleteRate, isFieldRep } from './SharedDatabase';
 import { jsPDF } from 'jspdf';
 import { LOGO_BASE64 } from './LogoBase64';
 import IntegrityWeeklyTimesheet from './IntegrityWeeklyTimesheet';
@@ -1090,6 +1090,11 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       return;
     }
     const newId = quickClientName?.toLowerCase()?.replace(/[^a-z0-9]/g, '_');
+    const contactsArr = quickClientContactName ? [{
+      name: quickClientContactName,
+      email: quickClientContactEmail || '',
+      role: 'Quality Manager'
+    }] : [];
     const newCust = {
       id: newId,
       name: quickClientName,
@@ -1097,7 +1102,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       contact_email: quickClientContactEmail,
       allotted_hours: quickClientAllottedHours || '20',
       invoice_schedule: quickClientSchedule,
-      contacts: quickClientContactName ? [quickClientContactName] : [],
+      contacts: contactsArr,
       plants_served: []
     };
     saveEntity('suppliers', newCust);
@@ -1897,7 +1902,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     .filter(r => showAllDates || r.created_at?.startsWith(selectedDate))
     .reduce((acc, curr) => acc + curr.qty, 0);
 
-  const activeRepsCount = users.filter(u => u.role === 'rep').length;
+  const activeRepsCount = users.filter(isFieldRep).length;
   
   // Hours and Mileage cost calculation (Colleen's Phase 1 utility)
   const ratePerKm = 0.73;
@@ -5700,7 +5705,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         className="bg-surface border border-border-subtle rounded-xl px-2.5 py-1 text-[13.5px] text-text-primary focus:outline-none focus:border-[#3B82F6]"
                       >
                         <option value="all">All Representatives</option>
-                        {users.filter(u => u.role === 'rep' || u.role === 'qre' || u.id === '1' || u.id === 'rep_hugo' || u.id === 'rep_nabil' || u.id === 'rep_rogelio').map(u => (
+                        {users.filter(isFieldRep).map(u => (
                           <option key={u.id} value={u.id}>{u.name}</option>
                         ))}
                         <option value="ADD_NEW" className="text-cyan-600 font-bold">+ Add New Rep...</option>
@@ -5794,7 +5799,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                       }}
                       className="bg-surface border border-border-subtle rounded-xl px-3 py-1.5 text-[13.5px] text-text-primary focus:outline-none focus:border-[#3B82F6]"
                     >
-                      {users.filter(u => u.role === 'rep' || u.role === 'qre' || u.id === '1' || u.id === 'rep_hugo' || u.id === 'rep_nabil' || u.id === 'rep_rogelio').map(u => (
+                      {users.filter(isFieldRep).map(u => (
                         <option key={u.id} value={u.id}>{u.name}</option>
                       ))}
                       <option value="ADD_NEW" className="text-cyan-600 font-bold">+ Add New Rep...</option>
@@ -6813,13 +6818,17 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     
                     <div className="border-t border-border-subtle pt-2 flex flex-col gap-1.5 text-[13.5px] text-text-secondary">
                       <div><span className="font-bold text-text-secondary">QM Contacts:</span></div>
-                      {sup.contacts.map((c, i) => (
+                      {((sup.contacts && sup.contacts.length > 0) ? sup.contacts : (sup.contact_name ? [{ name: sup.contact_name, email: sup.contact_email, role: 'Quality Contact' }] : [])).map((c, i) => (
                         <div key={i} className="bg-surface p-2 rounded-lg border border-border-subtle flex justify-between items-center text-[11.5px]">
                           <div>
-                            <p className="font-semibold text-text-primary">{c.name}</p>
-                            <p className="text-text-secondary text-[10.5px]">{c.role}</p>
+                            <p className="font-semibold text-text-primary">{typeof c === 'object' ? c.name : c}</p>
+                            <p className="text-text-secondary text-[10.5px]">{typeof c === 'object' ? (c.role || c.title || 'Quality Contact') : 'Quality Contact'}</p>
                           </div>
-                          <a href={`mailto:${c.email}`} className="text-[#3B82F6] hover:underline font-mono">{c.email}</a>
+                          {(typeof c === 'object' ? c.email : sup.contact_email) && (
+                            <a href={`mailto:${typeof c === 'object' ? c.email : sup.contact_email}`} className="text-[#3B82F6] hover:underline font-mono">
+                              {typeof c === 'object' ? c.email : sup.contact_email}
+                            </a>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -7226,7 +7235,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         <div className="flex flex-col gap-1">
                           <label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Representative</label>
                           <select value={logHoursRepId} onChange={(e) => setLogHoursRepId(e.target.value)} className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary focus:outline-none focus:border-[#3B82F6]">
-                            {users.filter(u => u.role === 'rep').map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                            {users.filter(isFieldRep).map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
                           </select>
                         </div>
                         <div className="flex flex-col gap-1">
@@ -7270,7 +7279,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         <div className="flex flex-col gap-1">
                           <label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Representative</label>
                           <select value={logExpRepId} onChange={(e) => setLogExpRepId(e.target.value)} className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary focus:outline-none">
-                            {users.filter(u => u.role === 'rep').map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                            {users.filter(isFieldRep).map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
                           </select>
                         </div>
                         <div className="flex flex-col gap-1">
@@ -7551,7 +7560,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                           <tr className="border-b border-border-subtle text-text-secondary font-bold uppercase text-[10.5px]"><th className="py-2">Rep</th><th className="py-2">Client</th><th className="py-2 text-right">Hours</th><th className="py-2 text-right">Rate</th><th className="py-2 text-right">Hours Pay</th><th className="py-2 text-right">Mileage</th><th className="py-2 text-right">Mileage Pay</th><th className="py-2 text-right">Expenses</th><th className="py-2 text-right">Net Payout</th></tr>
                         </thead>
                         <tbody className="divide-y divide-slate-850 text-text-primary">
-                          {users.filter(u => u.role === 'rep').map(rep => {
+                          {users.filter(isFieldRep).map(rep => {
                             const repTime = timeEntries.filter(t => t.rep_id === rep.id);
                             const repExpenses = expenseEntries.filter(e => e.rep_id === rep.id && e.status === 'approved');
                             const clients = [...new Set(repTime.map(e => e.supplier_id))];
@@ -7624,7 +7633,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-850">
-                            {users.filter(u => u.role === 'rep' || u.role === 'qre' || u.id === '1' || u.id === 'rep_hugo' || u.id === 'rep_nabil' || u.id === 'rep_rogelio').map(u => {
+                            {users.filter(isFieldRep).map(u => {
                               const rowData = matrixData[u.id] || {};
                               const mon = parseFloat(rowData.mon || 0);
                               const tue = parseFloat(rowData.tue || 0);
@@ -8072,7 +8081,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                             </div>
                             <div className="flex flex-col gap-1"><label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Default QRE Assignment</label>
                               <select value={newLocationRepId} onChange={(e) => setNewLocationRepId(e.target.value)} className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary">
-                                {users.filter(u => u.role === 'rep').map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                                {users.filter(isFieldRep).map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
                               </select>
                             </div>
                             <div className="grid grid-cols-2 gap-3">
@@ -8140,7 +8149,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                 <tr className="border-b border-border-subtle text-text-secondary font-bold uppercase text-[10.5px]"><th>Rep Name</th><th>Email</th><th>Phone</th><th>Pay Currency</th><th>Role</th></tr>
                               </thead>
                               <tbody className="divide-y divide-slate-850 text-text-primary">
-                                {users.filter(u => u.role === 'rep').map(r => (
+                                {users.filter(isFieldRep).map(r => (
                                   <tr key={r.id}>
                                     <td className="py-2 text-text-primary font-bold flex items-center gap-2">
                                       <span className="w-6 h-6 rounded-full bg-[#3B82F6] flex items-center justify-center text-[11.5px] text-[#3B82F6] font-bold">{r.avatar}</span>
@@ -8175,7 +8184,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                 }}
                                 className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary"
                               >
-                                {users.filter(u => u.role === 'rep' || u.role === 'qre' || u.id === '1' || u.id === 'rep_hugo' || u.id === 'rep_nabil' || u.id === 'rep_rogelio').map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                                {users.filter(isFieldRep).map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
                                 <option value="ADD_NEW" className="text-cyan-600 font-bold">+ Add New Rep...</option>
                               </select>
                             </div>
@@ -8331,7 +8340,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
                 {/* Reps Detail List Grid */}
                 <div className="grid grid-cols-2 gap-3">
-                  {users.filter(u => u && u.role === 'rep').map(u => {
+                  {users.filter(isFieldRep).map(u => {
                     const activeShift = shiftReports.find(r => r.rep_id === u.id && r.status === 'Draft');
                     const assignedRates = rates.filter(r => r.rep_id === u.id);
                     const assignedPlants = assignedRates.map(r => plants.find(p => p.id === r.plant_id || p.id === r.supplier_id)).filter(Boolean);
@@ -9146,7 +9155,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                           className="bg-surface border border-border-subtle rounded-xl px-3 py-2.5 text-[13.5px] text-text-primary focus:outline-none focus:border-cyan-500 transition-colors"
                         >
                           <option value="">Select Rep...</option>
-                          {users.filter(u => u.role === 'rep' || u.role === 'qre' || u.id === '1' || u.id === 'rep_hugo' || u.id === 'rep_nabil' || u.id === 'rep_rogelio').map(u => (
+                          {users.filter(isFieldRep).map(u => (
                             <option key={u.id} value={u.id}>{u.name}</option>
                           ))}
                           <option value="ADD_NEW" className="text-cyan-600 font-bold">+ Add New Rep...</option>
@@ -10637,8 +10646,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         className="stitch-input px-3 py-2 text-[13px] text-white"
                       >
                         <option value="__new__">➕ Create New Field Inspector...</option>
-                        {users && users.filter(u => u.role === 'rep' || u.title?.includes('Inspector') || u.title?.includes('Engineer')).length > 0 ? (
-                          users.filter(u => u.role === 'rep' || u.title?.includes('Inspector') || u.title?.includes('Engineer')).map(u => (
+                        {users && users.filter(isFieldRep).length > 0 ? (
+                          users.filter(isFieldRep).map(u => (
                             <option key={u.id} value={u.id}>{u.name} ({u.title || 'Field Rep'})</option>
                           ))
                         ) : (

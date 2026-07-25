@@ -92,6 +92,13 @@ export function getSupabaseTableName(type) {
   return type;
 }
 
+export function isFieldRep(user) {
+  if (!user) return false;
+  const role = (user.role || '').toLowerCase();
+  const title = (user.title || '').toLowerCase();
+  return role === 'rep' || role === 'qre' || title.includes('rep') || title.includes('quality') || title.includes('inspector') || title.includes('engineer');
+}
+
 // Supabase Async Sync Engine
 export async function syncWithSupabase(force = false) {
   if (isSyncing) return;

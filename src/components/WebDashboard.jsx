@@ -1690,9 +1690,25 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   // Date Formatting Helper
   const formatReadableDate = (dateStr) => {
     if (!dateStr) return '';
-    const dateObj = new Date(dateStr + 'T00:00:00');
-    if (isNaN(dateObj.getTime())) return dateStr;
-    return dateObj.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    let cleanStr = String(dateStr);
+    if (cleanStr.includes('T')) {
+      cleanStr = cleanStr.split('T')[0];
+    }
+    const parts = cleanStr.split('-');
+    if (parts.length === 3) {
+      const year = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10) - 1;
+      const day = parseInt(parts[2], 10);
+      const d = new Date(year, month, day);
+      if (!isNaN(d.getTime())) {
+        return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      }
+    }
+    const d = new Date(dateStr);
+    if (!isNaN(d.getTime())) {
+      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+    return dateStr;
   };
 
   // Get all dates with records in the database

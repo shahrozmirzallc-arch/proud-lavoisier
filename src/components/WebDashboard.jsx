@@ -430,26 +430,34 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     }
 
     const dbProjects = getEntities('projects') || [];
-    const projMatch = dbProjects.find(p => p && p.rep_id === rep_id && p.client_id === supplier_id && (!plant_id || p.plant_id === plant_id));
-    if (projMatch) {
+    const projMatch = dbProjects.find(p => p && (p.rep_id === rep_id || !rep_id) && (p.supplier_id === supplier_id || p.client_id === supplier_id) && (!plant_id || p.plant_id === plant_id));
+    if (projMatch && projMatch.billing_rate) {
       return {
-        billing_rate: parseFloat(projMatch.billing_rate) || 28.00,
-        pay_rate: parseFloat(projMatch.pay_rate) || 20.00,
+        billing_rate: parseFloat(projMatch.billing_rate) || 32.00,
+        pay_rate: parseFloat(projMatch.pay_rate) || 22.00,
         currency: projMatch.currency || 'USD'
       };
     }
+    const suppProjMatch = dbProjects.find(p => p && (p.supplier_id === supplier_id || p.client_id === supplier_id) && p.billing_rate);
+    if (suppProjMatch && suppProjMatch.billing_rate) {
+      return {
+        billing_rate: parseFloat(suppProjMatch.billing_rate) || 32.00,
+        pay_rate: parseFloat(suppProjMatch.pay_rate) || 22.00,
+        currency: suppProjMatch.currency || 'USD'
+      };
+    }
     const dbRates = getEntities('rates') || [];
-    const match = dbRates.find(r => r && r.rep_id === rep_id && r.supplier_id === supplier_id && (!plant_id || r.plant_id === plant_id));
+    const match = dbRates.find(r => r && (r.supplier_id === supplier_id || r.rep_id === rep_id) && (!plant_id || r.plant_id === plant_id));
     if (match) {
       const bRate = parseFloat(match.billing_rate);
       const pRate = parseFloat(match.pay_rate);
       return {
-        billing_rate: isNaN(bRate) ? 28.00 : bRate,
-        pay_rate: isNaN(pRate) ? 20.00 : pRate,
+        billing_rate: isNaN(bRate) ? 32.00 : bRate,
+        pay_rate: isNaN(pRate) ? 22.00 : pRate,
         currency: match.currency || 'USD'
       };
     }
-    return { billing_rate: 28.00, pay_rate: 20.00, currency: 'USD' };
+    return { billing_rate: 32.00, pay_rate: 22.00, currency: 'USD' };
   };
 
   const getRepPayCurrency = (rep_id) => {
@@ -497,13 +505,13 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     setLogHoursQty('');
     setLogHoursMileage('');
     setLogHoursNotes('');
-    alert("Hours logged successfully!");
+    addNotification("⏱️ Hours Logged", "Time entry logged and synced to cloud successfully!", "shift");
   };
 
   const handleLogExpenseSubmit = (e) => {
     e.preventDefault();
     if (!logExpAmount || parseFloat(logExpAmount) <= 0) {
-      alert("Please enter a valid expense amount.");
+      addNotification("⚠️ Invalid Amount", "Please enter a valid expense amount.", "defect");
       return;
     }
     const newEntry = {
@@ -522,7 +530,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     setExpenseEntries(getEntities('expenseEntries'));
     setLogExpAmount('');
     setLogExpNotes('');
-    alert("Expense claim submitted successfully!");
+    addNotification("💳 Expense Submitted", "Expense claim submitted for approval and synced to cloud!", "expense");
   };
 
   const handleSaveRateConfig = (e) => {
@@ -1489,6 +1497,18 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     }
   };
 
+  const [syncError, setSyncError] = useState(null);
+
+  useEffect(() => {
+    const handleSyncErr = (e) => {
+      if (e && e.detail) {
+        setSyncError(`Sync Warning: Failed pushing to ${e.detail.table}`);
+      }
+    };
+    window.addEventListener('ids_pulse_sync_error', handleSyncErr);
+    return () => window.removeEventListener('ids_pulse_sync_error', handleSyncErr);
+  }, []);
+
   const addNotification = (title, message, type = "info") => {
     const id = Date.now() + Math.random();
     setNotifications(prev => [...prev, { id, title, message, type }]);
@@ -1915,7 +1935,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     .reduce((acc, curr) => acc + curr.hours, 0);
   
   const totalMileageCost = totalMileage * ratePerKm;
-  const totalHoursCost = totalHours * 28.00;
+  const totalHoursCost = (timeEntries || []).reduce((acc, curr) => acc + ((curr.hours || 0) * (curr.billing_rate || getRepSupplierRates(curr.rep_id, curr.supplier_id, curr.plant_id).billing_rate || 32.00)), 0);
   const totalInvoicedEst = totalMileageCost + totalHoursCost;
 
   // Dynamic currency-aware totals for Admin billing overview
@@ -2956,7 +2976,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
     const totalHoursVal = timeEntries.reduce((acc, curr) => acc + curr.hours, 0);
     const totalMileageVal = timeEntries.reduce((acc, curr) => acc + curr.mileage_km, 0);
-    const totalInvoicedEstVal = totalHoursVal * 28.00 + totalMileageVal * 0.73;
+    const totalInvoicedEstVal = (timeEntries || []).reduce((acc, curr) => acc + ((curr.hours || 0) * (curr.billing_rate || getRepSupplierRates(curr.rep_id, curr.supplier_id, curr.plant_id).billing_rate || 32.00)) + ((curr.mileage_km || 0) * 0.73), 0);
 
     doc.setFont("helvetica", "bold");
     doc.setFontSize(12);
@@ -2990,7 +3010,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     timeEntries.forEach((entry) => {
       const rep = users.find(u => u.id === entry.rep_id)?.name || 'Unknown Rep';
       const mileageCost = entry.mileage_km * 0.73;
-      const hourlyBilling = entry.hours * 28.00;
+      const rate = entry.billing_rate || getRepSupplierRates(entry.rep_id, entry.supplier_id, entry.plant_id).billing_rate || 32.00;
+      const hourlyBilling = (entry.hours || 0) * rate;
       const total = mileageCost + hourlyBilling;
 
       doc.setFont("helvetica", "normal");
@@ -3028,7 +3049,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
     const totalHoursVal = timeEntries.reduce((acc, curr) => acc + curr.hours, 0);
     const totalMileageVal = timeEntries.reduce((acc, curr) => acc + curr.mileage_km, 0);
-    const totalInvoicedEstVal = totalHoursVal * 28.00 + totalMileageVal * 0.73;
+    const totalInvoicedEstVal = (timeEntries || []).reduce((acc, curr) => acc + ((curr.hours || 0) * (curr.billing_rate || getRepSupplierRates(curr.rep_id, curr.supplier_id, curr.plant_id).billing_rate || 32.00)) + ((curr.mileage_km || 0) * 0.73), 0);
 
     printWindow.document.write(`
       <html>
@@ -3101,7 +3122,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 ${(timeEntries || []).filter(entry => entry).map(entry => {
                   const rep = users.find(u => u && u.id === entry.rep_id)?.name || 'Unknown Rep';
                   const mileageCost = (entry.mileage_km || 0) * 0.73;
-                  const hourlyBilling = (entry.hours || 0) * 28.00;
+                  const rate = entry.billing_rate || getRepSupplierRates(entry.rep_id, entry.supplier_id, entry.plant_id).billing_rate || 32.00;
+                  const hourlyBilling = (entry.hours || 0) * rate;
                   const total = mileageCost + hourlyBilling;
                   return `
                     <tr>
@@ -3522,7 +3544,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
         const repName = rep ? rep.name : 'Unknown Rep';
         const plant = entry.plant_id === 'gm_oshawa' ? 'GM Oshawa Plant' : 'Hutchinson Plant';
         const mileageCost = (entry.mileage_km || 0) * 0.73;
-        const totalBilling = (entry.hours || 0) * 28.00 + mileageCost;
+        const rate = entry.billing_rate || getRepSupplierRates(entry.rep_id, entry.supplier_id, entry.plant_id).billing_rate || 32.00;
+        const totalBilling = (entry.hours || 0) * rate + mileageCost;
         return [
           `"${repName?.replace(/"/g, '""')}"`,
           `"${entry.date || ''}"`,
@@ -3537,7 +3560,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       const overtimeRows = expenseEntries.filter(e => e.category === 'Overtime Request' && (e.status === 'approved_customer' || e.status === 'approved_admin')).map(entry => {
         const rep = users.find(u => u && u.id === entry.rep_id);
         const repName = rep ? rep.name : 'Unknown Rep';
-        const totalBilling = (entry.amount || 0) * 28.00;
+        const rate = getRepSupplierRates(entry.rep_id, entry.supplier_id, entry.plant_id).billing_rate || 32.00;
+        const totalBilling = (entry.amount || 0) * rate;
         return [
           `"${repName?.replace(/"/g, '""')}"`,
           `"${entry.date || ''}"`,
@@ -3557,7 +3581,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                          expenseEntries.filter(e => e.category === 'Overtime Request' && (e.status === 'approved_customer' || e.status === 'approved_admin')).reduce((acc, curr) => acc + (curr.amount || 0), 0);
       const totalMileage = (timeEntries || []).filter(Boolean).reduce((acc, curr) => acc + (curr.mileage_km || 0), 0);
       const totalMileageCost = totalMileage * 0.73;
-      const totalInvoicedEst = totalHours * 28.00 + totalMileageCost;
+      const totalInvoicedEst = (timeEntries || []).reduce((acc, curr) => acc + ((curr.hours || 0) * (curr.billing_rate || getRepSupplierRates(curr.rep_id, curr.supplier_id, curr.plant_id).billing_rate || 32.00)), 0) + totalMileageCost;
 
       csvLines.push(``); // blank separator
       csvLines.push(`====================================================================================================`);
@@ -4196,6 +4220,13 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
         {/* Right Header Panel: Clock + User Profile + Help Guide + Reset DB */}
         <div className="flex items-center gap-3 flex-shrink-0">
+          {syncError && (
+            <div className="flex items-center gap-1.5 px-3 py-1 bg-red-500/10 border border-red-500/30 text-red-500 rounded-xl text-[11px] font-bold animate-pulse">
+              <AlertCircle className="w-3.5 h-3.5" />
+              <span>{syncError}</span>
+              <button onClick={() => setSyncError(null)} className="ml-1 text-slate-400 hover:text-slate-600">✕</button>
+            </div>
+          )}
           <div className="text-right hidden md:flex flex-col text-[11.5px] font-medium text-text-secondary pr-1.5 h-9 justify-center">
             <span className="text-text-primary font-bold font-mono leading-none">
               {currentTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })} EST

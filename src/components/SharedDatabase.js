@@ -89,6 +89,14 @@ let hasSyncedOnLoad = false;
 
 export function getSupabaseTableName(type) {
   if (type === 'shiftReports') return 'shift_reports';
+  if (type === 'expenseEntries') return 'expense_entries';
+  if (type === 'timeEntries') return 'time_entries';
+  if (type === 'reworkLogs') return 'rework_logs';
+  if (type === 'dailyTasks') return 'daily_tasks';
+  if (type === 'emailLogs') return 'email_logs';
+  if (type === 'systemLogs') return 'system_logs';
+  if (type === 'extraHoursRequests') return 'extra_hours_requests';
+  if (type === 'repActivities') return 'rep_activities';
   return type;
 }
 
@@ -125,7 +133,9 @@ export async function syncWithSupabase(force = false) {
     'reworkLogs',
     'dailyTasks',
     'emailLogs',
-    'shiftReports'
+    'shiftReports',
+    'repActivities',
+    'parts'
   ];
 
   try {
@@ -142,17 +152,33 @@ export async function syncWithSupabase(force = false) {
           continue;
         }
 
-        if (!data || data.length === 0) {
-          const localItems = db[col] || [];
-          if (localItems.length > 0) {
-            console.log(`[Supabase Seeding] table "${targetTable}": uploading ${localItems.length} items...`);
-            const { error: upsertError } = await supabase.from(targetTable).upsert(localItems);
-            if (upsertError) {
-              console.warn(`[Supabase Seed Info] table "${targetTable}":`, upsertError.message);
+        const cloudMap = new Map((data || []).map(item => [item.id, item]));
+        const localItems = db[col] || [];
+        const mergedMap = new Map();
+
+        // Preserve all local items; if not in cloud, push to cloud to recover
+        for (const localItem of localItems) {
+          mergedMap.set(localItem.id, localItem);
+          if (localItem && localItem.id && !cloudMap.has(localItem.id)) {
+            const { error: pushErr } = await supabase.from(targetTable).upsert(localItem);
+            if (pushErr) {
+              console.error(`[Cloud Push Recovery Error] table "${targetTable}":`, pushErr.message);
+              window.dispatchEvent(new CustomEvent('ids_pulse_sync_error', { detail: { table: targetTable, message: pushErr.message } }));
             }
           }
-        } else {
-          db[col] = data;
+        }
+
+        // Overlay cloud items over local items
+        for (const cloudItem of (data || [])) {
+          if (cloudItem && cloudItem.id) {
+            const existingLocal = mergedMap.get(cloudItem.id);
+            mergedMap.set(cloudItem.id, existingLocal ? { ...existingLocal, ...cloudItem } : cloudItem);
+          }
+        }
+
+        const finalCollection = Array.from(mergedMap.values());
+        if (JSON.stringify(db[col]) !== JSON.stringify(finalCollection)) {
+          db[col] = finalCollection;
           updated = true;
         }
       } catch (err) {
@@ -316,6 +342,10 @@ export function saveEntity(type, entity) {
       .then(({ error }) => {
         if (error) {
           console.error(`[Supabase Push Error] table "${targetTable}":`, error.message);
+          const queue = JSON.parse(localStorage.getItem('ids_pulse_offline_queue') || '[]');
+          queue.push({ type, entity, timestamp: new Date().toISOString() });
+          localStorage.setItem('ids_pulse_offline_queue', JSON.stringify(queue));
+          window.dispatchEvent(new CustomEvent('ids_pulse_sync_error', { detail: { table: targetTable, message: error.message } }));
         }
       })
       .catch(err => {
@@ -323,6 +353,7 @@ export function saveEntity(type, entity) {
         const queue = JSON.parse(localStorage.getItem('ids_pulse_offline_queue') || '[]');
         queue.push({ type, entity, timestamp: new Date().toISOString() });
         localStorage.setItem('ids_pulse_offline_queue', JSON.stringify(queue));
+        window.dispatchEvent(new CustomEvent('ids_pulse_sync_error', { detail: { table: type, message: err.message || String(err) } }));
       });
   }
 

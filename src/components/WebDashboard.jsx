@@ -4234,6 +4234,15 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
           </button>
 
           <button 
+            onClick={() => setShowQuickAddClient(true)}
+            className="h-9 flex items-center gap-1.5 bg-[#0056D2] hover:bg-[#3B82F6] text-white px-3.5 rounded-xl text-[13.5px] font-extrabold shadow-lg shadow-blue-500/20 cursor-pointer transition-all hover:scale-105"
+            title="Fast Company & Project Onboarding Hub"
+          >
+            <UserPlus className="w-4 h-4 text-white" />
+            <span>Onboard Company & Project</span>
+          </button>
+
+          <button 
             onClick={handleReset}
             className="h-9 flex items-center gap-1.5 bg-surface-elevated border border-border-subtle hover:bg-surface-elevated text-slate-450 hover:text-text-primary px-3 rounded-xl text-[13.5px] font-bold cursor-pointer transition-colors"
             title="Restore local browser sandbox seeds"

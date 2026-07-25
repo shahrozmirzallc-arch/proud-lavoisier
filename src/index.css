@@ -1261,5 +1261,135 @@ body.mode-light .text-sky-400 {
   color: #0284C7 !important;
 }
 
+/* ==========================================================================
+   LIGHT MODE KPI CARDS & SIDEBAR NAVIGATION HARMONY (GOOGLE STITCH)
+   ========================================================================== */
+
+/* 1. Light Mode KPI Stat Cards Override */
+body.mode-light [class*="from-red-950"] {
+  background: linear-gradient(135deg, #FEF2F2 0%, #FFF1F2 100%) !important;
+  border-color: #FECDD3 !important;
+  box-shadow: 0 4px 6px -1px rgba(225, 29, 72, 0.08) !important;
+}
+
+body.mode-light [class*="from-red-950"] span.text-red-300 {
+  color: #991B1B !important;
+}
+
+body.mode-light [class*="from-red-950"] span.text-red-400 {
+  color: #DC2626 !important;
+}
+
+body.mode-light [class*="from-red-950"] [class*="bg-red-950"] {
+  background-color: #FEE2E2 !important;
+  border-color: #FCA5A5 !important;
+  color: #991B1B !important;
+}
+
+body.mode-light [class*="from-emerald-950"] {
+  background: linear-gradient(135deg, #ECFDF5 0%, #F0FDF4 100%) !important;
+  border-color: #A7F3D0 !important;
+  box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.08) !important;
+}
+
+body.mode-light [class*="from-emerald-950"] span.text-emerald-300 {
+  color: #065F46 !important;
+}
+
+body.mode-light [class*="from-emerald-950"] span.text-emerald-400 {
+  color: #059669 !important;
+}
+
+body.mode-light [class*="from-emerald-950"] [class*="bg-emerald-950"] {
+  background-color: #D1FAE5 !important;
+  border-color: #6EE7B7 !important;
+  color: #065F46 !important;
+}
+
+body.mode-light [class*="from-cyan-950"] {
+  background: linear-gradient(135deg, #EFF6FF 0%, #F0F9FF 100%) !important;
+  border-color: #BAE6FD !important;
+  box-shadow: 0 4px 6px -1px rgba(2, 132, 199, 0.08) !important;
+}
+
+body.mode-light [class*="from-cyan-950"] span.text-cyan-300 {
+  color: #0369A1 !important;
+}
+
+body.mode-light [class*="from-cyan-950"] span.text-cyan-400 {
+  color: #0284C7 !important;
+}
+
+body.mode-light [class*="from-cyan-950"] [class*="bg-cyan-950"] {
+  background-color: #E0F2FE !important;
+  border-color: #7DD3FC !important;
+  color: #0369A1 !important;
+}
+
+body.mode-light [class*="from-purple-950"] {
+  background: linear-gradient(135deg, #F5F3FF 0%, #FAF5FF 100%) !important;
+  border-color: #DDD6FE !important;
+  box-shadow: 0 4px 6px -1px rgba(124, 58, 237, 0.08) !important;
+}
+
+body.mode-light [class*="from-purple-950"] span.text-purple-300 {
+  color: #5B21B6 !important;
+}
+
+body.mode-light [class*="from-purple-950"] span.text-purple-400 {
+  color: #7C3AED !important;
+}
+
+body.mode-light [class*="from-purple-950"] [class*="bg-purple-950"] {
+  background-color: #EDE9FE !important;
+  border-color: #C4B5FD !important;
+  color: #5B21B6 !important;
+}
+
+/* 2. Light Mode Sidebar Nav Cards & Buttons Override */
+body.mode-light .w-64 [class*="bg-slate-900\/50"],
+body.mode-light .w-64 [class*="bg-slate-900"],
+body.mode-light .w-64 [class*="bg-amber-950\/20"] {
+  background-color: #FFFFFF !important;
+  border-color: #E2E8F0 !important;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05) !important;
+}
+
+body.mode-light .w-64 button:not([class*="bg-[#3B82F6]"]):not([class*="bg-blue-950"]):not([class*="bg-sky-950"]):not([class*="bg-emerald-950"]):not([class*="bg-amber-950"]) {
+  background-color: #F8FAFC !important;
+  border-color: #E2E8F0 !important;
+  color: #334155 !important;
+}
+
+body.mode-light .w-64 button:hover {
+  background-color: #F1F5F9 !important;
+  color: #0F172A !important;
+}
+
+/* Active Nav Buttons in Light Mode */
+body.mode-light .w-64 button[class*="bg-blue-950"],
+body.mode-light .w-64 button[class*="bg-sky-950"],
+body.mode-light .w-64 button[class*="bg-emerald-950"],
+body.mode-light .w-64 button[class*="bg-amber-950"],
+body.mode-light .w-64 button[class*="bg-[#3B82F6]"] {
+  background: linear-gradient(135deg, #0056D2 0%, #3B82F6 100%) !important;
+  color: #FFFFFF !important;
+  border-color: #004DBA !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 86, 210, 0.25) !important;
+}
+
+body.mode-light .w-64 button[class*="bg-blue-950"] span,
+body.mode-light .w-64 button[class*="bg-sky-950"] span,
+body.mode-light .w-64 button[class*="bg-emerald-950"] span,
+body.mode-light .w-64 button[class*="bg-amber-950"] span,
+body.mode-light .w-64 button[class*="bg-[#3B82F6]"] span,
+body.mode-light .w-64 button[class*="bg-blue-950"] svg,
+body.mode-light .w-64 button[class*="bg-sky-950"] svg,
+body.mode-light .w-64 button[class*="bg-emerald-950"] svg,
+body.mode-light .w-64 button[class*="bg-amber-950"] svg,
+body.mode-light .w-64 button[class*="bg-[#3B82F6]"] svg {
+  color: #FFFFFF !important;
+}
+
 
 

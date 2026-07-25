@@ -1188,5 +1188,78 @@ button:focus-visible {
   }
 }
 
+/* ==========================================================================
+   GOOGLE STITCH LIGHT MODE DESIGN SYSTEM & CONTRAST RULES
+   ========================================================================== */
+
+/* Theme Contrast Asset Inversion Rules */
+body:not(.mode-light) .mode-light-logo {
+  filter: brightness(0) invert(1) !important;
+}
+
+body.mode-light .mode-light-logo {
+  filter: none !important;
+}
+
+/* Light Mode Global Colors */
+body.mode-light {
+  background-color: #F8FAFC !important;
+  color: #0F172A !important;
+}
+
+body.mode-light .web-dashboard-frame {
+  background-color: #FFFFFF !important;
+  border-color: #E2E8F0 !important;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.03) !important;
+}
+
+body.mode-light .stitch-input {
+  background-color: #FFFFFF !important;
+  border: 1px solid #CBD5E1 !important;
+  color: #0F172A !important;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03) !important;
+}
+
+body.mode-light .stitch-input::placeholder {
+  color: #94A3B8 !important;
+}
+
+body.mode-light .stitch-input:focus {
+  border-color: #0056D2 !important;
+  box-shadow: 0 0 0 3px rgba(0, 86, 210, 0.18) !important;
+}
+
+body.mode-light select.stitch-input option {
+  background-color: #FFFFFF !important;
+  color: #0F172A !important;
+}
+
+/* Light Mode Modal & Container Overrides */
+body.mode-light .bg-slate-900\/95,
+body.mode-light .bg-slate-950\/60,
+body.mode-light .bg-slate-950\/85 {
+  background-color: #FFFFFF !important;
+  border-color: #E2E8F0 !important;
+}
+
+body.mode-light .text-white {
+  color: #0F172A !important;
+}
+
+body.mode-light .text-slate-300,
+body.mode-light .text-slate-400 {
+  color: #475569 !important;
+}
+
+body.mode-light .bg-blue-950\/60 {
+  background-color: #EFF6FF !important;
+  border-color: #93C5FD !important;
+}
+
+body.mode-light .text-sky-300,
+body.mode-light .text-sky-400 {
+  color: #0284C7 !important;
+}
+
 
 

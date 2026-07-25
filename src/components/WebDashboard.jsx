@@ -4171,7 +4171,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       {/* Dashboard Top Header */}
       <div className="flex items-center justify-between pb-5 border-b border-border-subtle flex-shrink-0">
         <div className="flex items-center gap-3">
-          <img src={LOGO_BASE64} alt="IDS Logo" className="h-10 w-auto object-contain flex-shrink-0 brightness-0 invert" />
+          <img src={LOGO_BASE64} alt="IDS Logo" className="h-10 w-auto object-contain flex-shrink-0 mode-light-logo" />
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-[13.5px] font-extrabold text-text-primary leading-none m-0 tracking-tight">

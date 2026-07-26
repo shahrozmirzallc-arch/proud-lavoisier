@@ -479,10 +479,17 @@ export function saveEntity(type, entity) {
     console.log(`[Offline] Saved ${type} to offline queue.`);
   } else {
     const targetTable = getSupabaseTableName(type);
+
+    // Gracefully handle system_logs / telemetry telemetry without queue pollution
+    if (type === 'systemLogs' || targetTable === 'system_logs') {
+      supabase.from(targetTable).upsert(entity).catch(() => {});
+      return entity;
+    }
+
     supabase.from(targetTable).upsert(entity)
       .then(({ error }) => {
         if (error) {
-          console.error(`[Supabase Push Error] table "${targetTable}":`, error.message);
+          console.warn(`[Supabase Push Info] table "${targetTable}":`, error.message);
           const queue = JSON.parse(localStorage.getItem('ids_pulse_offline_queue') || '[]');
           queue.push({ type, entity, timestamp: new Date().toISOString() });
           localStorage.setItem('ids_pulse_offline_queue', JSON.stringify(queue));
@@ -490,7 +497,7 @@ export function saveEntity(type, entity) {
         }
       })
       .catch(err => {
-        console.error(`[Supabase Push Exception] table "${type}":`, err);
+        console.warn(`[Supabase Push Exception] table "${type}":`, err);
         const queue = JSON.parse(localStorage.getItem('ids_pulse_offline_queue') || '[]');
         queue.push({ type, entity, timestamp: new Date().toISOString() });
         localStorage.setItem('ids_pulse_offline_queue', JSON.stringify(queue));

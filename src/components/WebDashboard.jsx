@@ -4495,11 +4495,15 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       
       {/* Dashboard Top Header */}
       <div className="flex items-center justify-between pb-5 border-b border-border-subtle flex-shrink-0">
-        <div className="flex items-center gap-3">
-          <img src={LOGO_BASE64} alt="IDS Logo" className="h-10 w-auto object-contain flex-shrink-0 mode-light-logo" />
+        <div 
+          onClick={() => setActiveTab('command-center')}
+          className="flex items-center gap-3 cursor-pointer group hover:opacity-95 transition-opacity"
+          title="Return to Live Rep Operations & Project Command Center"
+        >
+          <img src={LOGO_BASE64} alt="IDS Logo" className="h-10 w-auto object-contain flex-shrink-0 mode-light-logo group-hover:scale-105 transition-transform" />
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-[13.5px] font-extrabold text-text-primary leading-none m-0 tracking-tight">
+              <h1 className="text-[13.5px] font-extrabold text-text-primary group-hover:text-blue-300 transition-colors leading-none m-0 tracking-tight">
                 {forceRoadmapOnly ? 'IDS Pulse Production Launch Roadmap' : 'IDS Pulse Portal'}
               </h1>
               <span className="text-[10.5px] bg-[#3B82F6]/60 border border-[#3B82F6]/25 text-[#3B82F6] px-2 py-1 rounded font-bold uppercase tracking-wider">
@@ -5058,6 +5062,20 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
                     {!collapsedGroups?.quality && (
                       <>
+                        <button 
+                          onClick={() => setActiveTab('command-center')}
+                          className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14.5px] transition-all cursor-pointer flex items-center justify-between border ${
+                            activeTab === 'command-center' 
+                              ? 'bg-blue-950/80 text-blue-300 border-blue-500/60 shadow-lg shadow-blue-500/30 font-black' 
+                              : 'bg-surface-elevated text-text-secondary hover:bg-surface hover:text-text-primary border-border-subtle/70'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <Activity className="w-4.5 h-4.5 text-[#3B82F6] animate-pulse" />
+                            <span>Live Command Center</span>
+                          </div>
+                          {activeTab === 'command-center' && <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399] animate-ping"></div>}
+                        </button>
 
                         <button
                           onClick={() => setActiveTab('incidents')}

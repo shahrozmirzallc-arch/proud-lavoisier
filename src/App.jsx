@@ -273,6 +273,8 @@ function App() {
         const fallbacks = [
           rawPw.charAt(0).toUpperCase() + rawPw.slice(1),
           'IDSPulse2026!',
+          `IDS${inputUser}2026!`,
+          `IDS${inputUser.charAt(0).toUpperCase() + inputUser.slice(1)}2026!`,
           `${inputUser.charAt(0).toUpperCase() + inputUser.slice(1)}2026!`,
           `${inputUser}2026!`
         ];

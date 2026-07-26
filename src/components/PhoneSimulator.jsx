@@ -1090,13 +1090,13 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                 <div className="relative">
                   <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-slate-600" />
                   <input 
-                    type="text" 
+                    type="email" 
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
                     className="phone-input"
                     style={{ paddingLeft: '38px' }}
-                    placeholder="clarence or email"
+                    placeholder="name@integritydriven.com"
                   />
                 </div>
               </div>

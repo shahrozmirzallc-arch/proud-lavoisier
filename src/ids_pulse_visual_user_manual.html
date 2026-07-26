@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>IDS Pulse Operations Suite - Visual User Manual Blueprint</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@600&display=swap');
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background-color: #0f172a;
+      color: #f8fafc;
+      line-height: 1.5;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    /* Print Page Container */
+    .page-container {
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .manual-page {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 20px;
+      padding: 30px;
+      margin-bottom: 40px;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4);
+      page-break-after: always;
+      display: flex;
+      flex-direction: column;
+      height: 920px;
+    }
+
+    .manual-header {
+      border-bottom: 2px solid #3b82f6;
+      padding-bottom: 15px;
+      margin-bottom: 25px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .manual-header h1 {
+      font-size: 20px;
+      font-weight: 800;
+      color: #60a5fa;
+      letter-spacing: -0.5px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .page-badge {
+      background: rgba(59, 130, 246, 0.2);
+      border: 1px solid #3b82f6;
+      color: #93c5fd;
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Split-Screen 50/50 Grid */
+    .split-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 25px;
+      flex: 1;
+    }
+
+    /* Left Column: Manual & Actions */
+    .left-col {
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 16px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .role-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+
+    .role-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #3b82f6;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 14px;
+    }
+
+    .role-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #f1f5f9;
+    }
+
+    .role-subtitle {
+      font-size: 12px;
+      color: #94a3b8;
+    }
+
+    .scenario-box {
+      background: #1e293b;
+      border-left: 4px solid #3b82f6;
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+
+    .scenario-box h3 {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #94a3b8;
+      margin-bottom: 6px;
+    }
+
+    .scenario-list {
+      list-style: none;
+      font-size: 13px;
+      color: #cbd5e1;
+    }
+
+    .scenario-list li {
+      margin-bottom: 4px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .scenario-list li span.val {
+      font-family: 'JetBrains Mono', monospace;
+      color: #38bdf8;
+      font-weight: 600;
+    }
+
+    .actions-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #f8fafc;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .action-steps {
+      list-style: none;
+    }
+
+    .action-steps li {
+      position: relative;
+      padding-left: 28px;
+      margin-bottom: 12px;
+      font-size: 13px;
+      color: #e2e8f0;
+      line-height: 1.4;
+    }
+
+    .action-steps li::before {
+      content: attr(data-step);
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 20px;
+      height: 20px;
+      background: #2563eb;
+      color: #fff;
+      border-radius: 50%;
+      font-size: 11px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .action-steps strong {
+      color: #60a5fa;
+    }
+
+    .callout-legend {
+      margin-top: 15px;
+      padding-top: 15px;
+      border-top: 1px dashed #334155;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+      color: #f43f5e;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .red-dot {
+      width: 14px;
+      height: 14px;
+      background: #ef4444;
+      border: 2px solid #fff;
+      border-radius: 50%;
+      box-shadow: 0 0 8px rgba(239, 68, 68, 0.8);
+    }
+
+    /* Right Column: Screenshot & Red Overlays */
+    .right-col {
+      position: relative;
+      background: #000;
+      border: 1px solid #334155;
+      border-radius: 16px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .screenshot-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* Red Action Target Circles Overlay */
+    .target-overlay {
+      position: absolute;
+      border: 3px solid #ef4444;
+      background: rgba(239, 68, 68, 0.2);
+      border-radius: 50%;
+      box-shadow: 0 0 15px rgba(239, 68, 68, 0.9), inset 0 0 10px rgba(239, 68, 68, 0.5);
+      animation: pulse-ring 2s infinite;
+      pointer-events: none;
+    }
+
+    .target-badge {
+      position: absolute;
+      top: -12px;
+      right: -12px;
+      background: #ef4444;
+      color: #fff;
+      font-size: 10px;
+      font-weight: 800;
+      padding: 2px 6px;
+      border-radius: 999px;
+      border: 1.5px solid #fff;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    }
+
+    @keyframes pulse-ring {
+      0% { transform: scale(0.95); opacity: 0.8; }
+      50% { transform: scale(1.05); opacity: 1; }
+      100% { transform: scale(0.95); opacity: 0.8; }
+    }
+
+    /* Footer Print Note */
+    .manual-footer {
+      margin-top: 15px;
+      font-size: 10.5px;
+      color: #64748b;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    @media print {
+      body { background: #fff; color: #000; }
+      .page-container { padding: 0; max-width: 100%; }
+      .manual-page {
+        margin: 0;
+        box-shadow: none;
+        border: none;
+        height: 100vh;
+        page-break-after: always;
+        background: #0f172a;
+        color: #fff;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="page-container">
+
+  <!-- PAGE 1: STEP 1 - DONNA (LEAD) -->
+  <div class="manual-page">
+    <div class="manual-header">
+      <h1><span>🌐 IDS PULSE OPERATIONS SUITE</span> - VISUAL USER MANUAL</h1>
+      <span class="page-badge">Page 1 of 4 • Step 1</span>
+    </div>
+
+    <div class="split-grid">
+      <!-- LEFT COLUMN -->
+      <div class="left-col">
+        <div>
+          <div class="role-header">
+            <div class="role-avatar">D</div>
+            <div>
+              <div class="role-title">Donna Cabral (Operations Lead)</div>
+              <div class="role-subtitle">Role: Executive Dispatch & Company Setup</div>
+            </div>
+          </div>
+
+          <div class="scenario-box">
+            <h3>Scenario: Client & Job Setup</h3>
+            <ul class="scenario-list">
+              <li>Company Name: <span class="val">Test Company</span></li>
+              <li>Plant Location: <span class="val">Test Sample</span></li>
+              <li>Job / Part Number: <span class="val">77667</span></li>
+              <li>Allotted Hours: <span class="val">35.0 Hrs @ $45/hr</span></li>
+              <li>Assigned Inspector: <span class="val">Clarence Kuiken</span></li>
+            </ul>
+          </div>
+
+          <div class="actions-title">⚡ Step-by-Step Action Guide</div>
+          <ul class="action-steps">
+            <li data-step="1">Click <strong>`+ Onboard Company & Register Project`</strong> in top navigation bar.</li>
+            <li data-step="2">Fill Company Name: <strong>`Test Company`</strong> & Primary Contact.</li>
+            <li data-step="3">Set Bill Rate: <strong>`$45.00/hr`</strong> & Pay Rate: <strong>`$25.00/hr`</strong>.</li>
+            <li data-step="4">Assign Field Representative: <strong>`Clarence Kuiken`</strong>.</li>
+            <li data-step="5">Click <strong>`Onboard Company & Register Project Assignment`</strong>.</li>
+          </ul>
+        </div>
+
+        <div class="callout-legend">
+          <div class="legend-item"><div class="red-dot"></div>🔴 Circle 1: Top Navigation Onboard Button</div>
+          <div class="legend-item"><div class="red-dot"></div>🔴 Circle 2: Bill Rate Field ($45.00/hr)</div>
+          <div class="legend-item"><div class="red-dot"></div>🔴 Circle 3: Submit Onboarding Button</div>
+        </div>
+      </div>
+
+      <!-- RIGHT COLUMN -->
+      <div class="right-col">
+        <img src="file:///C:/Users/Sharoz/.gemini/antigravity/brain/db8c5851-2fbb-4e2e-a61d-b7dfddf9f71f/e2e_step1_admin_dispatch.png" class="screenshot-img" alt="Step 1 Admin Onboarding">
+        
+        <!-- Target Overlay 1 -->
+        <div class="target-overlay" style="top: 15px; right: 220px; width: 180px; height: 35px; border-radius: 8px;">
+          <span class="target-badge">🔴 1</span>
+        </div>
+        <!-- Target Overlay 2 -->
+        <div class="target-overlay" style="top: 240px; left: 80px; width: 140px; height: 40px; border-radius: 8px;">
+          <span class="target-badge">🔴 2</span>
+        </div>
+        <!-- Target Overlay 3 -->
+        <div class="target-overlay" style="bottom: 80px; left: 80px; width: 220px; height: 45px; border-radius: 8px;">
+          <span class="target-badge">🔴 3</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="manual-footer">
+      <span>IDS Pulse Version 2026.4 • Verified Live Production Build</span>
+      <span>Print Ready Blueprint (Press Ctrl+P to export PDF)</span>
+    </div>
+  </div>
+
+
+  <!-- PAGE 2: STEP 2 - CLARENCE (FIELD REP) -->
+  <div class="manual-page">
+    <div class="manual-header">
+      <h1><span>📱 FIELD INSPECTOR APP</span> - VISUAL USER MANUAL</h1>
+      <span class="page-badge">Page 2 of 4 • Step 2</span>
+    </div>
+
+    <div class="split-grid">
+      <!-- LEFT COLUMN -->
+      <div class="left-col">
+        <div>
+          <div class="role-header">
+            <div class="role-avatar" style="background:#8b5cf6;">C</div>
+            <div>
+              <div class="role-title">Clarence Kuiken (Field Inspector / QRE)</div>
+              <div class="role-subtitle">Role: Mobile Shift & Inspection Logging</div>
+            </div>
+          </div>
+
+          <div class="scenario-box">
+            <h3>Scenario: Daily Shift & Clock-In</h3>
+            <ul class="scenario-list">
+              <li>Operator ID: <span class="val">clarence</span></li>
+              <li>Active Job: <span class="val">Job 77667</span></li>
+              <li>Location: <span class="val">Test Sample Plant</span></li>
+              <li>Shift Logged: <span class="val">35.0 Billable Hours</span></li>
+              <li>Parts Sorted: <span class="val">1,250 Inspected / 42 Defect</span></li>
+            </ul>
+          </div>
+
+          <div class="actions-title">⚡ Step-by-Step Action Guide</div>
+          <ul class="action-steps">
+            <li data-step="1">Log into Operator Terminal with <strong>`clarence`</strong> / <strong>`IDSPulse2026!`</strong>.</li>
+            <li data-step="2">Select Plant Location: <strong>`Test Sample`</strong> from dropdown.</li>
+            <li data-step="3">Tap <strong>`CLOCK IN (START JOB)`</strong> to activate shift.</li>
+            <li data-step="4">Enter <strong>`35.0 Hours`</strong> logged, parts count, and tap <strong>`SUBMIT INSPECTION`</strong>.</li>
+          </ul>
+        </div>
+
+        <div class="callout-legend">
+          <div class="legend-item"><div class="red-dot"></div>🔴 Circle 1: Plant Selector Dropdown</div>
+          <div class="legend-item"><div class="red-dot"></div>🔴 Circle 2: Clock-In Action Button</div>
+          <div class="legend-item"><div class="red-dot"></div>🔴 Circle 3: Billable Hours Input (35.0 hrs)</div>
+        </div>
+      </div>
+
+      <!-- RIGHT COLUMN -->
+      <div class="right-col">
+        <img src="file:///C:/Users/Sharoz/.gemini/antigravity/brain/db8c5851-2fbb-4e2e-a61d-b7dfddf9f71f/e2e_step2_clarence_inspector.png" class="screenshot-img" alt="Step 2 Field Rep Terminal">
+        
+        <!-- Target Overlay 1 -->
+        <div class="target-overlay" style="top: 260px; left: 180px; width: 220px; height: 40px; border-radius: 8px;">
+          <span class="target-badge">🔴 1</span>
+        </div>
+        <!-- Target Overlay 2 -->
+        <div class="target-overlay" style="top: 320px; left: 180px; width: 220px; height: 45px; border-radius: 8px;">
+          <span class="target-badge">🔴 2</span>
+        </div>
+        <!-- Target Overlay 3 -->
+        <div class="target-overlay" style="bottom: 120px; left: 180px; width: 220px; height: 40px; border-radius: 8px;">
+          <span class="target-badge">🔴 3</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="manual-footer">
+      <span>IDS Pulse Version 2026.4 • Verified Live Production Build</span>
+      <span>Print Ready Blueprint (Press Ctrl+P to export PDF)</span>
+    </div>
+  </div>
+
+
+  <!-- PAGE 3: STEP 3 - COLLEEN (ACCOUNTANT) -->
+  <div class="manual-page">
+    <div class="manual-header">
+      <h1><span>📊 FINANCIAL & INVOICING DASHBOARD</span> - VISUAL USER MANUAL</h1>
+      <span class="page-badge">Page 3 of 4 • Step 3</span>
+    </div>
+
+    <div class="split-grid">
+      <!-- LEFT COLUMN -->
+      <div class="left-col">
+        <div>
+          <div class="role-header">
+            <div class="role-avatar" style="background:#10b981;">C</div>
+            <div>
+              <div class="role-title">Colleen Boyd (Financial Accountant)</div>
+              <div class="role-subtitle">Role: Rate Audit & PDF Invoice Generation</div>
+            </div>
+          </div>
+
+          <div class="scenario-box">
+            <h3>Scenario: Invoicing & Rate Audit</h3>
+            <ul class="scenario-list">
+              <li>Target Client: <span class="val">Test Company</span></li>
+              <li>Approved Hours: <span class="val">35.0 Hours</span></li>
+              <li>Billing Rate: <span class="val">$45.00/hr (Single Source)</span></li>
+              <li>Total Amount: <span class="val">$1,575.00</span></li>
+              <li>Schedule: <span class="val">On-Demand PDF Export</span></li>
+            </ul>
+          </div>
+
+          <div class="actions-title">⚡ Step-by-Step Action Guide</div>
+          <ul class="action-steps">
+            <li data-step="1">Log in as <strong>`colleen`</strong> & navigate to <strong>`Invoicing & Payments`</strong> tab.</li>
+            <li data-step="2">Audit 35 approved hours logged under <strong>`Job 77667`</strong>.</li>
+            <li data-step="3">Verify rate calculation (35 hrs × $45/hr = <strong>`$1,575.00`</strong>).</li>
+            <li data-step="4">Click <strong>`Generate Invoice PDF`</strong> for Test Company & download document.</li>
+          </ul>
+        </div>
+
+        <div class="callout-legend">
+          <div class="legend-item"><div class="red-dot"></div>🔴 Circle 1: Navigation Tab [Invoicing & Payments]</div>
+          <div class="legend-item"><div class="red-dot"></div>🔴 Circle 2: Test Company Timesheet Audit Row</div>
+          <div class="legend-item"><div class="red-dot"></div>🔴 Circle 3: Generate Invoice PDF Action Button</div>
+        </div>
+      </div>
+
+      <!-- RIGHT COLUMN -->
+      <div class="right-col">
+        <img src="file:///C:/Users/Sharoz/.gemini/antigravity/brain/db8c5851-2fbb-4e2e-a61d-b7dfddf9f71f/e2e_step3_colleen_invoice.png" class="screenshot-img" alt="Step 3 Financial Invoicing">
+        
+        <!-- Target Overlay 1 -->
+        <div class="target-overlay" style="top: 15px; left: 160px; width: 160px; height: 35px; border-radius: 8px;">
+          <span class="target-badge">🔴 1</span>
+        </div>
+        <!-- Target Overlay 2 -->
+        <div class="target-overlay" style="top: 220px; left: 40px; width: 500px; height: 50px; border-radius: 8px;">
+          <span class="target-badge">🔴 2</span>
+        </div>
+        <!-- Target Overlay 3 -->
+        <div class="target-overlay" style="bottom: 40px; right: 40px; width: 180px; height: 40px; border-radius: 8px;">
+          <span class="target-badge">🔴 3</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="manual-footer">
+      <span>IDS Pulse Version 2026.4 • Verified Live Production Build</span>
+      <span>Print Ready Blueprint (Press Ctrl+P to export PDF)</span>
+    </div>
+  </div>
+
+
+  <!-- PAGE 4: STEP 4 - CUSTOMER PORTAL -->
+  <div class="manual-page">
+    <div class="manual-header">
+      <h1><span>🔒 SCOPED CUSTOMER PORTAL</span> - VISUAL USER MANUAL</h1>
+      <span class="page-badge">Page 4 of 4 • Step 4</span>
+    </div>
+
+    <div class="split-grid">
+      <!-- LEFT COLUMN -->
+      <div class="left-col">
+        <div>
+          <div class="role-header">
+            <div class="role-avatar" style="background:#f59e0b;">A</div>
+            <div>
+              <div class="role-title">Customer Portal (autokabel / test_company)</div>
+              <div class="role-subtitle">Role: Scoped Client View & Security Audit</div>
+            </div>
+          </div>
+
+          <div class="scenario-box">
+            <h3>Scenario: Client Quality Dashboard</h3>
+            <ul class="scenario-list">
+              <li>Logged Account: <span class="val">test_company</span></li>
+              <li>Active Project: <span class="val">Job 77667 Audit</span></li>
+              <li>Logged Hours: <span class="val">35.0 / 35.0 Budget</span></li>
+              <li>RLS Security: <span class="val">100% Least Privilege Scoped</span></li>
+            </ul>
+          </div>
+
+          <div class="actions-title">⚡ Step-by-Step Action Guide</div>
+          <ul class="action-steps">
+            <li data-step="1">Log into Client Portal with <strong>`test_company`</strong> or <strong>`autokabel`</strong>.</li>
+            <li data-step="2">Verify job hours (<strong>`35.0 hrs`</strong>) and live quality sorting progress.</li>
+            <li data-step="3">Confirm zero visibility of internal staff directory or unassigned clients.</li>
+          </ul>
+        </div>
+
+        <div class="callout-legend">
+          <div class="legend-item"><div class="red-dot"></div>🔴 Circle 1: KPI Card [35.0 Billable Hours Logged]</div>
+          <div class="legend-item"><div class="red-dot"></div>🔴 Circle 2: Status Badge [Job 77667 Active]</div>
+          <div class="legend-item" style="color:#10b981;"><div class="red-dot" style="background:#10b981;"></div>🔒 Security Guard: Staff directory & internal logs 100% hidden.</div>
+        </div>
+      </div>
+
+      <!-- RIGHT COLUMN -->
+      <div class="right-col">
+        <img src="file:///C:/Users/Sharoz/.gemini/antigravity/brain/db8c5851-2fbb-4e2e-a61d-b7dfddf9f71f/e2e_step4_customer_portal.png" class="screenshot-img" alt="Step 4 Customer Portal">
+        
+        <!-- Target Overlay 1 -->
+        <div class="target-overlay" style="top: 90px; left: 40px; width: 220px; height: 90px; border-radius: 12px;">
+          <span class="target-badge">🔴 1</span>
+        </div>
+        <!-- Target Overlay 2 -->
+        <div class="target-overlay" style="top: 240px; left: 40px; width: 340px; height: 60px; border-radius: 8px;">
+          <span class="target-badge">🔴 2</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="manual-footer">
+      <span>IDS Pulse Version 2026.4 • Verified Live Production Build</span>
+      <span>Print Ready Blueprint (Press Ctrl+P to export PDF)</span>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

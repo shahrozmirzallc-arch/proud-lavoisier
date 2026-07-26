@@ -146,6 +146,7 @@ function App() {
   const [systemUsername, setSystemUsername] = useState('');
   const [systemPassword, setSystemPassword] = useState('');
   const [authError, setAuthError] = useState(false);
+  const [authChecking, setAuthChecking] = useState(true);
 
   useEffect(() => {
     document.body.classList.remove('theme-royal-blue', 'theme-neon-violet', 'theme-emerald-green', 'theme-ruby-red');

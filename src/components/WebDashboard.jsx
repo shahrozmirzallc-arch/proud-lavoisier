@@ -1648,11 +1648,14 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
   const addNotification = (title, message, type = "info") => {
     const id = Date.now() + Math.random();
-    setNotifications(prev => [...prev, { id, title, message, type }]);
+    setNotifications(prev => {
+      const trimmed = prev.slice(-2); // Keep maximum 3 toasts visible to prevent visual clutter
+      return [...trimmed, { id, title, message, type }];
+    });
     playNotificationSound();
     setTimeout(() => {
       setNotifications(prev => prev.filter(n => n.id !== id));
-    }, 6000);
+    }, 4500);
   };
 
   // Quick Action Forms state
@@ -10820,12 +10823,15 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       )}
 
       {/* Toast Notification Corner Stack */}
-      <div className="absolute top-20 right-6 z-50 flex flex-col gap-3 max-w-sm w-full pointer-events-none">
+      <div className="fixed top-24 right-6 z-[9999] flex flex-col gap-2.5 max-w-sm w-full pointer-events-none">
         {notifications.map(n => (
           <div 
             key={n.id} 
-            className="pointer-events-auto bg-surface-elevated border-2 border-border-subtle rounded-2xl p-3 shadow-2xl flex gap-3 items-start animate-in slide-in-from-right duration-300 relative overflow-hidden"
-            style={{ borderColor: n.type === 'defect' ? '#ef4444' : (n.type === 'rework' || n.type === 'expense') ? '#10b981' : '#0ea5e9' }}
+            className="pointer-events-auto bg-slate-950 border-2 rounded-2xl p-3.5 shadow-2xl flex gap-3 items-start animate-in slide-in-from-right duration-300 relative overflow-hidden text-left"
+            style={{ 
+              backgroundColor: '#020617', // 100% opaque solid background to prevent text bleed-through
+              borderColor: n.type === 'defect' ? '#ef4444' : (n.type === 'rework' || n.type === 'expense') ? '#10b981' : '#0ea5e9' 
+            }}
           >
             {/* Ambient indicator accent line on the side */}
             <div 
@@ -10833,18 +10839,18 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
               style={{ backgroundColor: n.type === 'defect' ? '#ef4444' : (n.type === 'rework' || n.type === 'expense') ? '#10b981' : '#0ea5e9' }}
             />
             <div className="flex-1 pl-1 text-left">
-              <h4 className="text-[13.5px] font-black text-text-primary uppercase tracking-wider flex items-center gap-1.5">
-                {n.type === 'defect' && <AlertCircle className="w-3.5 h-3.5 text-red-500" />}
-                {n.type === 'rework' && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />}
-                {n.type === 'shift' && <Activity className="w-3.5 h-3.5 text-cyan-600" />}
-                {n.type === 'expense' && <DollarSign className="w-3.5 h-3.5 text-emerald-600" />}
+              <h4 className="text-[13.5px] font-black text-white uppercase tracking-wider flex items-center gap-1.5">
+                {n.type === 'defect' && <AlertCircle className="w-3.5 h-3.5 text-red-500 flex-shrink-0" />}
+                {n.type === 'rework' && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />}
+                {n.type === 'shift' && <Activity className="w-3.5 h-3.5 text-cyan-400 flex-shrink-0" />}
+                {n.type === 'expense' && <DollarSign className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />}
                 {n.title}
               </h4>
-              <p className="text-[11.5px] text-text-primary leading-relaxed mt-1 font-medium">{n.message}</p>
+              <p className="text-[11.5px] text-slate-200 leading-relaxed mt-1 font-medium">{n.message}</p>
             </div>
             <button 
               onClick={() => setNotifications(prev => prev.filter(item => item.id !== n.id))}
-              className="text-text-secondary hover:text-text-primary text-[13.5px] font-bold p-0.5 cursor-pointer focus:outline-none"
+              className="text-slate-400 hover:text-white text-[13.5px] font-bold p-0.5 cursor-pointer focus:outline-none"
             >
               ✕
             </button>

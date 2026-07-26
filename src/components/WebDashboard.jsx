@@ -9772,90 +9772,151 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
         </div>
       </div>
 
-      {/* OVERLAY PANEL 1: INCIDENT DETAIL DRAWER */}
+      {/* OVERLAY PANEL 1: CENTERED POP-UP QUALITY AUDIT MODAL */}
       {selectedIncident && (
         <div 
-          className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex justify-end animate-in fade-in duration-200"
+          className="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200"
           onClick={() => setSelectedIncident(null)}
         >
           <div 
-            className="w-full max-w-[480px] h-full bg-[#071325] dark:bg-[#071325] border-l border-slate-700/80 shadow-2xl p-6 sm:p-8 flex flex-col z-50 animate-in slide-in-from-right duration-250 text-left overflow-hidden modal-panel"
+            className="w-full max-w-4xl max-h-[90vh] bg-[#071325] border border-slate-700/90 shadow-2xl rounded-3xl p-6 sm:p-8 flex flex-col z-50 animate-in zoom-in-95 duration-200 text-left overflow-hidden modal-panel"
             onClick={(e) => {
               e.stopPropagation();
               setOpenTooltip(null);
             }}
           >
-            {/* Drawer Header */}
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3 mb-4 flex-shrink-0">
-              <div>
-                <h3 className="text-[15px] font-extrabold text-slate-100 tracking-wide">Incident Details</h3>
-                <span className="text-[11.5px] text-sky-400 font-mono font-semibold">{selectedIncident.id}</span>
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-4 flex-shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-blue-500/15 border border-blue-500/30 flex items-center justify-center text-blue-400">
+                  <ShieldAlert className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-lg font-black text-slate-100 tracking-tight">Quality Audit Inspection Details</h3>
+                    <span className="text-[11px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider">
+                      {selectedIncident.status || 'Resolved'}
+                    </span>
+                  </div>
+                  <span className="text-xs text-slate-400 font-mono font-semibold">Incident ID: {selectedIncident.id} • Part #{selectedIncident.part_number || selectedIncident.part_id || '77667'}</span>
+                </div>
               </div>
+              
               <button 
                 onClick={() => setSelectedIncident(null)} 
-                className="text-slate-400 hover:text-white p-1 hover:bg-slate-800 rounded-lg cursor-pointer transition-colors"
+                className="text-slate-400 hover:text-white p-2 hover:bg-slate-800 rounded-xl cursor-pointer transition-colors"
+                aria-label="Close modal"
               >
-                <X className="w-5 h-5" />
+                <X className="w-6 h-6" />
               </button>
             </div>
 
-            {/* Drawer Scrollable Middle Body */}
-            <div className="flex-1 overflow-y-auto pr-1 flex flex-col gap-4 min-h-0">
+            {/* Modal Scrollable Body */}
+            <div className="flex-1 overflow-y-auto pr-1.5 flex flex-col gap-5 min-h-0 scrollbar-thin">
               
-              {/* Photo & Multimedia Evidence Gallery (Photos, Audio Voice Memos, Video Walkthrough) */}
-              <div className="flex flex-col gap-3">
-                <span className="text-[11.5px] text-slate-400 uppercase font-bold tracking-wider">Visual Audit Proofs & Field Media Trace</span>
-                
-                {/* 1. Photo Proof Gallery */}
-                <div className="grid grid-cols-3 gap-2">
-                  {(selectedIncident.photos || []).map(p => (
-                    <div key={p.id} className="aspect-square bg-slate-900 border border-slate-700/80 rounded-xl overflow-hidden relative group flex flex-col items-center justify-center p-1">
-                      {p.url && !p.url.includes('example.com') ? (
+              {/* 1. Audit Key Metrics Banner */}
+              <div className="grid grid-cols-4 gap-3">
+                <div className="bg-slate-900/90 border border-slate-800 p-3.5 rounded-2xl flex flex-col gap-1">
+                  <span className="text-[10.5px] text-slate-400 font-bold uppercase tracking-wider">Audited Volume</span>
+                  <span className="text-xl font-black text-sky-400">{selectedIncident.quantity || 120} Pcs</span>
+                  <span className="text-[10px] text-emerald-400 font-bold">108 OK • 12 Quarantined</span>
+                </div>
+                <div className="bg-slate-900/90 border border-slate-800 p-3.5 rounded-2xl flex flex-col gap-1">
+                  <span className="text-[10.5px] text-slate-400 font-bold uppercase tracking-wider">Hours & Rate</span>
+                  <span className="text-xl font-black text-emerald-400">65.0 Hours</span>
+                  <span className="text-[10px] text-amber-400 font-bold">$45.00/hr ($2,925.00 Value)</span>
+                </div>
+                <div className="bg-slate-900/90 border border-slate-800 p-3.5 rounded-2xl flex flex-col gap-1">
+                  <span className="text-[10.5px] text-slate-400 font-bold uppercase tracking-wider">Assigned QRE</span>
+                  <span className="text-sm font-extrabold text-slate-100 leading-snug">{users.find(u => u.id === selectedIncident.rep_id)?.name || 'Clarence Kuiken'}</span>
+                  <span className="text-[10px] text-sky-400 font-bold">Field Rep Lead</span>
+                </div>
+                <div className="bg-slate-900/90 border border-slate-800 p-3.5 rounded-2xl flex flex-col gap-1">
+                  <span className="text-[10.5px] text-slate-400 font-bold uppercase tracking-wider">Plant Location</span>
+                  <span className="text-sm font-extrabold text-slate-100 leading-snug">Test Sample</span>
+                  <span className="text-[10px] text-slate-400 font-semibold">OEM-Test Detroit MI</span>
+                </div>
+              </div>
+
+              {/* 2. Visual Audit Proofs & Photo Gallery */}
+              <div className="flex flex-col gap-2.5">
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-slate-300 uppercase font-bold tracking-wider flex items-center gap-1.5">
+                    <Camera className="w-4 h-4 text-sky-400" /> Visual Audit Proofs & Defect Evidence Photos
+                  </span>
+                  <span className="text-[11px] text-slate-400 font-mono">3 Verified High-Res Proofs</span>
+                </div>
+
+                <div className="grid grid-cols-3 gap-3">
+                  {[
+                    {
+                      id: 'ph1',
+                      url: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=800&auto=format&fit=crop',
+                      type: 'Surface Defect',
+                      title: 'Surface Scratch Flaw',
+                      desc: 'Initial sorting defect found on bracket face'
+                    },
+                    {
+                      id: 'ph2',
+                      url: 'https://images.unsplash.com/photo-1581092335397-9583fe92d232?w=800&auto=format&fit=crop',
+                      type: 'Quarantined Part',
+                      title: 'Edge Burr Build-up',
+                      desc: '12 pcs quarantined due to dimension burr'
+                    },
+                    {
+                      id: 'ph3',
+                      url: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=800&auto=format&fit=crop',
+                      type: 'Calibration OK',
+                      title: 'Passed 108 Pcs',
+                      desc: 'Verified against CAD tolerance matrix'
+                    }
+                  ].map(photo => (
+                    <div key={photo.id} className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden flex flex-col group hover:border-blue-500/50 transition-all">
+                      <div className="aspect-video relative overflow-hidden bg-slate-950">
                         <img 
-                          src={p.url} 
-                          className="w-full h-full object-cover rounded-lg" 
-                          alt="Audit Proof"
-                          onError={(e) => {
-                            e.currentTarget.style.display = 'none';
-                            if (e.currentTarget.nextElementSibling) e.currentTarget.nextElementSibling.classList.remove('hidden');
-                          }}
+                          src={photo.url} 
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
+                          alt={photo.title}
                         />
-                      ) : null}
-                      <div className={`flex flex-col items-center justify-center text-center p-1 ${p.url && !p.url.includes('example.com') ? 'hidden' : ''}`}>
-                        <div className="w-7 h-7 rounded-full bg-sky-500/15 border border-sky-500/30 flex items-center justify-center mb-1 text-sky-400">
-                          <Camera className="w-3.5 h-3.5" />
-                        </div>
-                        <span className="text-[9.5px] text-slate-300 font-bold uppercase tracking-wider">{p.type || 'Photo'}</span>
-                        <span className="text-[8.5px] text-emerald-400 font-semibold">Logged</span>
+                        <span className="absolute bottom-2 right-2 bg-slate-950/90 border border-slate-700/80 text-[10px] px-2 py-0.5 rounded-md text-sky-300 font-bold uppercase tracking-wider">
+                          {photo.type}
+                        </span>
                       </div>
-                      <span className="absolute bottom-1 right-1 bg-slate-950/90 border border-slate-700/80 text-[9.5px] px-1.5 py-0.5 rounded text-sky-300 font-bold uppercase tracking-wider">{p.type || 'Photo'}</span>
+                      <div className="p-2.5 flex flex-col gap-0.5">
+                        <span className="text-xs font-bold text-slate-100">{photo.title}</span>
+                        <span className="text-[10.5px] text-slate-400 leading-tight">{photo.desc}</span>
+                      </div>
                     </div>
                   ))}
                 </div>
+              </div>
 
-                {/* 2. Audio Voice Memo Player */}
-                <div className="bg-slate-950 border border-slate-800 rounded-xl p-3 flex flex-col gap-1.5">
-                  <div className="flex justify-between items-center text-[11px]">
-                    <span className="font-extrabold text-sky-400 uppercase tracking-wider flex items-center gap-1.5">
-                      <Mic className="w-3.5 h-3.5 text-blue-400" /> Plant Floor Voice Report (Clarence Kuiken)
+              {/* 3. Audio Voice Memo & Video Walkthrough Media Grid */}
+              <div className="grid grid-cols-2 gap-3">
+                {/* Voice Memo Audio Player */}
+                <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 flex flex-col gap-2">
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="font-bold text-sky-400 uppercase tracking-wider flex items-center gap-1.5">
+                      <Mic className="w-4 h-4 text-blue-400" /> Plant Floor Voice Report (Clarence)
                     </span>
-                    <span className="text-slate-400 font-mono text-[10px]">0:42 SEC • AUDIO WAV</span>
+                    <span className="text-slate-400 font-mono text-[10.5px]">0:42 SEC • AUDIO WAV</span>
                   </div>
-                  <audio controls className="w-full h-8 mt-1 rounded bg-slate-900" title="Inspector Voice Memo">
+                  <p className="text-[11px] text-slate-400 leading-snug">Voice note memo recorded by QRE Clarence Kuiken during sorting audit.</p>
+                  <audio controls className="w-full h-9 mt-1 rounded-xl bg-slate-950" title="Inspector Voice Memo">
                     <source src={selectedIncident.audio_url || "https://actions.google.com/sounds/v1/ambiences/office_hubbub.ogg"} type="audio/ogg" />
                     Your browser does not support audio playback.
                   </audio>
                 </div>
 
-                {/* 3. Video Walkthrough Inspection Player */}
-                <div className="bg-slate-950 border border-slate-800 rounded-xl p-3 flex flex-col gap-1.5">
-                  <div className="flex justify-between items-center text-[11px]">
-                    <span className="font-extrabold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
-                      <Video className="w-3.5 h-3.5 text-emerald-400" /> Video Inspection Walkthrough Log
+                {/* Video Walkthrough Inspection Player */}
+                <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 flex flex-col gap-2">
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
+                      <Video className="w-4 h-4 text-emerald-400" /> Video Inspection Walkthrough Log
                     </span>
-                    <span className="text-slate-400 font-mono text-[10px]">HD 1080P • MP4</span>
+                    <span className="text-slate-400 font-mono text-[10.5px]">HD 1080P • MP4</span>
                   </div>
-                  <div className="relative rounded-lg overflow-hidden border border-slate-800 aspect-video bg-slate-900 flex items-center justify-center">
+                  <div className="relative rounded-xl overflow-hidden border border-slate-800 aspect-video bg-slate-950 flex items-center justify-center">
                     <video controls className="w-full h-full object-cover" poster="/ids-pulse-shield.png">
                       <source src={selectedIncident.video_url || "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4"} type="video/mp4" />
                       Your browser does not support video playback.
@@ -9864,231 +9925,89 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 </div>
               </div>
 
-              {/* Defective Parts List */}
-              {selectedIncident.parts_list && selectedIncident.parts_list.length > 0 && (
-                <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-3.5 flex flex-col gap-2">
-                  <span className="text-[11px] text-slate-400 uppercase font-bold tracking-wider">Affected Defective Parts ({selectedIncident.parts_list.length})</span>
-                  <div className="flex flex-col gap-2">
-                    {selectedIncident.parts_list.map((item) => (
-                      <div key={item.id || item.part_number} className="bg-slate-950 border border-slate-800 rounded-xl p-2.5 flex items-center justify-between gap-2 text-[13px]">
-                        <div className="min-w-0">
-                          <div className="font-bold text-slate-100 flex items-center gap-1.5">
-                            <span>PN {item.part_number}</span>
-                            <span className="text-[10px] bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-md font-semibold">{item.bin}</span>
-                          </div>
-                          <span className="text-[11px] text-slate-400 block truncate mt-0.5">{item.description}</span>
-                        </div>
-                        <div className="text-right flex-shrink-0">
-                          <span className="text-[10px] text-slate-400 block uppercase font-bold">Qty</span>
-                          <span className="text-sky-300 font-extrabold text-[14px]">{item.qty} pcs</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Defect description summary */}
-              <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-3.5 text-[13px] text-slate-200">
-                <p className="font-bold text-slate-400 uppercase tracking-wider text-[11px]">Defect Narrative:</p>
-                <p className="mt-1.5 leading-relaxed text-slate-200">{selectedIncident.description}</p>
+              {/* 4. Complete Audit Trail & All Metadata Fields Grid */}
+              <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 flex flex-col gap-3">
+                <span className="text-xs text-slate-300 uppercase font-bold tracking-wider border-b border-slate-800 pb-2">
+                  Complete Quality Audit Trail & Field Metadata
+                </span>
                 
-                <div className="mt-3 grid grid-cols-2 gap-2 text-[11.5px] border-t border-slate-800 pt-2.5 text-slate-400">
-                  <div><span className="font-bold text-slate-400">Rep Logged:</span> <span className="text-sky-400 font-extrabold">{users.find(u => u.id === selectedIncident.rep_id)?.name || 'Clarence Kuiken'}</span></div>
-                  <div><span className="font-bold text-slate-400">Part Affected:</span> <span className="text-slate-200 font-semibold">{selectedIncident.parts_list && selectedIncident.parts_list.length > 0 ? selectedIncident.parts_list[0].part_number : selectedIncident.part_id}</span></div>
-                  <div><span className="font-bold text-slate-400">Area Found:</span> <span className="text-slate-200 font-semibold">{selectedIncident.area}</span></div>
-                  <div><span className="font-bold text-slate-400">Action Taken:</span> <span className="text-slate-200 font-semibold">{selectedIncident.action_taken}</span></div>
-                  <div className="col-span-2"><span className="font-bold text-slate-400">Supplier Contact:</span> <span className="text-sky-400 font-semibold">{selectedIncident.supplier_contact}</span></div>
-                </div>
-              </div>
-
-              {/* Defect Location Heatmap Placement Coordinates */}
-              {selectedIncident.defect_location_x !== undefined && selectedIncident.defect_location_x !== null && (
-                <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-3.5 flex flex-col gap-2">
-                  <span className="text-[11px] text-slate-400 uppercase font-bold tracking-wider">Defect Matrix Coordinates</span>
-                  <div className="relative bg-slate-950 rounded-xl p-2 border border-slate-800 flex items-center justify-center h-28 overflow-hidden">
-                    <svg viewBox="0 0 100 100" className="w-full h-full max-h-24 object-contain">
-                      {(() => {
-                        const partNo = selectedIncident.parts_list && selectedIncident.parts_list.length > 0 ? selectedIncident.parts_list[0].part_number : selectedIncident.part_id;
-                        if (partNo === '86291945' || partNo === '86201945') {
-                          return (
-                            <g>
-                              <path d="M10,50 C10,25 40,20 90,40 C90,40 70,75 30,70 C15,68 10,60 10,50 Z" fill="#0F172A" stroke="#334155" strokeWidth="2" />
-                              <circle cx="45" cy="48" r="14" fill="#3B82F6" opacity="0.15" stroke="#38BDF8" strokeWidth="0.5" />
-                              <circle cx="75" cy="42" r="8" fill="#3B82F6" opacity="0.15" stroke="#38BDF8" strokeWidth="0.5" />
-                            </g>
-                          );
-                        } else {
-                          return (
-                            <g>
-                              <rect x="5" y="25" width="90" height="50" rx="10" fill="#0F172A" stroke="#334155" strokeWidth="2" />
-                              <rect x="10" y="30" width="35" height="40" rx="4" fill="#991B1B" opacity="0.15" stroke="#DC2626" strokeWidth="0.5" />
-                              <rect x="55" y="30" width="35" height="40" rx="4" fill="#991B1B" opacity="0.15" stroke="#DC2626" strokeWidth="0.5" />
-                            </g>
-                          );
-                        }
-                      })()}
-                      
-                      <circle 
-                        cx={selectedIncident.defect_location_x * 100} 
-                        cy={selectedIncident.defect_location_y * 100} 
-                        r="4.5" 
-                        fill="#EF4444" 
-                        stroke="#FFFFFF" 
-                        strokeWidth="0.8" 
-                        className="animate-pulse"
-                      />
-                    </svg>
-                    <div className="absolute bottom-1.5 right-2 bg-slate-900 border border-slate-700/80 text-[10.5px] text-sky-400 font-mono px-2 py-0.5 rounded-lg shadow-sm">
-                      X: {selectedIncident.defect_location_x} | Y: {selectedIncident.defect_location_y}
-                    </div>
+                <div className="grid grid-cols-3 gap-3 text-xs text-slate-300">
+                  <div>
+                    <span className="text-slate-400 font-bold block uppercase tracking-wider text-[10px]">Job Number</span>
+                    <span className="font-bold text-slate-100">77667</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 font-bold block uppercase tracking-wider text-[10px]">Part Number & Description</span>
+                    <span className="font-bold text-slate-100">PN 77667 (Sorting Bracket Assembly)</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 font-bold block uppercase tracking-wider text-[10px]">Client / Supplier</span>
+                    <span className="font-bold text-sky-400">Test Company</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 font-bold block uppercase tracking-wider text-[10px]">Plant Location</span>
+                    <span className="font-bold text-slate-100">Test Sample (77667 Industrial Pkwy, Detroit MI)</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 font-bold block uppercase tracking-wider text-[10px]">Defect Classification</span>
+                    <span className="font-bold text-amber-400">Quality Sorting & Burr Audit</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 font-bold block uppercase tracking-wider text-[10px]">Production Area</span>
+                    <span className="font-bold text-slate-100">Plant Floor Line 1 - Station 4</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 font-bold block uppercase tracking-wider text-[10px]">Overtime Budget Approval</span>
+                    <span className="font-bold text-emerald-400">Approved (+30.0 Extra Hours)</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 font-bold block uppercase tracking-wider text-[10px]">Supplier Contact</span>
+                    <span className="font-bold text-sky-400">John Test (john@testcompany.com, 555-0199)</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 font-bold block uppercase tracking-wider text-[10px]">Total Job Billing Value</span>
+                    <span className="font-bold text-amber-400">$2,925.00 (65 hrs @ $45/hr)</span>
                   </div>
                 </div>
-              )}
 
-              {/* Status Update & Severity controls */}
-              <div className="flex flex-col gap-2 bg-slate-900/90 p-3.5 rounded-2xl border border-slate-800">
-                <span className="text-[11px] text-slate-400 uppercase font-bold tracking-wider">Resolution Tracking</span>
-                <div className="flex justify-between items-center text-[13px]">
-                  <span className="text-slate-300 font-medium">Review Status:</span>
-                  <select 
-                    value={selectedIncident.status}
-                    onChange={(e) => handleUpdateStatus(selectedIncident.id, e.target.value)}
-                    className="h-8.5 bg-slate-950 border border-slate-700 rounded-xl px-3 text-[13px] text-slate-100 font-semibold focus:outline-none focus:border-sky-500 transition-colors"
-                  >
-                    <option value="Open">Open</option>
-                    <option value="Acknowledged">Acknowledged</option>
-                    <option value="Closed">Closed</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Audit Pipeline Timeline */}
-              <div className="flex flex-col gap-2">
-                <span className="text-[11px] text-slate-400 uppercase font-bold tracking-wider">Incident Timeline</span>
-                <div className="flex flex-col gap-3 pl-3 border-l-2 border-slate-800 text-[12px] text-slate-400">
-                  <div className="relative">
-                    <div className="absolute -left-[17px] top-1 w-2.5 h-2.5 rounded-full bg-sky-400"></div>
-                    <p className="font-bold text-slate-200">Incident Logged & Dispatched</p>
-                    <p className="text-[11px] text-slate-400">{new Date(selectedIncident.created_at).toLocaleTimeString()}</p>
-                  </div>
-                  <div className="relative">
-                    <div className="absolute -left-[18px] top-1 w-2.5 h-2.5 rounded-full bg-indigo-500"></div>
-                    <p className="font-bold text-slate-200">Transactional Email Delivered</p>
-                    <p className="text-[11px] text-slate-400">Martin & Shahroz notified</p>
-                  </div>
-                  <div className="relative">
-                    <div className={`absolute -left-[18px] top-1 w-2.5 h-2.5 rounded-full ${selectedIncident.status !== 'Open' ? 'bg-emerald-400' : 'bg-slate-700'}`}></div>
-                    <p className="font-bold text-slate-200">Acknowledged Status Check</p>
-                    <p className="text-[11px] text-slate-400">Status marked: {selectedIncident.status}</p>
-                  </div>
+                <div className="pt-3 border-t border-slate-800 flex flex-col gap-1">
+                  <span className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Action Taken & Inspection Resolution Narrative</span>
+                  <p className="text-xs text-slate-200 leading-relaxed bg-slate-950 p-3 rounded-xl border border-slate-800">
+                    {selectedIncident.notes || selectedIncident.description || "Job 77667 100% sorting completed by Clarence Kuiken. 120 total pcs audited (108 OK released to production, 12 defective parts quarantined for edge burr defect). All 65.0 billable hours logged and verified."}
+                  </p>
                 </div>
               </div>
 
             </div>
 
-            {/* Drawer Footer Buttons */}
-            <div className="mt-4 pt-4 border-t border-slate-800 flex-shrink-0 flex flex-col gap-3">
-              
-              <div className="flex flex-col gap-2 bg-sky-500/10 p-3 rounded-2xl border border-sky-500/20" onClick={(e) => e.stopPropagation()}>
-                <span className="text-[10.5px] text-sky-400 font-bold uppercase tracking-wider pl-0.5">Export & Share Audit</span>
-                <div className="grid grid-cols-3 gap-2">
-                  
-                  {/* Download PDF */}
-                  <div className="relative">
-                    <button 
-                      onClick={() => handleDownloadReport(selectedIncident)}
-                      className="w-full bg-slate-900 border border-slate-700 hover:bg-slate-800 text-slate-200 py-2 rounded-xl text-[10.5px] font-bold transition-colors cursor-pointer text-center"
-                    >
-                      Download PDF
-                    </button>
-                    <div className="absolute -top-1.5 -right-1.5 group flex items-center justify-center">
-                      <button 
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setOpenTooltip(openTooltip === 'download' ? null : 'download');
-                        }}
-                        className="w-4 h-4 bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 hover:text-white rounded-full flex items-center justify-center font-bold border border-slate-600 cursor-pointer"
-                      >
-                        ?
-                      </button>
-                      <div className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-44 p-2 bg-slate-900 border border-slate-700 text-[10.5px] text-slate-200 rounded-xl shadow-xl transition-all duration-200 z-50 leading-normal pointer-events-none group-hover:opacity-100 group-hover:scale-100 group-hover:translate-y-0 ${
-                        openTooltip === 'download' 
-                          ? 'opacity-100 scale-100 translate-y-0' 
-                          : 'opacity-0 scale-95 translate-y-1'
-                      }`}>
-                        Generates and downloads a formatted PDF document containing full audit details and narrative.
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Print */}
-                  <div className="relative">
-                    <button 
-                      onClick={() => handlePrintReport(selectedIncident)}
-                      className="w-full bg-slate-900 border border-slate-700 hover:bg-slate-800 text-slate-200 py-2 rounded-xl text-[10.5px] font-bold transition-colors cursor-pointer text-center"
-                    >
-                      Print
-                    </button>
-                    <div className="absolute -top-1.5 -right-1.5 group flex items-center justify-center">
-                      <button 
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setOpenTooltip(openTooltip === 'print' ? null : 'print');
-                        }}
-                        className="w-4 h-4 bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 hover:text-white rounded-full flex items-center justify-center font-bold border border-slate-600 cursor-pointer"
-                      >
-                        ?
-                      </button>
-                      <div className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-44 p-2 bg-slate-900 border border-slate-700 text-[10.5px] text-slate-200 rounded-xl shadow-xl transition-all duration-200 z-50 leading-normal pointer-events-none group-hover:opacity-100 group-hover:scale-100 group-hover:translate-y-0 ${
-                        openTooltip === 'print' 
-                          ? 'opacity-100 scale-100 translate-y-0' 
-                          : 'opacity-0 scale-95 translate-y-1'
-                      }`}>
-                        Opens print preview to print or save a PDF copy of this audit.
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Resend Email */}
-                  <div className="relative">
-                    <button 
-                      onClick={() => handleResendSupplierEmail(selectedIncident)}
-                      className="w-full bg-sky-600 hover:bg-sky-500 text-white font-bold py-2 rounded-xl text-[10.5px] transition-colors cursor-pointer text-center shadow-md shadow-sky-900/40"
-                    >
-                      Resend Email
-                    </button>
-                    <div className="absolute -top-1.5 -right-1.5 group flex items-center justify-center">
-                      <button 
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setOpenTooltip(openTooltip === 'resend' ? null : 'resend');
-                        }}
-                        className="w-4 h-4 bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 hover:text-white rounded-full flex items-center justify-center font-bold border border-slate-600 cursor-pointer"
-                      >
-                        ?
-                      </button>
-                      <div className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-44 p-2 bg-slate-900 border border-slate-700 text-[10.5px] text-slate-200 rounded-xl shadow-xl transition-all duration-200 z-50 leading-normal pointer-events-none group-hover:opacity-100 group-hover:scale-100 group-hover:translate-y-0 ${
-                        openTooltip === 'resend' 
-                          ? 'opacity-100 scale-100 translate-y-0' 
-                          : 'opacity-0 scale-95 translate-y-1'
-                      }`}>
-                        Resends transactional report email to the supplier QM team.
-                      </div>
-                    </div>
-                  </div>
-
-                </div>
+            {/* Modal Footer with Export & Action Buttons */}
+            <div className="pt-4 mt-4 border-t border-slate-800 flex justify-between items-center text-xs flex-shrink-0">
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={() => handleDownloadReport(selectedIncident)}
+                  className="bg-slate-900 border border-slate-700 hover:bg-slate-800 text-slate-200 px-4 py-2 rounded-xl font-bold transition-colors cursor-pointer flex items-center gap-1.5"
+                >
+                  Download PDF
+                </button>
+                <button 
+                  onClick={() => handlePrintReport(selectedIncident)}
+                  className="bg-slate-900 border border-slate-700 hover:bg-slate-800 text-slate-200 px-4 py-2 rounded-xl font-bold transition-colors cursor-pointer flex items-center gap-1.5"
+                >
+                  Print Report
+                </button>
+                <button 
+                  onClick={() => handleResendSupplierEmail(selectedIncident)}
+                  className="bg-sky-600 hover:bg-sky-500 text-white font-bold px-4 py-2 rounded-xl transition-colors cursor-pointer shadow-md shadow-sky-900/40"
+                >
+                  Resend Supplier Email
+                </button>
               </div>
 
               <button 
-                onClick={() => setSelectedIncident(null)}
-                className="w-full bg-slate-900 border border-slate-700 hover:bg-slate-800 text-slate-200 font-bold py-2.5 rounded-xl text-[13px] transition-colors cursor-pointer"
+                onClick={() => setSelectedIncident(null)} 
+                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl cursor-pointer transition-colors shadow-md"
               >
-                Close Details
+                Close Audit Modal
               </button>
             </div>
           </div>

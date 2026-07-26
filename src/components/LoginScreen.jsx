@@ -40,6 +40,8 @@ export default function LoginScreen({ onSignedIn }) {
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
+  const candidateSha = import.meta.env.VITE_COMMIT_SHA || 'e7bf82c1cc0b6e49f3b5e38372331950281e6108';
+
   const submit = async (event) => {
     event.preventDefault();
     setError('');
@@ -118,7 +120,7 @@ export default function LoginScreen({ onSignedIn }) {
           </div>
           <span className="login-eyebrow">IDS Pulse secure access</span>
           <h2>Welcome back</h2>
-          <p>Sign in with your authorized Super Admin account.</p>
+          <p>Sign in with your authorized credentials to access your workspace.</p>
 
           <form onSubmit={submit} noValidate>
             <label className="login-field" htmlFor="login-username">
@@ -187,13 +189,11 @@ export default function LoginScreen({ onSignedIn }) {
             </button>
           </form>
 
-
-
           <small className="login-support">
             Need access help? Contact your IDS Pulse administrator.
           </small>
           <div className="mt-3 text-center text-[10px] text-slate-400 font-mono">
-            Candidate Build SHA: <span className="font-bold text-sky-400">6be1bae20a16ade7a371493a9e62a1b07c28769e</span>
+            Candidate Build SHA: <span className="font-bold text-sky-400">{candidateSha}</span>
           </div>
         </div>
       </section>

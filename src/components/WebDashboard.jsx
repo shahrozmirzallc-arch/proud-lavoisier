@@ -1817,11 +1817,16 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       return false;
     }
 
-    const matchesSearch = 
-      inc.part_id?.toLowerCase()?.includes(searchQuery?.toLowerCase()) ||
-      (inc.parts_list && inc.parts_list.some(p => p.part_number?.toLowerCase()?.includes(searchQuery?.toLowerCase()))) ||
-      inc.description?.toLowerCase()?.includes(searchQuery?.toLowerCase()) ||
-      inc.area?.toLowerCase()?.includes(searchQuery?.toLowerCase());
+    const partMatchStr = (inc.part_id || inc.part_number || '').toLowerCase();
+    const descMatchStr = (inc.description || inc.notes || '').toLowerCase();
+    const areaMatchStr = (inc.area || '').toLowerCase();
+    const searchLow = (searchQuery || '').toLowerCase();
+
+    const matchesSearch = !searchLow ||
+      partMatchStr.includes(searchLow) ||
+      descMatchStr.includes(searchLow) ||
+      areaMatchStr.includes(searchLow) ||
+      (inc.parts_list && inc.parts_list.some(p => p.part_number?.toLowerCase()?.includes(searchLow)));
     const matchesSupplier = selectedSupplierFilter === 'all' || inc.supplier_id === selectedSupplierFilter;
     const matchesStatus = selectedStatusFilter === 'all' || inc.status === selectedStatusFilter;
     const matchesDate = showAllDates || inc.created_at?.startsWith(selectedDate);

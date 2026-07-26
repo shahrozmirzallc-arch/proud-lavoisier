@@ -163,13 +163,25 @@ export async function syncWithSupabase(force = false, roleOverride = null, repId
         let data = [];
         let error = null;
 
-        // NATIVE RLS SERVER-SIDE READ QUERIES
+        // NATIVE RLS SERVER-SIDE READ QUERIES WITH IDENTITY SCOPING
         if (col === 'rates' && !isAdmin) {
           data = [];
         } else if (col === 'expenseEntries' && role === 'customer') {
           data = [];
         } else {
-          const { data: defaultData, error: defaultErr } = await supabase.from(targetTable).select('*');
+          let query = supabase.from(targetTable).select('*');
+          if (!isAdmin) {
+            if (role === 'customer' && customerId) {
+              if (['incidents', 'time_entries', 'extra_hours_requests', 'projects', 'suppliers'].includes(targetTable)) {
+                query = query.or(`supplier_id.eq.${customerId},supplier_id.ilike.%${customerId}%`);
+              }
+            } else if (role === 'rep' && repId) {
+              if (['incidents', 'time_entries', 'shift_reports', 'extra_hours_requests', 'projects'].includes(targetTable)) {
+                query = query.or(`rep_id.eq.${repId}`);
+              }
+            }
+          }
+          const { data: defaultData, error: defaultErr } = await query;
           data = defaultData;
           error = defaultErr;
         }

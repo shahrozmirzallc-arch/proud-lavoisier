@@ -34,6 +34,8 @@ export const generateTrackingCode = (clientPrefix, dateString, prefix = '') => {
   return `${pfx}-W${weekNumber}-${prefix}${rand}`;
 };
 
+export const CONFIG_MILEAGE_RATE = 0.73;
+
 export const calculateOT = (hours, dateString, rules) => {
   if (!rules) return { regular: hours, ot: 0, ot_reason: null };
   const d = new Date(dateString);
@@ -3923,7 +3925,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
         const plantName = entry.plant_id === 'gm_oshawa' ? 'GM Oshawa Plant' : 'Hutchinson Plant';
 
         const repRateObj = (rates || []).find(r => r.rep_id === entry.rep_id);
-        const rateVal = repRateObj?.billing_rate || repRateObj?.hourly_rate || 28.00;
+        const rateVal = (repRateObj?.billing_rate !== undefined && repRateObj?.billing_rate !== null) ? parseFloat(repRateObj.billing_rate) : ((repRateObj?.hourly_rate !== undefined && repRateObj?.hourly_rate !== null) ? parseFloat(repRateObj.hourly_rate) : (entry.billing_rate ? parseFloat(entry.billing_rate) : 0));
 
         const mileageCost = (entry.mileage_km || 0) * 0.73;
         const totalBilling = (entry.hours || 0) * rateVal + mileageCost;

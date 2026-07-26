@@ -1725,7 +1725,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     playNotificationSound();
     setTimeout(() => {
       setNotifications(prev => prev.filter(n => n.id !== id));
-    }, 3500);
+    }, 10000); // 10-second display duration before auto-disappearing
   };
 
   // Quick Action Forms state
@@ -10816,7 +10816,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
         </div>
       )}
 
-      {/* Toast Notification Corner Stack (Positioned at bottom-right to eliminate top header UI overlap) */}
+      {/* Toast Notification Corner Stack (Positioned at bottom-right, 10s display, interactive tab redirection) */}
       <div className="fixed bottom-6 right-6 z-[99999] flex flex-col gap-2.5 max-w-sm w-full pointer-events-none">
         {notifications.length > 1 && (
           <div className="flex justify-end pointer-events-auto">
@@ -10831,7 +10831,19 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
         {notifications.map(n => (
           <div 
             key={n.id} 
-            className="pointer-events-auto bg-[#020617] border-2 rounded-2xl p-4 shadow-[0_25px_60px_rgba(0,0,0,0.95)] ring-1 ring-white/10 flex gap-3 items-start animate-in slide-in-from-bottom-4 duration-300 relative overflow-hidden text-left"
+            onClick={() => {
+              if (n.type === 'defect' || n.type === 'rework') {
+                setActiveTab('incidents');
+              } else if (n.type === 'shift') {
+                setActiveTab('shift-reports');
+              } else if (n.type === 'expense') {
+                setActiveTab('logging');
+              } else {
+                setActiveTab('command-center');
+              }
+              setNotifications(prev => prev.filter(item => item.id !== n.id));
+            }}
+            className="pointer-events-auto bg-[#020617] hover:bg-[#090d1f] border-2 rounded-2xl p-4 shadow-[0_25px_60px_rgba(0,0,0,0.95)] ring-1 ring-white/10 flex gap-3 items-start animate-in slide-in-from-bottom-4 duration-300 relative overflow-hidden text-left cursor-pointer group transition-all hover:scale-[1.02]"
             style={{ 
               backgroundColor: '#020617', // 100% solid opaque obsidian black to eliminate text bleed-through
               borderColor: n.type === 'defect' ? '#ef4444' : (n.type === 'rework' || n.type === 'expense') ? '#10b981' : '#0ea5e9' 
@@ -10839,11 +10851,11 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
           >
             {/* Solid Accent Line Indicator */}
             <div 
-              className="absolute left-0 top-0 bottom-0 w-1.5" 
+              className="absolute left-0 top-0 bottom-0 w-1.5 group-hover:w-2 transition-all" 
               style={{ backgroundColor: n.type === 'defect' ? '#ef4444' : (n.type === 'rework' || n.type === 'expense') ? '#10b981' : '#0ea5e9' }}
             />
             <div className="flex-1 pl-1 text-left">
-              <h4 className="text-[13px] font-black text-white uppercase tracking-wider flex items-center gap-1.5">
+              <h4 className="text-[13px] font-black text-white uppercase tracking-wider flex items-center gap-1.5 group-hover:text-blue-300 transition-colors">
                 {n.type === 'defect' && <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />}
                 {n.type === 'rework' && <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />}
                 {n.type === 'shift' && <Activity className="w-4 h-4 text-cyan-400 flex-shrink-0" />}
@@ -10851,10 +10863,17 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 {n.title}
               </h4>
               <p className="text-[11.5px] text-slate-200 leading-relaxed mt-1 font-medium">{n.message}</p>
+              <div className="mt-2 flex items-center gap-1 text-[10.5px] font-black text-blue-400 group-hover:text-blue-300 uppercase tracking-wider">
+                <span>Click to open target section</span>
+                <span>➔</span>
+              </div>
             </div>
             <button 
-              onClick={() => setNotifications(prev => prev.filter(item => item.id !== n.id))}
-              className="text-slate-400 hover:text-white bg-slate-800/60 hover:bg-slate-700 w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold transition-all cursor-pointer focus:outline-none flex-shrink-0"
+              onClick={(e) => {
+                e.stopPropagation();
+                setNotifications(prev => prev.filter(item => item.id !== n.id));
+              }}
+              className="text-slate-400 hover:text-white bg-slate-800/60 hover:bg-slate-700 w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold transition-all cursor-pointer focus:outline-none flex-shrink-0 z-10"
               title="Dismiss notification"
             >
               ✕

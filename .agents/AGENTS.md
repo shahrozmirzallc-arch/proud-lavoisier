@@ -23,4 +23,6 @@ To ensure historical mistakes are never repeated, the agent MUST obey the follow
 - **Zero-Overlap PDF Layout Engine**: All PDF export templates must enforce multiline text wrapping (`doc.splitTextToSize`), dynamic font scaling for long strings (e.g. invoice numbers), auto-truncation for fixed metadata columns, and multi-column height recalculation.
 - **Strict Lint & Zero Undeclared Variables Guardrail**: Never deploy without `npm run build` passing. `no-undef` MUST remain set to `'error'` in `eslint.config.js` and `package.json` MUST enforce `eslint . && vite build` on every build to permanently block undeclared variable runtime crashes.
 - **Zero Main-Thread Blocking & INP Guardrail**: All heavy user interaction handlers (PDF/Excel exports, batch email dispatches, canvas markup) MUST yield execution (`setTimeout` / `requestAnimationFrame`) so UI updates paint in `< 16ms`. Search/filter inputs MUST use `useDeferredValue` or debouncing to prevent keypress latency.
+- **Strict Super Admin Confidentiality & Zero Credential Leaks in Reports**: NEVER share, list, output, or disclose Super Admin credentials (usernames, email addresses, or raw passwords) in any generated report, audit document, commit message, walkthrough artifact, or handoff summary. Super Admin details MUST remain 100% confidential at all times.
+
 

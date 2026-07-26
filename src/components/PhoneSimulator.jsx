@@ -110,6 +110,9 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
   const [expenseCategory, setExpenseCategory] = useState('Fuel');
   const [expenseReceiptPhoto, setExpenseReceiptPhoto] = useState(null);
   const [expenseNotes, setExpenseNotes] = useState('');
+
+  // Overtime Request Edit State
+  const [editingOvertimeId, setEditingOvertimeId] = useState(null);
   const [overtimeHours, setOvertimeHours] = useState('');
   const [overtimeReason, setOvertimeReason] = useState('');
   const [manualShiftDate, setManualShiftDate] = useState('');
@@ -1517,7 +1520,21 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
               <button onClick={() => setIncStep(1)} className={`py-2 font-bold ${incStep === 1 ? 'text-blue-700 border-b-2 border-blue-600 bg-blue-50' : 'text-slate-600'}`}>1. Capture</button>
               <button onClick={() => setIncStep(2)} className={`py-2 font-bold ${incStep === 2 ? 'text-blue-700 border-b-2 border-blue-600 bg-blue-50' : 'text-slate-600'}`}>2. Scan</button>
               <button onClick={() => setIncStep(3)} className={`py-2 font-bold ${incStep === 3 ? 'text-blue-700 border-b-2 border-blue-600 bg-blue-50' : 'text-slate-600'}`}>3. Describe</button>
-              <button onClick={() => setIncStep(4)} className={`py-2 font-bold ${incStep === 4 ? 'text-blue-700 border-b-2 border-blue-600 bg-blue-50' : 'text-slate-600'}`}>4. Send</button>
+              <button 
+                onClick={() => {
+                  const hasWide = !!(capturedPhotos.wide || annotatedPhotos.wide);
+                  const hasMedium = !!(capturedPhotos.medium || annotatedPhotos.medium);
+                  const hasCloseup = !!(capturedPhotos.closeup || annotatedPhotos.closeup);
+                  if (!hasWide || !hasMedium || !hasCloseup) {
+                    showToast("Completeness Error: Please capture Wide, Medium, and Close-up evidence photos first!", "warning");
+                    return;
+                  }
+                  setIncStep(4);
+                }} 
+                className={`py-2 font-bold ${incStep === 4 ? 'text-blue-700 border-b-2 border-blue-600 bg-blue-50' : 'text-slate-600'}`}
+              >
+                4. Send
+              </button>
             </div>
 
             {/* Scrollable Form Content */}
@@ -2907,26 +2924,49 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
             <div className="flex flex-col gap-4">
               <form onSubmit={(e) => {
                 e.preventDefault();
-                if(!overtimeHours) return showToast("Please enter overtime hours.", "warning");
-                saveExtraHoursRequest({
-                  rep_id: currentUser?.id || 'rep_clarence',
+                if (!overtimeHours) return showToast("Please enter overtime hours.", "warning");
+
+                const dbReqs = getEntities('extraHoursRequests') || [];
+                const repId = currentUser?.id || 'rep_clarence';
+
+                // Check if open request is already pending (only if not editing an existing request)
+                if (!editingOvertimeId) {
+                  const openPending = dbReqs.find(r => r.rep_id === repId && (r.status === 'pending_customer' || r.status === 'pending_admin'));
+                  if (openPending) {
+                    showToast("An open overtime request is already pending approval!", "warning");
+                    return;
+                  }
+                }
+
+                const otId = editingOvertimeId || `ehr_${Date.now()}`;
+                const existingObj = dbReqs.find(r => r.id === otId);
+
+                const otPayload = {
+                  id: otId,
+                  rep_id: repId,
                   userName: currentUser?.name || 'Clarence Kuiken',
                   supplier_id: 'test_company',
-                  plant_id: 'test_sample',
+                  plant_id: selectedPlant || 'test_sample',
                   hours: parseFloat(overtimeHours),
                   reason: overtimeReason,
-                  status: 'pending_customer'
-                });
-                addExpenseEntry({
-                  rep_id: currentUser?.id || 'rep_clarence',
-                  date: new Date().toISOString()?.split('T')[0],
-                  category: 'Overtime Request',
-                  amount: parseFloat(overtimeHours),
-                  notes: overtimeReason,
-                  status: 'pending_customer'
-                });
-                showToast("Overtime requested! Pending customer approval.", "success");
-                setOvertimeHours(''); setOvertimeReason(''); setActiveScreen('home');
+                  status: 'pending_customer',
+                  created_at: existingObj?.created_at || new Date().toISOString(),
+                  history: [
+                    ...(existingObj?.history || []),
+                    {
+                      status: 'pending_customer',
+                      user: currentUser?.name || 'Field Rep',
+                      timestamp: new Date().toISOString(),
+                      comment: overtimeReason
+                    }
+                  ]
+                };
+
+                saveEntity('extraHoursRequests', otPayload);
+                setEditingOvertimeId(null);
+                setOvertimeHours('');
+                setOvertimeReason('');
+                showToast(editingOvertimeId ? "Revised overtime request re-submitted!" : "Overtime requested! Pending customer approval.", "success");
                 window.dispatchEvent(new Event('ids_pulse_db_update'));
               }} className="flex flex-col gap-3">
                 <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl shadow-sm">
@@ -3007,13 +3047,14 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                             <p className="text-[11px] text-rose-200">{req.customer_comment || req.notes || "Budget cap exceeded. Please lower to +15 hours or clarify defect scope."}</p>
                             <button 
                               onClick={() => {
-                                setOvertimeHours('15.0');
-                                setOvertimeReason(`[RE-SUBMITTED] Revised hours to +15.0 per customer feedback. ${req.reason || ''}`);
-                                showToast("Overtime form pre-filled with revised +15.0 hours!", "info");
+                                setEditingOvertimeId(req.id);
+                                setOvertimeHours(String(req.hours || '15.0'));
+                                setOvertimeReason(`[RE-SUBMITTED] Revised per customer feedback: ${req.customer_comment || ''}`);
+                                showToast("Overtime form pre-filled for revision!", "info");
                               }}
                               className="mt-1 py-1.5 px-3 bg-sky-600 hover:bg-sky-500 text-white font-bold text-[11px] rounded-md transition-colors cursor-pointer text-center"
                             >
-                              Re-Submit Revised Request (+15.0 Hrs)
+                              Re-Submit Revised Request
                             </button>
                           </div>
                         )}

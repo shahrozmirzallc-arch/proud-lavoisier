@@ -343,9 +343,10 @@ export async function flushOfflineQueue() {
   
   for (const item of queue) {
     try {
-      const { error } = await supabase.from(item.type).upsert(item.entity);
+      const tableName = getSupabaseTableName(item.type);
+      const { error } = await supabase.from(tableName).upsert(item.entity);
       if (error) {
-        console.error(`[Recovery Error] ${item.type}:`, error.message);
+        console.error(`[Recovery Error] ${tableName}:`, error.message);
         failed.push(item);
       }
     } catch (err) {

@@ -299,27 +299,18 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
     setSubmittingAuth(true);
 
     try {
-      let mappedEmail = inputUser;
-      if (!inputUser.includes('@')) {
-        const { data: rpcEmail } = await supabase.rpc('get_auth_email_by_username', { p_username: inputUser });
-        mappedEmail = rpcEmail || `${inputUser}@idspulse.com`;
-      } else {
-        const usernamePart = inputUser.split('@')[0];
-        const { data: rpcEmail } = await supabase.rpc('get_auth_email_by_username', { p_username: usernamePart });
-        if (rpcEmail) {
-          mappedEmail = rpcEmail;
-        }
-      }
+      const { data: rpcEmail } = await supabase.rpc('get_auth_email_by_username', { p_username: inputUser });
+      const targetEmail = rpcEmail || (inputUser.includes('@') ? inputUser : `${inputUser}@idspulse.com`);
 
       let { data: authData, error: authErr } = await supabase.auth.signInWithPassword({
-        email: mappedEmail,
+        email: targetEmail,
         password: rawPw
       });
 
       if (authErr && rawPw) {
         const capPw = rawPw.charAt(0).toUpperCase() + rawPw.slice(1);
         const { data: capAuthData, error: capErr } = await supabase.auth.signInWithPassword({
-          email: mappedEmail,
+          email: targetEmail,
           password: capPw
         });
         if (!capErr && capAuthData?.session) {

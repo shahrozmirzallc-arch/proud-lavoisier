@@ -1242,8 +1242,6 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
         plant_id: targetPlantId,
         rep_id: assignedRepId,
         start_date: newProjStartDate || new Date().toISOString().split('T')[0],
-        billing_rate: bRate,
-        pay_rate: pRate,
         currency: newProjCurrency || 'USD',
         status: 'Active'
       };
@@ -2043,7 +2041,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     .reduce((acc, curr) => acc + curr.hours, 0);
   
   const totalMileageCost = totalMileage * ratePerKm;
-  const totalHoursCost = (timeEntries || []).reduce((acc, curr) => acc + ((curr.hours || 0) * (curr.billing_rate || getRepSupplierRates(curr.rep_id, curr.supplier_id, curr.plant_id).billing_rate || 32.00)), 0);
+  const totalHoursCost = (timeEntries || []).reduce((acc, curr) => acc + ((curr.hours || 0) * ((curr.billing_rate !== undefined && curr.billing_rate !== null) ? parseFloat(curr.billing_rate) : getRepSupplierRates(curr.rep_id, curr.supplier_id, curr.plant_id).billing_rate)), 0);
   const totalInvoicedEst = totalMileageCost + totalHoursCost;
 
   // Dynamic currency-aware totals for Admin billing overview
@@ -3084,7 +3082,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
     const totalHoursVal = timeEntries.reduce((acc, curr) => acc + curr.hours, 0);
     const totalMileageVal = timeEntries.reduce((acc, curr) => acc + curr.mileage_km, 0);
-    const totalInvoicedEstVal = (timeEntries || []).reduce((acc, curr) => acc + ((curr.hours || 0) * (curr.billing_rate || getRepSupplierRates(curr.rep_id, curr.supplier_id, curr.plant_id).billing_rate || 32.00)) + ((curr.mileage_km || 0) * 0.73), 0);
+    const totalInvoicedEstVal = (timeEntries || []).reduce((acc, curr) => acc + ((curr.hours || 0) * ((curr.billing_rate !== undefined && curr.billing_rate !== null) ? parseFloat(curr.billing_rate) : getRepSupplierRates(curr.rep_id, curr.supplier_id, curr.plant_id).billing_rate)) + ((curr.mileage_km || 0) * 0.73), 0);
 
     doc.setFont("helvetica", "bold");
     doc.setFontSize(12);
@@ -3652,7 +3650,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
         const repName = rep ? rep.name : 'Unknown Rep';
         const plant = entry.plant_id === 'gm_oshawa' ? 'GM Oshawa Plant' : 'Hutchinson Plant';
         const mileageCost = (entry.mileage_km || 0) * 0.73;
-        const rate = entry.billing_rate || getRepSupplierRates(entry.rep_id, entry.supplier_id, entry.plant_id).billing_rate || 32.00;
+        const rate = (entry.billing_rate !== undefined && entry.billing_rate !== null) ? parseFloat(entry.billing_rate) : getRepSupplierRates(entry.rep_id, entry.supplier_id, entry.plant_id).billing_rate;
         const totalBilling = (entry.hours || 0) * rate + mileageCost;
         return [
           `"${repName?.replace(/"/g, '""')}"`,
@@ -9373,19 +9371,33 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                           return;
                         }
                         const repDetails = users.find(u => u.id === newProjRep);
+                        const projId = `prj_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
                         const newProjectItem = {
+                          id: projId,
                           project_number: `PRJ-${newProjClient?.substring(0, 3)?.toUpperCase()}-${Math.floor(100 + Math.random() * 900)}`,
                           client_id: newProjClient,
+                          supplier_id: newProjClient,
                           description: `Rep ${repDetails ? repDetails.name?.split(' ')[1] || repDetails.name : 'Staff'} ${newProjDesc || 'Inspection'}`,
                           plant_id: newProjPlant,
                           rep_id: newProjRep,
                           start_date: newProjStartDate || new Date().toISOString()?.split('T')[0],
                           currency: newProjCurrency,
-                          billing_rate: parseFloat(newProjBilling),
-                          pay_rate: parseFloat(newProjPay),
                           status: 'Active'
                         };
                         addProject(newProjectItem);
+
+                        const newRateItem = {
+                          id: `rate_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+                          rep_id: newProjRep,
+                          supplier_id: newProjClient,
+                          client_id: newProjClient,
+                          plant_id: newProjPlant,
+                          project_id: projId,
+                          billing_rate: String(newProjBilling),
+                          pay_rate: String(newProjPay),
+                          currency: newProjCurrency || 'USD'
+                        };
+                        saveEntity('rates', newRateItem);
                         logSystemEvent('system', 'create_project', `Registered new project ${newProjectItem.project_number} for client ${newProjClient} at location ${newProjPlant}.`);
                         alert("Project registered successfully!");
                         // Reset fields
@@ -9610,8 +9622,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         
                         <div className="bg-surface border border-border-subtle rounded-xl p-6 sm:p-8 flex flex-col">
                           <span className="text-[11.5px] font-bold text-text-secondary uppercase tracking-wider">Financials</span>
-                          <span className="text-[14.5px] font-black text-emerald-600 mt-1">Bill: {sym} {parseFloat(proj.billing_rate).toFixed(2)}/hr</span>
-                          <span className="text-[12.5px] text-text-secondary mt-0.5">Pay: {sym} {parseFloat(proj.pay_rate).toFixed(2)}/hr</span>
+                          <span className="text-[14.5px] font-black text-emerald-600 mt-1">Bill: {sym} {ratesObj.is_configured ? ratesObj.billing_rate.toFixed(2) : '0.00'}/hr</span>
+                          <span className="text-[12.5px] text-text-secondary mt-0.5">Pay: {sym} {ratesObj.is_configured ? ratesObj.pay_rate.toFixed(2) : '0.00'}/hr</span>
                         </div>
                         
                         <div className="bg-surface border border-border-subtle rounded-xl p-6 sm:p-8 flex flex-col">

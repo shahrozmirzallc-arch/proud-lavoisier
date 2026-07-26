@@ -49,7 +49,9 @@ export const calculateOT = (hours, dateString, rules) => {
   return { regular: hours, ot: 0, ot_reason: null };
 };
 
-export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false, userRole = 'admin', currentUserRepId = '', currentUserCustomerId = '', layoutMode = 'side-by-side' }) {
+export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false, userRole = 'admin', currentUserRepId = '', currentUserCustomerId = '', currentUser = null, layoutMode = 'side-by-side' }) {
+  const getActiveActorName = () => currentUser?.user_metadata?.full_name || currentUser?.app_metadata?.username || (userRole === 'shahroz' ? 'Shahroz Mirza' : (userRole === 'owner' ? 'Greg Phillippe' : (userRole === 'accountant' ? 'Colleen Boyd' : (userRole === 'lead' ? 'Donna Cabral' : 'Administrator'))));
+
   const [incidents, setIncidents] = useState([]);
   const [emailLogs, setEmailLogs] = useState([]);
   const [reworkLogs, setReworkLogs] = useState([]);
@@ -472,8 +474,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
   // Dynamic Rate Override Resolver with Plant/Location scoping and active session role protection
   const getRepSupplierRates = (rep_id, supplier_id, plant_id = '') => {
-    const role = sessionStorage.getItem('ids_pulse_role') || 'rep';
-    const isAdmin = ['admin', 'owner', 'super_admin', 'accountant', 'lead', 'shahroz', 'donna', 'idspulse']?.includes(role);
+    const role = userRole || 'customer';
+    const isAdmin = ['admin', 'owner', 'super_admin', 'accountant', 'lead', 'shahroz'].includes(role);
     if (!isAdmin) {
       return { billing_rate: 0, pay_rate: 0, currency: 'USD' };
     }
@@ -599,7 +601,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     };
     saveEntity('rates', newRate);
     setRates(getEntities('rates'));
-    const user = sessionStorage.getItem('ids_pulse_admin_user') || 'Admin';
+    const user = getActiveActorName();
     logSystemEvent('system', 'save_rate', `${user} configured custom rate for Rep ${configRepId} serving client ${configSupplierId} (Bill: $${configBillingRate} ${configCurrency}, Pay: $${configPayRate}).`);
     alert("Custom rate override saved successfully!");
   };
@@ -607,7 +609,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   const handleDeleteRate = (rateId) => {
     deleteRate(rateId);
     setRates(getEntities('rates') || []);
-    const user = sessionStorage.getItem('ids_pulse_admin_user') || 'Admin';
+    const user = getActiveActorName();
     logSystemEvent('system', 'delete_rate', `${user} deleted custom rate override configuration ID ${rateId}.`);
   };
 
@@ -741,7 +743,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       const notes = entry.notes || 'Shift sorting log';
       csv += `"${date}","${repName}","${clientName}","Standard Sorting Support","${duration}","${notes}","Billable"\n`;
     });
-    const user = sessionStorage.getItem('ids_pulse_admin_user') || 'Admin';
+    const user = getActiveActorName();
     logSystemEvent('payroll', 'quickbooks_export', `${user} exported QuickBooks CSV timesheets for supplier ${selectedInvoiceSupplier}.`);
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
@@ -860,7 +862,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
         updatedAt: new Date().toISOString()
       }));
 
-      const actor = users.find(u => u && u.id === (currentUserRepId || currentUserCustomerId))?.name || sessionStorage.getItem('ids_pulse_admin_user') || 'Accountant';
+      const actor = users.find(u => u && u.id === (currentUserRepId || currentUserCustomerId))?.name || getActiveActorName();
       logSystemEvent('payroll', 'cer_grid_save', `${actor} saved and persisted Weekly CER Audit & Timesheet Report for ${weeklyGridPerson} (Date: ${weeklyGridDate}).`);
 
       setWeeklyGridSaveMessage(true);
@@ -1013,7 +1015,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       doc.text("TOTAL DUE:", 120, y);
       doc.text(`${curSymbol}${totalBill.toFixed(2)}`, 160, y);
 
-      const user = sessionStorage.getItem('ids_pulse_admin_user') || 'Admin';
+      const user = getActiveActorName();
       logSystemEvent('payroll', 'invoice_export', `${user} generated client billing invoice PDF for ${client.name}.`);
       doc.save(`Invoice_${client.name?.replace(/\s+/g, '_')}_${Date.now()}.pdf`);
     } catch (err) {
@@ -1041,7 +1043,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     };
     saveEntity('suppliers', newCust);
     setSuppliers(getEntities('suppliers'));
-    const user = sessionStorage.getItem('ids_pulse_admin_user') || 'Admin';
+    const user = getActiveActorName();
     logSystemEvent('system', 'create_customer', `${user} onboarded new client/supplier ${newCustomerName} with contact ${newCustomerContactName}.`);
     setNewCustomerName('');
     setNewCustomerAddress('');
@@ -1085,7 +1087,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     saveEntity('rates', newRate);
     setRates(getEntities('rates'));
     
-    const userLoc = sessionStorage.getItem('ids_pulse_admin_user') || 'Admin';
+    const userLoc = getActiveActorName();
     logSystemEvent('system', 'create_location', `${userLoc} created plant location ${newLocationName} mapped to supplier ${newLocationSupplierId}.`);
 
     setNewLocationName('');
@@ -1112,7 +1114,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     saveEntity('users', newRep);
     setUsers(getEntities('users'));
     
-    const userRep = sessionStorage.getItem('ids_pulse_admin_user') || 'Admin';
+    const userRep = getActiveActorName();
     logSystemEvent('system', 'create_representative', `${userRep} onboarded representative ${newRepName} (${newRepPayCurrency}).`);
 
     setNewRepName('');
@@ -1140,7 +1142,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     };
     saveEntity('users', newRep);
     setUsers(getEntities('users'));
-    const user = sessionStorage.getItem('ids_pulse_admin_user') || 'Admin';
+    const user = getActiveActorName();
     logSystemEvent('system', 'quick_add_rep', `${user} quick-added representative ${quickRepName}.`);
     setQuickRepName('');
     setQuickRepEmail('');
@@ -1438,7 +1440,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
       saveEntity('extraHoursRequests', match);
       setExtraHoursRequests(getEntities('extraHoursRequests'));
-      const user = sessionStorage.getItem('ids_pulse_admin_user') || 'Admin';
+      const user = getActiveActorName();
       logSystemEvent('payroll', 'admin_overtime_approval', `${user} ${statusAction}d overtime request ${reqId} for Rep ${match.rep_id}.`);
       setAdminApprovalComment('');
       alert(`Request ${statusAction === 'approve' ? 'Approved & Added to Timesheets' : 'Rejected'}!`);
@@ -1452,7 +1454,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       match.status = statusAction === 'approve' ? 'approved' : 'rejected';
       saveEntity('expenseEntries', match);
       setExpenseEntries(getEntities('expenseEntries'));
-      const user = sessionStorage.getItem('ids_pulse_admin_user') || 'Admin';
+      const user = getActiveActorName();
       logSystemEvent('payroll', 'admin_expense_approval', `${user} ${statusAction}d expense claim ${expId} for Rep ${match.rep_id}.`);
       alert(`Expense claim ${statusAction === 'approve' ? 'Approved' : 'Rejected'}!`);
     }
@@ -1465,7 +1467,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       match.status = 'published';
       saveEntity('shiftReports', match);
       setShiftReports(getEntities('shiftReports'));
-      const user = sessionStorage.getItem('ids_pulse_admin_user') || 'Admin';
+      const user = getActiveActorName();
       logSystemEvent('shift', 'publish_report', `${user} published shift report ${reportId} to Customer Portal.`);
       alert("Report published successfully to Customer!");
     }
@@ -1800,7 +1802,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     if (found) {
       found.status = newStatus;
       saveEntity('incidents', found);
-      const user = sessionStorage.getItem('ids_pulse_admin_user') || 'Admin';
+      const user = getActiveActorName();
       logSystemEvent('incident', 'update_status', `${user} updated incident ${incidentId} status to ${newStatus}.`);
       
       // Update local state immediately
@@ -4351,41 +4353,39 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
           {/* User Profile Widget */}
           <div className="flex items-center gap-2 px-2.5 h-9 bg-surface-elevated border border-slate-100 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
             {(() => {
-              const uRole = sessionStorage.getItem('ids_pulse_role') || 'admin';
-              const uUser = sessionStorage.getItem('ids_pulse_admin_user');
-              const uCustId = sessionStorage.getItem('ids_pulse_customer_id');
-              const uRepId = sessionStorage.getItem('ids_pulse_rep_id');
+              const appMeta = currentUser?.app_metadata || {};
+              const userMeta = currentUser?.user_metadata || {};
+              const targetUsername = appMeta.username || userMeta.username || '';
               
-              let initials = 'DC';
-              let fullName = 'Donna Cabral';
-              let title = 'QA Supervisor';
-              
-              if (uRole === 'customer') {
-                const supp = (suppliers || []).find(s => s.id === uCustId);
-                fullName = supp?.name || uCustId || 'Client Portal';
+              let fullName = userMeta.full_name || targetUsername || 'Authorized User';
+              let title = 'Authorized User';
+              let initials = 'AU';
+
+              if (userRole === 'customer') {
+                const custId = currentUserCustomerId || appMeta.customer_id || targetUsername;
+                const supp = (suppliers || []).find(s => s.id === custId || s.name?.toLowerCase() === custId?.toLowerCase() || s.name?.toLowerCase()?.includes(custId?.toLowerCase()));
+                fullName = supp?.name || userMeta.company_name || custId || 'Client Portal';
                 title = 'Verified Client';
                 initials = fullName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) || 'CP';
-              } else if (uRole === 'rep') {
-                const repObj = (users || []).find(u => u.id === uRepId);
-                fullName = repObj?.name || 'Field Inspector';
+              } else if (userRole === 'rep') {
+                const repId = currentUserRepId || appMeta.rep_id;
+                const repObj = (users || []).find(u => u.id === repId || u.username === targetUsername);
+                fullName = repObj?.name || userMeta.full_name || 'Field Inspector';
                 title = repObj?.title || 'Quality Inspector';
                 initials = fullName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) || 'QI';
               } else {
-                if (uRole === 'accountant' || uUser === 'colleen') { initials = 'CB'; fullName = 'Colleen B.'; title = 'Accountant'; }
-                else if (uRole === 'shahroz' || uUser === 'shahroz') { initials = 'SM'; fullName = 'Shahroz Mirza'; title = 'Super Admin'; }
-                else if (uUser === 'greg') { initials = 'GP'; fullName = 'Greg Phillippe'; title = 'Director of Quality'; }
-                else if (uUser === 'monica') { initials = 'MV'; fullName = 'Monica Vargas'; title = 'Executive Assistant'; }
-                else if (uUser === 'diana') { initials = 'DP'; fullName = 'Diana Pulse'; title = 'Executive Admin'; }
-                else if (uUser === 'iris') { initials = 'IR'; fullName = 'Iris R.'; title = 'QA Admin'; }
-                else if (uUser === 'miriam') { initials = 'MB'; fullName = 'Miriam B.'; title = 'QA Coordinator'; }
+                const dbUser = (users || []).find(u => u.username === targetUsername || u.email === currentUser?.email);
+                fullName = dbUser?.name || userMeta.full_name || (userRole === 'shahroz' ? 'Shahroz Mirza' : (userRole === 'owner' ? 'Greg Phillippe' : (userRole === 'accountant' ? 'Colleen Boyd' : (userRole === 'lead' ? 'Donna Cabral' : 'Enterprise Admin'))));
+                title = dbUser?.title || (userRole === 'shahroz' ? 'Super Admin' : (userRole === 'owner' ? 'Director of Quality' : (userRole === 'accountant' ? 'Accountant' : (userRole === 'lead' ? 'QA Supervisor' : 'Enterprise Admin'))));
+                initials = fullName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) || 'ADM';
               }
-              
+
               return (
                 <>
-                  <div className="w-6 h-6 rounded-full bg-[#3B82F6] flex items-center justify-center font-bold text-[10.5px] text-[#3B82F6] border border-[#3B82F6]/25">
+                  <div className="w-6 h-6 rounded-full bg-[#3B82F6] flex items-center justify-center font-bold text-[10.5px] text-white border border-[#3B82F6]/25">
                     {initials}
                   </div>
-                  <div className="hidden lg:flex flex-col text-left justify-center">
+                  <div className="flex flex-col text-left justify-center">
                     <span className="text-[10.5px] font-extrabold text-text-primary leading-none">{fullName}</span>
                     <span className="text-[11.5px] text-[#3B82F6] font-bold mt-0.5 leading-none">{title}</span>
                   </div>
@@ -4395,7 +4395,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
           </div>
 
           {/* Admin-Only Header Controls (Hidden for Reps and Customers) */}
-          {['admin', 'owner', 'accountant', 'lead', 'shahroz'].includes(sessionStorage.getItem('ids_pulse_authenticated_role') || sessionStorage.getItem('ids_pulse_role')) && (
+          {['admin', 'owner', 'accountant', 'lead', 'shahroz', 'super_admin'].includes(userRole) && (
             <>
               <div className="flex items-center gap-1 bg-surface-elevated border border-border-subtle p-1 rounded-xl shadow-inner">
                 <button 

@@ -118,12 +118,12 @@ export async function syncWithSupabase(force = false, roleOverride = null, repId
   }
 
   isSyncing = true;
-  const authRole = sessionStorage.getItem('ids_pulse_authenticated_role') || roleOverride || sessionStorage.getItem('ids_pulse_role') || 'rep';
-  const role = roleOverride || sessionStorage.getItem('ids_pulse_role') || 'rep';
-  const repId = repIdOverride || sessionStorage.getItem('ids_pulse_rep_id') || '1';
-  const customerId = customerIdOverride || sessionStorage.getItem('ids_pulse_customer_id') || '';
-  const token = sessionTokenOverride || sessionStorage.getItem('ids_pulse_session_token') || localStorage.getItem('ids_pulse_session_token') || '';
-  const isAdmin = ['admin', 'owner', 'accountant', 'lead', 'shahroz']?.includes(authRole?.toLowerCase());
+  const authRole = roleOverride || 'rep';
+  const role = roleOverride || 'rep';
+  const repId = repIdOverride || '';
+  const customerId = customerIdOverride || '';
+  const token = sessionTokenOverride || '';
+  const isAdmin = ['admin', 'owner', 'accountant', 'lead', 'shahroz', 'super_admin']?.includes(authRole?.toLowerCase());
 
   const collections = [
     'users',
@@ -163,46 +163,11 @@ export async function syncWithSupabase(force = false, roleOverride = null, repId
         let data = [];
         let error = null;
 
-        // SERVER-SIDE ROLE ISOLATION READ QUERIES
-        if (col === 'rates') {
-          if (!isAdmin) {
-            // Non-admins get 0 rates at API level
-            data = [];
-          } else {
-            const { data: ratesData, error: ratesErr } = await supabase.rpc('get_rates_for_admin', { p_role: role, p_token: token });
-            data = ratesData;
-            error = ratesErr;
-          }
-        } else if (col === 'timeEntries') {
-          const { data: teData, error: teErr } = await supabase.rpc('get_scoped_time_entries', { 
-            p_role: role, 
-            p_rep_id: repId, 
-            p_customer_id: customerId,
-            p_token: token
-          });
-          data = teData;
-          error = teErr;
-        } else if (col === 'expenseEntries') {
-          if (role === 'customer') {
-            // Customers get 0 expense entries at API level
-            data = [];
-          } else {
-            const { data: expData, error: expErr } = await supabase.rpc('get_scoped_expense_entries', { 
-              p_role: role, 
-              p_rep_id: repId,
-              p_token: token 
-            });
-            data = expData;
-            error = expErr;
-          }
-        } else if (col === 'suppliers') {
-          const { data: suppData, error: suppErr } = await supabase.rpc('get_scoped_suppliers', { p_token: token });
-          data = suppData;
-          error = suppErr;
-        } else if (col === 'projects') {
-          const { data: projData, error: projErr } = await supabase.rpc('get_scoped_projects', { p_role: role, p_token: token });
-          data = projData;
-          error = projErr;
+        // NATIVE RLS SERVER-SIDE READ QUERIES
+        if (col === 'rates' && !isAdmin) {
+          data = [];
+        } else if (col === 'expenseEntries' && role === 'customer') {
+          data = [];
         } else {
           const { data: defaultData, error: defaultErr } = await supabase.from(targetTable).select('*');
           data = defaultData;

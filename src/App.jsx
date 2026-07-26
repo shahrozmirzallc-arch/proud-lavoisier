@@ -88,8 +88,6 @@ function App() {
   });
 
   const [layoutMode, setLayoutMode] = useState(() => {
-    const role = sessionStorage.getItem('ids_pulse_role') || 'admin';
-    const unlocked = sessionStorage.getItem('ids_pulse_unlocked') === 'true';
     if (typeof window !== 'undefined' && (
       window.Capacitor?.isNativePlatform?.() ||
       /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
@@ -97,10 +95,7 @@ function App() {
     )) {
       return 'phone-only';
     }
-    if (unlocked && role !== 'qre' && role !== 'rep') {
-      return 'dashboard-only';
-    }
-    return 'side-by-side';
+    return 'dashboard-only';
   }); // 'side-by-side' | 'phone-only' | 'dashboard-only' | 'roadmap-only'
 
   useEffect(() => {
@@ -135,14 +130,12 @@ function App() {
     return 'day'; // Default is Dark Theme
   });
 
-  // Password Lock & Effective Role State (Strictly Gated by Server Token Authenticated Role)
-  const authenticatedRole = sessionStorage.getItem('ids_pulse_authenticated_role') || localStorage.getItem('ids_pulse_authenticated_role') || '';
-  const isAdminAuthenticated = ['admin', 'owner', 'accountant', 'lead', 'shahroz'].includes(authenticatedRole?.toLowerCase());
-  
-  const [isUnlocked, setIsUnlocked] = useState(() => localStorage.getItem('ids_pulse_unlocked') === 'true' || sessionStorage.getItem('ids_pulse_unlocked') === 'true');
-  const [userRole, setUserRole] = useState(() => isAdminAuthenticated ? (sessionStorage.getItem('ids_pulse_role') || authenticatedRole) : (authenticatedRole || 'customer'));
-  const [currentUserRepId, setCurrentUserRepId] = useState(() => sessionStorage.getItem('ids_pulse_rep_id') || '');
-  const [currentUserCustomerId, setCurrentUserCustomerId] = useState(() => sessionStorage.getItem('ids_pulse_customer_id') || '');
+  // Auth State (Strictly Managed via Supabase Auth Session)
+  const [currentUser, setCurrentUser] = useState(null);
+  const [isUnlocked, setIsUnlocked] = useState(false);
+  const [userRole, setUserRole] = useState('');
+  const [currentUserRepId, setCurrentUserRepId] = useState('');
+  const [currentUserCustomerId, setCurrentUserCustomerId] = useState('');
   const [systemUsername, setSystemUsername] = useState('');
   const [systemPassword, setSystemPassword] = useState('');
   const [authError, setAuthError] = useState(false);
@@ -179,26 +172,43 @@ function App() {
     };
   }, []);
 
+  // Helper to purge all stale ids_pulse keys from storage
+  const clearStaleSessionStorage = () => {
+    try {
+      Object.keys(sessionStorage).forEach(key => {
+        if (key.startsWith('ids_pulse_')) {
+          sessionStorage.removeItem(key);
+        }
+      });
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('ids_pulse_')) {
+          localStorage.removeItem(key);
+        }
+      });
+    } catch (e) {
+      console.warn("Storage purge warning:", e);
+    }
+  };
+
   useEffect(() => {
     const initAuth = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (session && session.user) {
           const appMeta = session.user.app_metadata || {};
-          const role = appMeta.role || 'customer';
-          const targetUser = appMeta.username || '';
+          const userMeta = session.user.user_metadata || {};
+          const role = appMeta.role || userMeta.role || 'customer';
+          const targetUser = appMeta.username || userMeta.username || '';
           const repId = appMeta.rep_id || (targetUser === 'clarence' ? '1' : `rep_${targetUser}`);
           const custId = appMeta.customer_id || targetUser;
 
           setIsUnlocked(true);
-          sessionStorage.setItem('ids_pulse_authenticated_role', role);
-          localStorage.setItem('ids_pulse_authenticated_role', role);
-          if (['admin', 'owner', 'accountant', 'lead', 'shahroz'].includes(role)) {
+          setCurrentUser(session.user);
+
+          if (['admin', 'owner', 'accountant', 'lead', 'shahroz', 'super_admin'].includes(role)) {
             const reactRole = targetUser === 'greg' ? 'owner' : (targetUser === 'colleen' ? 'accountant' : (targetUser === 'shahroz' ? 'shahroz' : role));
-            const adminName = targetUser === 'shahroz' ? 'Shahroz Mirza' : (targetUser === 'greg' ? 'Greg Phillippe' : (targetUser === 'colleen' ? 'Colleen Boyd' : targetUser));
             setUserRole(reactRole);
             setLayoutMode('dashboard-only');
-            sessionStorage.setItem('ids_pulse_admin_user', adminName);
             syncWithSupabase(true, reactRole, '', '', session.access_token);
           } else if (role === 'rep') {
             setUserRole('rep');
@@ -212,10 +222,15 @@ function App() {
             syncWithSupabase(true, 'customer', '', custId, session.access_token);
           }
         } else {
+          clearStaleSessionStorage();
           setIsUnlocked(false);
+          setCurrentUser(null);
+          setUserRole('');
         }
       } catch (err) {
         console.error("[Auth Session Error]:", err);
+        clearStaleSessionStorage();
+        setIsUnlocked(false);
       } finally {
         setAuthChecking(false);
       }
@@ -225,8 +240,12 @@ function App() {
 
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!session) {
+        clearStaleSessionStorage();
         setIsUnlocked(false);
+        setCurrentUser(null);
         setUserRole('');
+      } else if (session.user) {
+        setCurrentUser(session.user);
       }
     });
 
@@ -240,13 +259,14 @@ function App() {
     const rawPw = password.trim();
 
     try {
+      clearStaleSessionStorage();
+
       const { data: mappedEmail, error: rpcErr } = await supabase.rpc('get_auth_email_by_username', { p_username: inputUser });
       if (rpcErr || !mappedEmail) {
         setAuthError(true);
         return false;
       }
 
-      let authRes = null;
       let { data: authData, error: authErr } = await supabase.auth.signInWithPassword({
         email: mappedEmail,
         password: rawPw
@@ -271,22 +291,20 @@ function App() {
 
       const user = authData.user;
       const appMeta = user.app_metadata || {};
-      const loginType = appMeta.role || 'customer';
+      const userMeta = user.user_metadata || {};
+      const loginType = appMeta.role || userMeta.role || 'customer';
       const targetUser = appMeta.username || inputUser;
       const repId = appMeta.rep_id || (targetUser === 'clarence' ? '1' : `rep_${targetUser}`);
       const custId = appMeta.customer_id || targetUser;
 
       setIsUnlocked(true);
       setAuthError(false);
-      sessionStorage.setItem('ids_pulse_authenticated_role', loginType);
-      localStorage.setItem('ids_pulse_authenticated_role', loginType);
+      setCurrentUser(user);
 
-      if (['admin', 'owner', 'accountant', 'lead', 'shahroz'].includes(loginType)) {
+      if (['admin', 'owner', 'accountant', 'lead', 'shahroz', 'super_admin'].includes(loginType)) {
         const reactRole = targetUser === 'greg' ? 'owner' : (targetUser === 'colleen' ? 'accountant' : (targetUser === 'shahroz' ? 'shahroz' : loginType));
-        const adminName = targetUser === 'shahroz' ? 'Shahroz Mirza' : (targetUser === 'greg' ? 'Greg Phillippe' : (targetUser === 'colleen' ? 'Colleen Boyd' : targetUser));
         setUserRole(reactRole);
         setLayoutMode('dashboard-only');
-        sessionStorage.setItem('ids_pulse_admin_user', adminName);
         syncWithSupabase(true, reactRole, '', '', authData.session.access_token);
       } else if (loginType === 'rep') {
         setDayNight('day');
@@ -342,31 +360,6 @@ function App() {
                   <span className="px-2 py-0.5 text-[9px] font-extrabold uppercase bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 rounded-full">
                     Active
                   </span>
-
-                  {/* Dev-only Admin Role Switcher (Disabled in Production & Non-Admin sessions) */}
-                  {isUnlocked && import.meta.env.DEV && ['admin', 'owner', 'accountant', 'lead', 'shahroz'].includes(sessionStorage.getItem('ids_pulse_authenticated_role') || userRole) && (
-                    <div className="flex items-center gap-1.5 bg-surface-elevated px-2.5 py-1 rounded-lg border border-border-subtle ml-1 shadow-xs">
-                      <User className="w-3.5 h-3.5 text-primary" />
-                      <select 
-                        value={userRole}
-                        onChange={(e) => {
-                          const newRole = e.target.value;
-                          setUserRole(newRole);
-                          sessionStorage.setItem('ids_pulse_role', newRole);
-                          setDbUpdateTrigger(prev => prev + 1);
-                        }}
-                        className="bg-transparent border-none text-[10.5px] font-extrabold text-text-primary focus:outline-none cursor-pointer p-0"
-                      >
-                        <option value="shahroz" className="bg-surface text-text-primary">Shahroz (Super Admin)</option>
-                        <option value="owner" className="bg-surface text-text-primary">Greg (Owner)</option>
-                        <option value="accountant" className="bg-surface text-text-primary">Colleen (Finance)</option>
-                        <option value="lead" className="bg-surface text-text-primary">Donna (Shift Lead)</option>
-                        <option value="admin" className="bg-surface text-text-primary">Admin</option>
-                        <option value="rep" className="bg-surface text-text-primary">Rep View</option>
-                        <option value="customer" className="bg-surface text-text-primary">Customer View</option>
-                      </select>
-                    </div>
-                  )}
                 </div>
                 <p className="text-[10px] text-text-secondary font-medium">Enterprise quality tracking, audit metrics, and field dispatch operations.</p>
               </div>
@@ -429,59 +422,58 @@ function App() {
 
               {/* Contextual Options */}
               <div className="flex items-center gap-3">
-                {/* Segmented Layout Selector */}
-                <div className="flex items-center bg-surface-elevated p-1 rounded-lg border border-border-subtle">
-                  <button 
-                    type="button"
-                    onClick={() => setLayoutMode('phone-only')}
-                    className={`flex items-center gap-1.5 text-[10px] font-bold py-1.5 px-3 rounded-md transition-all cursor-pointer ${layoutMode === 'phone-only' ? 'bg-[#1e3a5f] text-[#22d3ee] border border-[#22d3ee]/20' : 'text-text-secondary hover:text-text-primary'}`}
-                    title="Show Mobile App Only"
-                  >
-                    <Smartphone className="w-3.5 h-3.5" />
-                    <span className="hidden md:inline">App Only</span>
-                  </button>
-                  <button 
-                    type="button"
-                    onClick={() => setLayoutMode('dashboard-only')}
-                    className={`flex items-center gap-1.5 text-[10px] font-bold py-1.5 px-3 rounded-md transition-all cursor-pointer ${layoutMode === 'dashboard-only' ? 'bg-[#1e3a5f] text-[#22d3ee] border border-[#22d3ee]/20' : 'text-text-secondary hover:text-text-primary'}`}
-                    title="Show Dashboard Only"
-                  >
-                    <Monitor className="w-3.5 h-3.5" />
-                    <span className="hidden md:inline">Dashboard Only</span>
-                  </button>
-                  {userRole === 'shahroz' && (
+                {/* Segmented Layout Selector (Admin/Staff Roles Only) */}
+                {['admin', 'owner', 'accountant', 'lead', 'shahroz', 'super_admin'].includes(userRole) && (
+                  <div className="flex items-center bg-surface-elevated p-1 rounded-lg border border-border-subtle">
                     <button 
                       type="button"
-                      onClick={() => setLayoutMode('roadmap-only')}
-                      className={`flex items-center gap-1.5 text-[10px] font-bold py-1.5 px-3 rounded-md transition-all cursor-pointer ${layoutMode === 'roadmap-only' ? 'bg-[#1e3a5f] text-[#22d3ee] border border-[#22d3ee]/20' : 'text-text-secondary hover:text-text-primary'}`}
-                      title="Show Launch Roadmap Only"
+                      onClick={() => setLayoutMode('phone-only')}
+                      className={`flex items-center gap-1.5 text-[10px] font-bold py-1.5 px-3 rounded-md transition-all cursor-pointer ${layoutMode === 'phone-only' ? 'bg-[#1e3a5f] text-[#22d3ee] border border-[#22d3ee]/20' : 'text-text-secondary hover:text-text-primary'}`}
+                      title="Show Mobile App Only"
                     >
-                      <Milestone className="w-3.5 h-3.5" />
-                      <span className="hidden md:inline">Launch Roadmap</span>
+                      <Smartphone className="w-3.5 h-3.5" />
+                      <span className="hidden md:inline">App Only</span>
                     </button>
-                  )}
-                  <button 
-                    type="button"
-                    onClick={() => setLayoutMode('side-by-side')}
-                    className={`flex items-center gap-1.5 text-[10px] font-bold py-1.5 px-3 rounded-md transition-all cursor-pointer ${layoutMode === 'side-by-side' ? 'bg-[#1e3a5f] text-[#22d3ee] border border-[#22d3ee]/20' : 'text-text-secondary hover:text-text-primary'}`}
-                    title="Show Side-by-Side Layout"
-                  >
-                    <Laptop className="w-3.5 h-3.5" />
-                    <span className="hidden md:inline">Side-by-Side</span>
-                  </button>
-                </div>
+                    <button 
+                      type="button"
+                      onClick={() => setLayoutMode('dashboard-only')}
+                      className={`flex items-center gap-1.5 text-[10px] font-bold py-1.5 px-3 rounded-md transition-all cursor-pointer ${layoutMode === 'dashboard-only' ? 'bg-[#1e3a5f] text-[#22d3ee] border border-[#22d3ee]/20' : 'text-text-secondary hover:text-text-primary'}`}
+                      title="Show Dashboard Only"
+                    >
+                      <Monitor className="w-3.5 h-3.5" />
+                      <span className="hidden md:inline">Dashboard Only</span>
+                    </button>
+                    {userRole === 'shahroz' && (
+                      <button 
+                        type="button"
+                        onClick={() => setLayoutMode('roadmap-only')}
+                        className={`flex items-center gap-1.5 text-[10px] font-bold py-1.5 px-3 rounded-md transition-all cursor-pointer ${layoutMode === 'roadmap-only' ? 'bg-[#1e3a5f] text-[#22d3ee] border border-[#22d3ee]/20' : 'text-text-secondary hover:text-text-primary'}`}
+                        title="Show Launch Roadmap Only"
+                      >
+                        <Milestone className="w-3.5 h-3.5" />
+                        <span className="hidden md:inline">Launch Roadmap</span>
+                      </button>
+                    )}
+                    <button 
+                      type="button"
+                      onClick={() => setLayoutMode('side-by-side')}
+                      className={`flex items-center gap-1.5 text-[10px] font-bold py-1.5 px-3 rounded-md transition-all cursor-pointer ${layoutMode === 'side-by-side' ? 'bg-[#1e3a5f] text-[#22d3ee] border border-[#22d3ee]/20' : 'text-text-secondary hover:text-text-primary'}`}
+                      title="Show Side-by-Side Layout"
+                    >
+                      <Laptop className="w-3.5 h-3.5" />
+                      <span className="hidden md:inline">Side-by-Side</span>
+                    </button>
+                  </div>
+                )}
                 
                 <button 
                   type="button"
-                  onClick={() => {
-                    sessionStorage.removeItem('ids_pulse_unlocked');
-                    sessionStorage.removeItem('ids_pulse_role');
-                    sessionStorage.removeItem('ids_pulse_rep_id');
-                    sessionStorage.removeItem('ids_pulse_customer_id');
-                    sessionStorage.removeItem('ids_pulse_session_token');
-                    sessionStorage.removeItem('ids_pulse_authenticated_role');
-                    localStorage.removeItem('ids_pulse_session_token');
-                    localStorage.removeItem('ids_pulse_authenticated_role');
+                  onClick={async () => {
+                    clearStaleSessionStorage();
+                    await supabase.auth.signOut();
+                    setIsUnlocked(false);
+                    setCurrentUser(null);
+                    setUserRole('');
                     window.location.reload();
                   }}
                   className="flex items-center gap-1.5 text-text-secondary hover:text-red-400 bg-surface-elevated border border-border-subtle py-1.5 px-2.5 rounded-lg text-sm cursor-pointer transition-colors"
@@ -530,7 +522,7 @@ function App() {
                  userRole === 'shahroz' ? "Shahroz's Super Admin Dashboard (Web CRM Portal)" :
                  "Greg's Admin Dashboard (Web CRM Portal)"}
               </span>
-              <ErrorBoundary><WebDashboard dbUpdateTrigger={dbUpdateTrigger} userRole={userRole} currentUserRepId={currentUserRepId} currentUserCustomerId={currentUserCustomerId} layoutMode={layoutMode} /></ErrorBoundary>
+              <ErrorBoundary><WebDashboard dbUpdateTrigger={dbUpdateTrigger} userRole={userRole} currentUserRepId={currentUserRepId} currentUserCustomerId={currentUserCustomerId} currentUser={currentUser} layoutMode={layoutMode} /></ErrorBoundary>
             </div>
           )}
 
@@ -538,7 +530,7 @@ function App() {
           {(!isMobileDevice && layoutMode === 'roadmap-only' && userRole === 'shahroz') && (
             <div className="flex-1 w-full flex flex-col min-h-0">
               <span className="text-[10px] text-text-secondary font-bold uppercase tracking-wider mb-2 pl-2">IDS Pulse Project Launch Roadmap & Timeline</span>
-              <ErrorBoundary><WebDashboard dbUpdateTrigger={dbUpdateTrigger} forceRoadmapOnly={true} userRole={userRole} layoutMode={layoutMode} /></ErrorBoundary>
+              <ErrorBoundary><WebDashboard dbUpdateTrigger={dbUpdateTrigger} forceRoadmapOnly={true} userRole={userRole} currentUser={currentUser} layoutMode={layoutMode} /></ErrorBoundary>
             </div>
           )}
 

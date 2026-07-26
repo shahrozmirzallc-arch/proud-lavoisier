@@ -122,6 +122,7 @@ export async function syncWithSupabase(force = false, roleOverride = null, repId
   const role = roleOverride || sessionStorage.getItem('ids_pulse_role') || 'rep';
   const repId = repIdOverride || sessionStorage.getItem('ids_pulse_rep_id') || '1';
   const customerId = customerIdOverride || sessionStorage.getItem('ids_pulse_customer_id') || '';
+  const token = sessionTokenOverride || sessionStorage.getItem('ids_pulse_session_token') || localStorage.getItem('ids_pulse_session_token') || '';
   const isAdmin = ['admin', 'owner', 'accountant', 'lead', 'shahroz']?.includes(authRole?.toLowerCase());
 
   const collections = [

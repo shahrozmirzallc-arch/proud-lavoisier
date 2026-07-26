@@ -3,7 +3,7 @@ import {
   Shield, Activity, Server, FileText, Users, Mail, DollarSign, Database, 
   Search, Filter, ChevronRight, ChevronDown, X, Clock, CheckCircle2, UserCheck, AlertCircle, AlertTriangle, 
   FileSpreadsheet, Calendar, ArrowRight, UserPlus, MapPin, Printer, Download, Eye, Sparkles,
-  Milestone, TrendingUp, FolderKanban, PlusCircle, ArrowLeft, Camera, ClipboardCheck, Zap, Building2, ShieldAlert
+  Milestone, TrendingUp, FolderKanban, PlusCircle, ArrowLeft, Camera, ClipboardCheck, Zap, Building2, ShieldAlert, User
 } from 'lucide-react';
 import { getEntities, saveEntity, resetDB, logSystemEvent, addProject, deleteRate, isFieldRep } from './SharedDatabase';
 import { jsPDF } from 'jspdf';
@@ -5299,7 +5299,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
                   <button
                     type="button"
-                    onClick={() => exportShiftLogsPDF()}
+                    onClick={() => window.print()}
                     className="bg-gradient-to-br from-emerald-950/90 via-slate-900 to-slate-950 border-2 border-emerald-500/60 hover:border-emerald-400 p-5 rounded-2xl flex items-center gap-4 cursor-pointer transition-all hover:scale-[1.02] shadow-xl shadow-emerald-500/20 group text-left"
                   >
                     <div className="w-14 h-14 rounded-2xl bg-emerald-600 flex items-center justify-center text-white shadow-md flex-shrink-0 group-hover:scale-110 transition-transform">

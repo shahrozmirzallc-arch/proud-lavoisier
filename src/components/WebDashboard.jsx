@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useDeferredValue, useMemo } from 'react';
 import { 
   Shield, Activity, Server, FileText, Users, Mail, DollarSign, Database, 
   Search, Filter, ChevronRight, ChevronDown, X, Clock, CheckCircle2, UserCheck, AlertCircle, AlertTriangle, 
@@ -265,6 +265,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   const [dispatchToast, setDispatchToast] = useState('');
 
   const [searchQuery, setSearchQuery] = useState('');
+  const deferredSearchQuery = useDeferredValue(searchQuery);
   const [selectedSupplierFilter, setSelectedSupplierFilter] = useState('all');
   const [selectedStatusFilter, setSelectedStatusFilter] = useState('all');
   const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().split('T')[0]);
@@ -877,23 +878,26 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       showToast("Please select a specific Billing Currency (CAD or USD).", "warning");
       return;
     }
-    let count = 0;
-    suppliers.filter(Boolean).forEach(clientObj => {
-      const cEntries = timeEntries.filter(t => t && t.supplier_id === clientObj.id && !t.invoiced && (getRepSupplierRates(t.rep_id, t.supplier_id, t.plant_id).currency === selectedInvoiceCurrency));
-      const cExpenses = expenseEntries.filter(e => e && e.supplier_id === clientObj.id && !e.invoiced && (getExpenseCurrency(e) === selectedInvoiceCurrency));
-      
-      if (cEntries.length > 0 || cExpenses.length > 0) {
-        const dates = cEntries.filter(e => e && e.date).map(e => e.date).sort();
-        const dRange = dates.length > 0 ? `From ${dates[0]} to ${dates[dates.length - 1]}` : 'Current Billing Period';
-        handleGenerateClientInvoicePDF(clientObj, dRange, cEntries, cExpenses);
-        count++;
+    showToast("Generating batch client invoices...", "info");
+    setTimeout(() => {
+      let count = 0;
+      suppliers.filter(Boolean).forEach(clientObj => {
+        const cEntries = timeEntries.filter(t => t && t.supplier_id === clientObj.id && !t.invoiced && (getRepSupplierRates(t.rep_id, t.supplier_id, t.plant_id).currency === selectedInvoiceCurrency));
+        const cExpenses = expenseEntries.filter(e => e && e.supplier_id === clientObj.id && !e.invoiced && (getExpenseCurrency(e) === selectedInvoiceCurrency));
+        
+        if (cEntries.length > 0 || cExpenses.length > 0) {
+          const dates = cEntries.filter(e => e && e.date).map(e => e.date).sort();
+          const dRange = dates.length > 0 ? `From ${dates[0]} to ${dates[dates.length - 1]}` : 'Current Billing Period';
+          handleGenerateClientInvoicePDF(clientObj, dRange, cEntries, cExpenses);
+          count++;
+        }
+      });
+      if (count === 0) {
+        showToast("No pending un-invoiced entries found.", "info");
+      } else {
+        showToast(`Successfully generated ${count} separate client PDF invoice(s)!`, "success");
       }
-    });
-    if (count === 0) {
-      showToast("No pending un-invoiced entries found.", "info");
-    } else {
-      showToast(`Successfully generated ${count} separate client PDF invoice(s)!`, "success");
-    }
+    }, 40);
   };
 
   const handleGenerateClientInvoicePDF = (client, dateRangeStr, clientEntries, clientExpenses) => {
@@ -1827,7 +1831,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     const partMatchStr = (inc.part_id || inc.part_number || '').toLowerCase();
     const descMatchStr = (inc.description || inc.notes || '').toLowerCase();
     const areaMatchStr = (inc.area || '').toLowerCase();
-    const searchLow = (searchQuery || '').toLowerCase();
+    const searchLow = (deferredSearchQuery || '').toLowerCase();
 
     const matchesSearch = !searchLow ||
       partMatchStr.includes(searchLow) ||
@@ -3734,11 +3738,13 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   };
 
   // Export timesheets to real styled Excel Workbook (.xlsx)
-  const handleExportExcel = async () => {
-    try {
-      const ExcelJS = await import('exceljs');
-      const workbook = new ExcelJS.Workbook();
-      const worksheet = workbook.addWorksheet('Payroll & Mileage');
+  const handleExportExcel = () => {
+    showToast("Preparing Excel Payroll export...", "info");
+    setTimeout(async () => {
+      try {
+        const ExcelJS = await import('exceljs');
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('Payroll & Mileage');
 
       // Configure columns
       worksheet.columns = [
@@ -4045,6 +4051,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       console.error('Failed to export Excel:', error);
       showToast("Error generating Excel file: " + error.message, "error");
     }
+    }, 40);
   };
 
   // Pulse AI Database Audit Engine

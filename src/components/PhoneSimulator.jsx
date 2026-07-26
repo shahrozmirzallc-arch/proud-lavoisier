@@ -130,6 +130,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
 
   // Drawing Canvas Reference
   const canvasRef = useRef(null);
+  const animFrameRef = useRef(null);
   const [isDrawing, setIsDrawing] = useState(false);
 
   // Load plants and initial settings
@@ -493,18 +494,30 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
 
   const draw = (e) => {
     if (!isDrawing) return;
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    const rect = canvas.getBoundingClientRect();
-    ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
-    ctx.strokeStyle = '#EF4444'; // Red arrow annotation
-    ctx.lineWidth = 4;
-    ctx.lineCap = 'round';
-    ctx.stroke();
+    const clientX = e.clientX;
+    const clientY = e.clientY;
+    if (animFrameRef.current) return;
+
+    animFrameRef.current = requestAnimationFrame(() => {
+      const canvas = canvasRef.current;
+      if (canvas) {
+        const ctx = canvas.getContext('2d');
+        const rect = canvas.getBoundingClientRect();
+        ctx.lineTo(clientX - rect.left, clientY - rect.top);
+        ctx.strokeStyle = '#EF4444'; // Red arrow annotation
+        ctx.lineWidth = 4;
+        ctx.lineCap = 'round';
+        ctx.stroke();
+      }
+      animFrameRef.current = null;
+    });
   };
 
   const stopDrawing = () => {
+    if (animFrameRef.current) {
+      cancelAnimationFrame(animFrameRef.current);
+      animFrameRef.current = null;
+    }
     setIsDrawing(false);
   };
 

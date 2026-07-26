@@ -178,108 +178,130 @@ function App() {
     };
   }, []);
 
-  // Initial Session Checking State
-  const [authChecking, setAuthChecking] = useState(true);
-
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setAuthChecking(false);
-    }, 250);
-    return () => clearTimeout(timer);
+    const initAuth = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session && session.user) {
+          const appMeta = session.user.app_metadata || {};
+          const role = appMeta.role || 'customer';
+          const targetUser = appMeta.username || '';
+          const repId = appMeta.rep_id || (targetUser === 'clarence' ? '1' : `rep_${targetUser}`);
+          const custId = appMeta.customer_id || targetUser;
+
+          setIsUnlocked(true);
+          if (['admin', 'owner', 'accountant', 'lead', 'shahroz'].includes(role)) {
+            const reactRole = targetUser === 'greg' ? 'owner' : (targetUser === 'colleen' ? 'accountant' : (targetUser === 'shahroz' ? 'shahroz' : role));
+            const adminName = targetUser === 'shahroz' ? 'Shahroz Mirza' : (targetUser === 'greg' ? 'Greg Phillippe' : (targetUser === 'colleen' ? 'Colleen Boyd' : targetUser));
+            setUserRole(reactRole);
+            setLayoutMode('dashboard-only');
+            sessionStorage.setItem('ids_pulse_admin_user', adminName);
+            syncWithSupabase(true, reactRole, '', '', session.access_token);
+          } else if (role === 'rep') {
+            setUserRole('rep');
+            setCurrentUserRepId(repId);
+            setLayoutMode('phone-only');
+            syncWithSupabase(true, 'rep', repId, '', session.access_token);
+          } else if (role === 'customer') {
+            setUserRole('customer');
+            setCurrentUserCustomerId(custId);
+            setLayoutMode('dashboard-only');
+            syncWithSupabase(true, 'customer', '', custId, session.access_token);
+          }
+        } else {
+          setIsUnlocked(false);
+        }
+      } catch (err) {
+        console.error("[Auth Session Error]:", err);
+      } finally {
+        setAuthChecking(false);
+      }
+    };
+
+    initAuth();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session) {
+        setIsUnlocked(false);
+        setUserRole('');
+      }
+    });
+
+    return () => {
+      authListener?.subscription?.unsubscribe();
+    };
   }, []);
 
   const handleSignedIn = async ({ username, password }) => {
     const inputUser = username.trim().toLowerCase().replace(/\s+/g, '');
     const rawPw = password.trim();
 
-    // Verify input hashes via Supabase Server RPC (zero passwords/hashes in client bundle)
-    const msgBuffer = new TextEncoder().encode(rawPw);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-
-    const spaceRemovedRaw = rawPw.replace(/\s+/g, '');
-    const cleanBuffer = new TextEncoder().encode(spaceRemovedRaw);
-    const cleanHashBuffer = await crypto.subtle.digest('SHA-256', cleanBuffer);
-    const cleanHashHex = Array.from(new Uint8Array(cleanHashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
-
-    // Server-side credential verification call via RPC
-    let authRes = null;
     try {
-      const { data, error } = await supabase.rpc('verify_credentials', { p_username: inputUser, p_hash: hashHex });
-      if (!error && data && data.length > 0 && data[0].is_valid) {
-        authRes = data[0];
-      } else {
-        // Fallback 1: Space-removed hash
-        const { data: cleanData } = await supabase.rpc('verify_credentials', { p_username: inputUser, p_hash: cleanHashHex });
-        if (cleanData && cleanData.length > 0 && cleanData[0].is_valid) {
-          authRes = cleanData[0];
-        } else {
-          // Fallback 2: Capitalized first-letter hash (e.g., autokabel2026! -> AutoKabel2026!)
-          const capPw = rawPw.charAt(0).toUpperCase() + rawPw.slice(1);
-          const capBuffer = new TextEncoder().encode(capPw);
-          const capHashHex = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', capBuffer))).map(b => b.toString(16).padStart(2, '0')).join('');
-          const { data: capData } = await supabase.rpc('verify_credentials', { p_username: inputUser, p_hash: capHashHex });
-          if (capData && capData.length > 0 && capData[0].is_valid) {
-            authRes = capData[0];
-          }
+      const { data: mappedEmail, error: rpcErr } = await supabase.rpc('get_auth_email_by_username', { p_username: inputUser });
+      if (rpcErr || !mappedEmail) {
+        setAuthError(true);
+        return false;
+      }
+
+      let authRes = null;
+      let { data: authData, error: authErr } = await supabase.auth.signInWithPassword({
+        email: mappedEmail,
+        password: rawPw
+      });
+
+      if (authErr && rawPw) {
+        const capPw = rawPw.charAt(0).toUpperCase() + rawPw.slice(1);
+        const { data: capAuthData, error: capErr } = await supabase.auth.signInWithPassword({
+          email: mappedEmail,
+          password: capPw
+        });
+        if (!capErr && capAuthData?.session) {
+          authData = capAuthData;
+          authErr = null;
         }
       }
-    } catch (err) {
-      console.error("[Auth RPC Error]:", err);
-    }
 
-    if (!authRes || !authRes.is_valid) {
+      if (authErr || !authData?.session || !authData?.user) {
+        setAuthError(true);
+        return false;
+      }
+
+      const user = authData.user;
+      const appMeta = user.app_metadata || {};
+      const loginType = appMeta.role || 'customer';
+      const targetUser = appMeta.username || inputUser;
+      const repId = appMeta.rep_id || (targetUser === 'clarence' ? '1' : `rep_${targetUser}`);
+      const custId = appMeta.customer_id || targetUser;
+
+      setIsUnlocked(true);
+      setAuthError(false);
+
+      if (['admin', 'owner', 'accountant', 'lead', 'shahroz'].includes(loginType)) {
+        const reactRole = targetUser === 'greg' ? 'owner' : (targetUser === 'colleen' ? 'accountant' : (targetUser === 'shahroz' ? 'shahroz' : loginType));
+        const adminName = targetUser === 'shahroz' ? 'Shahroz Mirza' : (targetUser === 'greg' ? 'Greg Phillippe' : (targetUser === 'colleen' ? 'Colleen Boyd' : targetUser));
+        setUserRole(reactRole);
+        setLayoutMode('dashboard-only');
+        sessionStorage.setItem('ids_pulse_admin_user', adminName);
+        syncWithSupabase(true, reactRole, '', '', authData.session.access_token);
+      } else if (loginType === 'rep') {
+        setDayNight('day');
+        setUserRole('rep');
+        setCurrentUserRepId(repId);
+        setLayoutMode('phone-only');
+        syncWithSupabase(true, 'rep', repId, '', authData.session.access_token);
+      } else if (loginType === 'customer') {
+        setDayNight('day');
+        setUserRole('customer');
+        setCurrentUserCustomerId(custId);
+        setLayoutMode('dashboard-only');
+        syncWithSupabase(true, 'customer', '', custId, authData.session.access_token);
+      }
+      return true;
+    } catch (err) {
+      console.error("[Supabase Auth Error]:", err);
       setAuthError(true);
-      setSystemPassword('');
       return false;
     }
-
-    const targetUser = authRes.username || inputUser;
-    const loginType = authRes.role;
-
-    if (authRes.session_token) {
-      sessionStorage.setItem('ids_pulse_session_token', authRes.session_token);
-      sessionStorage.setItem('ids_pulse_authenticated_role', loginType);
-    }
-
-    setIsUnlocked(true);
-    if (loginType === 'admin') {
-      const reactRole = targetUser === 'greg' ? 'owner' : (targetUser === 'colleen' ? 'accountant' : (targetUser === 'shahroz' ? 'shahroz' : 'admin'));
-      const adminName = targetUser === 'shahroz' ? 'Shahroz Mirza' : (targetUser === 'greg' ? 'Greg Phillippe' : (targetUser === 'colleen' ? 'Colleen Boyd' : targetUser));
-      setUserRole(reactRole);
-      setLayoutMode('dashboard-only');
-      sessionStorage.setItem('ids_pulse_unlocked', 'true');
-      sessionStorage.setItem('ids_pulse_role', reactRole);
-      sessionStorage.setItem('ids_pulse_admin_user', adminName);
-      setAuthError(false);
-      syncWithSupabase(true, reactRole, '', '', authRes.session_token);
-    } else if (loginType === 'rep') {
-      setDayNight('day');
-      setUserRole('rep');
-      const repId = authRes.user_id || (targetUser === 'clarence' ? '1' : `rep_${targetUser}`);
-      setCurrentUserRepId(repId);
-      setLayoutMode('phone-only');
-      sessionStorage.setItem('ids_pulse_unlocked', 'true');
-      sessionStorage.setItem('ids_pulse_role', 'rep');
-      sessionStorage.setItem('ids_pulse_rep_id', repId);
-      sessionStorage.removeItem('ids_pulse_admin_user');
-      setAuthError(false);
-      syncWithSupabase(true, 'rep', repId, '', authRes.session_token);
-    } else if (loginType === 'customer') {
-      setDayNight('day');
-      setUserRole('customer');
-      const custId = authRes.customer_id || targetUser;
-      setCurrentUserCustomerId(custId);
-      setLayoutMode('dashboard-only');
-      sessionStorage.setItem('ids_pulse_unlocked', 'true');
-      sessionStorage.setItem('ids_pulse_role', 'customer');
-      sessionStorage.setItem('ids_pulse_customer_id', custId);
-      sessionStorage.removeItem('ids_pulse_admin_user');
-      setAuthError(false);
-      syncWithSupabase(true, 'customer', '', custId, authRes.session_token);
-    }
-    return true;
   };
 
   if (authChecking) {

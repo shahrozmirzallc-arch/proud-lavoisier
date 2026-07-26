@@ -129,17 +129,30 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
   useEffect(() => {
     const allPlants = getEntities('plants');
     setPlants(allPlants);
-    
-    const savedUser = localStorage.getItem('ids_pulse_saved_user');
-    const activeToken = sessionStorage.getItem('ids_pulse_session_token') || localStorage.getItem('ids_pulse_session_token');
-    if (savedUser && activeToken) {
-      const dbUsers = getEntities('users');
-      const found = dbUsers.find(u => u.id === savedUser);
-      if (found) {
-        setCurrentUser(found);
-        setEmail(found.email || '');
+
+    const initRepSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session && session.user) {
+          const appMeta = session.user.app_metadata || {};
+          if (appMeta.role === 'rep' || appMeta.rep_id) {
+            const repId = appMeta.rep_id || (appMeta.username === 'clarence' ? '1' : `rep_${appMeta.username}`);
+            const dbUsers = getEntities('users') || [];
+            const found = dbUsers.find(u => u.id === repId || u.name?.toLowerCase().includes(appMeta.username?.toLowerCase())) || dbUsers[0];
+            if (found) {
+              setCurrentUser(found);
+              setEmail(found.email || '');
+              setIsLoggedIn(true);
+              setActiveScreen('home');
+            }
+          }
+        }
+      } catch (err) {
+        console.error('[PhoneSimulator Session Error]:', err);
       }
-    }
+    };
+
+    initRepSession();
 
     const allTasks = getEntities('dailyTasks') || [];
     const repTasks = allTasks.filter(t => t.rep_id === '1' && t.date === '2026-06-01');
@@ -275,7 +288,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
     if (e) e.preventDefault();
     setAuthError('');
 
-    const inputUser = email.trim();
+    const inputUser = email.trim().toLowerCase().replace(/\s+/g, '');
     const rawPw = password.trim();
 
     if (!inputUser || !rawPw) {
@@ -286,61 +299,48 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
     setSubmittingAuth(true);
 
     try {
-      // 1. Digest SHA-256 hash of provided password
-      const msgBuffer = new TextEncoder().encode(rawPw);
-      const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-      const hashHex = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
-
-      // Clean space fallback
-      const cleanBuffer = new TextEncoder().encode(rawPw.replace(/\s+/g, ''));
-      const cleanHashHex = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', cleanBuffer))).map(b => b.toString(16).padStart(2, '0')).join('');
-
-      // Capitalized fallback (e.g. clarence2026! -> Clarence2026!)
-      const capPw = rawPw.charAt(0).toUpperCase() + rawPw.slice(1);
-      const capHashHex = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(capPw)))).map(b => b.toString(16).padStart(2, '0')).join('');
-
-      // 2. Call Supabase RPC verify_credentials
-      let authRes = null;
-      const { data, error } = await supabase.rpc('verify_credentials', { p_username: inputUser, p_hash: hashHex });
-      if (!error && data && data.length > 0 && data[0].is_valid) {
-        authRes = data[0];
-      } else {
-        const { data: cleanData } = await supabase.rpc('verify_credentials', { p_username: inputUser, p_hash: cleanHashHex });
-        if (cleanData && cleanData.length > 0 && cleanData[0].is_valid) {
-          authRes = cleanData[0];
-        } else {
-          const { data: capData } = await supabase.rpc('verify_credentials', { p_username: inputUser, p_hash: capHashHex });
-          if (capData && capData.length > 0 && capData[0].is_valid) {
-            authRes = capData[0];
-          }
-        }
-      }
-
-      if (!authRes || !authRes.is_valid) {
+      const { data: mappedEmail, error: rpcErr } = await supabase.rpc('get_auth_email_by_username', { p_username: inputUser });
+      if (rpcErr || !mappedEmail) {
         setAuthError('Operator ID or Access Code is incorrect.');
         setSubmittingAuth(false);
         return;
       }
 
-      // Store server session token & authenticated role
-      if (authRes.session_token) {
-        sessionStorage.setItem('ids_pulse_session_token', authRes.session_token);
-        sessionStorage.setItem('ids_pulse_authenticated_role', authRes.role);
-        localStorage.setItem('ids_pulse_session_token', authRes.session_token);
-        localStorage.setItem('ids_pulse_authenticated_role', authRes.role);
+      let { data: authData, error: authErr } = await supabase.auth.signInWithPassword({
+        email: mappedEmail,
+        password: rawPw
+      });
+
+      if (authErr && rawPw) {
+        const capPw = rawPw.charAt(0).toUpperCase() + rawPw.slice(1);
+        const { data: capAuthData, error: capErr } = await supabase.auth.signInWithPassword({
+          email: mappedEmail,
+          password: capPw
+        });
+        if (!capErr && capAuthData?.session) {
+          authData = capAuthData;
+          authErr = null;
+        }
       }
 
-      // Sync Supabase entities with server session token
-      const repId = authRes.user_id || (authRes.username === 'clarence' ? '1' : `rep_${authRes.username}`);
-      sessionStorage.setItem('ids_pulse_rep_id', repId);
-      await syncWithSupabase(true, authRes.role, repId, '', authRes.session_token);
+      if (authErr || !authData?.session || !authData?.user) {
+        setAuthError('Operator ID or Access Code is incorrect.');
+        setSubmittingAuth(false);
+        return;
+      }
 
-      const dbUsers = getEntities('users');
-      const foundUser = dbUsers.find(u => u.id === repId || u.name?.toLowerCase().includes(authRes.username?.toLowerCase())) || {
+      const user = authData.user;
+      const appMeta = user.app_metadata || {};
+      const repId = appMeta.rep_id || (appMeta.username === 'clarence' ? '1' : `rep_${appMeta.username}`);
+
+      await syncWithSupabase(true, appMeta.role, repId, '', authData.session.access_token);
+
+      const dbUsers = getEntities('users') || [];
+      const foundUser = dbUsers.find(u => u.id === repId || u.name?.toLowerCase().includes(appMeta.username?.toLowerCase())) || {
         id: repId,
-        name: authRes.username,
-        email: email,
-        role: authRes.role
+        name: appMeta.username,
+        email: user.email,
+        role: appMeta.role
       };
 
       performAuthLogin(foundUser);
@@ -353,17 +353,16 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     setIsLoggedIn(false);
     setCurrentUser(null);
     setShiftActive(false);
     setActiveScreen('login');
-    sessionStorage.removeItem('ids_pulse_session_token');
-    sessionStorage.removeItem('ids_pulse_authenticated_role');
-    sessionStorage.removeItem('ids_pulse_rep_id');
-    localStorage.removeItem('ids_pulse_session_token');
-    localStorage.removeItem('ids_pulse_authenticated_role');
-    localStorage.removeItem('ids_pulse_saved_user');
+    try {
+      await supabase.auth.signOut();
+    } catch (err) {
+      console.error("[Logout Error]:", err);
+    }
   };
 
   const handleStartShift = () => {

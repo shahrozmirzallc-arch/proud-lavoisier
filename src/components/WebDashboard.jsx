@@ -3,7 +3,7 @@ import {
   Shield, Activity, Server, FileText, Users, Mail, DollarSign, Database, 
   Search, Filter, ChevronRight, ChevronDown, X, Clock, CheckCircle2, UserCheck, AlertCircle, AlertTriangle, 
   FileSpreadsheet, Calendar, ArrowRight, UserPlus, MapPin, Printer, Download, Eye, Sparkles,
-  Milestone, TrendingUp, FolderKanban, PlusCircle, ArrowLeft, Camera, ClipboardCheck, Zap, Building2, ShieldAlert, User
+  Milestone, TrendingUp, FolderKanban, PlusCircle, ArrowLeft, Camera, ClipboardCheck, Zap, Building2, ShieldAlert, User, Cpu
 } from 'lucide-react';
 import { getEntities, saveEntity, resetDB, logSystemEvent, addProject, deleteRate, isFieldRep } from './SharedDatabase';
 import { jsPDF } from 'jspdf';
@@ -5453,6 +5453,89 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
                     </div>
                   ))}
+                </div>
+              </div>
+
+              {/* SECTION 2.5: STITCH INDUSTRIAL CAD QUALITY INSPECTION HOTSPOT WIDGET */}
+              <div className="bg-slate-900/90 border border-blue-500/40 rounded-2xl p-5 shadow-2xl relative overflow-hidden my-2">
+                <div className="flex items-center justify-between mb-4 border-b border-slate-800 pb-3">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-blue-500/20 text-blue-400 border border-blue-500/30 rounded-xl">
+                      <Cpu className="w-5 h-5 text-blue-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-extrabold text-white tracking-wide flex items-center gap-2">
+                        <span>CAD Telemetry & Component Wireframe Hotspots</span>
+                        <span className="text-[10px] bg-blue-500/20 text-blue-300 border border-blue-500/30 px-2 py-0.5 rounded-full font-black uppercase tracking-wider">3D Real-Time Scan</span>
+                      </h3>
+                      <span className="text-xs text-slate-400 font-medium">GM Tail Light Harness Assembly (PN 86286761) — Station 4 Wireframe</span>
+                    </div>
+                  </div>
+                  <span className="text-xs bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-3 py-1 rounded-xl font-bold uppercase tracking-wider flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                    Hotspots Synced
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-center">
+                  {/* CAD Interactive Wireframe Canvas */}
+                  <div className="lg:col-span-2 bg-slate-950/90 border border-slate-800 rounded-xl p-6 relative flex items-center justify-center min-h-[200px] overflow-hidden group">
+                    <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-[size:24px_24px] opacity-40"></div>
+                    
+                    <div className="relative z-10 w-full max-w-lg flex flex-col items-center">
+                      <svg className="w-full h-36 text-blue-500/80 drop-shadow-[0_0_12px_rgba(59,130,246,0.5)]" viewBox="0 0 400 160" fill="none" stroke="currentColor" strokeWidth="1.5">
+                        <path d="M 40 40 L 120 20 L 320 20 L 360 50 L 360 120 L 300 140 L 80 140 L 40 110 Z" className="stroke-blue-400/60 fill-blue-950/20" strokeDasharray="4 2" />
+                        <path d="M 80 60 L 280 60 L 320 85 L 280 110 L 80 110 Z" className="stroke-cyan-400 fill-cyan-950/30" />
+                        <circle cx="100" cy="85" r="16" className="stroke-emerald-400 fill-emerald-950/40" />
+                        <circle cx="200" cy="85" r="20" className="stroke-amber-400 fill-amber-950/40" />
+                        <circle cx="300" cy="85" r="14" className="stroke-blue-400 fill-blue-950/40" />
+                        <line x1="100" y1="20" x2="100" y2="60" stroke="#34d399" strokeWidth="1" strokeDasharray="2 2" />
+                        <line x1="200" y1="20" x2="200" y2="60" stroke="#fbbf24" strokeWidth="1" strokeDasharray="2 2" />
+                      </svg>
+
+                      <div className="absolute top-2 left-8 bg-emerald-950/90 border border-emerald-500/50 text-emerald-300 text-[10px] font-extrabold px-2 py-0.5 rounded shadow">
+                        Hotspot #1: Terminal PASS
+                      </div>
+                      <div className="absolute bottom-2 right-12 bg-amber-950/90 border border-amber-500/50 text-amber-300 text-[10px] font-extrabold px-2 py-0.5 rounded shadow animate-pulse">
+                        Hotspot #2: Pin Bend ATTENTION
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Hotspot Telemetry Details Sidebar */}
+                  <div className="flex flex-col gap-2.5">
+                    <div className="bg-slate-950/70 border border-slate-800 p-2.5 rounded-xl flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_6px_#34d399]"></span>
+                        <span className="text-xs font-extrabold text-white">#1 Terminal Voltage Contact</span>
+                      </div>
+                      <span className="text-[10.5px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded font-black">100% PASS</span>
+                    </div>
+
+                    <div className="bg-slate-950/70 border border-amber-500/40 p-2.5 rounded-xl flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping"></span>
+                        <span className="text-xs font-extrabold text-white">#2 Connector Latch Crimp</span>
+                      </div>
+                      <span className="text-[10.5px] bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2 py-0.5 rounded font-black">REWORK REQ</span>
+                    </div>
+
+                    <div className="bg-slate-950/70 border border-slate-800 p-2.5 rounded-xl flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_6px_#34d399]"></span>
+                        <span className="text-xs font-extrabold text-white">#3 Sealing Gasket Integrity</span>
+                      </div>
+                      <span className="text-[10.5px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded font-black">100% PASS</span>
+                    </div>
+
+                    <div className="bg-slate-950/70 border border-slate-800 p-2.5 rounded-xl flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full bg-blue-400 shadow-[0_0_6px_#60a5fa]"></span>
+                        <span className="text-xs font-extrabold text-white">#4 VIN Trace Barcode</span>
+                      </div>
+                      <span className="text-[10.5px] bg-blue-500/20 text-blue-300 border border-blue-500/40 px-2 py-0.5 rounded font-black">SYNCED</span>
+                    </div>
+                  </div>
                 </div>
               </div>
 

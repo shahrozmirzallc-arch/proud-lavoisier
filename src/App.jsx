@@ -261,14 +261,11 @@ function App() {
     try {
       clearStaleSessionStorage();
 
-      const { data: mappedEmail, error: rpcErr } = await supabase.rpc('get_auth_email_by_username', { p_username: inputUser });
-      if (rpcErr || !mappedEmail) {
-        setAuthError(true);
-        return false;
-      }
+      const { data: rpcEmail } = await supabase.rpc('get_auth_email_by_username', { p_username: inputUser });
+      const targetEmail = rpcEmail || (inputUser.includes('@') ? inputUser : `${inputUser}@idspulse.com`);
 
       let { data: authData, error: authErr } = await supabase.auth.signInWithPassword({
-        email: mappedEmail,
+        email: targetEmail,
         password: rawPw
       });
 
@@ -283,7 +280,7 @@ function App() {
         for (const altPw of fallbacks) {
           if (altPw === rawPw) continue;
           const { data: capAuthData, error: capErr } = await supabase.auth.signInWithPassword({
-            email: mappedEmail,
+            email: targetEmail,
             password: altPw
           });
           if (!capErr && capAuthData?.session) {

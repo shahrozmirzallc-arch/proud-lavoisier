@@ -3,7 +3,7 @@ import {
   Shield, Activity, Server, FileText, Users, Mail, DollarSign, Database, 
   Search, Filter, ChevronRight, ChevronDown, X, Clock, CheckCircle2, UserCheck, AlertCircle, AlertTriangle, 
   FileSpreadsheet, Calendar, ArrowRight, UserPlus, MapPin, Printer, Download, Eye, Sparkles,
-  Milestone, TrendingUp, FolderKanban, PlusCircle, ArrowLeft, Camera, ClipboardCheck, Zap, Building2, ShieldAlert, User, Cpu
+  Milestone, TrendingUp, FolderKanban, PlusCircle, ArrowLeft, Camera, ClipboardCheck, Zap, Building2, ShieldAlert, User, Cpu, Mic, Video
 } from 'lucide-react';
 import { getEntities, saveEntity, resetDB, logSystemEvent, addProject, deleteRate, isFieldRep } from './SharedDatabase';
 import { jsPDF } from 'jspdf';
@@ -9797,11 +9797,13 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
             {/* Drawer Scrollable Middle Body */}
             <div className="flex-1 overflow-y-auto pr-1 flex flex-col gap-4 min-h-0">
               
-              {/* Photo Gallery with annotations */}
-              <div className="flex flex-col gap-2">
-                <span className="text-[11.5px] text-slate-400 uppercase font-bold tracking-wider">Visual Audit Proofs</span>
+              {/* Photo & Multimedia Evidence Gallery (Photos, Audio Voice Memos, Video Walkthrough) */}
+              <div className="flex flex-col gap-3">
+                <span className="text-[11.5px] text-slate-400 uppercase font-bold tracking-wider">Visual Audit Proofs & Field Media Trace</span>
+                
+                {/* 1. Photo Proof Gallery */}
                 <div className="grid grid-cols-3 gap-2">
-                  {selectedIncident.photos.map(p => (
+                  {(selectedIncident.photos || []).map(p => (
                     <div key={p.id} className="aspect-square bg-slate-900 border border-slate-700/80 rounded-xl overflow-hidden relative group flex flex-col items-center justify-center p-1">
                       {p.url && !p.url.includes('example.com') ? (
                         <img 
@@ -9818,12 +9820,42 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         <div className="w-7 h-7 rounded-full bg-sky-500/15 border border-sky-500/30 flex items-center justify-center mb-1 text-sky-400">
                           <Camera className="w-3.5 h-3.5" />
                         </div>
-                        <span className="text-[9.5px] text-slate-300 font-bold uppercase tracking-wider">{p.type}</span>
+                        <span className="text-[9.5px] text-slate-300 font-bold uppercase tracking-wider">{p.type || 'Photo'}</span>
                         <span className="text-[8.5px] text-emerald-400 font-semibold">Logged</span>
                       </div>
-                      <span className="absolute bottom-1 right-1 bg-slate-950/90 border border-slate-700/80 text-[9.5px] px-1.5 py-0.5 rounded text-sky-300 font-bold uppercase tracking-wider">{p.type}</span>
+                      <span className="absolute bottom-1 right-1 bg-slate-950/90 border border-slate-700/80 text-[9.5px] px-1.5 py-0.5 rounded text-sky-300 font-bold uppercase tracking-wider">{p.type || 'Photo'}</span>
                     </div>
                   ))}
+                </div>
+
+                {/* 2. Audio Voice Memo Player */}
+                <div className="bg-slate-950 border border-slate-800 rounded-xl p-3 flex flex-col gap-1.5">
+                  <div className="flex justify-between items-center text-[11px]">
+                    <span className="font-extrabold text-sky-400 uppercase tracking-wider flex items-center gap-1.5">
+                      <Mic className="w-3.5 h-3.5 text-blue-400" /> Plant Floor Voice Report (Clarence Kuiken)
+                    </span>
+                    <span className="text-slate-400 font-mono text-[10px]">0:42 SEC • AUDIO WAV</span>
+                  </div>
+                  <audio controls className="w-full h-8 mt-1 rounded bg-slate-900" title="Inspector Voice Memo">
+                    <source src={selectedIncident.audio_url || "https://actions.google.com/sounds/v1/ambiences/office_hubbub.ogg"} type="audio/ogg" />
+                    Your browser does not support audio playback.
+                  </audio>
+                </div>
+
+                {/* 3. Video Walkthrough Inspection Player */}
+                <div className="bg-slate-950 border border-slate-800 rounded-xl p-3 flex flex-col gap-1.5">
+                  <div className="flex justify-between items-center text-[11px]">
+                    <span className="font-extrabold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
+                      <Video className="w-3.5 h-3.5 text-emerald-400" /> Video Inspection Walkthrough Log
+                    </span>
+                    <span className="text-slate-400 font-mono text-[10px]">HD 1080P • MP4</span>
+                  </div>
+                  <div className="relative rounded-lg overflow-hidden border border-slate-800 aspect-video bg-slate-900 flex items-center justify-center">
+                    <video controls className="w-full h-full object-cover" poster="/ids-pulse-shield.png">
+                      <source src={selectedIncident.video_url || "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4"} type="video/mp4" />
+                      Your browser does not support video playback.
+                    </video>
+                  </div>
                 </div>
               </div>
 

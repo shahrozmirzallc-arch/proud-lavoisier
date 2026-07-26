@@ -138,13 +138,16 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
           if (appMeta.role === 'rep' || appMeta.rep_id) {
             const repId = appMeta.rep_id || (appMeta.username === 'clarence' ? '1' : `rep_${appMeta.username}`);
             const dbUsers = getEntities('users') || [];
-            const found = dbUsers.find(u => u.id === repId || u.name?.toLowerCase().includes(appMeta.username?.toLowerCase())) || dbUsers[0];
-            if (found) {
-              setCurrentUser(found);
-              setEmail(found.email || '');
-              setIsLoggedIn(true);
-              setActiveScreen('home');
-            }
+            const found = dbUsers.find(u => u.id === repId || u.username === appMeta.username || u.name?.toLowerCase().includes(appMeta.username?.toLowerCase())) || {
+              id: repId || '1',
+              name: appMeta.username || 'Clarence Kuiken',
+              email: session.user.email,
+              role: 'rep'
+            };
+            setCurrentUser(found);
+            setEmail(found.email || session.user.email || '');
+            setIsLoggedIn(true);
+            setActiveScreen('home');
           }
         }
       } catch (err) {

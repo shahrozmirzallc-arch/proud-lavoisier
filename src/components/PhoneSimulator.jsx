@@ -299,11 +299,16 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
     setSubmittingAuth(true);
 
     try {
-      const { data: mappedEmail, error: rpcErr } = await supabase.rpc('get_auth_email_by_username', { p_username: inputUser });
-      if (rpcErr || !mappedEmail) {
-        setAuthError('Operator ID or Access Code is incorrect.');
-        setSubmittingAuth(false);
-        return;
+      let mappedEmail = inputUser;
+      if (!inputUser.includes('@')) {
+        const { data: rpcEmail } = await supabase.rpc('get_auth_email_by_username', { p_username: inputUser });
+        mappedEmail = rpcEmail || `${inputUser}@idspulse.com`;
+      } else {
+        const usernamePart = inputUser.split('@')[0];
+        const { data: rpcEmail } = await supabase.rpc('get_auth_email_by_username', { p_username: usernamePart });
+        if (rpcEmail) {
+          mappedEmail = rpcEmail;
+        }
       }
 
       let { data: authData, error: authErr } = await supabase.auth.signInWithPassword({
@@ -1090,13 +1095,13 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                 <div className="relative">
                   <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-slate-600" />
                   <input 
-                    type="email" 
+                    type="text" 
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
                     className="phone-input"
                     style={{ paddingLeft: '38px' }}
-                    placeholder="name@integritydriven.com"
+                    placeholder="clarence or email"
                   />
                 </div>
               </div>

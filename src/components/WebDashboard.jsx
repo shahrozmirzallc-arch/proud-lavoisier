@@ -6639,19 +6639,26 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                             </div>
                           </div>
 
-                          {/* Hours Progress bar */}
-                          <div className="flex flex-col gap-1.5 mt-2">
-                            <div className="flex justify-between text-[11.5px] font-semibold text-text-secondary">
-                              <span>Hours Tracked (Current Cycle):</span>
-                              <span className="text-text-primary font-bold">{unbilledHours} hrs</span>
+                          {/* Hours & Financial Summary Card */}
+                          <div className="flex flex-col gap-1.5 mt-2 bg-surface p-2.5 rounded-xl border border-border-subtle">
+                            <div className="flex justify-between items-center text-[12px] font-semibold">
+                              <span className="text-text-secondary">Approved Budget:</span>
+                              <span className="text-emerald-400 font-extrabold">{suppliers.find(s => s.id === currentUserCustomerId)?.allotted_hours || 35} Hours</span>
                             </div>
-                            <div className="w-full bg-surface h-2 rounded-full overflow-hidden border border-border-subtle">
+                            <div className="flex justify-between items-center text-[12px] font-semibold">
+                              <span className="text-text-secondary">Billing Rate:</span>
+                              <span className="text-sky-400 font-extrabold">${plantRate?.billing_rate || '45.00'}/hr</span>
+                            </div>
+                            <div className="flex justify-between items-center text-[12px] font-semibold pt-1 border-t border-border-subtle">
+                              <span className="text-text-secondary font-bold">Total Job Value:</span>
+                              <span className="text-amber-400 font-black">${((parseFloat(suppliers.find(s => s.id === currentUserCustomerId)?.allotted_hours || 35)) * (parseFloat(plantRate?.billing_rate || 45))).toFixed(2)}</span>
+                            </div>
+                            <div className="w-full bg-surface-elevated h-2 rounded-full overflow-hidden border border-border-subtle mt-1">
                               <div 
                                 className="bg-[#3B82F6] h-full rounded-full transition-all duration-500" 
-                                style={{ width: `${Math.min(100, (unbilledHours / 40) * 100)}%` }}
+                                style={{ width: `${Math.min(100, (unbilledHours / (parseFloat(suppliers.find(s => s.id === currentUserCustomerId)?.allotted_hours || 35))) * 100)}%` }}
                               />
                             </div>
-                            <span className="text-[12.5px] text-text-secondary font-semibold uppercase">Standard allocation: 40 hrs/wk max</span>
                           </div>
                         </div>
                       );

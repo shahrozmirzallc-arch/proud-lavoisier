@@ -259,9 +259,9 @@ function App() {
       let { data: rpcEmail } = await supabase.rpc('get_auth_email_by_username', { p_username: inputUser });
       let targetEmail = rpcEmail || (inputUser.includes('@') ? inputUser : null);
       if (!targetEmail) {
-        if (inputUser === 'shahroz') targetEmail = 'shahroz@integritydriven.com';
-        else if (inputUser === 'admin') targetEmail = 'admin@integritydriven.com';
-        else if (inputUser === 'greg' || inputUser === 'owner') targetEmail = 'greg@integritydriven.com';
+        if (inputUser === 'shahroz') targetEmail = 'shahroz@goto-ids.com';
+        else if (inputUser === 'admin') targetEmail = 'admin@goto-ids.com';
+        else if (inputUser === 'greg' || inputUser === 'owner') targetEmail = 'greg@goto-ids.com';
       }
 
       if (!targetEmail) {

@@ -2457,148 +2457,161 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   };
 
   const handleDownloadReport = (inc) => {
-    const conf = getConfidentiality(inc, "incident");
-    const doc = new jsPDF();
-    
-    // Draw Clean Light background container for the dark text logo image
-    doc.setFillColor(248, 250, 252);
-    doc.setDrawColor(203, 213, 225);
-    doc.setLineWidth(0.5);
-    doc.roundedRect(20, 13, 50, 13, 2, 2, "FD");
-    doc.addImage(LOGO_BASE64, 'PNG', 22, 14, 46, 11);
-    
-    // Confidentiality Badge in top right corner
-    doc.setDrawColor(conf.colorRGB[0], conf.colorRGB[1], conf.colorRGB[2]);
-    doc.setFillColor(conf.bgRGB[0], conf.bgRGB[1], conf.bgRGB[2]);
-    doc.rect(130, 14, 60, 11, "FD");
-    
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(8);
-    doc.setTextColor(conf.colorRGB[0], conf.colorRGB[1], conf.colorRGB[2]);
-    doc.text(conf.level, 160, 19.5, { align: "center" });
-    
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(5.5);
-    doc.text(conf.sub, 160, 23, { align: "center" });
-
-    // Background Watermark (Light rotated text matching classifier)
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(30);
-    doc.setTextColor(248, 250, 252); // Very faint slate grey
-    doc.text(`IDS ${conf.level}`, 25, 140, { angle: 45 });
-
-    // Header Separator line
-    doc.setDrawColor(30, 58, 95); 
-    doc.setLineWidth(1.2);
-    doc.line(20, 33, 190, 33);
-    
-    const firstPN = inc.parts_list?.[0]?.part_number || inc.part_id;
-    const partSubject = inc.parts_list && inc.parts_list.length > 1
-      ? `${firstPN} (+${inc.parts_list.length - 1} others)`
-      : firstPN;
-
-    const formattedDate = inc.date || (inc.created_at ? new Date(inc.created_at).toLocaleDateString() : new Date().toLocaleDateString());
-
-    const fields = [
-      { label: "Incident ID:", val: inc.id },
-      { label: "Logged By (Rep):", val: users.find(u => u.id === inc.rep_id)?.name || 'Clarence Kuiken' },
-      { label: "Report Date:", val: formattedDate },
-      { label: "Affected Part Number:", val: partSubject },
-      { label: "Area Discovered:", val: inc.area },
-      { label: "Defect Coordinates:", val: inc.defect_location_x !== undefined && inc.defect_location_x !== null ? `X: ${inc.defect_location_x} | Y: ${inc.defect_location_y}` : 'N/A' },
-      { label: "Immediate Action:", val: inc.action_taken },
-      { label: "Supplier QM Contact:", val: inc.supplier_contact },
-      { label: "Review Status Level:", val: inc.status },
-      { label: "Classification Reasoning:", val: conf.reason }
-    ];
-    
-    // Metadata Box background
-    doc.setFillColor(248, 250, 252);
-    doc.rect(20, 39, 170, 100, "F");
-    doc.setDrawColor(226, 232, 240);
-    doc.setLineWidth(0.5);
-    doc.rect(20, 39, 170, 100, "D");
-
-    let y = 46;
-    fields.forEach((f) => {
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(9.5);
-      doc.setTextColor(71, 85, 105);
-      doc.text(f.label, 25, y);
-      
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(9.5);
-      if (f.label === "Classification Reasoning:") {
+    if (!inc) return;
+    showToast("Preparing PDF report download...", "info");
+    setTimeout(() => {
+      try {
+        const conf = getConfidentiality(inc, "incident");
+        const doc = new jsPDF();
+        
+        // Draw Clean Light background container for the dark text logo image
+        doc.setFillColor(248, 250, 252);
+        doc.setDrawColor(203, 213, 225);
+        doc.setLineWidth(0.5);
+        doc.roundedRect(20, 13, 50, 13, 2, 2, "FD");
+        doc.addImage(LOGO_BASE64, 'PNG', 22, 14, 46, 11);
+        
+        // Confidentiality Badge in top right corner
+        doc.setDrawColor(conf.colorRGB[0], conf.colorRGB[1], conf.colorRGB[2]);
+        doc.setFillColor(conf.bgRGB[0], conf.bgRGB[1], conf.bgRGB[2]);
+        doc.rect(130, 14, 60, 11, "FD");
+        
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(8);
         doc.setTextColor(conf.colorRGB[0], conf.colorRGB[1], conf.colorRGB[2]);
-        doc.setFont("helvetica", "bold");
-      } else {
-        doc.setTextColor(15, 23, 42);
-      }
-      doc.text(String(f.val), 72, y);
-      
-      y += 9.5;
-    });
-    
-    if (inc.parts_list && inc.parts_list.length > 0) {
-      y = 148;
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(11);
-      doc.setTextColor(30, 58, 95);
-      doc.text("Affected Parts Checklist:", 20, y);
-      y += 8;
-      
-      doc.setFontSize(9.5);
-      inc.parts_list.forEach((p) => {
-        doc.setFont("helvetica", "bold");
-        doc.setTextColor(15, 23, 42);
-        doc.text(`PN ${p.part_number}`, 25, y);
+        doc.text(conf.level, 160, 19.5, { align: "center" });
         
         doc.setFont("helvetica", "normal");
-        doc.setTextColor(51, 65, 85);
-        const binText = p.bin ? `, Bin: ${p.bin}` : '';
-        doc.text(`- ${p.description} (Qty: ${p.qty}${binText})`, 60, y);
+        doc.setFontSize(5.5);
+        doc.text(conf.sub, 160, 23, { align: "center" });
+
+        // Background Watermark (Light rotated text matching classifier)
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(30);
+        doc.setTextColor(248, 250, 252); // Very faint slate grey
+        doc.text(`IDS ${conf.level}`, 25, 140, { angle: 45 });
+
+        // Header Separator line
+        doc.setDrawColor(30, 58, 95); 
+        doc.setLineWidth(1.2);
+        doc.line(20, 33, 190, 33);
+        
+        const firstPN = inc.parts_list?.[0]?.part_number || inc.part_id;
+        const partSubject = inc.parts_list && inc.parts_list.length > 1
+          ? `${firstPN} (+${inc.parts_list.length - 1} others)`
+          : firstPN;
+
+        const formattedDate = inc.date || (inc.created_at ? new Date(inc.created_at).toLocaleDateString() : new Date().toLocaleDateString());
+
+        const fields = [
+          { label: "Incident ID:", val: inc.id },
+          { label: "Logged By (Rep):", val: users.find(u => u.id === inc.rep_id)?.name || 'Clarence Kuiken' },
+          { label: "Report Date:", val: formattedDate },
+          { label: "Affected Part Number:", val: partSubject },
+          { label: "Area Discovered:", val: inc.area },
+          { label: "Defect Coordinates:", val: inc.defect_location_x !== undefined && inc.defect_location_x !== null ? `X: ${inc.defect_location_x} | Y: ${inc.defect_location_y}` : 'N/A' },
+          { label: "Immediate Action:", val: inc.action_taken },
+          { label: "Supplier QM Contact:", val: inc.supplier_contact },
+          { label: "Review Status Level:", val: inc.status },
+          { label: "Classification Reasoning:", val: conf.reason }
+        ];
+        
+        // Metadata Box background
+        doc.setFillColor(248, 250, 252);
+        doc.rect(20, 39, 170, 100, "F");
+        doc.setDrawColor(226, 232, 240);
+        doc.setLineWidth(0.5);
+        doc.rect(20, 39, 170, 100, "D");
+
+        let y = 46;
+        fields.forEach((f) => {
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(9.5);
+          doc.setTextColor(71, 85, 105);
+          doc.text(f.label, 25, y);
+          
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(9.5);
+          if (f.label === "Classification Reasoning:") {
+            doc.setTextColor(conf.colorRGB[0], conf.colorRGB[1], conf.colorRGB[2]);
+            doc.setFont("helvetica", "bold");
+          } else {
+            doc.setTextColor(15, 23, 42);
+          }
+          doc.text(String(f.val), 72, y);
+          
+          y += 9.5;
+        });
+        
+        if (inc.parts_list && inc.parts_list.length > 0) {
+          y = 148;
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(11);
+          doc.setTextColor(30, 58, 95);
+          doc.text("Affected Parts Checklist:", 20, y);
+          y += 8;
+          
+          doc.setFontSize(9.5);
+          inc.parts_list.forEach((p) => {
+            doc.setFont("helvetica", "bold");
+            doc.setTextColor(15, 23, 42);
+            doc.text(`PN ${p.part_number}`, 25, y);
+            
+            doc.setFont("helvetica", "normal");
+            doc.setTextColor(51, 65, 85);
+            const binText = p.bin ? `, Bin: ${p.bin}` : '';
+            doc.text(`- ${p.description} (Qty: ${p.qty}${binText})`, 60, y);
+            y += 8;
+          });
+        } else {
+          y = 148;
+        }
+        
+        y += 2;
+        doc.setDrawColor(226, 232, 240);
+        doc.setLineWidth(0.5);
+        doc.line(20, y, 190, y);
+        
         y += 8;
-      });
-    } else {
-      y = 148;
-    }
-    
-    y += 2;
-    doc.setDrawColor(226, 232, 240);
-    doc.setLineWidth(0.5);
-    doc.line(20, y, 190, y);
-    
-    y += 8;
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(11.5);
-    doc.setTextColor(30, 58, 95);
-    doc.text("Defect Narrative details:", 20, y);
-    
-    y += 7;
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(9.5);
-    doc.setTextColor(51, 65, 85);
-    
-    const splitText = doc.splitTextToSize(inc.description, 170);
-    doc.text(splitText, 20, y);
-    
-    // Page Footer
-    doc.setDrawColor(226, 232, 240);
-    doc.setLineWidth(0.5);
-    doc.line(20, 274, 190, 274);
-    
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(8);
-    doc.setTextColor(148, 163, 184);
-    doc.text("Generated by IDS Pulse Auditor | Date: " + new Date().toLocaleDateString(), 20, 281);
-    doc.text("Page 1 of 1", 190, 281, { align: "right" });
-    doc.text(`CLASSIFICATION: ${conf.level} / ${conf.sub}`, 105, 286, { align: "center" });
-    
-    doc.save(`IDS_Pulse_Audit_${firstPN}_${inc.id}.pdf`);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(11.5);
+        doc.setTextColor(30, 58, 95);
+        doc.text("Defect Narrative details:", 20, y);
+        
+        y += 7;
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9.5);
+        doc.setTextColor(51, 65, 85);
+        
+        const splitText = doc.splitTextToSize(inc.description, 170);
+        doc.text(splitText, 20, y);
+        
+        // Page Footer
+        doc.setDrawColor(226, 232, 240);
+        doc.setLineWidth(0.5);
+        doc.line(20, 274, 190, 274);
+        
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8);
+        doc.setTextColor(148, 163, 184);
+        doc.text("Generated by IDS Pulse Auditor | Date: " + new Date().toLocaleDateString(), 20, 281);
+        doc.text("Page 1 of 1", 190, 281, { align: "right" });
+        doc.text(`CLASSIFICATION: ${conf.level} / ${conf.sub}`, 105, 286, { align: "center" });
+        
+        doc.save(`IDS_Pulse_Audit_${firstPN}_${inc.id}.pdf`);
+        showToast("PDF report downloaded successfully!", "success");
+      } catch (err) {
+        console.error("PDF Export error:", err);
+        showToast("Failed to generate PDF report: " + err.message, "error");
+      }
+    }, 40);
   };
 
   const handleResendSupplierEmail = (inc) => {
-    showToast("Incident notification email queued & sent!", "success");
+    showToast("Resending supplier notification email...", "info");
+    setTimeout(() => {
+      showToast("Incident notification email queued & sent!", "success");
+    }, 40);
   };
 
   const handleDownloadShiftReport = (sr) => {

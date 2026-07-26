@@ -1534,8 +1534,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
         setActiveTab('time-tracking');
       } else if (userRole === 'qre') {
         setActiveTab('time-tracking');
-      } else if (userRole === 'customer') {
-        setActiveTab('customer-portal');
+      } else if (['shahroz', 'owner', 'admin'].includes(userRole)) {
+        setActiveTab('command-center');
       } else {
         setActiveTab('incidents');
       }

@@ -109,6 +109,13 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   const [newProjPay, setNewProjPay] = useState('');
   const [newProjCurrency, setNewProjCurrency] = useState('USD');
   
+  // Toast Notification State (Non-blocking replacement for native alerts)
+  const [toast, setToast] = useState(null);
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3500);
+  };
+
   // Navigation & UI Ergonomics Mode ('inspector' vs 'admin')
   const [uiMode, setUiMode] = useState('inspector');
   const [activeTab, setActiveTab] = useState('command-center');
@@ -533,7 +540,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   const handleLogHoursSubmit = (e) => {
     e.preventDefault();
     if (!logHoursQty || parseFloat(logHoursQty) <= 0) {
-      alert("Please enter a valid amount of hours.");
+      showToast("Please enter a valid amount of hours.", "error");
       return;
     }
     const newEntry = {
@@ -595,7 +602,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     setRates(getEntities('rates'));
     const user = getActiveActorName();
     logSystemEvent('system', 'save_rate', `${user} configured custom rate for Rep ${configRepId} serving client ${configSupplierId} (Bill: $${configBillingRate} ${configCurrency}, Pay: $${configPayRate}).`);
-    alert("Custom rate override saved successfully!");
+    showToast("Custom rate override saved successfully!", "success");
   };
 
   const handleDeleteRate = (rateId) => {
@@ -609,7 +616,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   const handleEditSave = (e) => {
     e.preventDefault();
     if (!editingEntry || !editForm.reason.trim()) {
-      alert("You must provide a reason for the edit to update the audit trail.");
+      showToast("You must provide a reason for the edit.", "warning");
       return;
     }
     const timestamp = new Date().toISOString();
@@ -700,10 +707,10 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     
     if (addedCount > 0) {
       window.dispatchEvent(new Event('ids_pulse_db_update'));
-      alert(`Successfully generated ${addedCount} daily timesheets for the week!`);
+      showToast(`Successfully generated ${addedCount} daily timesheets!`, "success");
       setMatrixData({}); // Clear grid
     } else {
-      alert("No hours were entered in the matrix.");
+      showToast("No hours were entered in the matrix.", "warning");
     }
   };
 
@@ -718,12 +725,12 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     });
     setTimeEntries(getEntities('timeEntries'));
     setExpenseEntries(getEntities('expenseEntries'));
-    alert("Marked as invoiced!");
+    showToast("Marked as invoiced!", "success");
   };
 
   const handleExportClientQuickBooks = (clientEntries) => {
     if (selectedInvoiceCurrency === 'all') {
-      alert("Please select a specific Billing Currency (CAD or USD) to export separate timesheets.");
+      showToast("Please select Billing Currency (CAD or USD).", "warning");
       return;
     }
     let csv = "Date,Name,Customer:Job,Service Item,Duration,Notes,Billing Status\n";
@@ -861,13 +868,13 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       setTimeout(() => setWeeklyGridSaveMessage(false), 3000);
     } catch (err) {
       console.error("Error persisting CER grid:", err);
-      alert("Failed to persist CER grid: " + err.message);
+      showToast("Failed to persist CER grid: " + err.message, "error");
     }
   };
 
   const handleBatchGenerateAllClientInvoices = () => {
     if (selectedInvoiceCurrency === 'all') {
-      alert("Please select a specific Billing Currency (CAD or USD) to batch print separate client invoices.");
+      showToast("Please select a specific Billing Currency (CAD or USD).", "warning");
       return;
     }
     let count = 0;
@@ -883,15 +890,15 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       }
     });
     if (count === 0) {
-      alert("No pending un-invoiced entries found for any client in " + selectedInvoiceCurrency);
+      showToast("No pending un-invoiced entries found.", "info");
     } else {
-      alert(`Successfully generated ${count} separate client PDF invoice(s)!`);
+      showToast(`Successfully generated ${count} separate client PDF invoice(s)!`, "success");
     }
   };
 
   const handleGenerateClientInvoicePDF = (client, dateRangeStr, clientEntries, clientExpenses) => {
     if (selectedInvoiceCurrency === 'all') {
-      alert("Please select a specific Billing Currency (CAD or USD) to print separate statements for the client.");
+      showToast("Please select a specific Billing Currency (CAD or USD).", "warning");
       return;
     }
     const curSymbol = selectedInvoiceCurrency === 'CAD' ? 'C$' : 'US$';
@@ -1012,14 +1019,14 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       doc.save(`Invoice_${client.name?.replace(/\s+/g, '_')}_${Date.now()}.pdf`);
     } catch (err) {
       console.error(err);
-      alert("Error generating PDF: " + err.message);
+      showToast("Error generating PDF: " + err.message, "error");
     }
   };
 
   const handleCreateCustomer = (e) => {
     e.preventDefault();
     if (!newCustomerName) {
-      alert("Customer name is required.");
+      showToast("Customer name is required.", "error");
       return;
     }
     const newId = newCustomerName?.toLowerCase()?.replace(/[^a-z0-9]/g, '_');
@@ -1041,13 +1048,13 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     setNewCustomerAddress('');
     setNewCustomerContactName('');
     setNewCustomerContactEmail('');
-    alert("Customer created successfully!");
+    showToast("Customer created successfully!", "success");
   };
 
   const handleCreateLocation = (e) => {
     e.preventDefault();
     if (!newLocationName) {
-      alert("Location name is required.");
+      showToast("Location name is required.", "error");
       return;
     }
     const newId = newLocationName?.toLowerCase()?.replace(/[^a-z0-9]/g, '_');
@@ -1084,13 +1091,13 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
     setNewLocationName('');
     setNewLocationAddress('');
-    alert("Location created and mapped successfully!");
+    showToast("Location created and mapped successfully!", "success");
   };
 
   const handleCreateRep = (e) => {
     e.preventDefault();
     if (!newRepName) {
-      alert("Representative name is required.");
+      showToast("Representative name is required.", "error");
       return;
     }
     const newId = `rep_${newRepName?.toLowerCase()?.replace(/[^a-z0-9]/g, '_')}`;
@@ -1113,13 +1120,13 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     setNewRepEmail('');
     setNewRepPhone('');
     setNewRepPayCurrency('CAD');
-    alert("Representative onboarding successful!");
+    showToast("Representative onboarding successful!", "success");
   };
 
   const handleQuickAddRepSubmit = (e) => {
     if (e) e.preventDefault();
     if (!quickRepName) {
-      alert("Representative name is required.");
+      showToast("Representative name is required.", "error");
       return;
     }
     const newId = `rep_${quickRepName?.toLowerCase()?.replace(/[^a-z0-9]/g, '_')}`;
@@ -1147,13 +1154,13 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     setConfigRepId(newId);
     setSelectedDispatchRepId(newId);
     
-    alert(`Representative ${quickRepName} added successfully!`);
+    showToast(`Representative ${quickRepName} added successfully!`, "success");
   };
 
   const handleQuickAddClientSubmit = (e) => {
     if (e) e.preventDefault();
     if (!quickClientName) {
-      alert("Company name is required.");
+      showToast("Company name is required.", "error");
       return;
     }
     const newId = quickClientName?.toLowerCase()?.replace(/[^a-z0-9]/g, '_');
@@ -1209,7 +1216,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     let finalRepId = newProjRep;
     if (isInlineNewRep || newProjRep === '__new__') {
       if (!inlineRepName) {
-        alert("New Field Inspector Name is required.");
+        showToast("New Field Inspector Name is required.", "error");
         return;
       }
       finalRepId = 'rep_' + Date.now();
@@ -1230,8 +1237,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     // If project assignment fields are filled, register project assignment seamlessly
     if (newProjDesc || finalRepId || newProjPlant) {
       const projId = 'proj_' + Date.now();
-      const bRate = parseFloat(newProjBilling) || 85.0;
-      const pRate = parseFloat(newProjPay) || 45.0;
+      const bRate = newProjBilling ? parseFloat(newProjBilling) : null;
+      const pRate = newProjPay ? parseFloat(newProjPay) : null;
       const assignedRepId = (finalRepId && finalRepId !== '__new__') ? finalRepId : '1';
 
       const newProjObj = {
@@ -1349,7 +1356,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
         setSelectedEditingRequestId(null);
         setExtraHoursRequests(getEntities('extraHoursRequests'));
         setExtraHoursReason('');
-        alert("Overtime request revised and resubmitted successfully!");
+        showToast("Overtime request revised & resubmitted!", "success");
         return;
       }
     }
@@ -1373,7 +1380,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     saveEntity('extraHoursRequests', newReqItem);
     setExtraHoursRequests(getEntities('extraHoursRequests'));
     setExtraHoursReason('');
-    alert("Extra hours request filed successfully! Pending Customer approval.");
+    showToast("Extra hours request filed! Pending approval.", "success");
   };
 
   const handleCustomerApproval = (reqId, statusAction) => {
@@ -1394,7 +1401,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       const user = suppliers.find(s => s.id === currentUserCustomerId)?.name || 'Customer Manager';
       logSystemEvent('payroll', 'customer_overtime_approval', `Customer ${user} ${statusAction}d overtime request ${reqId} for ${match.hours} hrs.`);
       setCustomerApprovalComment('');
-      alert(`Request ${statusAction === 'approve' ? 'Approved' : 'Rejected'}!`);
+      showToast(`Request ${statusAction === 'approve' ? 'Approved' : 'Rejected'}!`, "success");
     }
   };
 
@@ -1433,7 +1440,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       const user = getActiveActorName();
       logSystemEvent('payroll', 'admin_overtime_approval', `${user} ${statusAction}d overtime request ${reqId} for Rep ${match.rep_id}.`);
       setAdminApprovalComment('');
-      alert(`Request ${statusAction === 'approve' ? 'Approved & Added to Timesheets' : 'Rejected'}!`);
+      showToast(`Request ${statusAction === 'approve' ? 'Approved & Added' : 'Rejected'}!`, "success");
     }
   };
 
@@ -1446,7 +1453,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       setExpenseEntries(getEntities('expenseEntries'));
       const user = getActiveActorName();
       logSystemEvent('payroll', 'admin_expense_approval', `${user} ${statusAction}d expense claim ${expId} for Rep ${match.rep_id}.`);
-      alert(`Expense claim ${statusAction === 'approve' ? 'Approved' : 'Rejected'}!`);
+      showToast(`Expense claim ${statusAction === 'approve' ? 'Approved' : 'Rejected'}!`, "success");
     }
   };
 
@@ -1459,7 +1466,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       setShiftReports(getEntities('shiftReports'));
       const user = getActiveActorName();
       logSystemEvent('shift', 'publish_report', `${user} published shift report ${reportId} to Customer Portal.`);
-      alert("Report published successfully to Customer!");
+      showToast("Report published successfully to Customer!", "success");
     }
   };
 
@@ -1783,7 +1790,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     setSelectedIncident(null);
     setSelectedEmailLog(null);
     setSelectedShiftReport(null);
-    alert('Demo database successfully restored to default seed states.');
+    showToast("Demo database state restored to defaults.", "info");
   };
 
   const handleUpdateStatus = (incidentId, newStatus) => {
@@ -1803,7 +1810,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
   const handleAssignRepSubmit = (e) => {
     e.preventDefault();
-    alert(`Success: Assigned ${assignRepName} to active dispatch at ${assignPlant === 'gm_oshawa' ? 'GM Oshawa Plant' : 'Magna Belleville'}.`);
+    showToast(`Assigned ${assignRepName} to active dispatch!`, "success");
     setShowAssignRepModal(false);
   };
 
@@ -2587,7 +2594,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   };
 
   const handleResendSupplierEmail = (inc) => {
-    alert(`Incident notification email has been successfully queued and resent to: martin.s@magna.com (CC: Donna Cabral, Greg Phillippe)`);
+    showToast("Incident notification email queued & sent!", "success");
   };
 
   const handleDownloadShiftReport = (sr) => {
@@ -3722,7 +3729,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       document.body.removeChild(link);
     } catch (err) {
       console.error(err);
-      alert("Error generating CSV file.");
+      showToast("Error generating CSV file.", "error");
     }
   };
 
@@ -4036,7 +4043,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Failed to export Excel:', error);
-      alert('Error generating Excel file: ' + error.message);
+      showToast("Error generating Excel file: " + error.message, "error");
     }
   };
 
@@ -5623,10 +5630,15 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     <div className="space-y-2">
                       <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block">Target Plant & Location</label>
                       <select className="w-full h-11 bg-slate-950 border border-slate-800 rounded-xl px-3 text-xs font-bold text-white focus:outline-none focus:border-blue-500">
-                        <option value="magna">Magna AutoSystems — Oshawa, ON</option>
-                        <option value="autokabel">Auto-Kabel North America — Dearborn, MI</option>
-                        <option value="brose">Brose Mexico S.A. — Queretaro, MX</option>
-                        <option value="lear">Lear Corporation — Tuscaloosa, AL</option>
+                        {suppliers && suppliers.length > 0 ? (
+                          suppliers.map(s => (
+                            <option key={s.id} value={s.id}>
+                              {s.name} {s.location ? `— ${s.location}` : ''}
+                            </option>
+                          ))
+                        ) : (
+                          <option value="">No clients configured</option>
+                        )}
                       </select>
                     </div>
 
@@ -5634,7 +5646,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                       <button
                         type="button"
                         onClick={() => {
-                          alert(`Dispatch command sent! ${selectedDispatchRep.name} has been re-assigned.`);
+                          showToast(`Dispatch command sent to ${selectedDispatchRep?.name}!`, "success");
                           setSelectedDispatchRep(null);
                         }}
                         className="flex-1 h-11 bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl cursor-pointer shadow-lg transition-all"
@@ -7036,7 +7048,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                       if (allChecked) {
                         setWeeklySignOff(true);
                       } else {
-                        alert('Please check off at least some activities before signing off.');
+                        showToast("Please check off required activities before signoff.", "warning");
                       }
                     }}
                     className="bg-[#3B82F6] hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg flex items-center gap-2 transition-colors cursor-pointer shadow-sm shadow-blue-500/20"
@@ -7421,7 +7433,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                       setExtraHoursDate(req.date);
                                       setExtraHoursQty(req.hours.toString());
                                       setExtraHoursReason(req.reason);
-                                      alert("Form loaded with rejected request details. Modify and submit to resubmit.");
+                                      showToast("Form loaded with rejected request details. Modify and submit to resubmit.", "info");
                                     }}
                                     className="mt-1 px-2.5 py-1 bg-cyan-50 hover:bg-cyan-100 text-cyan-600 font-bold text-[10.5px] uppercase rounded border border-cyan-200 transition-colors w-fit cursor-pointer"
                                   >
@@ -9458,8 +9470,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     <form 
                       onSubmit={(e) => {
                         e.preventDefault();
-                        if (!newProjRep || !newProjClient || !newProjPlant || !newProjBilling || !newProjPay) {
-                          alert("Please fill in all required fields.");
+                        if (!newProjRep || !newProjClient || !newProjPlant) {
+                          showToast("Please fill in all required fields.", "error");
                           return;
                         }
                         const repDetails = users.find(u => u.id === newProjRep);
@@ -9485,13 +9497,13 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                           client_id: newProjClient,
                           plant_id: newProjPlant,
                           project_id: projId,
-                          billing_rate: String(newProjBilling),
-                          pay_rate: String(newProjPay),
+                          billing_rate: newProjBilling ? String(newProjBilling) : null,
+                          pay_rate: newProjPay ? String(newProjPay) : null,
                           currency: newProjCurrency || 'USD'
                         };
                         saveEntity('rates', newRateItem);
                         logSystemEvent('system', 'create_project', `Registered new project ${newProjectItem.project_number} for client ${newProjClient} at location ${newProjPlant}.`);
-                        alert("Project registered successfully!");
+                        showToast("Project registered successfully!", "success");
                         // Reset fields
                         setNewProjDesc('');
                         setNewProjBilling('');
@@ -10397,8 +10409,9 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   onChange={(e) => setAssignRepName(e.target.value)}
                   className="h-10 w-full bg-surface border border-border-subtle hover:border-border-subtle rounded-xl px-3.5 text-[13.5px] text-text-primary focus:outline-none focus:ring-1 focus:ring-[#3B82F6]/20 transition-all"
                 >
-                  <option value="Clarence Kuiken">Clarence Kuiken</option>
-                  <option value="Donna Cabral">Donna Cabral (Lead)</option>
+                  {users.filter(u => u.role === 'rep' || u.role === 'lead' || isFieldRep(u)).map(u => (
+                    <option key={u.id} value={u.name}>{u.name}</option>
+                  ))}
                 </select>
               </div>
 
@@ -10409,9 +10422,13 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   onChange={(e) => setAssignPlant(e.target.value)}
                   className="h-10 w-full bg-surface border border-border-subtle hover:border-border-subtle rounded-xl px-3.5 text-[13.5px] text-text-primary focus:outline-none focus:ring-1 focus:ring-[#3B82F6]/20 transition-all"
                 >
-                  <option value="gm_oshawa">GM Oshawa Plant</option>
-                  <option value="magna_autosystems">Magna AutoSystems Belleville</option>
-                  <option value="hutchinson">Hutchinson Mississauga</option>
+                  {plants && plants.length > 0 ? (
+                    plants.map(p => (
+                      <option key={p.id} value={p.id}>{p.name} {p.location ? `— ${p.location}` : ''}</option>
+                    ))
+                  ) : (
+                    <option value="">No plant locations configured</option>
+                  )}
                 </select>
               </div>
             </div>
@@ -11211,6 +11228,20 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
           onClose={() => setShowInvoiceModal(false)}
           invoiceData={previewInvoiceData}
         />
+      )}
+
+      {/* Floating Toast Notification Overlay */}
+      {toast && (
+        <div className={`fixed bottom-6 right-6 z-[100] px-4 py-3 rounded-2xl shadow-2xl border backdrop-blur-md flex items-center gap-3 text-xs font-bold animate-in slide-in-from-bottom duration-200 ${
+          toast.type === 'error' ? 'bg-rose-950/90 text-rose-200 border-rose-500/40' :
+          toast.type === 'warning' ? 'bg-amber-950/90 text-amber-200 border-amber-500/40' :
+          toast.type === 'info' ? 'bg-sky-950/90 text-sky-200 border-sky-500/40' :
+          'bg-emerald-950/90 text-emerald-200 border-emerald-500/40'
+        }`}>
+          <CheckCircle2 className="w-4.5 h-4.5 text-emerald-400 flex-shrink-0" />
+          <span>{toast.message}</span>
+          <button onClick={() => setToast(null)} className="ml-2 text-slate-400 hover:text-white cursor-pointer"><X className="w-3.5 h-3.5" /></button>
+        </div>
       )}
     </div>
   );

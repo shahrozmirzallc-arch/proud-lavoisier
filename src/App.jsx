@@ -514,6 +514,7 @@ function App() {
                     setIsOffline={setIsOffline}
                     dbUpdateTrigger={dbUpdateTrigger}
                     isNativeMobile={isMobileDevice}
+                    currentUser={currentUser}
                   />
                 </ErrorBoundary>
               </div>

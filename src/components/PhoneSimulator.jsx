@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Shield, Activity, Wifi, WifiOff, MapPin, Clock, 
-  User, Lock, LogOut, CheckCircle, AlertTriangle, Play, Square, X, Calendar,
+  User, Lock, LogOut, CheckCircle, CheckCircle2, AlertTriangle, Play, Square, X, Calendar,
   Camera, Scan, Plus, ChevronRight, Mail, Send, RotateCcw, Volume2, Video, ArrowLeft, Trash2,
   Receipt, DollarSign, FileText
 } from 'lucide-react';
@@ -10,7 +10,7 @@ import { uploadToCloudinary } from '../services/cloudinaryService';
 import { stageIncidentLocally, getLocalOutbox } from '../services/nativeStorageService';
 import { getRepStatusConfig, sanitizeCustomerDerivativeUrl } from '../services/mediaSecurityService';
 
-export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigger, isNativeMobile }) {
+export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigger, isNativeMobile, currentUser: propUser = null }) {
   const isNative = isNativeMobile ?? (typeof window !== 'undefined' && (
     window.Capacitor?.isNativePlatform?.() ||
     window.Capacitor?.getPlatform?.() === 'android' ||
@@ -27,6 +27,13 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
   const [rememberDevice, setRememberDevice] = useState(true);
   const [currentUser, setCurrentUser] = useState(null);
   
+  // Toast Notification State
+  const [toast, setToast] = useState(null);
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3200);
+  };
+
   // Shift Control
   const [shiftActive, setShiftActive] = useState(false);
   const [selectedPlant, setSelectedPlant] = useState('gm_oshawa');
@@ -135,20 +142,23 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
         const { data: { session } } = await supabase.auth.getSession();
         if (session && session.user) {
           const appMeta = session.user.app_metadata || {};
-          if (appMeta.role === 'rep' || appMeta.rep_id) {
-            const repId = appMeta.rep_id || (appMeta.username === 'clarence' ? '1' : `rep_${appMeta.username}`);
-            const dbUsers = getEntities('users') || [];
-            const found = dbUsers.find(u => u.id === repId || u.username === appMeta.username || u.name?.toLowerCase().includes(appMeta.username?.toLowerCase())) || {
-              id: repId || '1',
-              name: appMeta.username || 'Clarence Kuiken',
-              email: session.user.email,
-              role: 'rep'
-            };
-            setCurrentUser(found);
-            setEmail(found.email || session.user.email || '');
-            setIsLoggedIn(true);
-            setActiveScreen('home');
-          }
+          const username = appMeta.username || session.user.email?.split('@')[0] || 'clarence';
+          const repId = appMeta.rep_id || (username === 'clarence' ? '1' : `rep_${username}`);
+          const dbUsers = getEntities('users') || [];
+          const found = dbUsers.find(u => u.id === repId || u.username === username || u.email === session.user.email) || {
+            id: repId || '1',
+            name: appMeta.username || username || 'Clarence Kuiken',
+            email: session.user.email,
+            role: 'rep'
+          };
+          setCurrentUser(found);
+          setEmail(found.email || session.user.email || '');
+          setIsLoggedIn(true);
+          setActiveScreen('home');
+        } else if (propUser) {
+          setCurrentUser(propUser);
+          setIsLoggedIn(true);
+          setActiveScreen('home');
         }
       } catch (err) {
         console.error('[PhoneSimulator Session Error]:', err);
@@ -160,33 +170,38 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
     const allTasks = getEntities('dailyTasks') || [];
     const repTasks = allTasks.filter(t => t.rep_id === '1' && t.date === '2026-06-01');
     setDailyTasks(repTasks);
-  }, [dbUpdateTrigger]);
+  }, [dbUpdateTrigger, propUser]);
 
   const getActiveClientForPlant = () => {
-    if (!currentUser) return 'Magna AutoSystems';
+    if (!currentUser) return 'No client assigned';
     const dbProjects = getEntities('projects') || [];
     const dbSuppliers = getEntities('suppliers') || [];
     const dbRates = getEntities('rates') || [];
 
+    const repIdStr = String(currentUser.id || '');
+
     // 1. Direct project match for this rep and plant
-    const proj = dbProjects.find(p => p && p.plant_id === selectedPlant && (p.rep_id === currentUser.id || p.rep_id === '1'));
+    const proj = dbProjects.find(p => p && (String(p.rep_id) === repIdStr || p.rep_id === currentUser.id));
     if (proj) {
-      const sup = dbSuppliers.find(s => s.id === proj.client_id);
+      const sup = dbSuppliers.find(s => s.id === proj.client_id || s.name === proj.client_id || s.id === proj.supplier_id);
       if (sup) return sup.name;
+      if (proj.client_name) return proj.client_name;
     }
 
     // 2. Check rate assignment match
-    const rate = dbRates.find(r => r.rep_id === currentUser.id && (r.plant_id === selectedPlant || !r.plant_id));
+    const rate = dbRates.find(r => String(r.rep_id) === repIdStr || r.rep_id === currentUser.id);
     if (rate) {
       const sup = dbSuppliers.find(s => s.id === rate.supplier_id);
       if (sup) return sup.name;
     }
 
-    // 3. Fallback to supplier serving this plant
-    const supServed = dbSuppliers.find(s => s.plants_served && s.plants_served.includes(selectedPlant));
-    if (supServed) return supServed.name;
+    // 3. Fallback to supplier serving selected plant
+    if (selectedPlant) {
+      const supServed = dbSuppliers.find(s => s.plants_served && Array.isArray(s.plants_served) && s.plants_served.includes(selectedPlant));
+      if (supServed) return supServed.name;
+    }
 
-    return 'Magna AutoSystems';
+    return 'No client assigned';
   };
 
   const playBeep = (type = 'success') => {
@@ -711,7 +726,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
       } catch (err) {
         console.error("Error during incident release:", err);
         setIsSendingIncident(false);
-        alert(`Failed to send incident report: ${err.message || err}`);
+        showToast(`Failed to send incident report: ${err.message || err}`, "error");
       }
     }, 2000);
   };
@@ -720,7 +735,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
     if (!scannedPN) return;
     const isDuplicate = scannedPartsList.some(p => p.part_number === scannedPN && p.bin === (scannedBin || 'N/A'));
     if (isDuplicate) {
-      alert("This part number and bin location is already added to the list!");
+      showToast("This part number & bin location is already added!", "warning");
       return;
     }
     
@@ -855,7 +870,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
     
     window.dispatchEvent(new Event('ids_pulse_db_update'));
     
-    alert(`Observations successfully merged into active Incident ${incident.id}! Affecting PN ${updatedPartsList[0]?.part_number}.`);
+    showToast(`Observations merged into active Incident ${incident.id}!`, "success");
     
     resetIncidentScreen();
   };
@@ -911,7 +926,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
     });
     logSystemEvent('rework', 'create', `${currentUser.name} logged rework of ${reworkQty} pieces of Part #${reworkPN}.`);
 
-    alert('Rework logged successfully!');
+    showToast("Rework logged successfully!", "success");
     setReworkPN('86286761');
     setReworkQty(10);
     setReworkHours(1.5);
@@ -928,12 +943,12 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
   const handleExpenseSubmit = async (e) => {
     e.preventDefault();
     if (!expenseAmount || isNaN(parseFloat(expenseAmount)) || parseFloat(expenseAmount) <= 0) {
-      alert('Please enter a valid expense amount.');
+      showToast("Please enter a valid expense amount.", "error");
       return;
     }
     
     if (!expenseReceiptPhoto) {
-      alert('A photo receipt is mandatory for all expense claims. Please upload a receipt to continue.');
+      showToast("A photo receipt is mandatory for expense claims.", "warning");
       return;
     }
 
@@ -955,7 +970,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
     });
     logSystemEvent('payroll', 'expense_create', `${currentUser.name} logged $${expenseAmount} expense claim for ${expenseCategory}.`);
 
-    alert('Expense claim submitted successfully & saved to Cloudinary!');
+    showToast("Expense claim submitted successfully!", "success");
     setExpenseAmount('');
     setExpenseCategory('Fuel');
     setExpenseReceiptPhoto(null);
@@ -1036,7 +1051,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
       });
 
       setSendingShiftReport(false);
-      alert('Shift Summary Report submitted successfully! Logged in email history.');
+      showToast("Shift Summary Report submitted successfully!", "success");
       setActiveScreen('home');
     }, 1500);
   };
@@ -1817,7 +1832,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                             </div>
                             <div className="flex justify-between items-center text-[13.5px]">
                               <span className="text-text-secondary">Supplier:</span>
-                              <span className="text-blue-700 font-bold">Magna AutoSystems</span>
+                              <span className="text-blue-700 font-bold">{getActiveClientForPlant()}</span>
                             </div>
                           </>
                         ) : (
@@ -2081,7 +2096,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
 
                   {/* Magna AutoSystems Specific Fields (NoCOVID screening fields, PRR class only) */}
                   <div className="bg-slate-50 p-3 rounded-sm border border-slate-200 flex flex-col gap-3 mt-2 shadow-sm">
-                    <span className="text-[10.5px] text-[#3B82F6] font-extrabold uppercase tracking-wider block border-b border-slate-850 pb-1.5">Magna Specifications</span>
+                    <span className="text-[10.5px] text-[#3B82F6] font-extrabold uppercase tracking-wider block border-b border-slate-850 pb-1.5">{getActiveClientForPlant()} Specifications</span>
                     <div className="flex flex-col gap-3 text-[11.5px]">
                       
                       {/* Returned */}
@@ -2410,7 +2425,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                   /* PHYSICAL LABEL MOCK FOR BARCODES */
                   <div className="bg-white text-slate-950 p-2.5 rounded-lg border-2 border-slate-300 shadow-2xl w-full max-w-[260px] flex flex-col gap-1.5 animate-in zoom-in duration-200">
                     <div className="flex justify-between items-center border-b border-slate-200 pb-1 text-[12.5px] text-text-secondary font-bold uppercase tracking-wider">
-                      <span>Magna Belleville Systems</span>
+                      <span>{getActiveClientForPlant()} Facility</span>
                       <span>LOT: 902A5</span>
                     </div>
 
@@ -2427,7 +2442,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                           type="button"
                           onClick={() => {
                             playBeep('warning');
-                            alert("Incorrect Code Selected!\n\nThis is the Supplier Serial Number. Please tap the PART NUMBER barcode below instead.");
+                            showToast("Incorrect Code! Please tap Part Number barcode below.", "warning");
                           }}
                           className="absolute inset-0 bg-red-50 border border-red-500/40 rounded flex items-center justify-center cursor-pointer hover:bg-red-100"
                         >
@@ -2474,7 +2489,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                   /* PHYSICAL LABEL MOCK FOR QR BIN SCANS */
                   <div className="bg-white text-slate-950 p-3 rounded-lg border-2 border-slate-300 shadow-2xl w-full max-w-[260px] flex flex-col gap-2 animate-in zoom-in duration-200">
                     <div className="flex justify-between items-center border-b border-slate-200 pb-1 text-[12.5px] text-text-secondary font-bold uppercase">
-                      <span>Magna Bin Storage</span>
+                      <span>{getActiveClientForPlant()} Storage</span>
                       <span>SECTION: B4</span>
                     </div>
 
@@ -2490,7 +2505,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                           type="button"
                           onClick={() => {
                             playBeep('warning');
-                            alert("Incorrect QR Code!\n\nThis is the Manufacturing Batch QR. Please tap the green BIN LOCATION QR code instead.");
+                            showToast("Incorrect QR! Please tap green Bin Location QR.", "warning");
                           }}
                           className="absolute inset-0 bg-red-50 border border-red-500/40 rounded flex items-center justify-center cursor-pointer hover:bg-red-100"
                         >
@@ -2866,7 +2881,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
             <div className="flex flex-col gap-4">
               <form onSubmit={(e) => {
                 e.preventDefault();
-                if(!overtimeHours) return alert("Please enter overtime hours.");
+                if(!overtimeHours) return showToast("Please enter overtime hours.", "warning");
                 saveExtraHoursRequest({
                   rep_id: currentUser?.id || 'rep_clarence',
                   userName: currentUser?.name || 'Clarence Kuiken',
@@ -2884,7 +2899,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                   notes: overtimeReason,
                   status: 'pending_customer'
                 });
-                alert("Overtime requested! Pending customer approval.");
+                showToast("Overtime requested! Pending customer approval.", "success");
                 setOvertimeHours(''); setOvertimeReason(''); setActiveScreen('home');
                 window.dispatchEvent(new Event('ids_pulse_db_update'));
               }} className="flex flex-col gap-3">
@@ -2968,7 +2983,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                               onClick={() => {
                                 setOvertimeHours('15.0');
                                 setOvertimeReason(`[RE-SUBMITTED] Revised hours to +15.0 per customer feedback. ${req.reason || ''}`);
-                                alert("Overtime form pre-filled with revised +15.0 hours! Click 'Submit Request for Approval' above.");
+                                showToast("Overtime form pre-filled with revised +15.0 hours!", "info");
                               }}
                               className="mt-1 py-1.5 px-3 bg-sky-600 hover:bg-sky-500 text-white font-bold text-[11px] rounded-md transition-colors cursor-pointer text-center"
                             >
@@ -2995,7 +3010,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                 notes: 'Manual entry for missed clock-in',
                 status: 'pending_customer'
               });
-              alert("Manual job time submitted! Pending customer approval.");
+              showToast("Manual job time submitted! Pending customer approval.", "success");
               setManualShiftDate(''); setManualShiftHours(''); setActiveScreen('home');
             }} className="flex flex-col gap-3">
               <div className="p-3 bg-slate-50 border border-slate-200 rounded-sm mb-2 shadow-sm">
@@ -3075,14 +3090,14 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                               <button 
                                 onClick={() => {
                                   const val = document.getElementById(`rev_input_${inc.id}`)?.value;
-                                  if (!val) return alert("Please enter correction description!");
+                                  if (!val) return showToast("Please enter correction description!", "warning");
                                   const dbIncs = getEntities('incidents') || [];
                                   const match = dbIncs.find(i => i.id === inc.id);
                                   if (match) {
                                     match.revision_request = val;
                                     saveEntity('incidents', match);
                                     window.dispatchEvent(new Event('ids_pulse_db_update'));
-                                    alert("Revision request successfully logged and sent to quality lead!");
+                                    showToast("Revision request submitted to quality lead!", "success");
                                   }
                                 }} 
                                 className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-[10.5px] rounded-sm uppercase cursor-pointer transition-colors shadow-sm"
@@ -3149,6 +3164,19 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
           </div>
         )}
 
+        {/* Floating Toast Notification Overlay inside Phone */}
+        {toast && (
+          <div className={`absolute top-12 left-4 right-4 z-50 px-3 py-2.5 rounded-xl shadow-xl border backdrop-blur-md flex items-center gap-2.5 text-[11px] font-bold animate-in slide-in-from-top duration-200 ${
+            toast.type === 'error' ? 'bg-rose-900/90 text-rose-100 border-rose-500/40' :
+            toast.type === 'warning' ? 'bg-amber-900/90 text-amber-100 border-amber-500/40' :
+            toast.type === 'info' ? 'bg-sky-900/90 text-sky-100 border-sky-500/40' :
+            'bg-emerald-900/90 text-emerald-100 border-emerald-500/40'
+          }`}>
+            <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+            <span className="flex-1">{toast.message}</span>
+            <button onClick={() => setToast(null)} className="text-slate-400 hover:text-white cursor-pointer"><X className="w-3.5 h-3.5" /></button>
+          </div>
+        )}
       </div>
 
       {/* Device Home Button Area */}

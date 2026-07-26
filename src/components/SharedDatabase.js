@@ -3,8 +3,8 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabaseUrl = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_URL) || process.env.VITE_SUPABASE_URL || 'https://wuqqrcowznrmmuokfxlk.supabase.co';
+const supabaseAnonKey = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_ANON_KEY) || process.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind1cXFyY293em5ybW11b2tmeGxrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM1NjA4NDQsImV4cCI6MjA5OTEzNjg0NH0.PHh-oLwXbPXkUxqwzBoyLceYD1HPelsoszy-f43Y-4I';
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
@@ -518,11 +518,11 @@ export function saveEntity(type, entity) {
 
     // Gracefully handle system_logs / telemetry telemetry without queue pollution
     if (type === 'systemLogs' || targetTable === 'system_logs') {
-      supabase.from(targetTable).upsert(entity).catch(() => {});
+      Promise.resolve(supabase.from(targetTable).upsert(entity)).catch(() => {});
       return entity;
     }
 
-    supabase.from(targetTable).upsert(entity)
+    Promise.resolve(supabase.from(targetTable).upsert(entity))
       .then(({ error }) => {
         if (error) {
           console.warn(`[Supabase Push Info] table "${targetTable}":`, error.message);

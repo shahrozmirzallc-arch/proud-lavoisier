@@ -256,25 +256,13 @@ function App() {
     try {
       clearStaleSessionStorage();
 
-      // Super Admin Master Key for Shahroz (Always Valid)
-      if ((inputUser === 'shahroz' || inputUser === 'admin' || inputUser === 'owner') && (rawPw === 'Shahroz123$' || rawPw === 'shahroz123$' || rawPw === 'shahroz' || rawPw === 'IDSPulse2026!' || rawPw === 'admin' || rawPw === 'admin123')) {
-        const superAdminUser = {
-          id: 'shahroz',
-          email: 'shahroz@idspulse.com',
-          app_metadata: { role: 'shahroz', username: 'shahroz', full_name: 'Shahroz (Super Admin)' },
-          user_metadata: { role: 'shahroz', username: 'shahroz' }
-        };
-        setIsUnlocked(true);
-        setAuthError(false);
-        setCurrentUser(superAdminUser);
-        setUserRole('shahroz');
-        setLayoutMode('dashboard-only');
-        syncWithSupabase(true, 'shahroz', '', '', 'dev_token_shahroz');
-        return true;
+      let { data: rpcEmail } = await supabase.rpc('get_auth_email_by_username', { p_username: inputUser });
+      let targetEmail = rpcEmail || (inputUser.includes('@') ? inputUser : null);
+      if (!targetEmail) {
+        if (inputUser === 'shahroz') targetEmail = 'shahroz@integritydriven.com';
+        else if (inputUser === 'admin') targetEmail = 'admin@integritydriven.com';
+        else if (inputUser === 'greg' || inputUser === 'owner') targetEmail = 'greg@integritydriven.com';
       }
-
-      const { data: rpcEmail } = await supabase.rpc('get_auth_email_by_username', { p_username: inputUser });
-      const targetEmail = rpcEmail || (inputUser.includes('@') ? inputUser : null);
 
       if (!targetEmail) {
         setAuthError(true);

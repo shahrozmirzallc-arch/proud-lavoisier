@@ -5,12 +5,13 @@ import {
   FileSpreadsheet, Calendar, ArrowRight, UserPlus, MapPin, Printer, Download, Eye, Sparkles,
   Milestone, TrendingUp, FolderKanban, PlusCircle, ArrowLeft, Camera, ClipboardCheck, Zap, Building2, ShieldAlert, User, Cpu, Mic, Video
 } from 'lucide-react';
-import { getEntities, saveEntity, resetDB, logSystemEvent, addProject, deleteRate, isFieldRep } from './SharedDatabase';
+import { getEntities, saveEntity, resetDB, logSystemEvent, addProject, deleteRate, isFieldRep, syncWithSupabase } from './SharedDatabase';
 import { jsPDF } from 'jspdf';
 import { LOGO_BASE64 } from './LogoBase64';
 import IntegrityWeeklyTimesheet from './IntegrityWeeklyTimesheet';
 import { generateIntegrityInvoicePDF } from '../utils/generateInvoicePdf';
 import { InvoiceModal } from './InvoiceModal';
+import { performAtomicClientOnboarding, formatRateDisplay } from '../services/onboardingService';
 
 export const EXPENSE_GROUPS = {
   INTERNAL: 'Internal Expense (IDS)',
@@ -1194,137 +1195,75 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     showToast(`Representative ${quickRepName} added successfully!`, "success");
   };
 
-  const handleQuickAddClientSubmit = (e) => {
+  const handleQuickAddClientSubmit = async (e) => {
     if (e) e.preventDefault();
-    if (!quickClientName) {
+    if (!quickClientName || !quickClientName.trim()) {
       showToast("Company name is required.", "error");
       return;
     }
-    const newId = quickClientName?.toLowerCase()?.replace(/[^a-z0-9]/g, '_');
-    
-    // Create/Reuse Plant Record & Store Plant ID (ISSUE 3)
-    let targetPlantId = newProjPlant ? newProjPlant.toLowerCase().replace(/[^a-z0-9]/g, '_') : 'oshawa_on';
-    const existingPlantObj = (plants || []).find(p => p.id === targetPlantId || p.name === newProjPlant);
-    if (existingPlantObj) {
-      targetPlantId = existingPlantObj.id;
-      if (!existingPlantObj.supplier_ids?.includes(newId)) {
-        const updatedPlant = { ...existingPlantObj, supplier_ids: [...(existingPlantObj.supplier_ids || []), newId] };
-        saveEntity('plants', updatedPlant);
-      }
-    } else if (newProjPlant) {
-      const newPlantObj = {
-        id: targetPlantId,
-        name: newProjPlant,
-        address: quickClientAddress || 'Quality Audit Facility',
-        supplier_ids: [newId]
-      };
-      saveEntity('plants', newPlantObj);
-      setPlants(getEntities('plants'));
+    if (!newProjBilling || !newProjPay) {
+      showToast("Billing Rate and Pay Rate are required.", "error");
+      return;
     }
 
-    const existingSupplier = (suppliers || []).find(s => s.id === newId);
-    const existingPlants = existingSupplier?.plants_served || [];
-    const updatedPlantsServed = (!existingPlants.includes(targetPlantId))
-      ? [...existingPlants, targetPlantId]
-      : existingPlants;
+    try {
+      showToast("Submitting atomic onboarding transaction...", "info");
 
-    const contactsArr = quickClientContactName ? [{
-      name: quickClientContactName,
-      email: quickClientContactEmail || '',
-      role: 'Quality Manager'
-    }] : (existingSupplier?.contacts || []);
+      const payload = {
+        supplier_name: quickClientName,
+        contact_name: quickClientContactName,
+        contact_email: quickClientContactEmail,
+        contact_phone: '',
+        address: quickClientAddress,
+        allotted_hours: quickClientAllottedHours || '40',
+        plant_name: newProjPlant || 'Windsor Plant 1',
+        plant_city: 'Windsor',
+        plant_address: quickClientAddress || 'Windsor, ON',
+        project_name: newProjDesc || `${quickClientName} Quality Audit`,
+        part_number: 'AT-4472',
+        po_number: 'PO-2026-ATLAS',
+        rep_id: newProjRep || '1',
+        billing_rate: newProjBilling,
+        pay_rate: newProjPay,
+        currency: newProjCurrency || 'USD',
+        start_date: newProjStartDate || new Date().toISOString().split('T')[0]
+      };
 
-    const newCust = {
-      ...(existingSupplier || {}),
-      id: newId,
-      name: quickClientName,
-      contact_name: quickClientContactName || existingSupplier?.contact_name || '',
-      contact_email: quickClientContactEmail || existingSupplier?.contact_email || '',
-      address: quickClientAddress || existingSupplier?.address || '',
-      allotted_hours: quickClientAllottedHours || existingSupplier?.allotted_hours || '20',
-      invoice_schedule: quickClientSchedule || existingSupplier?.invoice_schedule || 'on-demand',
-      contacts: contactsArr,
-      plants_served: updatedPlantsServed
-    };
-    saveEntity('suppliers', newCust);
-    setSuppliers(getEntities('suppliers'));
+      const result = await performAtomicClientOnboarding(payload);
 
-    // Handle Inline New Field Inspector Creation
-    let finalRepId = newProjRep;
-    if (isInlineNewRep || newProjRep === '__new__') {
-      if (!inlineRepName) {
-        showToast("New Field Inspector Name is required.", "error");
+      if (result && result.isOffline) {
+        showToast(result.message, "warning");
         return;
       }
-      finalRepId = 'rep_' + Date.now();
-      const newRepObj = {
-        id: finalRepId,
-        name: inlineRepName,
-        email: inlineRepEmail || `${inlineRepName.toLowerCase().replace(/[^a-z0-9]/g, '.')}@integritydriven.com`,
-        phone: inlineRepPhone || '+1 905-555-0100',
-        title: inlineRepTitle || 'Quality Inspector',
-        role: 'rep',
-        avatar: inlineRepName.split(' ').map(n => n[0]).join('').toUpperCase() || 'QI',
-        pay_currency: newProjCurrency || 'USD'
-      };
-      saveEntity('users', newRepObj);
-      setUsers(getEntities('users'));
+
+      await syncWithSupabase(true);
+
+      const createdSupplierId = result.supplier_id;
+      setQuickClientName('');
+      setQuickClientContactName('');
+      setQuickClientContactEmail('');
+      setQuickClientAddress('');
+      setQuickClientAllottedHours('20');
+      setQuickClientSchedule('on-demand');
+      setIsInlineNewRep(false);
+      setInlineRepName('');
+      setInlineRepEmail('');
+      setInlineRepPhone('');
+      setInlineRepTitle('Quality Inspector');
+      setShowQuickAddClient(false);
+
+      if (createdSupplierId) {
+        setNewProjClient(createdSupplierId);
+        setConfigSupplierId(createdSupplierId);
+        setSelectedInvoiceSupplier(createdSupplierId);
+      }
+
+      addNotification("🏢 Company Onboarded", `Company ${quickClientName} onboarded and Project Assignment registered successfully!`, "shift");
+      showToast(`Company ${quickClientName} onboarded successfully!`, "success");
+    } catch (err) {
+      console.error("[Onboarding Failure]:", err);
+      showToast(`Onboarding Failed: ${err.message}`, "error");
     }
-
-    // If project assignment fields are filled, register project assignment seamlessly
-    if (newProjDesc || finalRepId || newProjPlant) {
-      const projId = 'proj_' + Date.now();
-      const bRate = newProjBilling ? parseFloat(newProjBilling) : null;
-      const pRate = newProjPay ? parseFloat(newProjPay) : null;
-      const assignedRepId = (finalRepId && finalRepId !== '__new__') ? finalRepId : '1';
-
-      const newProjObj = {
-        id: projId,
-        name: newProjDesc || `${quickClientName} Quality Audit`,
-        client_id: newId,
-        supplier_id: newId,
-        plant_id: targetPlantId,
-        rep_id: assignedRepId,
-        start_date: newProjStartDate || new Date().toISOString().split('T')[0],
-        currency: newProjCurrency || 'USD',
-        status: 'Active'
-      };
-      addProject(newProjObj);
-      setProjects(getEntities('projects'));
-
-      // Write rate to rates table (Single Source of Truth - ISSUE 2)
-      const newRateObj = {
-        id: `rate_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
-        rep_id: assignedRepId,
-        supplier_id: newId,
-        plant_id: targetPlantId,
-        project_id: projId,
-        billing_rate: String(bRate),
-        pay_rate: String(pRate),
-        currency: newProjCurrency || 'USD'
-      };
-      saveEntity('rates', newRateObj);
-    }
-
-    setQuickClientName('');
-    setQuickClientContactName('');
-    setQuickClientContactEmail('');
-    setQuickClientAddress('');
-    setQuickClientAllottedHours('20');
-    setQuickClientSchedule('on-demand');
-    setIsInlineNewRep(false);
-    setInlineRepName('');
-    setInlineRepEmail('');
-    setInlineRepPhone('');
-    setInlineRepTitle('Quality Inspector');
-    setShowQuickAddClient(false);
-
-    // Auto-select
-    setNewProjClient(newId);
-    setConfigSupplierId(newId);
-    setSelectedInvoiceSupplier(newId);
-    
-    addNotification("🏢 Company Onboarded", `Company ${quickClientName} onboarded and Project Assignment registered successfully!`, "shift");
   };
 
   const handleQuickAddPlantSubmit = (e) => {
@@ -9562,8 +9501,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                   <td className="py-3 px-6 text-text-primary">{plantName}</td>
                                   <td className="py-3 px-6 font-medium text-text-primary">{repName}</td>
                                   <td className="py-3 px-6 text-text-secondary">{p.start_date}</td>
-                                  <td className="py-3 px-6 text-right font-bold text-emerald-600">{p.currency === 'CAD' ? 'C$' : 'US$'} {parseFloat(p.billing_rate).toFixed(2)}/hr</td>
-                                  <td className="py-3 px-6 text-right text-text-secondary">{p.currency === 'CAD' ? 'C$' : 'US$'} {parseFloat(p.pay_rate).toFixed(2)}/hr</td>
+                                  <td className="py-3 px-6 text-right font-bold text-emerald-600">{formatRateDisplay(p, rates, 'billing')}</td>
+                                  <td className="py-3 px-6 text-right text-text-secondary">{formatRateDisplay(p, rates, 'pay')}</td>
                                   <td className="py-1 px-2 text-right">
                                     <button className="text-[10.5px] uppercase font-bold text-[#3B82F6] bg-[#3B82F6]/10 px-2.5 py-1 rounded-lg group-hover:bg-[#3B82F6] group-hover:text-text-primary transition-all whitespace-nowrap">View</button>
                                   </td>
@@ -9582,47 +9521,53 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                       Register New Project
                     </h3>
                     <form 
-                      onSubmit={(e) => {
+                      onSubmit={async (e) => {
                         e.preventDefault();
                         if (!newProjRep || !newProjClient || !newProjPlant) {
                           showToast("Please fill in all required fields.", "error");
                           return;
                         }
-                        const repDetails = users.find(u => u.id === newProjRep);
-                        const projId = `prj_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
-                        const newProjectItem = {
-                          id: projId,
-                          project_number: `PRJ-${newProjClient?.substring(0, 3)?.toUpperCase()}-${Math.floor(100 + Math.random() * 900)}`,
-                          client_id: newProjClient,
-                          supplier_id: newProjClient,
-                          description: `Rep ${repDetails ? repDetails.name?.split(' ')[1] || repDetails.name : 'Staff'} ${newProjDesc || 'Inspection'}`,
-                          plant_id: newProjPlant,
-                          rep_id: newProjRep,
-                          start_date: newProjStartDate || new Date().toISOString()?.split('T')[0],
-                          currency: newProjCurrency,
-                          status: 'Active'
-                        };
-                        addProject(newProjectItem);
+                        if (!newProjBilling || !newProjPay) {
+                          showToast("Billing Rate and Pay Rate are required.", "error");
+                          return;
+                        }
 
-                        const newRateItem = {
-                          id: `rate_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
-                          rep_id: newProjRep,
-                          supplier_id: newProjClient,
-                          client_id: newProjClient,
-                          plant_id: newProjPlant,
-                          project_id: projId,
-                          billing_rate: newProjBilling ? String(newProjBilling) : null,
-                          pay_rate: newProjPay ? String(newProjPay) : null,
-                          currency: newProjCurrency || 'USD'
-                        };
-                        saveEntity('rates', newRateItem);
-                        logSystemEvent('system', 'create_project', `Registered new project ${newProjectItem.project_number} for client ${newProjClient} at location ${newProjPlant}.`);
-                        showToast("Project registered successfully!", "success");
-                        // Reset fields
-                        setNewProjDesc('');
-                        setNewProjBilling('');
-                        setNewProjPay('');
-                        window.dispatchEvent(new Event('ids_pulse_db_update'));
+                        const clientObj = suppliers.find(s => s.id === newProjClient);
+                        const plantObj = plants.find(p => p.id === newProjPlant);
+
+                        try {
+                          showToast("Submitting atomic project registration...", "info");
+
+                          const payload = {
+                            supplier_id: newProjClient,
+                            supplier_name: clientObj?.name || newProjClient,
+                            plant_id: newProjPlant,
+                            plant_name: plantObj?.name || newProjPlant,
+                            project_name: newProjDesc || `${clientObj?.name || newProjClient} Quality Audit`,
+                            rep_id: newProjRep,
+                            billing_rate: newProjBilling,
+                            pay_rate: newProjPay,
+                            currency: newProjCurrency || 'USD',
+                            start_date: newProjStartDate || new Date().toISOString().split('T')[0]
+                          };
+
+                          const result = await performAtomicClientOnboarding(payload);
+
+                          if (result && result.isOffline) {
+                            showToast(result.message, "warning");
+                            return;
+                          }
+
+                          await syncWithSupabase(true);
+                          showToast("Project registered successfully!", "success");
+                          setNewProjDesc('');
+                          setNewProjBilling('');
+                          setNewProjPay('');
+                          window.dispatchEvent(new Event('ids_pulse_db_update'));
+                        } catch (err) {
+                          console.error("[Project Registration Error]:", err);
+                          showToast(`Registration Failed: ${err.message}`, "error");
+                        }
                       }}
                       className="flex flex-col gap-3 flex-1 overflow-y-auto pr-1 scrollbar-thin"
                     >

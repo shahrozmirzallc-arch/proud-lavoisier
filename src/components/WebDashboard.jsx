@@ -802,10 +802,10 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       items.push({
         quantity: totalMileage,
         item: 'Travel Mileage',
-        description: `Authorized Travel Mileage Reimbursement @ $0.73/km`,
+        description: `Authorized Travel Mileage Reimbursement @ $${CONFIG_MILEAGE_RATE}/km`,
         um: 'km',
-        priceEach: 0.73,
-        amount: totalMileage * 0.73
+        priceEach: CONFIG_MILEAGE_RATE,
+        amount: totalMileage * CONFIG_MILEAGE_RATE
       });
     }
 
@@ -1005,7 +1005,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       clientEntries.forEach(entry => {
         if (entry.mileage_km > 0) {
           const repName = users.find(u => u.id === entry.rep_id)?.name || 'Rep';
-          const sub = entry.mileage_km * 0.73;
+          const sub = entry.mileage_km * CONFIG_MILEAGE_RATE;
           totalBill += sub;
           
           const descText = `${repName} - Travel Mileage (${entry.date})`;
@@ -1013,7 +1013,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
           
           doc.text(wrappedDesc[0] || '', 16, y);
           doc.text(`${entry.mileage_km} km`, 100, y);
-          doc.text(`${curSymbol}0.73/km`, 130, y);
+          doc.text(`${curSymbol}${CONFIG_MILEAGE_RATE.toFixed(2)}/km`, 130, y);
           doc.text(`${curSymbol}${sub.toFixed(2)}`, 160, y);
           
           for (let k = 1; k < wrappedDesc.length; k++) {
@@ -2089,7 +2089,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     : users.filter(isFieldRep).length;
   
   // Hours and Mileage cost calculation (Colleen's Phase 1 utility)
-  const ratePerKm = 0.73;
+  const ratePerKm = CONFIG_MILEAGE_RATE;
   const totalMileage = timeEntries
     .filter(t => showAllDates || t.date === selectedDate)
     .reduce((acc, curr) => acc + curr.mileage_km, 0);
@@ -2108,7 +2108,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     .filter(t => getRepSupplierRates(t.rep_id, t.supplier_id, t.plant_id).currency === 'CAD')
     .reduce((acc, curr) => {
       const rates = getRepSupplierRates(curr.rep_id, curr.supplier_id, curr.plant_id);
-      return acc + (curr.hours * rates.billing_rate) + (curr.mileage_km * 0.73);
+      return acc + (curr.hours * rates.billing_rate) + (curr.mileage_km * CONFIG_MILEAGE_RATE);
     }, 0);
     
   const usdInvoicedTotal = activeEntries
@@ -3179,7 +3179,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
     const totalHoursVal = timeEntries.reduce((acc, curr) => acc + curr.hours, 0);
     const totalMileageVal = timeEntries.reduce((acc, curr) => acc + curr.mileage_km, 0);
-    const totalInvoicedEstVal = (timeEntries || []).reduce((acc, curr) => acc + ((curr.hours || 0) * ((curr.billing_rate !== undefined && curr.billing_rate !== null) ? parseFloat(curr.billing_rate) : getRepSupplierRates(curr.rep_id, curr.supplier_id, curr.plant_id).billing_rate)) + ((curr.mileage_km || 0) * 0.73), 0);
+    const totalInvoicedEstVal = (timeEntries || []).reduce((acc, curr) => acc + ((curr.hours || 0) * ((curr.billing_rate !== undefined && curr.billing_rate !== null) ? parseFloat(curr.billing_rate) : getRepSupplierRates(curr.rep_id, curr.supplier_id, curr.plant_id).billing_rate)) + ((curr.mileage_km || 0) * CONFIG_MILEAGE_RATE), 0);
 
     doc.setFont("helvetica", "bold");
     doc.setFontSize(12);
@@ -3212,7 +3212,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
     timeEntries.forEach((entry) => {
       const rep = users.find(u => u.id === entry.rep_id)?.name || 'Unknown Rep';
-      const mileageCost = entry.mileage_km * 0.73;
+      const mileageCost = entry.mileage_km * CONFIG_MILEAGE_RATE;
       const rate = (entry.billing_rate !== undefined && entry.billing_rate !== null) ? parseFloat(entry.billing_rate) : getRepSupplierRates(entry.rep_id, entry.supplier_id, entry.plant_id).billing_rate;
       const hourlyBilling = (entry.hours || 0) * rate;
       const total = mileageCost + hourlyBilling;
@@ -3252,7 +3252,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
     const totalHoursVal = timeEntries.reduce((acc, curr) => acc + curr.hours, 0);
     const totalMileageVal = timeEntries.reduce((acc, curr) => acc + curr.mileage_km, 0);
-    const totalInvoicedEstVal = (timeEntries || []).reduce((acc, curr) => acc + ((curr.hours || 0) * ((curr.billing_rate !== undefined && curr.billing_rate !== null) ? parseFloat(curr.billing_rate) : getRepSupplierRates(curr.rep_id, curr.supplier_id, curr.plant_id).billing_rate)) + ((curr.mileage_km || 0) * 0.73), 0);
+    const totalInvoicedEstVal = (timeEntries || []).reduce((acc, curr) => acc + ((curr.hours || 0) * ((curr.billing_rate !== undefined && curr.billing_rate !== null) ? parseFloat(curr.billing_rate) : getRepSupplierRates(curr.rep_id, curr.supplier_id, curr.plant_id).billing_rate)) + ((curr.mileage_km || 0) * CONFIG_MILEAGE_RATE), 0);
 
     printWindow.document.write(`
       <html>
@@ -3324,7 +3324,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
               <tbody>
                 ${(timeEntries || []).filter(entry => entry).map(entry => {
                   const rep = users.find(u => u && u.id === entry.rep_id)?.name || 'Unknown Rep';
-                  const mileageCost = (entry.mileage_km || 0) * 0.73;
+                  const mileageCost = (entry.mileage_km || 0) * CONFIG_MILEAGE_RATE;
                   const rate = (entry.billing_rate !== undefined && entry.billing_rate !== null) ? parseFloat(entry.billing_rate) : getRepSupplierRates(entry.rep_id, entry.supplier_id, entry.plant_id).billing_rate;
                   const hourlyBilling = (entry.hours || 0) * rate;
                   const total = mileageCost + hourlyBilling;
@@ -3746,7 +3746,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
         const rep = users.find(u => u && u.id === entry.rep_id);
         const repName = rep ? rep.name : 'Unknown Rep';
         const plant = entry.plant_id === 'gm_oshawa' ? 'GM Oshawa Plant' : 'Hutchinson Plant';
-        const mileageCost = (entry.mileage_km || 0) * 0.73;
+        const mileageCost = (entry.mileage_km || 0) * CONFIG_MILEAGE_RATE;
         const rate = (entry.billing_rate !== undefined && entry.billing_rate !== null) ? parseFloat(entry.billing_rate) : getRepSupplierRates(entry.rep_id, entry.supplier_id, entry.plant_id).billing_rate;
         const totalBilling = (entry.hours || 0) * rate + mileageCost;
         return [
@@ -3783,7 +3783,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       const totalHours = (timeEntries || []).filter(Boolean).reduce((acc, curr) => acc + (curr.hours || 0), 0) + 
                          expenseEntries.filter(e => e.category === 'Overtime Request' && (e.status === 'approved_customer' || e.status === 'approved_admin')).reduce((acc, curr) => acc + (curr.amount || 0), 0);
       const totalMileage = (timeEntries || []).filter(Boolean).reduce((acc, curr) => acc + (curr.mileage_km || 0), 0);
-      const totalMileageCost = totalMileage * 0.73;
+      const totalMileageCost = totalMileage * CONFIG_MILEAGE_RATE;
       const totalInvoicedEst = (timeEntries || []).reduce((acc, curr) => acc + ((curr.hours || 0) * ((curr.billing_rate !== undefined && curr.billing_rate !== null) ? parseFloat(curr.billing_rate) : getRepSupplierRates(curr.rep_id, curr.supplier_id, curr.plant_id).billing_rate)), 0) + totalMileageCost;
 
       csvLines.push(``); // blank separator
@@ -3927,7 +3927,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
         const repRateObj = (rates || []).find(r => r.rep_id === entry.rep_id);
         const rateVal = (repRateObj?.billing_rate !== undefined && repRateObj?.billing_rate !== null) ? parseFloat(repRateObj.billing_rate) : ((repRateObj?.hourly_rate !== undefined && repRateObj?.hourly_rate !== null) ? parseFloat(repRateObj.hourly_rate) : (entry.billing_rate ? parseFloat(entry.billing_rate) : 0));
 
-        const mileageCost = (entry.mileage_km || 0) * 0.73;
+        const mileageCost = (entry.mileage_km || 0) * CONFIG_MILEAGE_RATE;
         const totalBilling = (entry.hours || 0) * rateVal + mileageCost;
 
         // Flag entry sent to payroll
@@ -3970,7 +3970,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       // 5. Total Row
       const totalHours = (timeEntries || []).filter(Boolean).reduce((acc, curr) => acc + (curr.hours || 0), 0);
       const totalMileage = (timeEntries || []).filter(Boolean).reduce((acc, curr) => acc + (curr.mileage_km || 0), 0);
-      const totalMileageCost = totalMileage * 0.73;
+      const totalMileageCost = totalMileage * CONFIG_MILEAGE_RATE;
       const totalInvoicedEst = (timeEntries || []).filter(Boolean).reduce((acc, curr) => {
         const rObj = (rates || []).find(r => r.rep_id === curr.rep_id);
         const rVal = rObj?.billing_rate || rObj?.hourly_rate || 28.00;
@@ -7801,14 +7801,14 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     const cadEntries = includedEntries.filter(t => getRepSupplierRates(t.rep_id, t.supplier_id, t.plant_id).currency === 'CAD');
                     const cadExpenses = includedExpenses.filter(e => getExpenseCurrency(e) === 'CAD');
                     const cadHourly = cadEntries.reduce((acc, curr) => acc + ((curr.hours || 0) * ((curr.billing_rate !== undefined && curr.billing_rate !== null) ? parseFloat(curr.billing_rate) : getRepSupplierRates(curr.rep_id, curr.supplier_id, curr.plant_id).billing_rate)), 0);
-                    const cadMileage = cadEntries.reduce((acc, curr) => acc + ((curr.mileage_km || 0) * 0.73), 0);
+                    const cadMileage = cadEntries.reduce((acc, curr) => acc + ((curr.mileage_km || 0) * CONFIG_MILEAGE_RATE), 0);
                     const cadExpense = cadExpenses.reduce((acc, curr) => acc + parseFloat(curr.amount || 0), 0);
                     const cadTotal = cadHourly + cadMileage + cadExpense;
 
                     const usdEntries = includedEntries.filter(t => getRepSupplierRates(t.rep_id, t.supplier_id, t.plant_id).currency === 'USD');
                     const usdExpenses = includedExpenses.filter(e => getExpenseCurrency(e) === 'USD');
                     const usdHourly = usdEntries.reduce((acc, curr) => acc + ((curr.hours || 0) * ((curr.billing_rate !== undefined && curr.billing_rate !== null) ? parseFloat(curr.billing_rate) : getRepSupplierRates(curr.rep_id, curr.supplier_id, curr.plant_id).billing_rate)), 0);
-                    const usdMileage = usdEntries.reduce((acc, curr) => acc + ((curr.mileage_km || 0) * 0.73), 0);
+                    const usdMileage = usdEntries.reduce((acc, curr) => acc + ((curr.mileage_km || 0) * CONFIG_MILEAGE_RATE), 0);
                     const usdExpense = usdExpenses.reduce((acc, curr) => acc + parseFloat(curr.amount || 0), 0);
                     const usdTotal = usdHourly + usdMileage + usdExpense;
 
@@ -7970,7 +7970,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                           <td className="py-2 text-right text-text-secondary">{billing_rate ? `${rowSymbol} ${parseFloat(billing_rate).toFixed(2)}/hr` : 'Unconfigured Rate'}</td>
                                           <td className="py-2 text-right text-text-primary font-bold">{billing_rate ? `${rowSymbol} ${((entry.hours || 0) * parseFloat(billing_rate)).toFixed(2)}` : 'Unconfigured'}</td>
                                           <td className="py-2 text-right text-amber-600">{entry.mileage_km || 0} km</td>
-                                          <td className="py-2 text-right text-emerald-450">{rowSymbol} {((entry.mileage_km || 0) * 0.73).toFixed(2)}</td>
+                                          <td className="py-2 text-right text-emerald-450">{rowSymbol} {((entry.mileage_km || 0) * CONFIG_MILEAGE_RATE).toFixed(2)}</td>
                                         </tr>
                                       );
                                     })}
@@ -8042,7 +8042,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                               const expAmt = idx === 0 ? repExpenses.reduce((acc, curr) => acc + parseFloat(curr.amount || 0), 0) : 0;
                               const { pay_rate } = getRepSupplierRates(rep.id, clientId);
                               const hoursPay = clientHours * pay_rate;
-                              const mileagePay = clientMileage * 0.73;
+                              const mileagePay = clientMileage * CONFIG_MILEAGE_RATE;
                               return (
                                 <tr key={`${rep.id}_${clientId}`} className="hover:bg-surface">
                                   {idx === 0 ? <td className="py-2 text-text-primary font-extrabold" rowSpan={clients.length}>{rep.name}</td> : null}

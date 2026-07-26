@@ -654,6 +654,31 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
 
   // SUBMIT INCIDENT AND SEND EMAIL
   const handleSendIncident = () => {
+    // P0-4 Evidence Guard (3 Photos + Video Walkthrough + Audio Voice Memo)
+    const hasWide = !!(capturedPhotos.wide || annotatedPhotos.wide);
+    const hasMedium = !!(capturedPhotos.medium || annotatedPhotos.medium);
+    const hasCloseup = !!(capturedPhotos.closeup || annotatedPhotos.closeup);
+
+    if (!hasWide || !hasMedium || !hasCloseup) {
+      showToast("Completeness Error: Wide, Medium, and Close-up evidence photos are required before sending!", "warning");
+      return;
+    }
+
+    if (!hasVideo) {
+      showToast("Completeness Error: 15s Video Walkthrough evidence must be attached before sending!", "warning");
+      return;
+    }
+
+    if (!hasAudio) {
+      showToast("Completeness Error: Voice Memo Audio Note must be attached before sending!", "warning");
+      return;
+    }
+
+    if (!selectedArea || !description) {
+      showToast("Completeness Error: Please complete Step 3 (Describe & Area) before sending!", "warning");
+      return;
+    }
+
     setIsSendingIncident(true);
 
     // Simulate 2-second rule with loader

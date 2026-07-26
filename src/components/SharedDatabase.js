@@ -200,7 +200,7 @@ export async function syncWithSupabase(force = false, roleOverride = null, repId
             data = data.filter(u => {
               const uId = (u.id || '').toLowerCase();
               const uName = (u.username || '').toLowerCase();
-              return uId === custId || uName === custId || uId.includes('autokabel') || uName.includes('autokabel');
+              return custId && (uId === custId || uName === custId || uId.includes(custId) || uName.includes(custId));
             });
           } else if (role === 'rep') {
             const rId = (repId || '').toLowerCase();

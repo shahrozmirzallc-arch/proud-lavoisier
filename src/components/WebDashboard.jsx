@@ -298,6 +298,116 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   const [weeklyGridPerson, setWeeklyGridPerson] = useState('Boyd Colleen');
   const [weeklyGridDate, setWeeklyGridDate] = useState('2026-07-09');
   const [weeklyGridSaveMessage, setWeeklyGridSaveMessage] = useState(false);
+
+  const dynamicRepCards = useMemo(() => {
+    if (projects && projects.length > 0) {
+      return projects.map((p, idx) => {
+        const repObj = (users || []).find(u => 
+          u.id === p.rep_id || 
+          u.rep_id === p.rep_id || 
+          u.username === p.rep_id ||
+          (u.name && u.name.toLowerCase() === (p.rep_id || '').toLowerCase())
+        ) || {};
+        
+        const supplierObj = (suppliers || []).find(s => 
+          s.id === p.supplier_id || 
+          s.name?.toLowerCase() === (p.supplier_id || '').toLowerCase()
+        ) || {};
+
+        const plantObj = (plants || []).find(pl => 
+          pl.id === p.plant_id || 
+          pl.name?.toLowerCase() === (p.plant_id || '').toLowerCase()
+        ) || {};
+
+        let repName = repObj.name || (p.rep_id ? p.rep_id.replace(/^rep_/, '').replace(/_/g, ' ') : 'Clarence Kuiken');
+        repName = repName.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+
+        const supplierName = supplierObj.name || (p.supplier_id ? p.supplier_id.replace(/^sup_/, '').replace(/_/g, ' ') : 'Client Company');
+        const plantLocation = plantObj.name || plantObj.city || (p.plant_id ? p.plant_id.replace(/^plt_/, '').replace(/_/g, ' ') : 'Windsor Plant 1');
+
+        const colors = ['bg-blue-600', 'bg-cyan-600', 'bg-indigo-600', 'bg-purple-600', 'bg-emerald-600'];
+        
+        return {
+          name: repName,
+          role: repObj.title || repObj.role || 'Quality Resident Engineer',
+          status: 'ON-SITE / CLOCKED IN',
+          statusColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
+          dotColor: 'bg-emerald-400',
+          plant: supplierName,
+          location: plantLocation,
+          project: p.name || 'Quality Inspection Audit',
+          parts: p.part_number ? [p.part_number] : (p.plants_served ? [p.plants_served].flat() : ['PN AT-4472']),
+          shiftTime: 'Active Session',
+          inspected: p.billing_rate ? `$${parseFloat(p.billing_rate).toFixed(2)}/hr` : 'Inspecting',
+          defects: 'Logged',
+          avatarBg: colors[idx % colors.length]
+        };
+      });
+    }
+
+    return [
+      {
+        name: 'Clarence Kuiken',
+        role: 'Lead Senior Quality Inspector',
+        status: 'ON-SITE / CLOCKED IN',
+        statusColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
+        dotColor: 'bg-emerald-400',
+        plant: 'Magna AutoSystems',
+        location: 'Oshawa, ON (Plant 4)',
+        project: 'GM Tail Light Assembly Audit',
+        parts: ['PN 86286761', 'PN 86291945'],
+        shiftTime: '6.5 hrs active',
+        inspected: '450 pcs',
+        defects: '12 logged',
+        avatarBg: 'bg-blue-600'
+      },
+      {
+        name: 'Hugo Ramos',
+        role: 'Quality Resident Engineer (QRE)',
+        status: 'ON-SITE / CLOCKED IN',
+        statusColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
+        dotColor: 'bg-emerald-400',
+        plant: 'Auto-Kabel North America',
+        location: 'Dearborn, MI (Line 2)',
+        project: 'Ford Battery Sheath Quality Audit',
+        parts: ['AK-BAT-001', 'AK-HAR-294'],
+        shiftTime: '7.0 hrs active',
+        inspected: '380 pcs',
+        defects: '8 logged',
+        avatarBg: 'bg-cyan-600'
+      },
+      {
+        name: 'Nabil El-Sabagh',
+        role: 'Quality Resident Engineer (QRE)',
+        status: 'ON-SITE / CLOCKED IN',
+        statusColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
+        dotColor: 'bg-emerald-400',
+        plant: 'Brose Mexico S.A.',
+        location: 'Queretaro, MX (Assembly B)',
+        project: 'Door Regulator Bracket Inspection',
+        parts: ['BR-REG-502'],
+        shiftTime: '5.2 hrs active',
+        inspected: '290 pcs',
+        defects: '5 logged',
+        avatarBg: 'bg-indigo-600'
+      },
+      {
+        name: 'Rogelio Gutierrez',
+        role: 'Quality Resident Engineer (QRE)',
+        status: 'STANDBY / READY DISPATCH',
+        statusColor: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
+        dotColor: 'bg-amber-400',
+        plant: 'Lear Corporation',
+        location: 'Tuscaloosa, AL',
+        project: 'Mercedes Seat Frame Containment',
+        parts: ['BW-SOL-119'],
+        shiftTime: '3.0 hrs logged',
+        inspected: '120 pcs',
+        defects: '2 logged',
+        avatarBg: 'bg-purple-600'
+      }
+    ];
+  }, [projects, users, suppliers, plants]);
   const [weeklyGridData, setWeeklyGridData] = useState({
     'Monday 7/6/2026': { location: 'Magna Brampton', miles: '45', billable_hours: '8.0', shift: 'A', non_billable_hours: '0', per_diem: '25.00', piece_count: '120', warehouse: '0', hilo: '0', gas: '0', trucking: '0', bonus: '0', other_expenses: '0', paid_by_cer: '0', description: 'Sorting automotive harness components', attached: false },
     'Tuesday 7/7/2026': { location: 'Magna Brampton', miles: '45', billable_hours: '8.0', shift: 'A', non_billable_hours: '0', per_diem: '25.00', piece_count: '145', warehouse: '0', hilo: '0', gas: '0', trucking: '0', bonus: '0', other_expenses: '0', paid_by_cer: '0', description: 'Visual inspection & containment', attached: false },
@@ -5292,7 +5402,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   <div className="flex items-center gap-3 flex-wrap">
                     <div className="bg-slate-950/60 border border-slate-800 px-4 py-2.5 rounded-xl flex flex-col items-center">
                       <span className="text-[10.5px] font-bold text-slate-400 uppercase tracking-wider">Active Field Reps</span>
-                      <span className="text-xl font-black text-emerald-400 mt-0.5">4 On-Site</span>
+                      <span className="text-xl font-black text-emerald-400 mt-0.5">{dynamicRepCards.length} Active</span>
                     </div>
                     <div className="bg-slate-950/60 border border-slate-800 px-4 py-2.5 rounded-xl flex flex-col items-center">
                       <span className="text-[10.5px] font-bold text-slate-400 uppercase tracking-wider">Today's Inspection</span>
@@ -5378,72 +5488,11 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     <Activity className="w-5 h-5 text-blue-400" />
                     <span>Live Rep Deployment & Active Project Cards</span>
                   </h3>
-                  <span className="text-xs font-semibold text-slate-400">4 Active Operatives Synchronized</span>
+                  <span className="text-xs font-semibold text-slate-400">{dynamicRepCards.length} Active Operatives Synchronized</span>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-                  {[
-                    {
-                      name: 'Clarence Kuiken',
-                      role: 'Lead Senior Quality Inspector',
-                      status: 'ON-SITE / CLOCKED IN',
-                      statusColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
-                      dotColor: 'bg-emerald-400',
-                      plant: 'Magna AutoSystems',
-                      location: 'Oshawa, ON (Plant 4)',
-                      project: 'GM Tail Light Assembly Audit',
-                      parts: ['PN 86286761', 'PN 86291945'],
-                      shiftTime: '6.5 hrs active',
-                      inspected: '450 pcs',
-                      defects: '12 logged',
-                      avatarBg: 'bg-blue-600'
-                    },
-                    {
-                      name: 'Hugo Ramos',
-                      role: 'Quality Resident Engineer (QRE)',
-                      status: 'ON-SITE / CLOCKED IN',
-                      statusColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
-                      dotColor: 'bg-emerald-400',
-                      plant: 'Auto-Kabel North America',
-                      location: 'Dearborn, MI (Line 2)',
-                      project: 'Ford Battery Sheath Quality Audit',
-                      parts: ['AK-BAT-001', 'AK-HAR-294'],
-                      shiftTime: '7.0 hrs active',
-                      inspected: '380 pcs',
-                      defects: '8 logged',
-                      avatarBg: 'bg-cyan-600'
-                    },
-                    {
-                      name: 'Nabil El-Sabagh',
-                      role: 'Quality Resident Engineer (QRE)',
-                      status: 'ON-SITE / CLOCKED IN',
-                      statusColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
-                      dotColor: 'bg-emerald-400',
-                      plant: 'Brose Mexico S.A.',
-                      location: 'Queretaro, MX (Assembly B)',
-                      project: 'Door Regulator Bracket Inspection',
-                      parts: ['BR-REG-502'],
-                      shiftTime: '5.2 hrs active',
-                      inspected: '290 pcs',
-                      defects: '5 logged',
-                      avatarBg: 'bg-indigo-600'
-                    },
-                    {
-                      name: 'Rogelio Gutierrez',
-                      role: 'Quality Resident Engineer (QRE)',
-                      status: 'STANDBY / READY DISPATCH',
-                      statusColor: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
-                      dotColor: 'bg-amber-400',
-                      plant: 'Lear Corporation',
-                      location: 'Tuscaloosa, AL',
-                      project: 'Mercedes Seat Frame Containment',
-                      parts: ['BW-SOL-119'],
-                      shiftTime: '3.0 hrs logged',
-                      inspected: '120 pcs',
-                      defects: '2 logged',
-                      avatarBg: 'bg-purple-600'
-                    }
-                  ].map((rep, idx) => (
+                  {dynamicRepCards.map((rep, idx) => (
                     <div key={idx} className="bg-slate-900/80 border border-slate-800 hover:border-blue-500/50 rounded-2xl p-4 flex flex-col justify-between gap-3 shadow-lg hover:shadow-blue-500/10 transition-all group">
                       
                       {/* Rep Header */}

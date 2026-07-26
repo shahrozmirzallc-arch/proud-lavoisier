@@ -184,6 +184,17 @@ export async function syncWithSupabase(force = false, roleOverride = null, repId
           });
         }
 
+        if (col === 'suppliers') {
+          if (role === 'customer') {
+            const custId = customerId || '';
+            data = (data || []).filter(s => {
+              const sId = (s.id || '').toLowerCase();
+              const cId = custId.toLowerCase();
+              return sId === cId || sId.includes(cId) || cId.includes(sId);
+            });
+          }
+        }
+
         if (col === 'projects') {
           data = (data || []).map(p => {
             if (!isAdmin) {

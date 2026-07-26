@@ -4549,55 +4549,6 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
               );
             })()}
           </div>
-
-          {/* Admin-Only Header Controls (Hidden for Reps and Customers) */}
-          {['admin', 'owner', 'accountant', 'lead', 'shahroz', 'super_admin'].includes(userRole) && (
-            <>
-              <div className="flex items-center gap-1 bg-surface-elevated border border-border-subtle p-1 rounded-xl shadow-inner">
-                <button 
-                  type="button"
-                  onClick={() => setUiMode('inspector')}
-                  className={`px-3 py-1.5 rounded-lg font-extrabold text-[12.5px] transition-all cursor-pointer flex items-center gap-1.5 ${
-                    uiMode === 'inspector' 
-                      ? 'bg-[#3B82F6] text-white shadow-md shadow-blue-500/25 scale-[1.02]' 
-                      : 'text-text-secondary hover:text-text-primary'
-                  }`}
-                  title="Switch to Ultra-Simplified Inspector Interface"
-                >
-                  <span>👷 Field Inspector View</span>
-                </button>
-                <button 
-                  type="button"
-                  onClick={() => setUiMode('admin')}
-                  className={`px-3 py-1.5 rounded-lg font-extrabold text-[12.5px] transition-all cursor-pointer flex items-center gap-1.5 ${
-                    uiMode === 'admin' 
-                      ? 'bg-purple-600 text-white shadow-md shadow-purple-500/25 scale-[1.02]' 
-                      : 'text-text-secondary hover:text-text-primary'
-                  }`}
-                  title="Switch to Full Super Admin Command Center"
-                >
-                  <span>🎛️ Super Admin Mode</span>
-                </button>
-              </div>
-
-              <button 
-                onClick={() => setShowQuickAddClient(true)}
-                className="h-9 flex items-center gap-1.5 bg-[#0056D2] hover:bg-[#3B82F6] text-white px-3.5 rounded-xl text-[13.5px] font-extrabold shadow-lg shadow-blue-500/20 cursor-pointer transition-all hover:scale-105"
-                title="Fast Company & Project Onboarding Hub"
-              >
-                <UserPlus className="w-4 h-4 text-white" />
-                <span>Onboard Company & Project</span>
-              </button>
-            </>
-          )}
-
-          <button 
-            onClick={() => setShowHelpDrawer(true)}
-            className="h-9 flex items-center gap-1 bg-[#3B82F6]/60 hover:bg-[#3B82F6] text-[#3B82F6] border border-[#3B82F6]/25 px-3 rounded-xl text-[13.5px] font-bold cursor-pointer transition-all hover:scale-102"
-            title="Open Interactive Guide"
-          >
-            <span>❓ How to use this Portal</span>
-          </button>
         </div>
       </div>
 

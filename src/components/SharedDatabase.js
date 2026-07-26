@@ -182,6 +182,24 @@ export async function syncWithSupabase(force = false, roleOverride = null, repId
             }
             return { ...u, passcode: 'auth_managed' };
           });
+
+          if (role === 'customer') {
+            const custId = (customerId || '').toLowerCase();
+            data = data.filter(u => {
+              const uId = (u.id || '').toLowerCase();
+              const uName = (u.username || '').toLowerCase();
+              return uId === custId || uName === custId || uId.includes('autokabel') || uName.includes('autokabel');
+            });
+          } else if (role === 'rep') {
+            const rId = (repId || '').toLowerCase();
+            data = data.filter(u => {
+              const uId = (u.id || '').toLowerCase();
+              const uName = (u.username || '').toLowerCase();
+              const isSelf = uId === rId || uName === rId;
+              const isAdminUser = ['admin', 'owner', 'super_admin', 'accountant', 'lead', 'shahroz'].includes(u.role);
+              return isSelf || isAdminUser;
+            });
+          }
         }
 
         if (col === 'suppliers') {
@@ -192,6 +210,31 @@ export async function syncWithSupabase(force = false, roleOverride = null, repId
               const cId = custId.toLowerCase();
               return sId === cId || sId.includes(cId) || cId.includes(sId);
             });
+          }
+        }
+
+        if (col === 'plants') {
+          if (role === 'customer') {
+            const custId = (customerId || '').toLowerCase();
+            const supps = getEntities('suppliers') || [];
+            const mySupp = supps.find(s => (s.id || '').toLowerCase() === custId || (s.name || '').toLowerCase().includes(custId));
+            const servedPlants = mySupp && Array.isArray(mySupp.plants_served) ? mySupp.plants_served.map(p => (p || '').toLowerCase()) : [];
+            data = (data || []).filter(p => {
+              const pName = (p.name || '').toLowerCase();
+              const pId = (p.id || '').toLowerCase();
+              return servedPlants.some(sp => pName.includes(sp) || sp.includes(pName) || pId.includes(sp));
+            });
+          } else if (role === 'rep') {
+            const projs = getEntities('projects') || [];
+            const repProjs = projs.filter(pr => pr.rep_id === repId);
+            const plantIds = repProjs.map(pr => (pr.plant_id || '').toLowerCase());
+            data = (data || []).filter(p => plantIds.includes((p.id || '').toLowerCase()) || plantIds.includes((p.name || '').toLowerCase()));
+          }
+        }
+
+        if (col === 'systemLogs') {
+          if (!isAdmin) {
+            data = [];
           }
         }
 
@@ -212,8 +255,8 @@ export async function syncWithSupabase(force = false, roleOverride = null, repId
 
         const cloudItems = data || [];
 
-        // Cloud state is 100% authoritative for suppliers and rates; never push local cache defaults back to cloud
-        if (col === 'suppliers' || col === 'rates') {
+        // Cloud state is 100% authoritative for scoped entities; never push local cache defaults back to cloud
+        if (col === 'suppliers' || col === 'rates' || col === 'users' || col === 'plants' || col === 'systemLogs') {
           if (JSON.stringify(db[col] || []) !== JSON.stringify(cloudItems)) {
             db[col] = cloudItems;
             updated = true;

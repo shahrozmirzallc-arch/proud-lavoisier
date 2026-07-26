@@ -2028,7 +2028,9 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     .filter(r => showAllDates || r.created_at?.startsWith(selectedDate))
     .reduce((acc, curr) => acc + curr.qty, 0);
 
-  const activeRepsCount = users.filter(isFieldRep).length;
+  const activeRepsCount = userRole === 'customer'
+    ? new Set(incidents.map(i => i.rep_id).concat(timeEntries.map(t => t.rep_id)).filter(Boolean)).size
+    : users.filter(isFieldRep).length;
   
   // Hours and Mileage cost calculation (Colleen's Phase 1 utility)
   const ratePerKm = 0.73;

@@ -319,36 +319,18 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
 
     try {
       const { data: rpcEmail } = await supabase.rpc('get_auth_email_by_username', { p_username: inputUser });
-      const targetEmail = rpcEmail || (inputUser.includes('@') ? inputUser : `${inputUser}@idspulse.com`);
+      const targetEmail = rpcEmail || (inputUser.includes('@') ? inputUser : null);
+
+      if (!targetEmail) {
+        setAuthError('Invalid username or operator ID.');
+        setSubmittingAuth(false);
+        return;
+      }
 
       let { data: authData, error: authErr } = await supabase.auth.signInWithPassword({
         email: targetEmail,
         password: rawPw
       });
-
-      if (authErr && rawPw) {
-        const fallbacks = [
-          rawPw.charAt(0).toUpperCase() + rawPw.slice(1),
-          'IDSPulse2026!',
-          `IDS${inputUser}2026!`,
-          `IDS${inputUser.charAt(0).toUpperCase() + inputUser.slice(1)}2026!`,
-          `${inputUser.charAt(0).toUpperCase() + inputUser.slice(1)}2026!`,
-          `${inputUser}2026!`
-        ];
-
-        for (const altPw of fallbacks) {
-          if (altPw === rawPw) continue;
-          const { data: capAuthData, error: capErr } = await supabase.auth.signInWithPassword({
-            email: targetEmail,
-            password: altPw
-          });
-          if (!capErr && capAuthData?.session) {
-            authData = capAuthData;
-            authErr = null;
-            break;
-          }
-        }
-      }
 
       if (authErr || !authData?.session || !authData?.user) {
         setAuthError('Operator ID or Access Code is incorrect.');
@@ -442,20 +424,18 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
 
   const triggerEndShiftFlow = () => {
     const now = new Date();
-    const endTimeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const endTimeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     setModalEndTime(endTimeString);
 
+    const breakMinutes = 30; // standard 30 min unpaid meal break
     if (shiftStartRawTime) {
       const diffMs = now - shiftStartRawTime;
-      const diffSeconds = Math.floor(diffMs / 1000);
-      if (diffSeconds < 60) {
-        setModalElapsedTime('9.0 Hours (Simulated Demo)');
-      } else {
-        const diffHrs = (diffMs / (1000 * 60 * 60)).toFixed(2);
-        setModalElapsedTime(`${diffHrs} Hours`);
-      }
+      const rawHrs = diffMs / (1000 * 60 * 60);
+      const breakHrs = breakMinutes / 60;
+      const netDurationHours = Math.max(0, parseFloat((rawHrs - breakHrs).toFixed(2)));
+      setModalElapsedTime(`${netDurationHours.toFixed(2)} Hours`);
     } else {
-      setModalElapsedTime('8.5 Hours');
+      setModalElapsedTime('8.00 Hours');
     }
     
     setShowEndShiftModal(true);
@@ -1032,7 +1012,32 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
       
       // Save walkthrough log
       saveEntity('shiftReports', newReport);
-      logSystemEvent('shift', 'clock_out', `${currentUser.name} completed shift at plant ${selectedPlant}. Walkthrough status set to Sent.`);
+
+      // Compute and record complete work session linkage
+      const startIso = shiftStartRawTime ? shiftStartRawTime.toISOString() : (existingDraft?.created_at || new Date(Date.now() - 8.5 * 3600 * 1000).toISOString());
+      const endIso = new Date().toISOString();
+      const startTimeMs = new Date(startIso).getTime();
+      const endTimeMs = new Date(endIso).getTime();
+      const breakMinutes = 30;
+      const rawHrs = (endTimeMs - startTimeMs) / (1000 * 3600);
+      const netDurationHours = Math.max(0, parseFloat((rawHrs - (breakMinutes / 60)).toFixed(2)));
+
+      const workSessionRecord = {
+        id: `ws_${Date.now()}`,
+        rep_id: currentUser.id,
+        plant_id: selectedPlant,
+        start_time: startIso,
+        end_time: endIso,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
+        break_minutes: breakMinutes,
+        duration_hours: netDurationHours,
+        shift_report_id: newReport.id,
+        incidents_count: repIncidentsCount,
+        created_at: endIso
+      };
+      saveEntity('work_sessions', workSessionRecord);
+
+      logSystemEvent('shift', 'clock_out', `${currentUser.name} completed shift at plant ${selectedPlant}. Worked ${netDurationHours} net hours.`);
       
       // Clean up localStorage active shift indicators
       localStorage.removeItem('ids_pulse_active_shift_rep_id');

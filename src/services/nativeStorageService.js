@@ -2,7 +2,7 @@
 // Native Storage & Durable Outbox Engine for IDS Pulse
 // Uses Capacitor Filesystem & Encrypted SQLite with browser fallback
 
-const STORAGE_OUTBOX_KEY = 'ids_pulse_sqlite_outbox_v2';
+const STORAGE_OUTBOX_KEY = 'ids_pulse_offline_queue';
 const STORAGE_MEDIA_KEY = 'ids_pulse_sqlite_media_outbox_v2';
 
 /**
@@ -20,30 +20,30 @@ export function generateLocalTrackingRef() {
  * @returns {Object} Staged local record with tracking_ref and local_id
  */
 export function stageIncidentLocally(incidentPayload) {
-  const localId = `loc_inc_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+  const localId = incidentPayload.id || `loc_inc_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
   const trackingRef = generateLocalTrackingRef();
 
-  const stagedRecord = {
+  const stagedItem = {
+    type: 'incidents',
+    entity: {
+      ...incidentPayload,
+      id: localId,
+      tracking_ref: trackingRef
+    },
     local_id: localId,
     tracking_ref: trackingRef,
-    rep_id: incidentPayload.rep_id || '1',
-    plant_id: incidentPayload.plant_id || 'gm_oshawa',
-    supplier_id: incidentPayload.supplier_id || 'magna',
-    status: 'submitted_local',
-    sync_status: 'waiting_internet',
-    payload: incidentPayload,
     created_at: new Date().toISOString()
   };
 
   try {
     const existingOutbox = getLocalOutbox();
-    existingOutbox.unshift(stagedRecord);
+    existingOutbox.unshift(stagedItem);
     localStorage.setItem(STORAGE_OUTBOX_KEY, JSON.stringify(existingOutbox));
   } catch (err) {
     console.error('[NativeStorage] Outbox Staging Error:', err);
   }
 
-  return stagedRecord;
+  return stagedItem;
 }
 
 /**

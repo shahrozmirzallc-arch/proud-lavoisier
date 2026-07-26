@@ -271,6 +271,9 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [showAllDates, setShowAllDates] = useState(true);
   
+  const [leadRejectReason, setLeadRejectReason] = useState('');
+  const [showLeadRejectForm, setShowLeadRejectForm] = useState(false);
+  
   // Accounting Sub-tab Navigation
   const [accountingSubTab, setAccountingSubTab] = useState('log-hours');
 
@@ -883,12 +886,25 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       let count = 0;
       suppliers.filter(Boolean).forEach(clientObj => {
         const cEntries = timeEntries.filter(t => t && t.supplier_id === clientObj.id && !t.invoiced && (getRepSupplierRates(t.rep_id, t.supplier_id, t.plant_id).currency === selectedInvoiceCurrency));
-        const cExpenses = expenseEntries.filter(e => e && e.supplier_id === clientObj.id && !e.invoiced && (getExpenseCurrency(e) === selectedInvoiceCurrency));
+        const cExpenses = expenseEntries.filter(e => e && e.supplier_id === clientObj.id && !e.invoiced && e.status === 'approved' && (getExpenseCurrency(e) === selectedInvoiceCurrency));
         
         if (cEntries.length > 0 || cExpenses.length > 0) {
           const dates = cEntries.filter(e => e && e.date).map(e => e.date).sort();
           const dRange = dates.length > 0 ? `From ${dates[0]} to ${dates[dates.length - 1]}` : 'Current Billing Period';
           handleGenerateClientInvoicePDF(clientObj, dRange, cEntries, cExpenses);
+
+          // Mark items invoiced to prevent duplicate billing
+          cEntries.forEach(t => {
+            t.invoiced = true;
+            t.invoiced_at = new Date().toISOString();
+            saveEntity('time_entries', t);
+          });
+          cExpenses.forEach(e => {
+            e.invoiced = true;
+            e.invoiced_at = new Date().toISOString();
+            saveEntity('expense_entries', e);
+          });
+
           count++;
         }
       });
@@ -1388,6 +1404,10 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   };
 
   const handleCustomerApproval = (reqId, statusAction) => {
+    if (statusAction === 'reject' && !customerApprovalComment.trim()) {
+      showToast("A rejection reason is mandatory when rejecting extra hours!", "warning");
+      return;
+    }
     const dbReqs = getEntities('extraHoursRequests');
     const match = dbReqs.find(r => r.id === reqId);
     if (match) {
@@ -2612,6 +2632,32 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     setTimeout(() => {
       showToast("Incident notification email queued & sent!", "success");
     }, 40);
+  };
+
+  const handleLeadRejectIncident = (incId) => {
+    if (!leadRejectReason.trim()) {
+      showToast("A rejection reason is mandatory for Lead Quality rejection!", "warning");
+      return;
+    }
+    const dbIncidents = getEntities('incidents') || [];
+    const target = dbIncidents.find(i => i.id === incId);
+    if (target) {
+      target.status = 'rejected_by_lead';
+      target.lead_rejection_reason = leadRejectReason;
+      target.decision_history = target.decision_history || [];
+      target.decision_history.push({
+        timestamp: new Date().toISOString(),
+        actor: currentUser?.name || 'Quality Lead',
+        action: 'rejected',
+        reason: leadRejectReason
+      });
+      saveEntity('incidents', target);
+      window.dispatchEvent(new Event('ids_pulse_db_update'));
+      showToast("Incident report rejected & returned to Rep with required reason!", "success");
+      setLeadRejectReason('');
+      setShowLeadRejectForm(false);
+      setSelectedIncident(null);
+    }
   };
 
   const handleDownloadShiftReport = (sr) => {
@@ -3857,8 +3903,17 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
         const rep = users.find(u => u.id === entry.rep_id);
         const repName = rep ? rep.name : 'Unknown Rep';
         const plantName = entry.plant_id === 'gm_oshawa' ? 'GM Oshawa Plant' : 'Hutchinson Plant';
-        const mileageCost = entry.mileage_km * 0.73;
-        const totalBilling = entry.hours * 28.00 + mileageCost;
+
+        const repRateObj = (rates || []).find(r => r.rep_id === entry.rep_id);
+        const rateVal = repRateObj?.billing_rate || repRateObj?.hourly_rate || 28.00;
+
+        const mileageCost = (entry.mileage_km || 0) * 0.73;
+        const totalBilling = (entry.hours || 0) * rateVal + mileageCost;
+
+        // Flag entry sent to payroll
+        entry.sent_to_payroll = true;
+        entry.sent_to_payroll_at = new Date().toISOString();
+        saveEntity('time_entries', entry);
 
         row.values = [
           repName,
@@ -3896,7 +3951,11 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       const totalHours = (timeEntries || []).filter(Boolean).reduce((acc, curr) => acc + (curr.hours || 0), 0);
       const totalMileage = (timeEntries || []).filter(Boolean).reduce((acc, curr) => acc + (curr.mileage_km || 0), 0);
       const totalMileageCost = totalMileage * 0.73;
-      const totalInvoicedEst = totalHours * 28.00 + totalMileageCost;
+      const totalInvoicedEst = (timeEntries || []).filter(Boolean).reduce((acc, curr) => {
+        const rObj = (rates || []).find(r => r.rep_id === curr.rep_id);
+        const rVal = rObj?.billing_rate || rObj?.hourly_rate || 28.00;
+        return acc + ((curr.hours || 0) * rVal);
+      }, 0) + totalMileageCost;
 
       const totalRowIdx = 11 + timeEntries.length;
       const totalRow = worksheet.getRow(totalRowIdx);
@@ -9952,52 +10011,38 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
               <div className="flex flex-col gap-2.5">
                 <div className="flex justify-between items-center">
                   <span className="text-xs text-slate-300 uppercase font-bold tracking-wider flex items-center gap-1.5">
-                    <Camera className="w-4 h-4 text-sky-400" /> Visual Audit Proofs & Defect Evidence Photos
+                    <Camera className="w-4 h-4 text-sky-400" /> Submitted Defect Evidence & Inspection Photos
                   </span>
-                  <span className="text-[11px] text-slate-400 font-mono">3 Verified High-Res Proofs</span>
+                  <span className="text-[11px] text-slate-400 font-mono">
+                    {Array.isArray(selectedIncident.photos) && selectedIncident.photos.length > 0 ? `${selectedIncident.photos.length} Captured Media Proof(s)` : 'No Media Attached'}
+                  </span>
                 </div>
 
                 <div className="grid grid-cols-3 gap-3">
-                  {[
-                    {
-                      id: 'ph1',
-                      url: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=800&auto=format&fit=crop',
-                      type: 'Surface Defect',
-                      title: 'Surface Scratch Flaw',
-                      desc: 'Initial sorting defect found on bracket face'
-                    },
-                    {
-                      id: 'ph2',
-                      url: 'https://images.unsplash.com/photo-1581092335397-9583fe92d232?w=800&auto=format&fit=crop',
-                      type: 'Quarantined Part',
-                      title: 'Edge Burr Build-up',
-                      desc: '12 pcs quarantined due to dimension burr'
-                    },
-                    {
-                      id: 'ph3',
-                      url: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=800&auto=format&fit=crop',
-                      type: 'Calibration OK',
-                      title: 'Passed 108 Pcs',
-                      desc: 'Verified against CAD tolerance matrix'
-                    }
-                  ].map(photo => (
-                    <div key={photo.id} className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden flex flex-col group hover:border-blue-500/50 transition-all">
-                      <div className="aspect-video relative overflow-hidden bg-slate-950">
-                        <img 
-                          src={photo.url} 
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
-                          alt={photo.title}
-                        />
-                        <span className="absolute bottom-2 right-2 bg-slate-950/90 border border-slate-700/80 text-[10px] px-2 py-0.5 rounded-md text-sky-300 font-bold uppercase tracking-wider">
-                          {photo.type}
-                        </span>
+                  {Array.isArray(selectedIncident.photos) && selectedIncident.photos.length > 0 ? (
+                    selectedIncident.photos.map((photo, idx) => (
+                      <div key={photo.id || idx} className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden flex flex-col group hover:border-blue-500/50 transition-all">
+                        <div className="aspect-video relative overflow-hidden bg-slate-950">
+                          <img 
+                            src={typeof photo === 'string' ? photo : (photo.url || photo.path)} 
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
+                            alt={photo.type || `Evidence ${idx + 1}`}
+                          />
+                          <span className="absolute bottom-2 right-2 bg-slate-950/90 border border-slate-700/80 text-[10px] px-2 py-0.5 rounded-md text-sky-300 font-bold uppercase tracking-wider">
+                            {photo.type || `Angle ${idx + 1}`}
+                          </span>
+                        </div>
+                        <div className="p-2.5 flex flex-col gap-0.5">
+                          <span className="text-xs font-bold text-slate-100">{photo.type || `Evidence Photo ${idx + 1}`}</span>
+                          <span className="text-[10.5px] text-slate-400 leading-tight">Submitted by Field Rep #{selectedIncident.rep_id}</span>
+                        </div>
                       </div>
-                      <div className="p-2.5 flex flex-col gap-0.5">
-                        <span className="text-xs font-bold text-slate-100">{photo.title}</span>
-                        <span className="text-[10.5px] text-slate-400 leading-tight">{photo.desc}</span>
-                      </div>
+                    ))
+                  ) : (
+                    <div className="col-span-3 bg-slate-900/60 border border-slate-800 rounded-2xl p-4 text-center text-slate-400 text-xs font-mono">
+                      No evidence photos attached to this record.
                     </div>
-                  ))}
+                  )}
                 </div>
               </div>
 
@@ -10007,83 +10052,62 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 flex flex-col gap-2">
                   <div className="flex justify-between items-center text-xs">
                     <span className="font-bold text-sky-400 uppercase tracking-wider flex items-center gap-1.5">
-                      <Mic className="w-4 h-4 text-blue-400" /> Plant Floor Voice Report (Clarence)
+                      <Mic className="w-4 h-4 text-blue-400" /> Inspector Voice Report
                     </span>
-                    <span className="text-slate-400 font-mono text-[10.5px]">0:42 SEC • AUDIO WAV</span>
+                    <span className="text-slate-400 font-mono text-[10.5px]">AUDIO WAV</span>
                   </div>
-                  <p className="text-[11px] text-slate-400 leading-snug">Voice note memo recorded by QRE Clarence Kuiken during sorting audit.</p>
-                  <audio controls className="w-full h-9 mt-1 rounded-xl bg-slate-950" title="Inspector Voice Memo">
-                    <source src={selectedIncident.audio_url || "https://actions.google.com/sounds/v1/ambiences/office_hubbub.ogg"} type="audio/ogg" />
-                    Your browser does not support audio playback.
-                  </audio>
+                  <p className="text-[11px] text-slate-400 leading-snug">Voice note memo recorded during inspection audit.</p>
+                  {selectedIncident.audio_url ? (
+                    <audio controls className="w-full h-9 mt-1 rounded-xl bg-slate-950" title="Inspector Voice Memo">
+                      <source src={selectedIncident.audio_url} />
+                    </audio>
+                  ) : (
+                    <span className="text-[11px] text-slate-500 font-mono italic">No audio clip submitted.</span>
+                  )}
                 </div>
 
                 {/* Video Walkthrough Inspection Player */}
                 <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 flex flex-col gap-2">
                   <div className="flex justify-between items-center text-xs">
                     <span className="font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
-                      <Video className="w-4 h-4 text-emerald-400" /> Video Inspection Walkthrough Log
+                      <Video className="w-4 h-4 text-emerald-400" /> Video Inspection Log
                     </span>
-                    <span className="text-slate-400 font-mono text-[10.5px]">HD 1080P • MP4</span>
+                    <span className="text-slate-400 font-mono text-[10.5px]">MP4</span>
                   </div>
-                  <div className="relative rounded-xl overflow-hidden border border-slate-800 aspect-video bg-slate-950 flex items-center justify-center">
-                    <video controls className="w-full h-full object-cover" poster="/ids-pulse-shield.png">
-                      <source src={selectedIncident.video_url || "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4"} type="video/mp4" />
-                      Your browser does not support video playback.
-                    </video>
-                  </div>
+                  {selectedIncident.video_url ? (
+                    <div className="relative rounded-xl overflow-hidden border border-slate-800 aspect-video bg-slate-950 flex items-center justify-center">
+                      <video controls className="w-full h-full object-cover">
+                        <source src={selectedIncident.video_url} type="video/mp4" />
+                      </video>
+                    </div>
+                  ) : (
+                    <span className="text-[11px] text-slate-500 font-mono italic">No video walkthrough submitted.</span>
+                  )}
                 </div>
               </div>
 
               {/* 4. Complete Audit Trail & All Metadata Fields Grid */}
               <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 flex flex-col gap-3">
                 <span className="text-xs text-slate-300 uppercase font-bold tracking-wider border-b border-slate-800 pb-2">
-                  Complete Quality Audit Trail & Field Metadata
+                  Complete Audit Trail & Decision History
                 </span>
-                
-                <div className="grid grid-cols-3 gap-3 text-xs text-slate-300">
-                  <div>
-                    <span className="text-slate-400 font-bold block uppercase tracking-wider text-[10px]">Job Number</span>
-                    <span className="font-bold text-slate-100">77667</span>
+                {Array.isArray(selectedIncident.decision_history) && selectedIncident.decision_history.length > 0 ? (
+                  <div className="flex flex-col gap-1.5 max-h-32 overflow-y-auto">
+                    {selectedIncident.decision_history.map((log, idx) => (
+                      <div key={idx} className="bg-slate-950 p-2 rounded-lg border border-slate-800 text-[11px] flex justify-between items-center">
+                        <span className="text-slate-300 font-bold">{log.actor} ({log.action}): {log.reason}</span>
+                        <span className="text-slate-500 font-mono">{new Date(log.timestamp).toLocaleString()}</span>
+                      </div>
+                    ))}
                   </div>
-                  <div>
-                    <span className="text-slate-400 font-bold block uppercase tracking-wider text-[10px]">Part Number & Description</span>
-                    <span className="font-bold text-slate-100">PN 77667 (Sorting Bracket Assembly)</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 font-bold block uppercase tracking-wider text-[10px]">Client / Supplier</span>
-                    <span className="font-bold text-sky-400">Test Company</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 font-bold block uppercase tracking-wider text-[10px]">Plant Location</span>
-                    <span className="font-bold text-slate-100">Test Sample (77667 Industrial Pkwy, Detroit MI)</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 font-bold block uppercase tracking-wider text-[10px]">Defect Classification</span>
-                    <span className="font-bold text-amber-400">Quality Sorting & Burr Audit</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 font-bold block uppercase tracking-wider text-[10px]">Production Area</span>
-                    <span className="font-bold text-slate-100">Plant Floor Line 1 - Station 4</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 font-bold block uppercase tracking-wider text-[10px]">Overtime Budget Approval</span>
-                    <span className="font-bold text-emerald-400">Approved (+30.0 Extra Hours)</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 font-bold block uppercase tracking-wider text-[10px]">Supplier Contact</span>
-                    <span className="font-bold text-sky-400">John Test (john@testcompany.com, 555-0199)</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 font-bold block uppercase tracking-wider text-[10px]">Total Job Billing Value</span>
-                    <span className="font-bold text-amber-400">$2,925.00 (65 hrs @ $45/hr)</span>
-                  </div>
-                </div>
+                ) : (
+                  <span className="text-[11px] text-slate-500 font-mono italic">No prior rejection history recorded.</span>
+                )}
 
                 <div className="pt-3 border-t border-slate-800 flex flex-col gap-1">
                   <span className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Action Taken & Inspection Resolution Narrative</span>
                   <p className="text-xs text-slate-200 leading-relaxed bg-slate-950 p-3 rounded-xl border border-slate-800">
-                    {selectedIncident.notes || selectedIncident.description || "Job 77667 100% sorting completed by Clarence Kuiken. 120 total pcs audited (108 OK released to production, 12 defective parts quarantined for edge burr defect). All 65.0 billable hours logged and verified."}
+                    {selectedIncident.notes || selectedIncident.description || "Sorting completed."}
                   </p>
                 </div>
               </div>
@@ -10111,10 +10135,40 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 >
                   Resend Supplier Email
                 </button>
+                {!showLeadRejectForm ? (
+                  <button 
+                    onClick={() => setShowLeadRejectForm(true)}
+                    className="bg-rose-600 hover:bg-rose-500 text-white font-bold px-4 py-2 rounded-xl transition-colors cursor-pointer shadow-md shadow-rose-900/40"
+                  >
+                    Reject & Return to Rep
+                  </button>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <input 
+                      type="text"
+                      value={leadRejectReason}
+                      onChange={(e) => setLeadRejectReason(e.target.value)}
+                      placeholder="Mandatory rejection reason..."
+                      className="bg-slate-950 border border-rose-500/80 rounded-xl px-3 py-1.5 text-xs text-white outline-none w-64"
+                    />
+                    <button 
+                      onClick={() => handleLeadRejectIncident(selectedIncident.id)}
+                      className="bg-rose-600 hover:bg-rose-500 text-white font-bold px-3 py-1.5 rounded-xl cursor-pointer"
+                    >
+                      Confirm Reject
+                    </button>
+                    <button 
+                      onClick={() => setShowLeadRejectForm(false)}
+                      className="text-slate-400 hover:text-white px-2 py-1.5"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                )}
               </div>
 
               <button 
-                onClick={() => setSelectedIncident(null)} 
+                onClick={() => { setSelectedIncident(null); setShowLeadRejectForm(false); }} 
                 className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl cursor-pointer transition-colors shadow-md"
               >
                 Close Audit Modal

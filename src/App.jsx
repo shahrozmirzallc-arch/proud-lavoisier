@@ -172,16 +172,16 @@ function App() {
     };
   }, []);
 
-  // Helper to purge all stale ids_pulse keys from storage
+  // Helper to purge stale keys from storage (preserving offline queues)
   const clearStaleSessionStorage = () => {
     try {
       Object.keys(sessionStorage).forEach(key => {
-        if (key.startsWith('ids_pulse_')) {
+        if (key.startsWith('ids_pulse_') && key !== 'ids_pulse_offline_queue' && key !== 'ids_pulse_sqlite_outbox_v2') {
           sessionStorage.removeItem(key);
         }
       });
       Object.keys(localStorage).forEach(key => {
-        if (key.startsWith('ids_pulse_')) {
+        if (key.startsWith('ids_pulse_') && key !== 'ids_pulse_offline_queue' && key !== 'ids_pulse_sqlite_outbox_v2') {
           localStorage.removeItem(key);
         }
       });
@@ -196,56 +196,51 @@ function App() {
         const { data: { session } } = await supabase.auth.getSession();
         if (session && session.user) {
           const appMeta = session.user.app_metadata || {};
-          const userMeta = session.user.user_metadata || {};
-          const role = appMeta.role || userMeta.role || 'customer';
-          const targetUser = appMeta.username || userMeta.username || '';
+          const role = appMeta.role || 'customer';
+          const targetUser = appMeta.username || '';
           const repId = appMeta.rep_id || (targetUser === 'clarence' ? '1' : `rep_${targetUser}`);
           const custId = appMeta.customer_id || targetUser;
 
           setIsUnlocked(true);
-          setCurrentUser(session.user);
-
-          if (['admin', 'owner', 'accountant', 'lead', 'shahroz', 'super_admin'].includes(role)) {
-            const reactRole = targetUser === 'greg' ? 'owner' : (targetUser === 'colleen' ? 'accountant' : (targetUser === 'shahroz' ? 'shahroz' : role));
-            setUserRole(reactRole);
-            setLayoutMode('dashboard-only');
-            syncWithSupabase(true, reactRole, '', '', session.access_token);
-          } else if (role === 'rep') {
-            setUserRole('rep');
-            setCurrentUserRepId(repId);
-            setLayoutMode('phone-only');
-            syncWithSupabase(true, 'rep', repId, '', session.access_token);
-          } else if (role === 'customer') {
-            setUserRole('customer');
-            setCurrentUserCustomerId(custId);
-            setLayoutMode('dashboard-only');
-            syncWithSupabase(true, 'customer', '', custId, session.access_token);
-          }
-        } else {
-          clearStaleSessionStorage();
-          setIsUnlocked(false);
-          setCurrentUser(null);
-          setUserRole('');
+          setAuthError(false);
+          setUserRole(role);
+          setCurrentUser({
+            id: role === 'rep' ? repId : custId,
+            name: appMeta.full_name || targetUser || session.user.email?.split('@')[0] || 'User',
+            email: session.user.email,
+            role: role
+          });
         }
       } catch (err) {
-        console.error("[Auth Session Error]:", err);
-        clearStaleSessionStorage();
-        setIsUnlocked(false);
+        console.error('[App Auth Session Init Error]:', err);
       } finally {
         setAuthChecking(false);
       }
     };
-
     initAuth();
 
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!session) {
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session && session.user) {
+        const appMeta = session.user.app_metadata || {};
+        const role = appMeta.role || 'customer';
+        const targetUser = appMeta.username || '';
+        const repId = appMeta.rep_id || (targetUser === 'clarence' ? '1' : `rep_${targetUser}`);
+        const custId = appMeta.customer_id || targetUser;
+
+        setIsUnlocked(true);
+        setAuthError(false);
+        setUserRole(role);
+        setCurrentUser({
+          id: role === 'rep' ? repId : custId,
+          name: appMeta.full_name || targetUser || session.user.email?.split('@')[0] || 'User',
+          email: session.user.email,
+          role: role
+        });
+      } else if (event === 'SIGNED_OUT') {
         clearStaleSessionStorage();
         setIsUnlocked(false);
+        setUserRole(null);
         setCurrentUser(null);
-        setUserRole('');
-      } else if (session.user) {
-        setCurrentUser(session.user);
       }
     });
 
@@ -262,36 +257,17 @@ function App() {
       clearStaleSessionStorage();
 
       const { data: rpcEmail } = await supabase.rpc('get_auth_email_by_username', { p_username: inputUser });
-      const targetEmail = rpcEmail || (inputUser.includes('@') ? inputUser : `${inputUser}@idspulse.com`);
+      const targetEmail = rpcEmail || (inputUser.includes('@') ? inputUser : null);
+
+      if (!targetEmail) {
+        setAuthError(true);
+        return false;
+      }
 
       let { data: authData, error: authErr } = await supabase.auth.signInWithPassword({
         email: targetEmail,
         password: rawPw
       });
-
-      if (authErr && rawPw) {
-        const fallbacks = [
-          rawPw.charAt(0).toUpperCase() + rawPw.slice(1),
-          'IDSPulse2026!',
-          `IDS${inputUser}2026!`,
-          `IDS${inputUser.charAt(0).toUpperCase() + inputUser.slice(1)}2026!`,
-          `${inputUser.charAt(0).toUpperCase() + inputUser.slice(1)}2026!`,
-          `${inputUser}2026!`
-        ];
-
-        for (const altPw of fallbacks) {
-          if (altPw === rawPw) continue;
-          const { data: capAuthData, error: capErr } = await supabase.auth.signInWithPassword({
-            email: targetEmail,
-            password: altPw
-          });
-          if (!capErr && capAuthData?.session) {
-            authData = capAuthData;
-            authErr = null;
-            break;
-          }
-        }
-      }
 
       if (authErr || !authData?.session || !authData?.user) {
         setAuthError(true);
@@ -300,8 +276,7 @@ function App() {
 
       const user = authData.user;
       const appMeta = user.app_metadata || {};
-      const userMeta = user.user_metadata || {};
-      const loginType = appMeta.role || userMeta.role || 'customer';
+      const loginType = appMeta.role || 'customer';
       const targetUser = appMeta.username || inputUser;
       const repId = appMeta.rep_id || (targetUser === 'clarence' ? '1' : `rep_${targetUser}`);
       const custId = appMeta.customer_id || targetUser;

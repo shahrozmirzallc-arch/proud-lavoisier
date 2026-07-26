@@ -6727,7 +6727,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     <div className="flex flex-col gap-3 max-h-[350px] overflow-y-auto pr-1">
                       {(() => {
                         const customerPlants = suppliers.find(s => s.id === currentUserCustomerId)?.plants_served || [];
-                        const customerReports = shiftReports.filter(r => r.status === 'published' && customerPlants?.includes(r.plant_id));
+                        const customerReports = shiftReports.filter(r => r.status?.toLowerCase() === 'published' && customerPlants?.includes(r.plant_id));
                         
                         if (customerReports.length === 0) {
                           return <div className="text-center py-8 text-slate-550 italic">No published shift logs available.</div>;
@@ -6882,7 +6882,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 {shiftReports.filter(sr => {
                   if (userRole === 'customer') {
                     const customerPlants = suppliers.find(s => s.id === currentUserCustomerId)?.plants_served || [];
-                    return sr.status === 'published' && customerPlants?.includes(sr.plant_id);
+                    return sr.status?.toLowerCase() === 'published' && customerPlants?.includes(sr.plant_id);
                   }
                   return true;
                 }).map(sr => (

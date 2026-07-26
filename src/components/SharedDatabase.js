@@ -195,9 +195,7 @@ export async function syncWithSupabase(force = false, roleOverride = null, repId
             data = data.filter(u => {
               const uId = (u.id || '').toLowerCase();
               const uName = (u.username || '').toLowerCase();
-              const isSelf = uId === rId || uName === rId;
-              const isAdminUser = ['admin', 'owner', 'super_admin', 'accountant', 'lead', 'shahroz'].includes(u.role);
-              return isSelf || isAdminUser;
+              return uId === rId || uName === rId;
             });
           }
         }
@@ -209,6 +207,22 @@ export async function syncWithSupabase(force = false, roleOverride = null, repId
               const sId = (s.id || '').toLowerCase();
               const cId = custId.toLowerCase();
               return sId === cId || sId.includes(cId) || cId.includes(sId);
+            });
+          } else if (role === 'rep') {
+            const projs = getEntities('projects') || [];
+            const incs = getEntities('incidents') || [];
+            const rId = (repId || '').toLowerCase();
+            const repProjs = projs.filter(pr => (pr.rep_id || '').toLowerCase() === rId);
+            const repIncs = incs.filter(inc => (inc.rep_id || '').toLowerCase() === rId);
+            const assignedClientIds = new Set([
+              ...repProjs.map(pr => (pr.supplier_id || pr.client_id || '').toLowerCase()),
+              ...repIncs.map(inc => (inc.supplier_id || inc.client_id || '').toLowerCase())
+            ].filter(Boolean));
+
+            data = (data || []).filter(s => {
+              const sId = (s.id || '').toLowerCase();
+              const sName = (s.name || '').toLowerCase();
+              return assignedClientIds.has(sId) || Array.from(assignedClientIds).some(cid => cid && (sId.includes(cid) || sName.includes(cid)));
             });
           }
         }

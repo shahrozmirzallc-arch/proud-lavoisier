@@ -487,23 +487,32 @@ export function addReworkLog(log) {
 
 // Add time entry with automated Rep Payroll ledger synchronization
 export function addTimeEntry(entry) {
+  const dbRates = getEntities('rates') || [];
+  const rateMatch = dbRates.find(r => r && (r.supplier_id === entry.supplier_id || r.client_id === entry.supplier_id) && (r.rep_id === entry.rep_id || !r.rep_id) && (!entry.plant_id || r.plant_id === entry.plant_id))
+    || dbRates.find(r => r && (r.supplier_id === entry.supplier_id || r.client_id === entry.supplier_id));
+
+  const billRate = (entry.billing_rate !== undefined && entry.billing_rate !== null)
+    ? parseFloat(entry.billing_rate)
+    : (rateMatch && rateMatch.billing_rate ? parseFloat(rateMatch.billing_rate) : 0.00);
+
+  const payRate = (entry.pay_rate !== undefined && entry.pay_rate !== null)
+    ? parseFloat(entry.pay_rate)
+    : (rateMatch && rateMatch.pay_rate ? parseFloat(rateMatch.pay_rate) : 0.00);
+
   const newEntry = {
     ...entry,
     id: entry.id || `te_${Date.now()}_${Math.random().toString(36)?.substring(2, 7)}`,
-    created_at: new Date().toISOString()
+    billing_rate: billRate,
+    pay_rate: payRate,
+    created_at: entry.created_at || new Date().toISOString()
   };
 
   const saved = saveEntity('timeEntries', newEntry);
 
-  // Auto-sync Rep Payroll Ledger
+  // Auto-sync Rep Payroll Ledger using the authoritative rate snapshot
   try {
     const dbUsers = getEntities('users') || [];
-    const dbRates = getEntities('rates') || [];
     const rep = dbUsers.find(u => u.id === newEntry.rep_id);
-    const rate = dbRates.find(r => r.rep_id === newEntry.rep_id && (r.supplier_id === newEntry.supplier_id || !r.supplier_id));
-
-    const billRate = rate ? parseFloat(rate.billing_rate) : 34.00;
-    const payRate = rate ? parseFloat(rate.pay_rate) : 25.00;
     const hrs = parseFloat(newEntry.hours || 0);
 
     const grossRevenue = hrs * billRate;
@@ -519,17 +528,14 @@ export function addTimeEntry(entry) {
       hours: hrs,
       pay_rate: payRate,
       bill_rate: billRate,
-      rep_expense: repExpense,
       gross_revenue: grossRevenue,
+      rep_expense: repExpense,
       net_profit: netProfit,
-      margin_percent: grossRevenue > 0 ? ((netProfit / grossRevenue) * 100).toFixed(1) : '0.0',
-      status: newEntry.status || 'approved',
       created_at: new Date().toISOString()
     };
-
-    saveEntity('payroll', payrollRecord);
+    saveEntity('payrollLedger', payrollRecord);
   } catch (err) {
-    console.warn("Could not auto-sync payroll record:", err);
+    console.warn("Payroll ledger auto-sync info:", err.message);
   }
 
   return saved;

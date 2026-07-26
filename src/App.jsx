@@ -191,6 +191,8 @@ function App() {
           const custId = appMeta.customer_id || targetUser;
 
           setIsUnlocked(true);
+          sessionStorage.setItem('ids_pulse_authenticated_role', role);
+          localStorage.setItem('ids_pulse_authenticated_role', role);
           if (['admin', 'owner', 'accountant', 'lead', 'shahroz'].includes(role)) {
             const reactRole = targetUser === 'greg' ? 'owner' : (targetUser === 'colleen' ? 'accountant' : (targetUser === 'shahroz' ? 'shahroz' : role));
             const adminName = targetUser === 'shahroz' ? 'Shahroz Mirza' : (targetUser === 'greg' ? 'Greg Phillippe' : (targetUser === 'colleen' ? 'Colleen Boyd' : targetUser));
@@ -276,6 +278,8 @@ function App() {
 
       setIsUnlocked(true);
       setAuthError(false);
+      sessionStorage.setItem('ids_pulse_authenticated_role', loginType);
+      localStorage.setItem('ids_pulse_authenticated_role', loginType);
 
       if (['admin', 'owner', 'accountant', 'lead', 'shahroz'].includes(loginType)) {
         const reactRole = targetUser === 'greg' ? 'owner' : (targetUser === 'colleen' ? 'accountant' : (targetUser === 'shahroz' ? 'shahroz' : loginType));
@@ -519,14 +523,14 @@ function App() {
           {(!isMobileDevice && (layoutMode === 'side-by-side' || layoutMode === 'dashboard-only')) && (
             <div className="flex-1 w-full flex flex-col min-h-0">
               <span className="text-[10px] text-text-secondary font-bold uppercase tracking-wider mb-2 pl-2">
-                {(!isAdminAuthenticated || userRole === 'customer') ? "Customer Quality Portal" :
+                {userRole === 'customer' ? "Customer Quality Portal" :
                  userRole === 'rep' ? "QRE Representative Portal" :
                  userRole === 'accountant' ? "Colleen's Dashboard (Web CRM Portal)" :
                  userRole === 'lead' ? "Donna's Dashboard (Web CRM Portal)" :
                  userRole === 'shahroz' ? "Shahroz's Super Admin Dashboard (Web CRM Portal)" :
                  "Greg's Admin Dashboard (Web CRM Portal)"}
               </span>
-              <ErrorBoundary><WebDashboard dbUpdateTrigger={dbUpdateTrigger} userRole={isAdminAuthenticated ? userRole : (authenticatedRole || 'customer')} currentUserRepId={currentUserRepId} currentUserCustomerId={currentUserCustomerId} layoutMode={layoutMode} /></ErrorBoundary>
+              <ErrorBoundary><WebDashboard dbUpdateTrigger={dbUpdateTrigger} userRole={userRole} currentUserRepId={currentUserRepId} currentUserCustomerId={currentUserCustomerId} layoutMode={layoutMode} /></ErrorBoundary>
             </div>
           )}
 

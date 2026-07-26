@@ -192,6 +192,9 @@ export default function LoginScreen({ onSignedIn }) {
           <small className="login-support">
             Need access help? Contact your IDS Pulse administrator.
           </small>
+          <div className="mt-3 text-center text-[10px] text-slate-400 font-mono">
+            Candidate Build SHA: <span className="font-bold text-sky-400">6be1bae20a16ade7a371493a9e62a1b07c28769e</span>
+          </div>
         </div>
       </section>
     </main>

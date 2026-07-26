@@ -5,7 +5,7 @@ import {
   Camera, Scan, Plus, ChevronRight, Mail, Send, RotateCcw, Volume2, Video, ArrowLeft, Trash2,
   Receipt, DollarSign, FileText
 } from 'lucide-react';
-import { getEntities, addIncident, addEmailLog, addReworkLog, saveEntity, addExpenseEntry, logSystemEvent, supabase, syncWithSupabase } from './SharedDatabase';
+import { getEntities, addIncident, addEmailLog, addReworkLog, saveEntity, addExpenseEntry, logSystemEvent, supabase, syncWithSupabase, saveExtraHoursRequest } from './SharedDatabase';
 import { uploadToCloudinary } from '../services/cloudinaryService';
 import { stageIncidentLocally, getLocalOutbox } from '../services/nativeStorageService';
 import { getRepStatusConfig, sanitizeCustomerDerivativeUrl } from '../services/mediaSecurityService';
@@ -2866,16 +2866,26 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
             <form onSubmit={(e) => {
               e.preventDefault();
               if(!overtimeHours) return alert("Please enter overtime hours.");
-              alert("Overtime requested! Pending customer approval.");
+              saveExtraHoursRequest({
+                rep_id: currentUser?.id || 'rep_clarence',
+                userName: currentUser?.name || 'Clarence Kuiken',
+                supplier_id: 'test_company',
+                plant_id: 'test_sample',
+                hours: parseFloat(overtimeHours),
+                reason: overtimeReason,
+                status: 'pending_customer'
+              });
               addExpenseEntry({
-                rep_id: currentUser.id,
+                rep_id: currentUser?.id || 'rep_clarence',
                 date: new Date().toISOString()?.split('T')[0],
                 category: 'Overtime Request',
-                amount: parseFloat(overtimeHours), // storing hours here temporarily
+                amount: parseFloat(overtimeHours),
                 notes: overtimeReason,
                 status: 'pending_customer'
               });
+              alert("Overtime requested! Pending customer approval.");
               setOvertimeHours(''); setOvertimeReason(''); setActiveScreen('home');
+              window.dispatchEvent(new Event('ids_pulse_db_update'));
             }} className="flex flex-col gap-3">
               <div className="p-3 bg-amber-50 border border-amber-200 rounded-sm shadow-sm">
                 <p className="text-[11.5px] text-amber-800 leading-relaxed font-semibold">

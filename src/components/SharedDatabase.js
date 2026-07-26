@@ -270,7 +270,7 @@ export async function syncWithSupabase(force = false, roleOverride = null, repId
         const cloudItems = data || [];
 
         // Cloud state is 100% authoritative for scoped entities; never push local cache defaults back to cloud
-        if (col === 'suppliers' || col === 'rates' || col === 'users' || col === 'plants' || col === 'systemLogs') {
+        if (col === 'suppliers' || col === 'rates' || col === 'users' || col === 'plants' || col === 'systemLogs' || col === 'extraHoursRequests') {
           if (JSON.stringify(db[col] || []) !== JSON.stringify(cloudItems)) {
             db[col] = cloudItems;
             updated = true;

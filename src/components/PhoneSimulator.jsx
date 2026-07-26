@@ -2863,56 +2863,125 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
           )}
 
           {timeExpenseTab === 'overtime' && (
-            <form onSubmit={(e) => {
-              e.preventDefault();
-              if(!overtimeHours) return alert("Please enter overtime hours.");
-              saveExtraHoursRequest({
-                rep_id: currentUser?.id || 'rep_clarence',
-                userName: currentUser?.name || 'Clarence Kuiken',
-                supplier_id: 'test_company',
-                plant_id: 'test_sample',
-                hours: parseFloat(overtimeHours),
-                reason: overtimeReason,
-                status: 'pending_customer'
-              });
-              addExpenseEntry({
-                rep_id: currentUser?.id || 'rep_clarence',
-                date: new Date().toISOString()?.split('T')[0],
-                category: 'Overtime Request',
-                amount: parseFloat(overtimeHours),
-                notes: overtimeReason,
-                status: 'pending_customer'
-              });
-              alert("Overtime requested! Pending customer approval.");
-              setOvertimeHours(''); setOvertimeReason(''); setActiveScreen('home');
-              window.dispatchEvent(new Event('ids_pulse_db_update'));
-            }} className="flex flex-col gap-3">
-              <div className="p-3 bg-amber-50 border border-amber-200 rounded-sm shadow-sm">
-                <p className="text-[11.5px] text-amber-800 leading-relaxed font-semibold">
-                  Overtime requests must be pre-approved by the assigned customer before they are processed by the payroll admin.
-                </p>
+            <div className="flex flex-col gap-4">
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                if(!overtimeHours) return alert("Please enter overtime hours.");
+                saveExtraHoursRequest({
+                  rep_id: currentUser?.id || 'rep_clarence',
+                  userName: currentUser?.name || 'Clarence Kuiken',
+                  supplier_id: 'test_company',
+                  plant_id: 'test_sample',
+                  hours: parseFloat(overtimeHours),
+                  reason: overtimeReason,
+                  status: 'pending_customer'
+                });
+                addExpenseEntry({
+                  rep_id: currentUser?.id || 'rep_clarence',
+                  date: new Date().toISOString()?.split('T')[0],
+                  category: 'Overtime Request',
+                  amount: parseFloat(overtimeHours),
+                  notes: overtimeReason,
+                  status: 'pending_customer'
+                });
+                alert("Overtime requested! Pending customer approval.");
+                setOvertimeHours(''); setOvertimeReason(''); setActiveScreen('home');
+                window.dispatchEvent(new Event('ids_pulse_db_update'));
+              }} className="flex flex-col gap-3">
+                <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl shadow-sm">
+                  <p className="text-[11.5px] text-amber-300 leading-relaxed font-semibold">
+                    Overtime requests must be pre-approved by the assigned customer before they are processed by the payroll admin.
+                  </p>
+                </div>
+                <div className="flex flex-col gap-1.5 text-left">
+                  <label className="text-[10.5px] font-bold text-text-secondary uppercase">Requested Extra Hours</label>
+                  <input 
+                    type="number" step="0.5" min="0.5" placeholder="e.g. 15.0"
+                    value={overtimeHours} onChange={(e) => setOvertimeHours(e.target.value)}
+                    className="phone-input h-11" required
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5 text-left">
+                  <label className="text-[10.5px] font-bold text-text-secondary uppercase">Reason for Overtime</label>
+                  <textarea 
+                    value={overtimeReason} onChange={(e) => setOvertimeReason(e.target.value)}
+                    placeholder="Customer requested extra sorting due to edge burrs..."
+                    rows={3} className="phone-textarea" required
+                  />
+                </div>
+                <button type="submit" className="stitch-btn py-3 mt-1 flex items-center justify-center gap-2 w-full font-bold text-[13.5px]">
+                  <Clock className="w-4.5 h-4" />
+                  <span>Submit Request for Approval</span>
+                </button>
+              </form>
+
+              {/* Overtime Request Status & Re-Submission Section for Rep */}
+              <div className="flex flex-col gap-2 pt-3 border-t border-slate-800 text-left">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">My Overtime Request Tracking</span>
+                
+                {(() => {
+                  const reqs = getEntities('extraHoursRequests') || [];
+                  const myReqs = reqs.filter(r => r.rep_id === (currentUser?.id || 'rep_clarence') || r.supplier_id === 'test_company');
+
+                  if (myReqs.length === 0) {
+                    return <div className="text-[11px] text-slate-550 italic">No recent overtime requests logged.</div>;
+                  }
+
+                  return myReqs.map(req => {
+                    const isRejected = req.status === 'rejected' || req.status === 'rejected_by_customer';
+                    const isApproved = req.status === 'approved' || req.status === 'approved_customer';
+
+                    return (
+                      <div key={req.id} className="p-3 bg-slate-900 border border-slate-800 rounded-xl flex flex-col gap-2">
+                        <div className="flex justify-between items-center text-xs">
+                          <span className="font-mono text-sky-400 font-bold">{req.created_at || '2026-07-26'}</span>
+                          <span className="font-extrabold text-amber-400">+{req.hours || 30.0} Hours</span>
+                        </div>
+                        
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] text-slate-300 font-semibold">{req.reason || 'Job 77667 sorting expanded'}</span>
+                          
+                          {isApproved && (
+                            <span className="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded-full font-bold uppercase">
+                              Approved
+                            </span>
+                          )}
+
+                          {isRejected && (
+                            <span className="text-[10px] bg-rose-500/20 text-rose-300 border border-rose-500/40 px-2 py-0.5 rounded-full font-bold uppercase">
+                              Rejected
+                            </span>
+                          )}
+
+                          {!isApproved && !isRejected && (
+                            <span className="text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2 py-0.5 rounded-full font-bold uppercase">
+                              Pending
+                            </span>
+                          )}
+                        </div>
+
+                        {isRejected && (
+                          <div className="mt-1 p-2 bg-rose-950/40 border border-rose-900/60 rounded-lg flex flex-col gap-1.5">
+                            <span className="text-[10px] font-bold text-rose-400 uppercase">Customer Rejection Note:</span>
+                            <p className="text-[11px] text-rose-200">{req.customer_comment || req.notes || "Budget cap exceeded. Please lower to +15 hours or clarify defect scope."}</p>
+                            <button 
+                              onClick={() => {
+                                setOvertimeHours('15.0');
+                                setOvertimeReason(`[RE-SUBMITTED] Revised hours to +15.0 per customer feedback. ${req.reason || ''}`);
+                                alert("Overtime form pre-filled with revised +15.0 hours! Click 'Submit Request for Approval' above.");
+                              }}
+                              className="mt-1 py-1.5 px-3 bg-sky-600 hover:bg-sky-500 text-white font-bold text-[11px] rounded-md transition-colors cursor-pointer text-center"
+                            >
+                              Re-Submit Revised Request (+15.0 Hrs)
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  });
+                })()}
               </div>
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[10.5px] font-bold text-text-secondary uppercase">Requested Extra Hours</label>
-                <input 
-                  type="number" step="0.5" min="0.5" placeholder="e.g. 2.0"
-                  value={overtimeHours} onChange={(e) => setOvertimeHours(e.target.value)}
-                  className="phone-input h-11" required
-                />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[10.5px] font-bold text-text-secondary uppercase">Reason for Overtime</label>
-                <textarea 
-                  value={overtimeReason} onChange={(e) => setOvertimeReason(e.target.value)}
-                  placeholder="Customer requested extra sorting..."
-                  rows={3} className="phone-textarea" required
-                />
-              </div>
-              <button type="submit" className="stitch-btn py-3 mt-4 flex items-center justify-center gap-2 w-full font-bold text-[13.5px]">
-                <Clock className="w-4.5 h-4" />
-                <span>Submit Request for Approval</span>
-              </button>
-            </form>
+            </div>
           )}
 
           {timeExpenseTab === 'manual' && (

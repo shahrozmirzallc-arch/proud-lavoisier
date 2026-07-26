@@ -732,15 +732,15 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     showToast("Marked as invoiced!", "success");
   };
 
-  const handleExportClientQuickBooks = (clientEntries) => {
+  const handleExportClientQuickBooks = (clientEntries, clientExpenses = []) => {
     if (selectedInvoiceCurrency === 'all') {
       showToast("Please select Billing Currency (CAD or USD).", "warning");
       return;
     }
     let csv = "Date,Name,Customer:Job,Service Item,Duration,Notes,Billing Status\n";
-    clientEntries.forEach(entry => {
-      const repName = users.find(u => u.id === entry.rep_id)?.name || 'Rep';
-      const clientName = suppliers.find(s => s.id === entry.supplier_id)?.name || 'Client';
+    (clientEntries || []).forEach(entry => {
+      const repName = users.find(u => u && u.id === entry.rep_id)?.name || 'Rep';
+      const clientName = suppliers.find(s => s && s.id === entry.supplier_id)?.name || 'Client';
       const date = entry.date;
       const duration = entry.hours;
       const notes = entry.notes || 'Shift sorting log';
@@ -748,6 +748,20 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     });
     const user = getActiveActorName();
     logSystemEvent('payroll', 'quickbooks_export', `${user} exported QuickBooks CSV timesheets for supplier ${selectedInvoiceSupplier}.`);
+
+    // Auto-flag exported entries as invoiced & sent_to_payroll
+    const allEntries = getEntities('timeEntries') || [];
+    const entryIdsToFlag = (clientEntries || []).map(e => e.id);
+    const updatedEntries = allEntries.map(e => entryIdsToFlag.includes(e.id) ? { ...e, invoiced: true, sent_to_payroll: true } : e);
+    updatedEntries.forEach(entry => saveEntity('timeEntries', entry));
+    setTimeEntries(updatedEntries);
+
+    const allExps = getEntities('expenseEntries') || [];
+    const expIdsToFlag = (clientExpenses || []).map(e => e.id);
+    const updatedExps = allExps.map(e => expIdsToFlag.includes(e.id) ? { ...e, invoiced: true, sent_to_payroll: true } : e);
+    updatedExps.forEach(exp => saveEntity('expenseEntries', exp));
+    setExpenseEntries(updatedExps);
+
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
@@ -755,6 +769,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    showToast("Exported & auto-flagged records as invoiced!", "success");
   };
 
   // Open Integrated Invoice Modal & PDF Generator
@@ -6761,11 +6776,11 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                             </div>
                             <div className="flex justify-between items-center text-[12px] font-semibold">
                               <span className="text-text-secondary">Billing Rate:</span>
-                              <span className="text-sky-400 font-extrabold">${plantRate?.billing_rate || '45.00'}/hr</span>
+                              <span className="text-sky-400 font-extrabold">{plantRate?.billing_rate ? `$${parseFloat(plantRate.billing_rate).toFixed(2)}/hr` : 'Unconfigured Rate'}</span>
                             </div>
                             <div className="flex justify-between items-center text-[12px] font-semibold pt-1 border-t border-border-subtle">
                               <span className="text-text-secondary font-bold">Total Job Value:</span>
-                              <span className="text-amber-400 font-black">${((parseFloat(suppliers.find(s => s.id === currentUserCustomerId)?.allotted_hours || 35)) * (parseFloat(plantRate?.billing_rate || 45))).toFixed(2)}</span>
+                              <span className="text-amber-400 font-black">{plantRate?.billing_rate ? `$${((parseFloat(suppliers.find(s => s.id === currentUserCustomerId)?.allotted_hours || 35)) * (parseFloat(plantRate.billing_rate))).toFixed(2)}` : 'Unconfigured Rate'}</span>
                             </div>
                             <div className="w-full bg-surface-elevated h-2 rounded-full overflow-hidden border border-border-subtle mt-1">
                               <div 
@@ -7776,7 +7791,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     const client = suppliers.filter(Boolean).find(s => s.id === selectedInvoiceSupplier) || suppliers.filter(Boolean)[0] || { id: 'unknown', name: 'Unknown Client', invoice_schedule: 'weekly' };
                     
                     const clientEntries = timeEntries.filter(t => t && t.supplier_id === (client?.id || selectedInvoiceSupplier) && !t.invoiced && (selectedInvoiceCurrency === 'all' || getRepSupplierRates(t.rep_id, t.supplier_id, t.plant_id).currency === selectedInvoiceCurrency));
-                    const clientExpenses = expenseEntries.filter(e => e && e.supplier_id === (client?.id || selectedInvoiceSupplier) && !e.invoiced && (selectedInvoiceCurrency === 'all' || getExpenseCurrency(e) === selectedInvoiceCurrency));
+                    const clientExpenses = expenseEntries.filter(e => e && e.supplier_id === (client?.id || selectedInvoiceSupplier) && !e.invoiced && e.status === 'approved' && (selectedInvoiceCurrency === 'all' || getExpenseCurrency(e) === selectedInvoiceCurrency));
 
                     const includedEntries = clientEntries.filter(t => !excludedInvoiceEntryIds?.includes(t.id));
                     const includedExpenses = clientExpenses.filter(e => !excludedInvoiceExpenseIds?.includes(e.id));
@@ -7950,8 +7965,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                           <td className="py-2 text-text-primary font-semibold">{users.find(u => u && u.id === entry.rep_id)?.name || 'Rep'}</td>
                                           <td className="py-2 font-mono">{entry.date || ''}</td>
                                           <td className="py-2 text-right">{entry.hours || 0} hrs</td>
-                                          <td className="py-2 text-right text-text-secondary">{rowSymbol} {(billing_rate || 28.00).toFixed(2)}/hr</td>
-                                          <td className="py-2 text-right text-text-primary font-bold">{rowSymbol} {((entry.hours || 0) * (billing_rate || 28.00)).toFixed(2)}</td>
+                                          <td className="py-2 text-right text-text-secondary">{billing_rate ? `${rowSymbol} ${parseFloat(billing_rate).toFixed(2)}/hr` : 'Unconfigured Rate'}</td>
+                                          <td className="py-2 text-right text-text-primary font-bold">{billing_rate ? `${rowSymbol} ${((entry.hours || 0) * parseFloat(billing_rate)).toFixed(2)}` : 'Unconfigured'}</td>
                                           <td className="py-2 text-right text-amber-600">{entry.mileage_km || 0} km</td>
                                           <td className="py-2 text-right text-emerald-450">{rowSymbol} {((entry.mileage_km || 0) * 0.73).toFixed(2)}</td>
                                         </tr>
@@ -10029,20 +10044,37 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
               <div className="flex flex-col gap-2.5">
                 <div className="flex justify-between items-center">
                   <span className="text-xs text-slate-300 uppercase font-bold tracking-wider flex items-center gap-1.5">
-                    <Camera className="w-4 h-4 text-sky-400" /> Submitted Defect Evidence & Inspection Photos
+                    <Camera className="w-4 h-4 text-sky-400" /> {userRole === 'customer' ? 'Published Verified Quality Media' : 'Submitted Defect Evidence & Inspection Photos'}
                   </span>
                   <span className="text-[11px] text-slate-400 font-mono">
-                    {Array.isArray(selectedIncident.photos) && selectedIncident.photos.length > 0 ? `${selectedIncident.photos.length} Captured Media Proof(s)` : 'No Media Attached'}
+                    {(() => {
+                      const displayMedia = userRole === 'customer'
+                        ? (getEntities('mediaPublications') || []).filter(m => m.incident_id === selectedIncident.id && m.supplier_id === selectedIncident.supplier_id && m.published)
+                        : (Array.isArray(selectedIncident.photos) ? selectedIncident.photos : []);
+                      return displayMedia.length > 0 ? `${displayMedia.length} Verified Media Proof(s)` : 'No Media Attached';
+                    })()}
                   </span>
                 </div>
 
                 <div className="grid grid-cols-3 gap-3">
-                  {Array.isArray(selectedIncident.photos) && selectedIncident.photos.length > 0 ? (
-                    selectedIncident.photos.map((photo, idx) => (
+                  {(() => {
+                    const displayMedia = userRole === 'customer'
+                      ? (getEntities('mediaPublications') || []).filter(m => m.incident_id === selectedIncident.id && m.supplier_id === selectedIncident.supplier_id && m.published)
+                      : (Array.isArray(selectedIncident.photos) ? selectedIncident.photos : []);
+
+                    if (displayMedia.length === 0) {
+                      return (
+                        <div className="col-span-3 bg-slate-900/60 border border-slate-800 rounded-2xl p-4 text-center text-slate-400 text-xs font-mono">
+                          {userRole === 'customer' ? 'No published quality media available for this record.' : 'No evidence photos attached to this record.'}
+                        </div>
+                      );
+                    }
+
+                    return displayMedia.map((photo, idx) => (
                       <div key={photo.id || idx} className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden flex flex-col group hover:border-blue-500/50 transition-all">
                         <div className="aspect-video relative overflow-hidden bg-slate-950">
                           <img 
-                            src={typeof photo === 'string' ? photo : (photo.url || photo.path)} 
+                            src={typeof photo === 'string' ? photo : (photo.url || photo.path || photo.media_url)} 
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
                             alt={photo.type || `Evidence ${idx + 1}`}
                           />
@@ -10052,15 +10084,11 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         </div>
                         <div className="p-2.5 flex flex-col gap-0.5">
                           <span className="text-xs font-bold text-slate-100">{photo.type || `Evidence Photo ${idx + 1}`}</span>
-                          <span className="text-[10.5px] text-slate-400 leading-tight">Submitted by Field Rep #{selectedIncident.rep_id}</span>
+                          <span className="text-[10.5px] text-slate-400 leading-tight">{userRole === 'customer' ? 'Verified Quality Publication' : `Submitted by Field Rep #${selectedIncident.rep_id}`}</span>
                         </div>
                       </div>
-                    ))
-                  ) : (
-                    <div className="col-span-3 bg-slate-900/60 border border-slate-800 rounded-2xl p-4 text-center text-slate-400 text-xs font-mono">
-                      No evidence photos attached to this record.
-                    </div>
-                  )}
+                    ));
+                  })()}
                 </div>
               </div>
 

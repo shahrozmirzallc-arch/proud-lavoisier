@@ -332,32 +332,55 @@ export async function syncWithSupabase(force = false, roleOverride = null, repId
   }
 }
 
-// Flush Offline Queue
+// Flush Offline Queue & Outboxes (P0-3 Offline Recovery)
 export async function flushOfflineQueue() {
   if (typeof navigator !== 'undefined' && !navigator.onLine) return;
+
   const queue = JSON.parse(localStorage.getItem('ids_pulse_offline_queue') || '[]');
-  if (queue.length === 0) return;
+  const outboxV2 = JSON.parse(localStorage.getItem('ids_pulse_sqlite_outbox_v2') || '[]');
   
-  console.log(`[Online Recovery] Flushing ${queue.length} items from offline queue...`);
-  const failed = [];
-  
+  const allOfflineItems = [...queue, ...outboxV2];
+  if (allOfflineItems.length === 0) return;
+
+  console.log(`[Online Recovery] Flushing ${allOfflineItems.length} items from durable outboxes...`);
+  const failedQueue = [];
+  const failedV2 = [];
+
   for (const item of queue) {
     try {
-      const tableName = getSupabaseTableName(item.type);
-      const { error } = await supabase.from(tableName).upsert(item.entity);
+      const tableName = getSupabaseTableName(item.type || 'incidents');
+      const payload = item.entity || item;
+      const { error } = await supabase.from(tableName).upsert(payload);
       if (error) {
         console.error(`[Recovery Error] ${tableName}:`, error.message);
-        failed.push(item);
+        failedQueue.push(item);
       }
     } catch (err) {
-       console.error(`[Recovery Exception] ${item.type}:`, err);
-       failed.push(item);
+      console.error(`[Recovery Exception] ${item.type}:`, err);
+      failedQueue.push(item);
     }
   }
-  
-  localStorage.setItem('ids_pulse_offline_queue', JSON.stringify(failed));
-  if (failed.length === 0) {
-    console.log('[Online Recovery] Complete. Offline queue empty.');
+
+  for (const item of outboxV2) {
+    try {
+      const tableName = getSupabaseTableName(item.type || 'incidents');
+      const payload = item.entity || item;
+      const { error } = await supabase.from(tableName).upsert(payload);
+      if (error) {
+        console.error(`[Recovery V2 Error] ${tableName}:`, error.message);
+        failedV2.push(item);
+      }
+    } catch (err) {
+      console.error(`[Recovery V2 Exception] ${item.type}:`, err);
+      failedV2.push(item);
+    }
+  }
+
+  localStorage.setItem('ids_pulse_offline_queue', JSON.stringify(failedQueue));
+  localStorage.setItem('ids_pulse_sqlite_outbox_v2', JSON.stringify(failedV2));
+
+  if (failedQueue.length === 0 && failedV2.length === 0) {
+    console.log('[Online Recovery] Complete. All offline outboxes cleared.');
   }
 }
 

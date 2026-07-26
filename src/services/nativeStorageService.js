@@ -39,6 +39,10 @@ export function stageIncidentLocally(incidentPayload) {
     const existingOutbox = getLocalOutbox();
     existingOutbox.unshift(stagedItem);
     localStorage.setItem(STORAGE_OUTBOX_KEY, JSON.stringify(existingOutbox));
+
+    const existingV2 = JSON.parse(localStorage.getItem('ids_pulse_sqlite_outbox_v2') || '[]');
+    existingV2.unshift(stagedItem);
+    localStorage.setItem('ids_pulse_sqlite_outbox_v2', JSON.stringify(existingV2));
   } catch (err) {
     console.error('[NativeStorage] Outbox Staging Error:', err);
   }

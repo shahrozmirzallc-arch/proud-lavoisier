@@ -460,12 +460,29 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
     setActiveScreen('summary');
   };
 
-  // MOCK CAMERA CAPTURE
-  const captureMockPhoto = (type) => {
+  // CAPACITOR CAMERA / DEVICE CAMERA & FILE CAPTURE
+  const captureMockPhoto = async (type) => {
+    try {
+      if (window.Capacitor?.Plugins?.Camera) {
+        const image = await window.Capacitor.Plugins.Camera.getPhoto({
+          quality: 90,
+          allowEditing: true,
+          resultType: 'base64'
+        });
+        const photoUrl = `data:image/jpeg;base64,${image.base64String}`;
+        setCapturedPhotos(prev => ({ ...prev, [type]: photoUrl }));
+        setAnnotatedPhotos(prev => ({ ...prev, [type]: null }));
+        return;
+      }
+    } catch (err) {
+      console.warn('[Camera Plugin Fallback]:', err);
+    }
+
+    // Default Fallback
     const images = {
-      wide: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=800&q=80', // box label container
-      medium: 'https://images.unsplash.com/photo-1542282088-fe8426682b8f?auto=format&fit=crop&w=800&q=80', // tail light assembly
-      closeup: 'https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?auto=format&fit=crop&w=800&q=80' // defect close up
+      wide: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=800&q=80',
+      medium: 'https://images.unsplash.com/photo-1542282088-fe8426682b8f?auto=format&fit=crop&w=800&q=80',
+      closeup: 'https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?auto=format&fit=crop&w=800&q=80'
     };
 
     setCapturedPhotos(prev => ({ ...prev, [type]: images[type] }));

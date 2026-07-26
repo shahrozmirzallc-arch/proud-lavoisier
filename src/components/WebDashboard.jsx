@@ -5363,7 +5363,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     </div>
                     <div className="flex flex-col text-left">
                       <span className="text-xs font-black text-blue-400 uppercase tracking-widest">Step 1: Daily Hours</span>
-                      <span className="text-base sm:text-lg font-black text-white mt-0.5 leading-tight">➕ Log Shift & Hours</span>
+                      <span className="text-base sm:text-lg font-black text-white mt-0.5 leading-tight">Log Shift & Hours</span>
                       <span className="text-xs text-slate-300 mt-1 font-medium">Timesheet, plant location & breaks</span>
                     </div>
                   </button>
@@ -5378,7 +5378,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     </div>
                     <div className="flex flex-col text-left">
                       <span className="text-xs font-black text-red-400 uppercase tracking-widest">Step 2: Quality Hold</span>
-                      <span className="text-base sm:text-lg font-black text-white mt-0.5 leading-tight">🚨 Report Defect Hold</span>
+                      <span className="text-base sm:text-lg font-black text-white mt-0.5 leading-tight">Report Defect Hold</span>
                       <span className="text-xs text-slate-300 mt-1 font-medium">Log defect photos & Part Number</span>
                     </div>
                   </button>
@@ -5393,7 +5393,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     </div>
                     <div className="flex flex-col text-left">
                       <span className="text-xs font-black text-emerald-400 uppercase tracking-widest">Step 3: Daily Summary</span>
-                      <span className="text-base sm:text-lg font-black text-white mt-0.5 leading-tight">📄 Download Daily PDF</span>
+                      <span className="text-base sm:text-lg font-black text-white mt-0.5 leading-tight">Download Daily PDF</span>
                       <span className="text-xs text-slate-300 mt-1 font-medium">Export official quality report</span>
                     </div>
                   </button>

@@ -1715,13 +1715,17 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   const addNotification = (title, message, type = "info") => {
     const id = Date.now() + Math.random();
     setNotifications(prev => {
-      const trimmed = prev.slice(-2); // Keep maximum 3 toasts visible to prevent visual clutter
+      // Prevent exact duplicate notifications from stacking
+      if (prev.some(n => n.title === title && n.message === message)) {
+        return prev;
+      }
+      const trimmed = prev.slice(-1); // Keep maximum 2 toasts visible to prevent visual clutter
       return [...trimmed, { id, title, message, type }];
     });
     playNotificationSound();
     setTimeout(() => {
       setNotifications(prev => prev.filter(n => n.id !== id));
-    }, 4500);
+    }, 3500);
   };
 
   // Quick Action Forms state
@@ -10861,35 +10865,46 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
         </div>
       )}
 
-      {/* Toast Notification Corner Stack */}
-      <div className="fixed top-24 right-6 z-[9999] flex flex-col gap-2.5 max-w-sm w-full pointer-events-none">
+      {/* Toast Notification Corner Stack (Positioned at bottom-right to eliminate top header UI overlap) */}
+      <div className="fixed bottom-6 right-6 z-[99999] flex flex-col gap-2.5 max-w-sm w-full pointer-events-none">
+        {notifications.length > 1 && (
+          <div className="flex justify-end pointer-events-auto">
+            <button
+              onClick={() => setNotifications([])}
+              className="bg-slate-900/90 hover:bg-red-950/80 text-slate-300 hover:text-red-300 border border-slate-700/80 hover:border-red-500/50 text-[11px] font-black px-2.5 py-1 rounded-lg transition-all cursor-pointer shadow-md uppercase tracking-wider"
+            >
+              ✕ Clear All Notifications
+            </button>
+          </div>
+        )}
         {notifications.map(n => (
           <div 
             key={n.id} 
-            className="pointer-events-auto bg-slate-950 border-2 rounded-2xl p-3.5 shadow-2xl flex gap-3 items-start animate-in slide-in-from-right duration-300 relative overflow-hidden text-left"
+            className="pointer-events-auto bg-[#020617] border-2 rounded-2xl p-4 shadow-[0_25px_60px_rgba(0,0,0,0.95)] ring-1 ring-white/10 flex gap-3 items-start animate-in slide-in-from-bottom-4 duration-300 relative overflow-hidden text-left"
             style={{ 
-              backgroundColor: '#020617', // 100% opaque solid background to prevent text bleed-through
+              backgroundColor: '#020617', // 100% solid opaque obsidian black to eliminate text bleed-through
               borderColor: n.type === 'defect' ? '#ef4444' : (n.type === 'rework' || n.type === 'expense') ? '#10b981' : '#0ea5e9' 
             }}
           >
-            {/* Ambient indicator accent line on the side */}
+            {/* Solid Accent Line Indicator */}
             <div 
               className="absolute left-0 top-0 bottom-0 w-1.5" 
               style={{ backgroundColor: n.type === 'defect' ? '#ef4444' : (n.type === 'rework' || n.type === 'expense') ? '#10b981' : '#0ea5e9' }}
             />
             <div className="flex-1 pl-1 text-left">
-              <h4 className="text-[13.5px] font-black text-white uppercase tracking-wider flex items-center gap-1.5">
-                {n.type === 'defect' && <AlertCircle className="w-3.5 h-3.5 text-red-500 flex-shrink-0" />}
-                {n.type === 'rework' && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />}
-                {n.type === 'shift' && <Activity className="w-3.5 h-3.5 text-cyan-400 flex-shrink-0" />}
-                {n.type === 'expense' && <DollarSign className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />}
+              <h4 className="text-[13px] font-black text-white uppercase tracking-wider flex items-center gap-1.5">
+                {n.type === 'defect' && <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />}
+                {n.type === 'rework' && <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />}
+                {n.type === 'shift' && <Activity className="w-4 h-4 text-cyan-400 flex-shrink-0" />}
+                {n.type === 'expense' && <DollarSign className="w-4 h-4 text-emerald-400 flex-shrink-0" />}
                 {n.title}
               </h4>
               <p className="text-[11.5px] text-slate-200 leading-relaxed mt-1 font-medium">{n.message}</p>
             </div>
             <button 
               onClick={() => setNotifications(prev => prev.filter(item => item.id !== n.id))}
-              className="text-slate-400 hover:text-white text-[13.5px] font-bold p-0.5 cursor-pointer focus:outline-none"
+              className="text-slate-400 hover:text-white bg-slate-800/60 hover:bg-slate-700 w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold transition-all cursor-pointer focus:outline-none flex-shrink-0"
+              title="Dismiss notification"
             >
               ✕
             </button>

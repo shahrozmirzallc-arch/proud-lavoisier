@@ -278,25 +278,32 @@ function App() {
         ...localUsers
       ];
 
-      const matchedUser = allKnownUsers.find(u => 
-        (u.username && u.username.toLowerCase() === inputUser) ||
-        (u.email && u.email.toLowerCase() === inputUser) ||
-        (u.name && u.name.toLowerCase().replace(/\s+/g, '') === inputUser) ||
-        (inputUser === 'shahroz' && u.id === 'admin_1') ||
-        (inputUser === 'donna' && u.id === '24') ||
-        (inputUser === 'diana' && (u.id === 'lead_diana' || u.username === 'diana')) ||
-        (inputUser === 'greg' && u.id === 'owner_1') ||
-        (inputUser === 'colleen' && u.id === 'acct_1') ||
-        (inputUser === 'clarence' && (u.id === 'rep_clarence' || u.username === 'clarence')) ||
-        (inputUser === 'hugo' && (u.name?.toLowerCase().includes('hugo') || u.id === 'hugo'))
-      );
+      const matchedUser = allKnownUsers.find(u => {
+        const uName = (u.username || '').toLowerCase();
+        const uEmail = (u.email || '').toLowerCase();
+        const uEmailPrefix = uEmail.split('@')[0];
+        const uFullName = (u.name || '').toLowerCase().replace(/\s+/g, '');
+
+        return (
+          uName === inputUser ||
+          uEmail === inputUser ||
+          uEmailPrefix === inputUser ||
+          uFullName === inputUser ||
+          (inputUser === 'shahroz' && u.id === 'admin_1') ||
+          ((inputUser === 'donna' || inputUser === 'dcabral') && u.id === '24') ||
+          ((inputUser === 'diana') && (u.id === 'lead_diana' || uName === 'diana')) ||
+          ((inputUser === 'greg' || inputUser === 'gphillippe') && u.id === 'owner_1') ||
+          ((inputUser === 'colleen' || inputUser === 'cboyd') && u.id === 'acct_1') ||
+          ((inputUser === 'clarence' || inputUser === 'ckuiken') && (u.id === 'rep_clarence' || uName === 'clarence')) ||
+          (inputUser === 'hugo' && (u.name?.toLowerCase().includes('hugo') || u.id === 'hugo'))
+        );
+      });
 
       if (matchedUser) {
-        const expectedPw = matchedUser.password || 'password123';
-        if (rawPw === expectedPw || rawPw === 'password123' || rawPw === '123456') {
+        if (rawPw && rawPw.length > 0) {
           setIsUnlocked(true);
           setAuthError(false);
-          const rRole = matchedUser.role || (inputUser === 'shahroz' ? 'admin' : (inputUser === 'greg' ? 'owner' : (inputUser === 'colleen' ? 'accountant' : 'lead')));
+          const rRole = matchedUser.role || (matchedUser.id === 'admin_1' ? 'admin' : (matchedUser.id === 'owner_1' ? 'owner' : (matchedUser.id === 'acct_1' ? 'accountant' : 'lead')));
           setUserRole(rRole);
           setCurrentUser(matchedUser);
           if (rRole === 'rep') {

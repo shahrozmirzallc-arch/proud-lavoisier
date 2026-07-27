@@ -47,13 +47,13 @@ export default function LoginScreen({ onSignedIn }) {
     setError('');
 
     const trimmedUser = username.trim();
-    if (trimmedUser.length < 3 || trimmedUser.length > 100) {
-      setError('Enter a valid username.');
+    if (trimmedUser.length < 2 || trimmedUser.length > 100) {
+      setError('Enter a valid username or email.');
       return;
     }
 
-    if (password.length < 8 || password.length > 256) {
-      setError('Enter a valid password.');
+    if (!password) {
+      setError('Enter your password.');
       return;
     }
 
@@ -189,7 +189,64 @@ export default function LoginScreen({ onSignedIn }) {
             </button>
           </form>
 
-          <small className="login-support">
+          {/* Quick 1-Click Login Shortcuts */}
+          <div className="mt-4 pt-4 border-t border-slate-700/60">
+            <span className="text-[10px] uppercase tracking-wider font-extrabold text-slate-400 block mb-2 text-center">
+              ⚡ Quick 1-Click Test Sign-Ins:
+            </span>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setUsername('clarence');
+                  setPassword('password123');
+                  onSignedIn({ username: 'clarence', password: 'password123' });
+                }}
+                className="px-2.5 py-2 rounded-lg bg-indigo-950/70 hover:bg-indigo-900 border border-indigo-500/30 text-indigo-200 text-xs font-bold transition-all text-left flex flex-col cursor-pointer"
+              >
+                <span className="text-[11px] font-extrabold text-indigo-300">👤 Clarence Kuiken</span>
+                <span className="text-[9px] text-indigo-400 font-mono">Rep • Quality Inspector</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setUsername('donna');
+                  setPassword('password123');
+                  onSignedIn({ username: 'donna', password: 'password123' });
+                }}
+                className="px-2.5 py-2 rounded-lg bg-sky-950/70 hover:bg-sky-900 border border-sky-500/30 text-sky-200 text-xs font-bold transition-all text-left flex flex-col cursor-pointer"
+              >
+                <span className="text-[11px] font-extrabold text-sky-300">👩‍💼 Donna Cabral</span>
+                <span className="text-[9px] text-sky-400 font-mono">Admin • Operations Lead</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setUsername('colleen');
+                  setPassword('password123');
+                  onSignedIn({ username: 'colleen', password: 'password123' });
+                }}
+                className="px-2.5 py-2 rounded-lg bg-amber-950/70 hover:bg-amber-900 border border-amber-500/30 text-amber-200 text-xs font-bold transition-all text-left flex flex-col cursor-pointer"
+              >
+                <span className="text-[11px] font-extrabold text-amber-300">💼 Colleen Boyd</span>
+                <span className="text-[9px] text-amber-400 font-mono">Accountant • Controller</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setUsername('greg');
+                  setPassword('password123');
+                  onSignedIn({ username: 'greg', password: 'password123' });
+                }}
+                className="px-2.5 py-2 rounded-lg bg-emerald-950/70 hover:bg-emerald-900 border border-emerald-500/30 text-emerald-200 text-xs font-bold transition-all text-left flex flex-col cursor-pointer"
+              >
+                <span className="text-[11px] font-extrabold text-emerald-300">👔 Greg Phillippe</span>
+                <span className="text-[9px] text-emerald-400 font-mono">Admin • Owner</span>
+              </button>
+            </div>
+          </div>
+
+          <small className="login-support mt-3">
             Need access help? Contact your IDS Pulse administrator.
           </small>
           <div className="mt-3 text-center text-[10px] text-slate-400 font-mono">

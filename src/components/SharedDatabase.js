@@ -55,15 +55,53 @@ export function initializeDB() {
     }
   }
 
-  // Fix migration missing collections
-  const collections = Object.keys(EMPTY_SCHEMA);
   let updated = false;
-  collections.forEach(col => {
-    if (!data[col] || !Array.isArray(data[col])) {
-      data[col] = [];
-      updated = true;
-    }
-  });
+
+  // Auto-seed baseline data if collections are empty
+  if (!data.users || data.users.length === 0) {
+    data.users = [
+      { id: '1', name: 'Clarence Kuiken', email: 'ckuiken@integritydriven.com', phone: '+1 (416) 555-0144', role: 'rep', title: 'Lead Senior Quality Inspector', pay_currency: 'CAD', avatar: 'CK' },
+      { id: '2', name: 'Hugo Ramos', email: 'hramos@integritydriven.com', phone: '+1 (416) 555-0288', role: 'qre', title: 'Quality Resident Engineer', pay_currency: 'USD', avatar: 'HR' },
+      { id: '3', name: 'Nabil El-Sabagh', email: 'nel-sabagh@integritydriven.com', phone: '+1 (416) 555-0811', role: 'qre', title: 'Quality Resident Engineer', pay_currency: 'USD', avatar: 'NE' },
+      { id: '4', name: 'Rogelio Gutierrez', email: 'rgutierrez@integritydriven.com', phone: '+1 (416) 555-0377', role: 'qre', title: 'Quality Resident Engineer', pay_currency: 'USD', avatar: 'RG' },
+      { id: '24', name: 'Donna Cabral', email: 'dcabral@integritydriven.com', phone: '+1 (416) 555-0024', role: 'lead', title: 'Operations Lead Supervisor', pay_currency: 'CAD', avatar: 'DC' },
+      { id: 'owner_1', name: 'Greg Phillippe', email: 'gphillippe@integritydriven.com', phone: '+1 (416) 555-0001', role: 'owner', title: 'Managing Director / Owner', pay_currency: 'CAD', avatar: 'GP' },
+      { id: 'acct_1', name: 'Colleen Boyd', email: 'cboyd@integritydriven.com', phone: '+1 (416) 555-0002', role: 'accountant', title: 'Financial Accountant / Controller', pay_currency: 'CAD', avatar: 'CB' },
+      { id: 'admin_1', name: 'Shahroz Mirza', email: 'smirza@integritydriven.com', phone: '+1 (416) 555-0000', role: 'admin', title: 'System Super Admin', pay_currency: 'CAD', avatar: 'SM' }
+    ];
+    updated = true;
+  }
+
+  if (!data.suppliers || data.suppliers.length === 0) {
+    data.suppliers = [
+      { id: 'autokabel', name: 'AutoKabel North America', allotted_hours: 40, invoice_schedule: 'weekly', contacts: [{ name: 'Juan Carlos', email: 'jc@autokabel.mx' }], plants_served: ['autokabel_windsor', 'autokabel_dearborn'] },
+      { id: 'magna', name: 'Magna International', allotted_hours: 80, invoice_schedule: 'weekly', contacts: [{ name: 'Dave Smith', email: 'dave.smith@magna.com' }], plants_served: ['magna_brampton', 'gm_oshawa'] },
+      { id: 'brose', name: 'Brose North America', allotted_hours: 50, invoice_schedule: 'bi-weekly', contacts: [{ name: 'Marcus Brose', email: 'm.brose@brose.com' }], plants_served: ['brose_mexico'] },
+      { id: 'lear', name: 'Lear Corporation', allotted_hours: 30, invoice_schedule: 'on-demand', contacts: [{ name: 'Sarah Miller', email: 'smiller@lear.com' }], plants_served: ['lear_tuscaloosa'] }
+    ];
+    updated = true;
+  }
+
+  if (!data.plants || data.plants.length === 0) {
+    data.plants = [
+      { id: 'gm_oshawa', name: 'GM Oshawa Staging Facility', oem_brand: 'GM', supplier_id: 'magna', address: 'Oshawa, ON (Plant 4)' },
+      { id: 'autokabel_windsor', name: 'AutoKabel Windsor Facility', oem_brand: 'Ford', supplier_id: 'autokabel', address: 'Windsor, ON' },
+      { id: 'magna_brampton', name: 'Magna Brampton Stamping', oem_brand: 'Stellantis', supplier_id: 'magna', address: 'Brampton, ON' },
+      { id: 'brose_mexico', name: 'Brose Queretaro Plant', oem_brand: 'BMW', supplier_id: 'brose', address: 'Queretaro, MX' },
+      { id: 'lear_tuscaloosa', name: 'Lear Tuscaloosa Plant', oem_brand: 'Mercedes-Benz', supplier_id: 'lear', address: 'Tuscaloosa, AL' }
+    ];
+    updated = true;
+  }
+
+  if (!data.rates || data.rates.length === 0) {
+    data.rates = [
+      { id: 'rate_1', rep_id: '1', supplier_id: 'magna', plant_id: 'gm_oshawa', pay_rate: 25.00, billing_rate: 35.00, currency: 'CAD' },
+      { id: 'rate_2', rep_id: '2', supplier_id: 'autokabel', plant_id: 'autokabel_windsor', pay_rate: 28.00, billing_rate: 42.00, currency: 'USD' },
+      { id: 'rate_3', rep_id: '3', supplier_id: 'brose', plant_id: 'brose_mexico', pay_rate: 26.00, billing_rate: 38.00, currency: 'USD' },
+      { id: 'rate_4', rep_id: '4', supplier_id: 'lear', plant_id: 'lear_tuscaloosa', pay_rate: 27.00, billing_rate: 40.00, currency: 'USD' }
+    ];
+    updated = true;
+  }
 
   if (updated) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));

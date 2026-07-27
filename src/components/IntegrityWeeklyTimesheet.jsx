@@ -234,14 +234,42 @@ export default function IntegrityWeeklyTimesheet({
 
   }, [selectedRepId, weekEnded]);
 
-  // Robust Update Matrix Row Cell
+  // Robust Update Matrix Row Cell with Supplier Selection Auto-Matching
   const updateRow = (id, field, value) => {
-    setRows(prev => prev.map(r => String(r.id) === String(id) ? { ...r, [field]: value } : r));
+    setRows(prev => prev.map(r => {
+      if (String(r.id) !== String(id)) return r;
+
+      const updated = { ...r, [field]: value };
+
+      if (field === 'clientName') {
+        const matchSup = suppliers.find(s => s.name.toLowerCase() === value.toLowerCase() || s.id.toLowerCase() === value.toLowerCase());
+        const sId = matchSup ? matchSup.id : value.toLowerCase();
+        const rateInfo = getRepSupplierRatesHelper(selectedRepId, sId, r.plant);
+
+        updated.supplier_id = sId;
+        if (matchSup) updated.clientName = matchSup.name;
+        if (rateInfo.is_configured) {
+          updated.payRate = rateInfo.pay_rate;
+          updated.is_configured = true;
+          updated.currency = rateInfo.currency;
+        }
+      }
+
+      return updated;
+    }));
   };
 
-  // Robust Update Expense Row Cell
+  // Robust Update Expense Row Cell with Supplier Selection Auto-Matching
   const updateExpense = (id, field, value) => {
-    setExpenses(prev => prev.map(e => String(e.id) === String(id) ? { ...e, [field]: value } : e));
+    setExpenses(prev => prev.map(e => {
+      if (String(e.id) !== String(id)) return e;
+      const updated = { ...e, [field]: value };
+      if (field === 'clientName') {
+        const matchSup = suppliers.find(s => s.name.toLowerCase() === value.toLowerCase() || s.id.toLowerCase() === value.toLowerCase());
+        if (matchSup) updated.clientName = matchSup.name;
+      }
+      return updated;
+    }));
   };
 
   // Robust Add New Client Row
@@ -266,15 +294,16 @@ export default function IntegrityWeeklyTimesheet({
     setRows(prev => prev.filter(r => String(r.id) !== String(id)));
   };
 
-  // Robust Add Expense Row (guaranteed unique ID & state update)
+  // Robust Add Expense Row with Default Date & Category
   const addExpenseRow = () => {
     const newId = generateUniqueId();
+    const defaultClient = suppliers.length > 0 ? suppliers[0].name : 'General Operations';
     setExpenses(prev => [
       ...prev,
       {
         id: newId,
         date: weekEnded,
-        clientName: '',
+        clientName: defaultClient,
         plant: '',
         category: 'Supplies',
         description: '',
@@ -661,6 +690,22 @@ export default function IntegrityWeeklyTimesheet({
 
   return (
     <div className="flex flex-col gap-6 text-left w-full">
+      {/* Global Datalists for Auto-Suggesting Active Clients & Plants */}
+      <datalist id="ids-suppliers-datalist">
+        {suppliers.map(s => (
+          <option key={s.id} value={s.name} />
+        ))}
+        <option value="Administration" />
+        <option value="General Operations" />
+        <option value="IDS Travel" />
+      </datalist>
+
+      <datalist id="ids-plants-datalist">
+        {plants.map(p => (
+          <option key={p.id} value={p.name} />
+        ))}
+      </datalist>
+
       {/* Top Action & Information Header Bar */}
       <div className="bg-surface-elevated border border-border-subtle p-4 rounded-2xl flex flex-wrap items-center justify-between gap-4 shadow-sm print:hidden">
         <div>
@@ -800,8 +845,8 @@ export default function IntegrityWeeklyTimesheet({
             <thead>
               <tr className="bg-slate-200 text-slate-900 font-bold border-b border-slate-400 text-center">
                 <th className="p-1.5 border-r border-slate-300 w-8">#</th>
-                <th className="p-1.5 border-r border-slate-300 text-left min-w-[140px]">Client Name</th>
-                <th className="p-1.5 border-r border-slate-300 text-left w-24">Plant</th>
+                <th className="p-1.5 border-r border-slate-300 text-left min-w-[150px]">Client / Supplier Name</th>
+                <th className="p-1.5 border-r border-slate-300 text-left w-28">Plant</th>
                 <th className="p-1.5 border-r border-slate-300 text-left min-w-[140px]">Description</th>
                 <th className="p-1.5 border-r border-slate-300 w-11">Mon</th>
                 <th className="p-1.5 border-r border-slate-300 w-11">Tue</th>
@@ -827,19 +872,21 @@ export default function IntegrityWeeklyTimesheet({
                     <td className="p-1 border-r border-slate-300">
                       <input
                         type="text"
+                        list="ids-suppliers-datalist"
                         value={row.clientName}
                         onChange={(e) => updateRow(row.id, 'clientName', e.target.value)}
                         className="w-full bg-transparent px-1 py-0.5 font-semibold text-slate-900 focus:bg-amber-50 focus:outline-none"
-                        placeholder="Client / Supplier Name"
+                        placeholder="Select or Type Client..."
                       />
                     </td>
                     <td className="p-1 border-r border-slate-300">
                       <input
                         type="text"
+                        list="ids-plants-datalist"
                         value={row.plant}
                         onChange={(e) => updateRow(row.id, 'plant', e.target.value)}
                         className="w-full bg-transparent px-1 py-0.5 text-slate-900 focus:bg-amber-50 focus:outline-none"
-                        placeholder="Plant"
+                        placeholder="Select Plant..."
                       />
                     </td>
                     <td className="p-1 border-r border-slate-300">
@@ -953,7 +1000,7 @@ export default function IntegrityWeeklyTimesheet({
               <thead>
                 <tr className="bg-slate-200 text-slate-800 font-bold border-b border-slate-300 text-center">
                   <th className="p-1.5 border-r border-slate-300 text-left w-24">Date</th>
-                  <th className="p-1.5 border-r border-slate-300 text-left w-36">Client Name</th>
+                  <th className="p-1.5 border-r border-slate-300 text-left w-40">Client / Supplier Name</th>
                   <th className="p-1.5 border-r border-slate-300 text-left w-32">Category</th>
                   <th className="p-1.5 border-r border-slate-300 text-left">Expense Description</th>
                   <th className="p-1.5 border-r border-slate-300 text-left w-36">Receipt Link / URL</th>
@@ -966,19 +1013,20 @@ export default function IntegrityWeeklyTimesheet({
                   <tr key={exp.id} className="border-b border-slate-200 hover:bg-slate-50">
                     <td className="p-1 border-r border-slate-300">
                       <input
-                        type="text"
+                        type="date"
                         value={exp.date}
                         onChange={(e) => updateExpense(exp.id, 'date', e.target.value)}
-                        className="w-full bg-transparent px-1 py-0.5 text-slate-900 font-mono focus:bg-amber-50 focus:outline-none"
+                        className="w-full bg-transparent px-1 py-0.5 text-slate-900 font-mono text-[10px] focus:bg-amber-50 focus:outline-none cursor-pointer"
                       />
                     </td>
                     <td className="p-1 border-r border-slate-300">
                       <input
                         type="text"
+                        list="ids-suppliers-datalist"
                         value={exp.clientName}
                         onChange={(e) => updateExpense(exp.id, 'clientName', e.target.value)}
-                        className="w-full bg-transparent px-1 py-0.5 text-slate-900 focus:bg-amber-50 focus:outline-none"
-                        placeholder="Client / Supplier Name"
+                        className="w-full bg-transparent px-1 py-0.5 font-semibold text-slate-900 focus:bg-amber-50 focus:outline-none"
+                        placeholder="Select or Type Client..."
                       />
                     </td>
                     <td className="p-1 border-r border-slate-300">

@@ -5626,7 +5626,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
-                      onClick={() => setActiveTab('projects')}
+                      onClick={() => setShowQuickAddClient(true)}
                       className="bg-cyan-600/20 hover:bg-cyan-600 border border-cyan-500/40 hover:border-cyan-500 text-cyan-300 hover:text-white font-bold text-xs px-3 py-1.5 rounded-xl transition-all cursor-pointer shadow-sm flex items-center gap-1.5"
                     >
                       <span>+ Onboard Project & PO</span>

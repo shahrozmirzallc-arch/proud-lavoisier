@@ -7,6 +7,8 @@ import { saveEntity, getEntities } from './SharedDatabase';
 
 const CONFIG_MILEAGE_RATE = 0.73;
 
+const generateUniqueId = () => 'item_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
+
 export default function IntegrityWeeklyTimesheet({
   currentUserRole = 'admin',
   reps = [],
@@ -92,7 +94,7 @@ export default function IntegrityWeeklyTimesheet({
     return map;
   };
 
-  // Synchronize when selectedRepId or weekEnded changes
+  // Synchronize when selectedRepId or weekEnded changes ONLY
   useEffect(() => {
     const selectedUser = reps.find(r => String(r.id) === String(selectedRepId));
     if (selectedUser) {
@@ -103,7 +105,7 @@ export default function IntegrityWeeklyTimesheet({
     // Check for saved draft in localStorage or saved entities
     const draftKey = `ids_pulse_integrity_weekly_timesheet_${selectedRepId}_${weekEnded}`;
     const localSaved = localStorage.getItem(draftKey);
-    const dbSaved = (getEntities('weeklyTimesheets') || []).find(w => w.rep_id === selectedRepId && w.weekEnded === weekEnded);
+    const dbSaved = (getEntities('weeklyTimesheets') || []).find(w => String(w.rep_id) === String(selectedRepId) && w.weekEnded === weekEnded);
 
     const savedSheet = localSaved ? JSON.parse(localSaved) : dbSaved;
 
@@ -134,7 +136,6 @@ export default function IntegrityWeeklyTimesheet({
     });
 
     const generatedRows = [];
-    let rowIdCounter = 1;
 
     Object.keys(supplierGroups).forEach(sId => {
       const group = supplierGroups[sId];
@@ -144,7 +145,7 @@ export default function IntegrityWeeklyTimesheet({
       const rateInfo = getRepSupplierRatesHelper(selectedRepId, sId, plant);
 
       const rowObj = {
-        id: rowIdCounter++,
+        id: generateUniqueId(),
         supplier_id: sId,
         clientName,
         plant,
@@ -167,7 +168,7 @@ export default function IntegrityWeeklyTimesheet({
     if (generatedRows.length === 0) {
       // Default empty row
       generatedRows.push({
-        id: 1,
+        id: generateUniqueId(),
         supplier_id: '',
         clientName: 'Administration',
         plant: '',
@@ -183,7 +184,6 @@ export default function IntegrityWeeklyTimesheet({
 
     // 2. Expenses Auto-Population (Approved expenseEntries + Mileage from timeEntries)
     const generatedExpenses = [];
-    let expIdCounter = 1;
 
     // Filter approved expenses
     const repExpenses = (expenseEntries || []).filter(e => e && String(e.rep_id) === String(selectedRepId) && weekDates.includes(e.date) && (e.status === 'approved' || e.status === 'approved_admin' || e.status === 'approved_customer'));
@@ -191,7 +191,7 @@ export default function IntegrityWeeklyTimesheet({
     repExpenses.forEach(exp => {
       const supObj = suppliers.find(s => s.id === exp.supplier_id);
       generatedExpenses.push({
-        id: expIdCounter++,
+        id: generateUniqueId(),
         date: exp.date,
         clientName: supObj ? supObj.name : (exp.supplier_id || 'General Operations'),
         plant: exp.plant_id || '',
@@ -208,7 +208,7 @@ export default function IntegrityWeeklyTimesheet({
         const mCost = (parseFloat(t.mileage_km) * CONFIG_MILEAGE_RATE).toFixed(2);
         const supObj = suppliers.find(s => s.id === t.supplier_id);
         generatedExpenses.push({
-          id: expIdCounter++,
+          id: generateUniqueId(),
           date: t.date,
           clientName: supObj ? supObj.name : (t.supplier_id || 'IDS Travel'),
           plant: t.plant_id || '',
@@ -232,23 +232,24 @@ export default function IntegrityWeeklyTimesheet({
       status: 'Draft'
     });
 
-  }, [selectedRepId, weekEnded, timeEntries, expenseEntries, reps]);
+  }, [selectedRepId, weekEnded]);
 
-  // Update Matrix Row Cell
+  // Robust Update Matrix Row Cell
   const updateRow = (id, field, value) => {
-    setRows(prev => prev.map(r => r.id === id ? { ...r, [field]: value } : r));
+    setRows(prev => prev.map(r => String(r.id) === String(id) ? { ...r, [field]: value } : r));
   };
 
-  // Update Expense Row Cell
+  // Robust Update Expense Row Cell
   const updateExpense = (id, field, value) => {
-    setExpenses(prev => prev.map(e => e.id === id ? { ...e, [field]: value } : e));
+    setExpenses(prev => prev.map(e => String(e.id) === String(id) ? { ...e, [field]: value } : e));
   };
 
-  // Add New Client Row
+  // Robust Add New Client Row
   const addRow = () => {
-    const newId = rows.length ? Math.max(...rows.map(r => r.id)) + 1 : 1;
+    const newId = generateUniqueId();
     setRows(prev => [...prev, {
       id: newId,
+      supplier_id: '',
       clientName: '',
       plant: '',
       description: '',
@@ -259,21 +260,33 @@ export default function IntegrityWeeklyTimesheet({
     }]);
   };
 
-  // Remove Client Row
+  // Robust Remove Client Row
   const removeRow = (id) => {
     if (rows.length <= 1) return;
-    setRows(prev => prev.filter(r => r.id !== id));
+    setRows(prev => prev.filter(r => String(r.id) !== String(id)));
   };
 
-  // Add Expense Row
+  // Robust Add Expense Row (guaranteed unique ID & state update)
   const addExpenseRow = () => {
-    const newId = expenses.length ? Math.max(...expenses.map(e => e.id)) + 1 : 1;
-    setExpenses(prev => [...prev, { id: newId, date: weekEnded, clientName: '', plant: '', category: 'Supplies', description: '', amount: '', receipt_url: '' }]);
+    const newId = generateUniqueId();
+    setExpenses(prev => [
+      ...prev,
+      {
+        id: newId,
+        date: weekEnded,
+        clientName: '',
+        plant: '',
+        category: 'Supplies',
+        description: '',
+        amount: '0.00',
+        receipt_url: ''
+      }
+    ]);
   };
 
-  // Remove Expense Row
+  // Robust Remove Expense Row
   const removeExpenseRow = (id) => {
-    setExpenses(prev => prev.filter(e => e.id !== id));
+    setExpenses(prev => prev.filter(e => String(e.id) !== String(id)));
   };
 
   // Calculations
@@ -732,7 +745,7 @@ export default function IntegrityWeeklyTimesheet({
                 <select
                   value={selectedRepId}
                   onChange={(e) => setSelectedRepId(e.target.value)}
-                  className="border border-slate-300 rounded px-2 py-1 w-52 font-bold bg-white text-slate-900 focus:outline-none focus:border-blue-500 shadow-sm"
+                  className="border border-slate-300 rounded px-2 py-1 w-52 font-bold bg-white text-slate-900 focus:outline-none focus:border-blue-500 shadow-sm cursor-pointer"
                 >
                   {reps.map(r => (
                     <option key={r.id} value={r.id}>
@@ -748,7 +761,7 @@ export default function IntegrityWeeklyTimesheet({
                 <select
                   value={currency}
                   onChange={(e) => setCurrency(e.target.value)}
-                  className="border border-slate-300 rounded px-2 py-1 text-xs font-bold bg-white text-slate-900 focus:outline-none w-52"
+                  className="border border-slate-300 rounded px-2 py-1 text-xs font-bold bg-white text-slate-900 focus:outline-none w-52 cursor-pointer"
                 >
                   <option value="CAD">CAD ($ - Canadian Dollar)</option>
                   <option value="USD">USD ($ - US Dollar)</option>
@@ -774,7 +787,7 @@ export default function IntegrityWeeklyTimesheet({
                   type="date"
                   value={weekEnded}
                   onChange={(e) => setWeekEnded(e.target.value)}
-                  className="border border-slate-300 rounded px-2 py-1 w-52 font-bold bg-white text-slate-900 focus:outline-none focus:border-blue-500 text-center shadow-sm"
+                  className="border border-slate-300 rounded px-2 py-1 w-52 font-bold bg-white text-slate-900 focus:outline-none focus:border-blue-500 text-center shadow-sm cursor-pointer"
                 />
               </div>
             </div>
@@ -878,7 +891,7 @@ export default function IntegrityWeeklyTimesheet({
                     </td>
 
                     <td className="p-1 text-center print:hidden">
-                      <button onClick={() => removeRow(row.id)} className="text-slate-400 hover:text-red-600 transition-colors p-0.5">
+                      <button onClick={() => removeRow(row.id)} className="text-slate-400 hover:text-red-600 transition-colors p-0.5 cursor-pointer" title="Delete Row">
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </td>
@@ -907,10 +920,11 @@ export default function IntegrityWeeklyTimesheet({
 
         <div className="flex items-center justify-between mb-6 print:hidden">
           <button
+            type="button"
             onClick={addRow}
-            className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg text-slate-800 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-sm"
+            className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg text-slate-800 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-sm active:scale-95"
           >
-            <Plus className="w-3.5 h-3.5" />
+            <Plus className="w-3.5 h-3.5 text-blue-600" />
             <span>Add Client Row</span>
           </button>
         </div>
@@ -942,7 +956,7 @@ export default function IntegrityWeeklyTimesheet({
                   <th className="p-1.5 border-r border-slate-300 text-left w-36">Client Name</th>
                   <th className="p-1.5 border-r border-slate-300 text-left w-32">Category</th>
                   <th className="p-1.5 border-r border-slate-300 text-left">Expense Description</th>
-                  <th className="p-1.5 border-r border-slate-300 text-left w-28">Receipt Link</th>
+                  <th className="p-1.5 border-r border-slate-300 text-left w-36">Receipt Link / URL</th>
                   <th className="p-1.5 border-r border-slate-300 w-28 text-right pr-3">Total $</th>
                   <th className="p-1 w-7 print:hidden"></th>
                 </tr>
@@ -964,13 +978,14 @@ export default function IntegrityWeeklyTimesheet({
                         value={exp.clientName}
                         onChange={(e) => updateExpense(exp.id, 'clientName', e.target.value)}
                         className="w-full bg-transparent px-1 py-0.5 text-slate-900 focus:bg-amber-50 focus:outline-none"
+                        placeholder="Client / Supplier Name"
                       />
                     </td>
                     <td className="p-1 border-r border-slate-300">
                       <select
                         value={exp.category}
                         onChange={(e) => updateExpense(exp.id, 'category', e.target.value)}
-                        className="w-full bg-transparent px-1 py-0.5 text-slate-900 font-semibold focus:bg-amber-50 focus:outline-none"
+                        className="w-full bg-transparent px-1 py-0.5 text-slate-900 font-semibold focus:bg-amber-50 focus:outline-none cursor-pointer"
                       >
                         <option value="Fuel">Fuel</option>
                         <option value="Mileage">Mileage</option>
@@ -987,27 +1002,30 @@ export default function IntegrityWeeklyTimesheet({
                         value={exp.description}
                         onChange={(e) => updateExpense(exp.id, 'description', e.target.value)}
                         className="w-full bg-transparent px-1 py-0.5 text-slate-900 focus:bg-amber-50 focus:outline-none"
+                        placeholder="Expense details..."
                       />
                     </td>
                     <td className="p-1 border-r border-slate-300">
-                      {exp.receipt_url ? (
-                        <a
-                          href={exp.receipt_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-600 hover:underline font-semibold flex items-center gap-1 text-[10px]"
-                        >
-                          <Paperclip className="w-3 h-3 text-blue-500" /> View Receipt
-                        </a>
-                      ) : (
+                      <div className="flex items-center gap-1">
                         <input
                           type="text"
                           placeholder="Receipt URL..."
                           value={exp.receipt_url || ''}
                           onChange={(e) => updateExpense(exp.id, 'receipt_url', e.target.value)}
-                          className="w-full bg-transparent px-1 py-0.5 text-slate-500 text-[10px] focus:bg-amber-50 focus:outline-none"
+                          className="w-full bg-transparent px-1 py-0.5 text-slate-700 text-[10px] focus:bg-amber-50 focus:outline-none"
                         />
-                      )}
+                        {exp.receipt_url && (
+                          <a
+                            href={exp.receipt_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:text-blue-800 p-0.5 shrink-0"
+                            title="View Receipt"
+                          >
+                            <ExternalLink className="w-3.5 h-3.5 text-blue-500" />
+                          </a>
+                        )}
+                      </div>
                     </td>
                     <td className="p-1 border-r border-slate-300 text-right pr-2">
                       <input
@@ -1015,10 +1033,11 @@ export default function IntegrityWeeklyTimesheet({
                         value={exp.amount}
                         onChange={(e) => updateExpense(exp.id, 'amount', e.target.value)}
                         className="w-full text-right bg-transparent px-1 py-0.5 text-slate-900 font-mono font-bold focus:bg-amber-100 focus:outline-none"
+                        placeholder="0.00"
                       />
                     </td>
                     <td className="p-1 text-center print:hidden">
-                      <button onClick={() => removeExpenseRow(exp.id)} className="text-slate-400 hover:text-red-600 transition-colors p-0.5">
+                      <button onClick={() => removeExpenseRow(exp.id)} className="text-slate-400 hover:text-red-600 transition-colors p-0.5 cursor-pointer" title="Delete Expense">
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </td>
@@ -1026,7 +1045,7 @@ export default function IntegrityWeeklyTimesheet({
                 ))}
                 {expenses.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="p-3 text-center text-slate-400 italic">No reimbursable expenses logged for this week.</td>
+                    <td colSpan={7} className="p-3 text-center text-slate-400 italic">No reimbursable expenses logged for this week. Click "+ Add Expense Row" to add one.</td>
                   </tr>
                 )}
               </tbody>
@@ -1042,10 +1061,11 @@ export default function IntegrityWeeklyTimesheet({
 
           <div className="flex items-center justify-between print:hidden">
             <button
+              type="button"
               onClick={addExpenseRow}
-              className="px-3 py-1 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded text-slate-800 text-[11px] font-bold flex items-center gap-1 transition-colors cursor-pointer shadow-sm"
+              className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg text-slate-800 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-sm active:scale-95"
             >
-              <Plus className="w-3 h-3" />
+              <Plus className="w-3.5 h-3.5 text-emerald-600" />
               <span>Add Expense Row</span>
             </button>
           </div>

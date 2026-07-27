@@ -281,10 +281,16 @@ export async function syncWithSupabase(force = false, roleOverride = null, repId
 
         const cloudItems = data || [];
 
-        // Cloud state is 100% authoritative for scoped entities; never push local cache defaults back to cloud
+        // Cloud state is authoritative for scoped entities; merge local newly created items so they are never lost
         if (col === 'suppliers' || col === 'rates' || col === 'users' || col === 'plants' || col === 'systemLogs' || col === 'extraHoursRequests') {
-          if (JSON.stringify(db[col] || []) !== JSON.stringify(cloudItems)) {
-            db[col] = cloudItems;
+          const localItems = db[col] || [];
+          const mergedMap = new Map();
+          cloudItems.forEach(item => { if (item && item.id) mergedMap.set(String(item.id), item); });
+          localItems.forEach(item => { if (item && item.id && !mergedMap.has(String(item.id))) mergedMap.set(String(item.id), item); });
+
+          const merged = Array.from(mergedMap.values());
+          if (JSON.stringify(db[col] || []) !== JSON.stringify(merged)) {
+            db[col] = merged;
             updated = true;
           }
           continue;

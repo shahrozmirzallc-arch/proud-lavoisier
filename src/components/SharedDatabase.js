@@ -32,10 +32,11 @@ const EMPTY_SCHEMA = {
 
 // Core Super-Admin Accounts required for 1-click authentication
 const ESSENTIAL_ADMIN_USERS = [
-  { id: '24', name: 'Donna Cabral', email: 'dcabral@integritydriven.com', phone: '+1 (416) 555-0024', role: 'lead', title: 'Operations Lead Supervisor', pay_currency: 'CAD', avatar: 'DC' },
-  { id: 'owner_1', name: 'Greg Phillippe', email: 'gphillippe@integritydriven.com', phone: '+1 (416) 555-0001', role: 'owner', title: 'Managing Director / Owner', pay_currency: 'CAD', avatar: 'GP' },
-  { id: 'acct_1', name: 'Colleen Boyd', email: 'cboyd@integritydriven.com', phone: '+1 (416) 555-0002', role: 'accountant', title: 'Financial Accountant / Controller', pay_currency: 'CAD', avatar: 'CB' },
-  { id: 'admin_1', name: 'Shahroz Mirza', email: 'smirza@integritydriven.com', phone: '+1 (416) 555-0000', role: 'admin', title: 'System Super Admin', pay_currency: 'CAD', avatar: 'SM' }
+  { id: '24', name: 'Donna Cabral', email: 'dcabral@integritydriven.com', username: 'donna', phone: '+1 (416) 555-0024', role: 'lead', title: 'Operations Lead Supervisor', pay_currency: 'CAD', avatar: 'DC' },
+  { id: 'owner_1', name: 'Greg Phillippe', email: 'gphillippe@integritydriven.com', username: 'greg', phone: '+1 (416) 555-0001', role: 'owner', title: 'Managing Director / Owner', pay_currency: 'CAD', avatar: 'GP' },
+  { id: 'acct_1', name: 'Colleen Boyd', email: 'cboyd@integritydriven.com', username: 'colleen', phone: '+1 (416) 555-0002', role: 'accountant', title: 'Financial Accountant / Controller', pay_currency: 'CAD', avatar: 'CB' },
+  { id: 'admin_1', name: 'Shahroz Mirza', email: 'smirza@integritydriven.com', username: 'shahroz', phone: '+1 (416) 555-0000', role: 'admin', title: 'System Super Admin', pay_currency: 'CAD', avatar: 'SM' },
+  { id: 'lead_diana', name: 'Diana Operations Lead', email: 'diana@goto-ids.com', username: 'diana', phone: '+1 (416) 555-0088', role: 'lead', title: 'Operations Lead Supervisor', pay_currency: 'CAD', avatar: 'DL' }
 ];
 
 // Initialize database in localStorage with automatic version cache invalidation

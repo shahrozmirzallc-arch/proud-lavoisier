@@ -23,17 +23,18 @@ BEGIN
   DELETE FROM system_logs WHERE id IS NOT NULL;
   DELETE FROM rep_activities WHERE id IS NOT NULL;
 
-  -- Delete non-essential users (preserving essential admins)
-  DELETE FROM users WHERE id NOT IN ('24', 'owner_1', 'acct_1', 'admin_1', 'lead_diana', 'shahroz', 'admin');
+  -- Delete non-essential users (preserving essential admins and Clarence rep)
+  DELETE FROM users WHERE id NOT IN ('24', 'owner_1', 'acct_1', 'admin_1', 'lead_diana', 'rep_clarence', 'shahroz', 'admin', 'clarence');
 
-  -- Re-seed essential admin accounts
+  -- Re-seed essential admin accounts and Clarence Kuiken
   INSERT INTO users (id, name, email, username, role, title, pay_currency, avatar)
   VALUES 
     ('24', 'Donna Cabral', 'dcabral@integritydriven.com', 'donna', 'lead', 'Operations Lead Supervisor', 'CAD', 'DC'),
     ('owner_1', 'Greg Phillippe', 'gphillippe@integritydriven.com', 'greg', 'owner', 'Managing Director / Owner', 'CAD', 'GP'),
     ('acct_1', 'Colleen Boyd', 'cboyd@integritydriven.com', 'colleen', 'accountant', 'Financial Accountant / Controller', 'CAD', 'CB'),
     ('admin_1', 'Shahroz Mirza', 'smirza@integritydriven.com', 'shahroz', 'admin', 'System Super Admin', 'CAD', 'SM'),
-    ('lead_diana', 'Diana Operations Lead', 'diana@goto-ids.com', 'diana', 'lead', 'Operations Lead Supervisor', 'CAD', 'DL')
+    ('lead_diana', 'Diana Operations Lead', 'diana@goto-ids.com', 'diana', 'lead', 'Operations Lead Supervisor', 'CAD', 'DL'),
+    ('rep_clarence', 'Clarence Kuiken', 'ckuiken@integritydriven.com', 'clarence', 'rep', 'Quality Inspector', 'CAD', 'CK')
   ON CONFLICT (id) DO UPDATE SET
     name = EXCLUDED.name,
     email = EXCLUDED.email,

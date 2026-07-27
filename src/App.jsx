@@ -274,6 +274,7 @@ function App() {
         { id: 'lead_diana', name: 'Diana Operations Lead', email: 'diana@goto-ids.com', username: 'diana', role: 'lead' },
         { id: 'owner_1', name: 'Greg Phillippe', email: 'gphillippe@integritydriven.com', username: 'greg', role: 'owner' },
         { id: 'acct_1', name: 'Colleen Boyd', email: 'cboyd@integritydriven.com', username: 'colleen', role: 'accountant' },
+        { id: 'rep_clarence', name: 'Clarence Kuiken', email: 'ckuiken@integritydriven.com', username: 'clarence', role: 'rep', title: 'Quality Inspector' },
         ...localUsers
       ];
 
@@ -286,6 +287,7 @@ function App() {
         (inputUser === 'diana' && (u.id === 'lead_diana' || u.username === 'diana')) ||
         (inputUser === 'greg' && u.id === 'owner_1') ||
         (inputUser === 'colleen' && u.id === 'acct_1') ||
+        (inputUser === 'clarence' && (u.id === 'rep_clarence' || u.username === 'clarence')) ||
         (inputUser === 'hugo' && (u.name?.toLowerCase().includes('hugo') || u.id === 'hugo'))
       );
 

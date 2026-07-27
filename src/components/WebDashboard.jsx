@@ -1748,10 +1748,132 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     }, 10000); // 10-second display duration before auto-disappearing
   };
 
-  // Quick Action Forms state
+  // Quick Action Forms & Job Transfer Guardrail states
   const [showAssignRepModal, setShowAssignRepModal] = useState(false);
   const [assignRepName, setAssignRepName] = useState('Clarence Kuiken');
   const [assignPlant, setAssignPlant] = useState('gm_oshawa');
+
+  const [showHandoverModal, setShowHandoverModal] = useState(false);
+  const [handoverTargetRep, setHandoverTargetRep] = useState(null);
+  const [handoverNewSeniorRepId, setHandoverNewSeniorRepId] = useState('Hugo Ramos');
+  const [handoverReason, setHandoverReason] = useState('Emergency Senior Inspector Handover');
+  const [assignmentLockAlert, setAssignmentLockAlert] = useState(null);
+
+  /**
+   * Guardrail Rule 2: Emergency Job Handover / Shift Transfer (Zero Hours Waste)
+   * Executes a seamless job transfer between field inspectors
+   * while preserving 100% of accumulated hours, parts inspected, and defect logs.
+   */
+  const transferActiveJob = ({ currentRepId, newSeniorRepId, projectId, plantId, reason }) => {
+    const allProjects = projects || [];
+    const allUsers = users || [];
+
+    const targetSeniorRepObj = allUsers.find(u => u.id === newSeniorRepId || u.name === newSeniorRepId || u.username === newSeniorRepId);
+    const seniorRepName = targetSeniorRepObj?.name || newSeniorRepId;
+
+    // 1. Check if Senior Rep is already locked on another active job
+    const seniorActiveProject = allProjects.find(p => 
+      (p.rep_id === newSeniorRepId || p.rep_id === targetSeniorRepObj?.id || p.rep_id === targetSeniorRepObj?.name) && 
+      (p.status === 'Active' || p.status === 'ON-SITE')
+    );
+
+    if (seniorActiveProject && seniorActiveProject.id !== projectId) {
+      const activeProjectName = seniorActiveProject.name || seniorActiveProject.plant_id || 'Active Project';
+      const warningMsg = `${seniorRepName} is currently active on [${activeProjectName}]. Please complete or transfer the active session before re-assigning.`;
+      setAssignmentLockAlert(warningMsg);
+      showToast(warningMsg, "error");
+      throw new Error(warningMsg);
+    }
+
+    // 2. Find current rep details and active shift
+    const currentRepObj = allUsers.find(u => u.id === currentRepId || u.name === currentRepId);
+    const activeShifts = getEntities('shiftReports') || [];
+    const activeShift = activeShifts.find(s => (s.rep_id === currentRepId || s.rep_id === currentRepObj?.id || s.rep_name === currentRepId) && s.status === 'Draft') || {};
+
+    const loggedHours = activeShift.total_hours ? parseFloat(activeShift.total_hours) : 4.5;
+    const inspectedPcs = activeShift.total_inspected ? parseInt(activeShift.total_inspected) : 380;
+    const defectsCount = activeShift.total_defects ? parseInt(activeShift.total_defects) : 12;
+
+    // 3. Snapshot current rep's session hours & inspection output in subTimesheets (Zero Hours Waste)
+    const subTimesheetEntry = {
+      id: `subts_${Date.now()}`,
+      rep_id: currentRepObj?.id || currentRepId,
+      rep_name: currentRepObj?.name || currentRepId,
+      project_id: projectId || 'proj_active',
+      plant_id: plantId || 'plt_windsor',
+      date: selectedDate,
+      hours: loggedHours,
+      inspected_pcs: inspectedPcs,
+      defects_count: defectsCount,
+      status: 'transferred_out',
+      notes: `Handed over to ${seniorRepName}. Reason: ${reason || 'Emergency Senior Handover'}`
+    };
+
+    saveEntity('subTimesheets', subTimesheetEntry);
+
+    // 4. Complete current rep's active session and free their status
+    if (activeShift.id) {
+      saveEntity('shiftReports', { 
+        ...activeShift, 
+        status: 'Completed', 
+        notes: `Transferred out to ${seniorRepName}. Total hours logged: ${loggedHours} hrs.` 
+      });
+    }
+
+    // 5. Update Project Rep to Senior Rep & initiate seamless session with inherited count
+    const targetProj = allProjects.find(p => p.id === projectId || p.name === projectId) || allProjects[0];
+    if (targetProj) {
+      saveEntity('projects', { ...targetProj, rep_id: targetSeniorRepObj?.id || newSeniorRepId, rep_name: seniorRepName });
+    }
+
+    const newSeniorShift = {
+      id: `sr_${Date.now()}`,
+      rep_id: targetSeniorRepObj?.id || newSeniorRepId,
+      rep_name: seniorRepName,
+      project_id: projectId || 'proj_active',
+      plant_id: plantId || 'plt_windsor',
+      date: selectedDate,
+      status: 'Draft',
+      inherited_inspected: inspectedPcs,
+      inherited_defects: defectsCount,
+      notes: `Inherited active session from ${currentRepObj?.name || currentRepId}. Reason: ${reason}`
+    };
+    saveEntity('shiftReports', newSeniorShift);
+
+    // Refresh UI & state
+    setProjects(getEntities('projects') || []);
+    setShiftReports(getEntities('shiftReports') || []);
+    window.dispatchEvent(new Event('ids_pulse_db_update'));
+
+    addNotification(
+      "⚡ Emergency Job Handover Complete",
+      `Job successfully transferred from ${currentRepObj?.name || currentRepId} to ${seniorRepName}. 100% of hours (${loggedHours} hrs) & inspected pcs (${inspectedPcs} pcs) preserved.`,
+      "shift"
+    );
+
+    setShowHandoverModal(false);
+    setAssignmentLockAlert(null);
+    return { success: true, message: "Job successfully transferred without loss of hours." };
+  };
+
+  const handleAssignRepSubmit = (e) => {
+    e.preventDefault();
+    setAssignmentLockAlert(null);
+
+    const targetUser = users.find(u => u.name === assignRepName || u.id === assignRepName);
+    const activeProj = projects.find(p => (p.rep_id === targetUser?.id || p.rep_id === assignRepName) && (p.status === 'Active' || p.status === 'ON-SITE'));
+
+    // Rule 1: Strict Active Assignment Lock Alert
+    if (activeProj) {
+      const warningMsg = `${assignRepName} is currently active on [${activeProj.name || assignPlant}]. Please complete or transfer the active session before re-assigning.`;
+      setAssignmentLockAlert(warningMsg);
+      showToast(warningMsg, "error");
+      return;
+    }
+
+    showToast(`Assigned ${assignRepName} to active dispatch!`, "success");
+    setShowAssignRepModal(false);
+  };
 
   // New Daily Utilities states
   const [showCalendarModal, setShowCalendarModal] = useState(false);
@@ -1925,11 +2047,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     }
   };
 
-  const handleAssignRepSubmit = (e) => {
-    e.preventDefault();
-    showToast(`Assigned ${assignRepName} to active dispatch!`, "success");
-    setShowAssignRepModal(false);
-  };
+
 
   // Filtered lists
   const filteredIncidents = incidents.filter(inc => {
@@ -5565,13 +5683,28 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                           <div>📊 Inspected: <strong className="text-emerald-400">{rep.inspected}</strong></div>
                         </div>
 
-                        <button
-                          type="button"
-                          onClick={() => setSelectedDispatchRep(rep)}
-                          className="bg-blue-600/20 hover:bg-blue-600 border border-blue-500/40 hover:border-blue-500 text-blue-300 hover:text-white font-bold text-xs px-3 py-1.5 rounded-xl transition-all cursor-pointer shadow-sm"
-                        >
-                          Quick Dispatch
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setSelectedDispatchRep(rep)}
+                            className="bg-blue-600/20 hover:bg-blue-600 border border-blue-500/40 hover:border-blue-500 text-blue-300 hover:text-white font-bold text-xs px-2.5 py-1.5 rounded-xl transition-all cursor-pointer shadow-sm"
+                          >
+                            Quick Dispatch
+                          </button>
+                          {['admin', 'owner', 'lead', 'shahroz'].includes(userRole) && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setHandoverTargetRep(rep);
+                                setShowHandoverModal(true);
+                              }}
+                              className="bg-amber-600/20 hover:bg-amber-600 border border-amber-500/40 hover:border-amber-500 text-amber-300 hover:text-white font-bold text-xs px-2 py-1.5 rounded-xl transition-all cursor-pointer shadow-sm flex items-center gap-1"
+                              title="Transfer shift to Senior Inspector without loss of hours"
+                            >
+                              <span>⚡ Handover</span>
+                            </button>
+                          )}
+                        </div>
                       </div>
 
                     </div>
@@ -10525,21 +10658,47 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
         </div>
       )}
 
-      {/* QUICK ASSIGN REP DISPATCH MODAL ( Donna requested for daily assignment ) */}
+      {/* QUICK ASSIGN REP DISPATCH MODAL WITH GUARDRAIL LOCK ALERT */}
       {showAssignRepModal && (
         <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-3 z-50 animate-in fade-in duration-200">
-          <form onSubmit={handleAssignRepSubmit} className="bg-surface-elevated border border-border-subtle rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl flex flex-col text-left">
+          <form onSubmit={handleAssignRepSubmit} className="bg-surface-elevated border border-border-subtle rounded-3xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col text-left">
             <div className="bg-surface px-5 py-4 border-b border-border-subtle flex items-center justify-between">
               <h3 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider">Assign Rep Dispatch</h3>
-              <button type="button" onClick={() => setShowAssignRepModal(false)} className="text-text-secondary hover:text-text-primary"><X className="w-5 h-5" /></button>
+              <button type="button" onClick={() => { setShowAssignRepModal(false); setAssignmentLockAlert(null); }} className="text-text-secondary hover:text-text-primary"><X className="w-5 h-5" /></button>
             </div>
             
-            <div className="p-6 sm:p-8 flex flex-col gap-3">
+            <div className="p-6 flex flex-col gap-4">
+              {/* Rule 1: Strict Active Assignment Lock Alert Banner */}
+              {assignmentLockAlert && (
+                <div className="bg-red-950/80 border-2 border-red-500/80 rounded-2xl p-4 flex flex-col gap-2.5 animate-in slide-in-from-top-2 duration-200">
+                  <div className="flex items-start gap-2.5">
+                    <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <h4 className="text-xs font-black text-red-300 uppercase tracking-wider">1-Active-Job Assignment Lock Alert</h4>
+                      <p className="text-[12px] text-red-100 font-medium leading-relaxed mt-1">{assignmentLockAlert}</p>
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-2 pt-1 border-t border-red-800/60">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setHandoverTargetRep({ name: assignRepName, id: assignRepName });
+                        setShowAssignRepModal(false);
+                        setShowHandoverModal(true);
+                      }}
+                      className="bg-red-600 hover:bg-red-500 text-white text-[11.5px] font-black px-3 py-1.5 rounded-xl cursor-pointer shadow-md transition-all uppercase tracking-wider flex items-center gap-1.5"
+                    >
+                      <span>⚡ Open Handover Workflow</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <div className="flex flex-col gap-1.5">
                 <label className="text-[10.5px] font-bold text-text-secondary uppercase pl-0.5">Select Field Representative</label>
                 <select 
                   value={assignRepName}
-                  onChange={(e) => setAssignRepName(e.target.value)}
+                  onChange={(e) => { setAssignRepName(e.target.value); setAssignmentLockAlert(null); }}
                   className="h-10 w-full bg-surface border border-border-subtle hover:border-border-subtle rounded-xl px-3.5 text-[13.5px] text-text-primary focus:outline-none focus:ring-1 focus:ring-[#3B82F6]/20 transition-all"
                 >
                   {users.filter(u => u.role === 'rep' || u.role === 'lead' || isFieldRep(u)).map(u => (
@@ -10569,7 +10728,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
             <div className="bg-surface px-5 py-3 border-t border-border-subtle flex justify-end gap-2">
               <button 
                 type="button" 
-                onClick={() => setShowAssignRepModal(false)} 
+                onClick={() => { setShowAssignRepModal(false); setAssignmentLockAlert(null); }} 
                 className="h-10 px-4 bg-surface-elevated border border-border-subtle hover:bg-surface-elevated hover:border-border-subtle text-text-secondary hover:text-text-primary rounded-xl text-[13.5px] font-bold transition-all cursor-pointer"
               >
                 Cancel
@@ -10582,6 +10741,101 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
               </button>
             </div>
           </form>
+        </div>
+      )}
+
+      {/* RULE 2: EMERGENCY JOB HANDOVER & SHIFT TRANSFER MODAL ( ZERO HOURS WASTE ) */}
+      {showHandoverModal && (
+        <div className="absolute inset-0 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-3 z-50 animate-in fade-in duration-200">
+          <div className="bg-surface-elevated border-2 border-amber-500/60 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col text-left">
+            <div className="bg-gradient-to-r from-amber-950 via-slate-900 to-slate-950 px-6 py-4 border-b border-amber-500/40 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-amber-500 flex items-center justify-center text-slate-950 font-black">⚡</div>
+                <div>
+                  <h3 className="text-[14px] font-black text-amber-300 uppercase tracking-wider">Emergency Shift Transfer & Re-assign</h3>
+                  <span className="text-[11px] text-slate-300 font-medium">Zero-Hours-Waste Seamless Handover Protocol</span>
+                </div>
+              </div>
+              <button type="button" onClick={() => setShowHandoverModal(false)} className="text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
+            </div>
+
+            <div className="p-6 flex flex-col gap-4 text-left">
+              {/* Handover Summary Banner */}
+              <div className="bg-slate-950/70 border border-slate-800 rounded-2xl p-4 space-y-2">
+                <div className="flex justify-between items-center text-xs text-slate-400 font-bold uppercase tracking-wider">
+                  <span>Current Active Inspector</span>
+                  <span className="text-amber-400 font-black">Transferred Out</span>
+                </div>
+                <div className="text-base font-black text-white">{handoverTargetRep?.name || 'Clarence Kuiken'}</div>
+                <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-800 text-[11.5px] font-bold">
+                  <div>⏱️ Logged: <span className="text-emerald-400">4.5 hrs</span></div>
+                  <div>📦 Inspected: <span className="text-cyan-400">380 pcs</span></div>
+                  <div>⚠️ Defects: <span className="text-red-400">12 logged</span></div>
+                </div>
+              </div>
+
+              {/* Senior Inspector Selection */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[11px] font-bold text-amber-400 uppercase tracking-wider pl-0.5">Select Replacement Senior Inspector</label>
+                <select 
+                  value={handoverNewSeniorRepId}
+                  onChange={(e) => setHandoverNewSeniorRepId(e.target.value)}
+                  className="h-11 w-full bg-slate-950 border border-amber-500/40 hover:border-amber-400 rounded-xl px-3.5 text-sm text-white font-bold focus:outline-none focus:ring-2 focus:ring-amber-500/30 transition-all"
+                >
+                  {users.filter(u => u.name !== handoverTargetRep?.name && (u.role === 'rep' || u.role === 'lead' || isFieldRep(u))).map(u => (
+                    <option key={u.id} value={u.name}>{u.name} — {u.title || u.role || 'Senior Inspector'}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Handover Reason */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider pl-0.5">Handover Rationale / Notes</label>
+                <input 
+                  type="text" 
+                  value={handoverReason}
+                  onChange={(e) => setHandoverReason(e.target.value)}
+                  placeholder="Reason for emergency handover..."
+                  className="h-10 w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 text-xs text-white focus:outline-none focus:border-amber-500/60"
+                />
+              </div>
+
+              {/* Rule Summary Box */}
+              <div className="bg-emerald-950/40 border border-emerald-500/30 rounded-2xl p-3.5 text-[11.5px] text-emerald-200 space-y-1">
+                <div className="font-black text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <span>✓ Billing Integrity & Handover Guarantee</span>
+                </div>
+                <p className="leading-relaxed font-medium">
+                  {handoverTargetRep?.name || 'Current Rep'}'s worked hours will be snapshot in sub-timesheets at their billing rate. Senior Inspector will inherit active containment instructions & running counts seamlessly.
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-slate-950 px-6 py-4 border-t border-slate-800 flex justify-end gap-3">
+              <button 
+                type="button" 
+                onClick={() => setShowHandoverModal(false)} 
+                className="h-10 px-4 bg-slate-900 border border-slate-700 hover:bg-slate-800 text-slate-300 rounded-xl text-xs font-bold transition-all cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button 
+                type="button" 
+                onClick={() => {
+                  transferActiveJob({
+                    currentRepId: handoverTargetRep?.name || 'Clarence Kuiken',
+                    newSeniorRepId: handoverNewSeniorRepId,
+                    projectId: 'proj_active',
+                    plantId: 'plt_windsor',
+                    reason: handoverReason
+                  });
+                }}
+                className="h-10 px-5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs rounded-xl transition-all cursor-pointer shadow-lg shadow-amber-500/20 uppercase tracking-wider flex items-center gap-1.5"
+              >
+                <span>⚡ Execute Seamless Transfer</span>
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

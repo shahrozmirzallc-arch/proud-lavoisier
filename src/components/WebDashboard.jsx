@@ -2455,118 +2455,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   };
 
   const handlePrintReport = (inc) => {
-    const conf = getConfidentiality(inc, "incident");
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) return;
-
-    let partsSectionHtml = '';
-    if (inc.parts_list && inc.parts_list.length > 0) {
-      partsSectionHtml = `
-        <div class="desc" style="border-top: 1px solid #e2e8f0; padding-top: 20px; margin-top: 20px;">
-          <h3>Defective Parts List</h3>
-          <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 13px;">
-            <thead>
-              <tr style="background: #f1f5f9; text-align: left;">
-                <th style="padding: 8px; border: 1px solid #e2e8f0;">Part Number</th>
-                <th style="padding: 8px; border: 1px solid #e2e8f0;">Description</th>
-                <th style="padding: 8px; border: 1px solid #e2e8f0;">Bin</th>
-                <th style="padding: 8px; border: 1px solid #e2e8f0; text-align: center;">Qty</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${inc.parts_list.map(p => `
-                <tr>
-                  <td style="padding: 8px; border: 1px solid #e2e8f0; font-weight: bold;">${p.part_number}</td>
-                  <td style="padding: 8px; border: 1px solid #e2e8f0;">${p.description}</td>
-                  <td style="padding: 8px; border: 1px solid #e2e8f0; color: #10B981; font-weight: 500;">${p.bin}</td>
-                  <td style="padding: 8px; border: 1px solid #e2e8f0; text-align: center; font-weight: bold;">${p.qty}</td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table></div>
-        </div>
-      `;
-    }
-
-    const firstPN = inc.parts_list?.[0]?.part_number || inc.part_id;
-    const partSubject = inc.parts_list && inc.parts_list.length > 1
-      ? `${firstPN} (+${inc.parts_list.length - 1} others)`
-      : firstPN;
-
-    printWindow.document.write(`
-      <html>
-        <head>
-          <title>IDS Pulse Report - PN ${partSubject}</title>
-          <style>
-            body { font-family: sans-serif; padding: 40px; color: #1e293b; line-height: 1.6; background: #f8fafc; position: relative; }
-            .card { background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 30px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); position: relative; z-index: 1; }
-            .header-container { display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #3B82F6; padding-bottom: 15px; margin-bottom: 24px; }
-            .logo-section { display: flex; align-items: center; gap: 12px; }
-            .shield-icon { width: 34px; height: 34px; background: #3B82F6; clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%); display: flex; align-items: center; justify-content: center; }
-            .pulse-wave { width: 18px; height: 18px; border-bottom: 2.5px solid #3B82F6; border-top: 2.5px solid #3B82F6; transform: rotate(15deg); }
-            .company-details { display: flex; flex-direction: column; }
-            .company-title { color: #3B82F6; font-size: 18px; font-weight: 800; margin: 0; line-height: 1.1; letter-spacing: -0.02em; }
-            .company-subtitle { font-size: 8px; color: #64748b; margin-top: 2px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
-            .confidentiality-tag { border: 1.5px solid ${conf.color}; background: ${conf.bgHex}; color: ${conf.color}; font-size: 9px; font-weight: 800; padding: 4px 10px; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.05em; text-align: center; }
-            .confidentiality-sub { font-size: 7px; display: block; margin-top: 2px; font-weight: bold; color: ${conf.color}; opacity: 0.8; text-transform: uppercase; }
-            .watermark { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-45deg); font-size: 64px; font-weight: 900; color: rgba(226, 232, 240, 0.25); pointer-events: none; z-index: 0; white-space: nowrap; text-transform: uppercase; font-family: sans-serif; }
-            .grid { display: grid; grid-template-cols: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
-            .field { background: #f8fafc; padding: 10px 14px; border-radius: 10px; border: 1px solid #f1f5f9; }
-            .label { font-size: 9px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 4px; }
-            .val { font-size: 13px; font-weight: 600; color: #0f172a; }
-            .desc { border-top: 1px solid #e2e8f0; padding-top: 20px; margin-top: 20px; }
-            .desc h3 { color: #3B82F6; font-size: 15px; margin-top: 0; margin-bottom: 8px; font-weight: 700; }
-            .desc p { font-size: 13px; color: #334155; margin: 0; white-space: pre-wrap; }
-            .footer { border-top: 1px solid #e2e8f0; padding-top: 12px; margin-top: 40px; font-size: 9px; color: #94a3b8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; display: flex; justify-content: space-between; }
-          </style>
-        </head>
-        <body>
-          <div class="watermark">IDS ${conf.level}</div>
-          <div class="card">
-            <div class="header-container">
-              <div class="logo-section" style="display: flex; align-items: center; background: #1e3a5f; padding: 6px 14px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
-                <img src="${LOGO_BASE64}" style="height: 28px; width: auto; object-fit: contain;" />
-              </div>
-              <div class="confidentiality-tag">
-                ${conf.level}
-                <span class="confidentiality-sub">${conf.sub}</span>
-              </div>
-            </div>
-
-            <div class="grid">
-              <div class="field"><span class="label">Incident ID</span><span class="val">${inc.id}</span></div>
-              <div class="field"><span class="label">Logged By (Rep)</span><span class="val">${users.find(u => u.id === inc.rep_id)?.name || 'Clarence Kuiken'}</span></div>
-              <div class="field"><span class="label">Report Date</span><span class="val">${new Date(inc.created_at).toLocaleString()}</span></div>
-              <div class="field"><span class="label">Affected Part Number</span><span class="val">${partSubject}</span></div>
-              <div class="field"><span class="label">Area Discovered</span><span class="val">${inc.area}</span></div>
-              <div class="field"><span class="label">Defect Coordinates</span><span class="val">${inc.defect_location_x !== undefined && inc.defect_location_x !== null ? `X: ${inc.defect_location_x} | Y: ${inc.defect_location_y}` : 'N/A'}</span></div>
-              <div class="field"><span class="label">Action Taken</span><span class="val">${inc.action_taken}</span></div>
-              <div class="field"><span class="label">Supplier QM Contact</span><span class="val">${inc.supplier_contact}</span></div>
-              <div class="field"><span class="label">RMA Required</span><span class="val">${inc.rma_required || 'N'}</span></div>
-              <div class="field"><span class="label">Current Status</span><span class="val">${inc.status}</span></div>
-              <div class="field" style="grid-column: span 2;"><span class="label">Classification Rationale</span><span class="val" style="font-weight: 500; font-size: 11px; color: ${conf.color};">${conf.reason}</span></div>
-            </div>
-            
-            ${partsSectionHtml}
-            
-            <div class="desc">
-              <h3>Defect Narrative Details</h3>
-              <p>${inc.description}</p>
-            </div>
-
-            <div class="footer">
-              <span>System: IDS Pulse Audit Portal</span>
-              <span>CLASSIFICATION: ${conf.level} / ${conf.sub}</span>
-              <span>&copy; 2026 Integrity Driven Solutions Inc.</span>
-            </div>
-          </div>
-          <script>
-            window.onload = function() { window.print(); setTimeout(() => window.close(), 500); }
-          </script>
-        </body>
-      </html>
-    `);
-    printWindow.document.close();
+    handleDownloadReport(inc);
   };
 
   const handleGenerateCerReport = () => {
@@ -3063,122 +2952,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   };
 
   const handlePrintShiftReport = (sr) => {
-    const conf = getConfidentiality(sr, "shift");
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) return;
-
-    const repName = users.find(u => u.id === sr.rep_id)?.name || 'Clarence Kuiken';
-
-    printWindow.document.write(`
-      <html>
-        <head>
-          <title>IDS Walkthrough Audit Report - ${sr.date}</title>
-          <style>
-            body { font-family: sans-serif; padding: 40px; color: #1e293b; line-height: 1.6; background: #f8fafc; position: relative; }
-            .card { background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 30px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); position: relative; z-index: 1; }
-            .header-container { display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #3B82F6; padding-bottom: 15px; margin-bottom: 24px; }
-            .logo-section { display: flex; align-items: center; background: #1e3a5f; padding: 6px 14px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
-            .confidentiality-tag { border: 1.5px solid ${conf.color}; background: ${conf.bgHex}; color: ${conf.color}; font-size: 9px; font-weight: 800; padding: 4px 10px; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.05em; text-align: center; }
-            .confidentiality-sub { font-size: 7px; display: block; margin-top: 2px; font-weight: bold; color: ${conf.color}; opacity: 0.8; text-transform: uppercase; }
-            .watermark { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-45deg); font-size: 50px; font-weight: 900; color: rgba(226, 232, 240, 0.25); pointer-events: none; z-index: 0; white-space: nowrap; text-transform: uppercase; font-family: sans-serif; }
-            .grid { display: grid; grid-template-cols: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
-            .field { background: #f8fafc; padding: 10px 14px; border-radius: 10px; border: 1px solid #f1f5f9; }
-            .label { font-size: 9px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 4px; }
-            .val { font-size: 13px; font-weight: 600; color: #0f172a; }
-            .section-title { color: #3B82F6; font-size: 15px; margin-top: 20px; margin-bottom: 12px; font-weight: 700; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; }
-            
-            .table-styled { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 12px; }
-            .table-styled th { background: #f1f5f9; padding: 8px; border: 1px solid #e2e8f0; text-align: left; font-weight: 800; color: #475569; text-transform: uppercase; font-size: 9px; }
-            .table-styled td { padding: 10px 8px; border: 1px solid #e2e8f0; }
-            
-            .badge-issues { background: #fee2e2; color: #ef4444; border: 1px solid #fca5a5; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 9px; text-transform: uppercase; }
-            .badge-no_issues { background: #dcfce7; color: #10b981; border: 1px solid #86efac; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 9px; text-transform: uppercase; }
-            .badge-completed { background: #dcfce7; color: #10b981; border: 1px solid #86efac; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 9px; text-transform: uppercase; }
-
-            .footer { border-top: 1px solid #e2e8f0; padding-top: 12px; margin-top: 40px; font-size: 9px; color: #94a3b8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; display: flex; justify-content: space-between; }
-          </style>
-        </head>
-        <body>
-          <div class="watermark">IDS ${conf.level}</div>
-          <div class="card">
-            <div class="header-container">
-              <div class="logo-section">
-                <img src="${LOGO_BASE64}" style="height: 28px; width: auto; object-fit: contain;" />
-              </div>
-              <div class="confidentiality-tag">
-                ${conf.level}
-                <span class="confidentiality-sub">${conf.sub}</span>
-              </div>
-            </div>
-
-            <div class="grid">
-              <div class="field"><span class="label">Report Type</span><span class="val">Shift Walkthrough Audit Summary</span></div>
-              <div class="field"><span class="label">Logged By (Rep)</span><span class="val">${repName}</span></div>
-              <div class="field"><span class="label">Report Date</span><span class="val">${sr.date}</span></div>
-              <div class="field"><span class="label">Plant Location</span><span class="val">GM Oshawa Plant</span></div>
-              <div class="field"><span class="label">Time Compiled</span><span class="val">${new Date(sr.sent_at).toLocaleString()}</span></div>
-              <div class="field" style="grid-column: span 2;"><span class="label">Classification Rationale</span><span class="val" style="font-weight: 500; font-size: 11px; color: ${conf.color};">${conf.reason}</span></div>
-            </div>
-
-            <div class="section-title">Walked Area Audits</div>
-            <table class="table-styled">
-              <thead>
-                <tr>
-                  <th style="width: 25%;">Area Walked</th>
-                  <th style="width: 20%;">Audit Status</th>
-                  <th style="width: 55%;">Notes & Remarks</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${sr.areas_walked.map(area => `
-                  <tr>
-                    <td style="font-weight: bold; color: #0f172a;">${area.name}</td>
-                    <td>
-                      <span class="badge-${area.status}">
-                        ${area.status === 'issues' ? 'Defects Found' : 'No Issues'}
-                      </span>
-                    </td>
-                    <td style="color: #475569;">${area.notes || 'Rep walked area and confirmed no active part issues.'}</td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table></div>
-
-            ${sr.bonus_tasks && sr.bonus_tasks.length > 0 ? `
-              <div class="section-title">Requested Sorts & Audits</div>
-              <table class="table-styled">
-                <thead>
-                  <tr>
-                    <th style="width: 40%;">Task Instruction</th>
-                    <th style="width: 20%;">Task Status</th>
-                    <th style="width: 40%;">Rep Notes</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${sr.bonus_tasks.map(t => `
-                    <tr>
-                      <td style="font-weight: bold; color: #0f172a;">${t.task}</td>
-                      <td><span class="badge-completed">Completed</span></td>
-                      <td style="color: #475569;">${t.notes || 'Audit check completed.'}</td>
-                    </tr>
-                  `).join('')}
-                </tbody>
-              </table></div>
-            ` : ''}
-
-            <div class="footer">
-              <span>System: IDS Pulse Audit Portal</span>
-              <span>CLASSIFICATION: ${conf.level} / ${conf.sub}</span>
-              <span>&copy; 2026 Integrity Driven Solutions Inc.</span>
-            </div>
-          </div>
-          <script>
-            window.onload = function() { window.print(); setTimeout(() => window.close(), 500); }
-          </script>
-        </body>
-      </html>
-    `);
-    printWindow.document.close();
+    handleDownloadShiftReport(sr);
   };
 
   const handleDownloadSupplierDirectoryReport = () => {
@@ -3284,81 +3058,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   };
 
   const handlePrintSupplierDirectoryReport = () => {
-    const conf = getConfidentiality(null, "suppliers");
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) return;
-
-    printWindow.document.write(`
-      <html>
-        <head>
-          <title>IDS Supplier Partnership Directory</title>
-          <style>
-            body { font-family: sans-serif; padding: 40px; color: #1e293b; line-height: 1.6; background: #f8fafc; position: relative; }
-            .card { background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 30px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); position: relative; z-index: 1; }
-            .header-container { display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #3B82F6; padding-bottom: 15px; margin-bottom: 24px; }
-            .logo-section { display: flex; align-items: center; background: #1e3a5f; padding: 6px 14px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
-            .confidentiality-tag { border: 1.5px solid ${conf.color}; background: ${conf.bgHex}; color: ${conf.color}; font-size: 9px; font-weight: 800; padding: 4px 10px; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.05em; text-align: center; }
-            .confidentiality-sub { font-size: 7px; display: block; margin-top: 2px; font-weight: bold; color: ${conf.color}; opacity: 0.8; text-transform: uppercase; }
-            .watermark { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-45deg); font-size: 50px; font-weight: 900; color: rgba(226, 232, 240, 0.25); pointer-events: none; z-index: 0; white-space: nowrap; text-transform: uppercase; font-family: sans-serif; }
-            
-            .supplier-card { border: 1px solid #e2e8f0; background: #f8fafc; border-radius: 12px; padding: 20px; margin-bottom: 20px; }
-            .supplier-name { color: #3B82F6; font-size: 16px; font-weight: 800; display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-            .badge-active { background: #dcfce7; color: #10b981; border: 1px solid #86efac; padding: 2px 8px; border-radius: 99px; font-size: 9px; font-weight: bold; }
-            
-            .contact-row { display: flex; justify-content: space-between; background: white; border: 1px solid #f1f5f9; padding: 8px 12px; border-radius: 8px; font-size: 11px; margin-bottom: 6px; }
-            .contact-info { font-weight: 700; color: #334155; }
-            .contact-role { font-weight: 500; color: #64748b; font-size: 9px; text-transform: uppercase; margin-top: 2px; }
-            
-            .footer { border-top: 1px solid #e2e8f0; padding-top: 12px; margin-top: 40px; font-size: 9px; color: #94a3b8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; display: flex; justify-content: space-between; }
-          </style>
-        </head>
-        <body>
-          <div class="watermark">IDS ${conf.level}</div>
-          <div class="card">
-            <div class="header-container">
-              <div class="logo-section">
-                <img src="${LOGO_BASE64}" style="height: 28px; width: auto; object-fit: contain;" />
-              </div>
-              <div class="confidentiality-tag">
-                ${conf.level}
-                <span class="confidentiality-sub">${conf.sub}</span>
-              </div>
-            </div>
-
-            <h2 style="color: #3B82F6; font-size: 18px; font-weight: 850; margin-top: 0; margin-bottom: 20px; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px;">Supplier Partnership Directory</h2>
-
-            ${suppliers.map(sup => `
-              <div class="supplier-card">
-                <div class="supplier-name">
-                  <span>${sup.name}</span>
-                  <span class="badge-active">ACTIVE PARTNERSHIP</span>
-                </div>
-                <div style="font-size: 10px; font-weight: bold; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">Quality Management Contacts</div>
-                ${sup.contacts.map(c => `
-                  <div class="contact-row">
-                    <div>
-                      <div class="contact-info">${c.name}</div>
-                      <div class="contact-role">${c.role}</div>
-                    </div>
-                    <div style="font-family: monospace; align-self: center;"><a href="mailto:${c.email}" style="color: #3B82F6; text-decoration: none;">${c.email}</a></div>
-                  </div>
-                `).join('')}
-              </div>
-            `).join('')}
-
-            <div class="footer">
-              <span>System: IDS Supplier Directory</span>
-              <span>CLASSIFICATION: ${conf.level} / ${conf.sub}</span>
-              <span>&copy; 2026 Integrity Driven Solutions Inc.</span>
-            </div>
-          </div>
-          <script>
-            window.onload = function() { window.print(); setTimeout(() => window.close(), 500); }
-          </script>
-        </body>
-      </html>
-    `);
-    printWindow.document.close();
+    handleDownloadSupplierDirectoryReport();
   };
 
   const handleDownloadTimesheetReport = () => {
@@ -3477,115 +3177,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   };
 
   const handlePrintTimesheetReport = () => {
-    const conf = getConfidentiality(timeEntries, "payroll");
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) return;
-
-    const totalHoursVal = timeEntries.reduce((acc, curr) => acc + curr.hours, 0);
-    const totalMileageVal = timeEntries.reduce((acc, curr) => acc + curr.mileage_km, 0);
-    const totalInvoicedEstVal = (timeEntries || []).reduce((acc, curr) => acc + ((curr.hours || 0) * ((curr.billing_rate !== undefined && curr.billing_rate !== null) ? parseFloat(curr.billing_rate) : getRepSupplierRates(curr.rep_id, curr.supplier_id, curr.plant_id).billing_rate)) + ((curr.mileage_km || 0) * CONFIG_MILEAGE_RATE), 0);
-
-    printWindow.document.write(`
-      <html>
-        <head>
-          <title>IDS Payroll and Mileage Timesheets Audit Report</title>
-          <style>
-            body { font-family: sans-serif; padding: 40px; color: #1e293b; line-height: 1.6; background: #f8fafc; position: relative; }
-            .card { background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 30px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); position: relative; z-index: 1; }
-            .header-container { display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #3B82F6; padding-bottom: 15px; margin-bottom: 24px; }
-            .logo-section { display: flex; align-items: center; background: #1e3a5f; padding: 6px 14px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
-            .confidentiality-tag { border: 1.5px solid ${conf.color}; background: ${conf.bgHex}; color: ${conf.color}; font-size: 9px; font-weight: 800; padding: 4px 10px; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.05em; text-align: center; }
-            .confidentiality-sub { font-size: 7px; display: block; margin-top: 2px; font-weight: bold; color: ${conf.color}; opacity: 0.8; text-transform: uppercase; }
-            .watermark { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-45deg); font-size: 50px; font-weight: 900; color: rgba(226, 232, 240, 0.25); pointer-events: none; z-index: 0; white-space: nowrap; text-transform: uppercase; font-family: sans-serif; }
-            
-            .summary-box { display: grid; grid-template-cols: 1fr 1fr 1fr; gap: 16px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; margin-bottom: 24px; }
-            .summary-item { display: flex; flex-direction: column; }
-            .summary-label { font-size: 9px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
-            .summary-val { font-size: 15px; font-weight: 800; color: #0f172a; margin-top: 4px; }
-
-            .table-styled { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 12px; }
-            .table-styled th { background: #f1f5f9; padding: 8px; border: 1px solid #e2e8f0; text-align: left; font-weight: 800; color: #475569; text-transform: uppercase; font-size: 9px; }
-            .table-styled td { padding: 10px 8px; border: 1px solid #e2e8f0; }
-
-            .footer { border-top: 1px solid #e2e8f0; padding-top: 12px; margin-top: 40px; font-size: 9px; color: #94a3b8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; display: flex; justify-content: space-between; }
-          </style>
-        </head>
-        <body>
-          <div class="watermark">IDS ${conf.level}</div>
-          <div class="card">
-            <div class="header-container">
-              <div class="logo-section">
-                <img src="${LOGO_BASE64}" style="height: 28px; width: auto; object-fit: contain;" />
-              </div>
-              <div class="confidentiality-tag">
-                ${conf.level}
-                <span class="confidentiality-sub">${conf.sub}</span>
-              </div>
-            </div>
-
-            <h2 style="color: #3B82F6; font-size: 18px; font-weight: 850; margin-top: 0; margin-bottom: 20px; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px;">Timesheet Payroll Summary Audit Report</h2>
-
-            <div class="summary-box">
-              <div class="summary-item">
-                <span class="summary-label">Total Hours Billed</span>
-                <span class="summary-val">${totalHoursVal} Hours</span>
-              </div>
-              <div class="summary-item">
-                <span class="summary-label">Total Mileage Claimed</span>
-                <span class="summary-val">${totalMileageVal} km</span>
-              </div>
-              <div class="summary-item">
-                <span class="summary-label">Invoice Estimate Total</span>
-                <span class="summary-val" style="color: #0ea5e9;">$${totalInvoicedEstVal.toFixed(2)}</span>
-              </div>
-            </div>
-
-            <div style="font-size: 10px; font-weight: bold; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">Detailed Representative Labor Log</div>
-            <table class="table-styled">
-              <thead>
-                <tr>
-                  <th>Employee/Rep Name</th>
-                  <th>Date Logged</th>
-                  <th>Hours Billed ($28.00/hr)</th>
-                  <th>Mileage (KM)</th>
-                  <th>Mileage Cost ($0.73/km)</th>
-                  <th>Total Billing</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${(timeEntries || []).filter(entry => entry).map(entry => {
-                  const rep = users.find(u => u && u.id === entry.rep_id)?.name || 'Unknown Rep';
-                  const mileageCost = (entry.mileage_km || 0) * CONFIG_MILEAGE_RATE;
-                  const rate = (entry.billing_rate !== undefined && entry.billing_rate !== null) ? parseFloat(entry.billing_rate) : getRepSupplierRates(entry.rep_id, entry.supplier_id, entry.plant_id).billing_rate;
-                  const hourlyBilling = (entry.hours || 0) * rate;
-                  const total = mileageCost + hourlyBilling;
-                  return `
-                    <tr>
-                      <td style="font-weight: bold; color: #0f172a;">${rep}</td>
-                      <td>${entry.date || ''}</td>
-                      <td>${entry.hours || 0} hrs ($${hourlyBilling.toFixed(2)})</td>
-                      <td>${entry.mileage_km || 0} km</td>
-                      <td style="color: #10b981; font-weight: 500;">$${mileageCost.toFixed(2)}</td>
-                      <td style="font-weight: 800; color: #0f172a;">$${total.toFixed(2)}</td>
-                    </tr>
-                  `;
-                }).join('')}
-              </tbody>
-            </table></div>
-
-            <div class="footer">
-              <span>System: IDS Payroll Timesheets</span>
-              <span>CLASSIFICATION: ${conf.level} / ${conf.sub}</span>
-              <span>&copy; 2026 Integrity Driven Solutions Inc.</span>
-            </div>
-          </div>
-          <script>
-            window.onload = function() { window.print(); setTimeout(() => window.close(), 500); }
-          </script>
-        </body>
-      </html>
-    `);
-    printWindow.document.close();
+    handleDownloadTimesheetReport();
   };
 
   const handleDownloadReworkFeedReport = () => {
@@ -3688,95 +3280,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   };
 
   const handlePrintReworkFeedReport = () => {
-    const conf = getConfidentiality(null, "rework");
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) return;
-
-    const filteredRework = reworkLogs.filter(rw => showAllDates || rw.created_at?.startsWith(selectedDate));
-
-    printWindow.document.write(`
-      <html>
-        <head>
-          <title>IDS Rework Logs Feed Report</title>
-          <style>
-            body { font-family: sans-serif; padding: 40px; color: #1e293b; line-height: 1.6; background: #f8fafc; position: relative; }
-            .card { background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 30px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); position: relative; z-index: 1; }
-            .header-container { display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #3B82F6; padding-bottom: 15px; margin-bottom: 24px; }
-            .logo-section { display: flex; align-items: center; background: #1e3a5f; padding: 6px 14px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
-            .confidentiality-tag { border: 1.5px solid ${conf.color}; background: ${conf.bgHex}; color: ${conf.color}; font-size: 9px; font-weight: 800; padding: 4px 10px; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.05em; text-align: center; }
-            .confidentiality-sub { font-size: 7px; display: block; margin-top: 2px; font-weight: bold; color: ${conf.color}; opacity: 0.8; text-transform: uppercase; }
-            .watermark { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-45deg); font-size: 50px; font-weight: 900; color: rgba(226, 232, 240, 0.25); pointer-events: none; z-index: 0; white-space: nowrap; text-transform: uppercase; font-family: sans-serif; }
-
-            .table-styled { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 12px; }
-            .table-styled th { background: #f1f5f9; padding: 8px; border: 1px solid #e2e8f0; text-align: left; font-weight: 800; color: #475569; text-transform: uppercase; font-size: 9px; }
-            .table-styled td { padding: 10px 8px; border: 1px solid #e2e8f0; }
-
-            .footer { border-top: 1px solid #e2e8f0; padding-top: 12px; margin-top: 40px; font-size: 9px; color: #94a3b8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; display: flex; justify-content: space-between; }
-          </style>
-        </head>
-        <body>
-          <div class="watermark">IDS ${conf.level}</div>
-          <div class="card">
-            <div class="header-container">
-              <div class="logo-section">
-                <img src="${LOGO_BASE64}" style="height: 28px; width: auto; object-fit: contain;" />
-              </div>
-              <div class="confidentiality-tag">
-                ${conf.level}
-                <span class="confidentiality-sub">${conf.sub}</span>
-              </div>
-            </div>
-
-            <h2 style="color: #3B82F6; font-size: 18px; font-weight: 850; margin-top: 0; margin-bottom: 20px; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px;">Defect Rework Logs Feed Report</h2>
-
-            <table class="table-styled">
-              <thead>
-                <tr>
-                  <th>Date logged</th>
-                  <th>Field Rep</th>
-                  <th>Part Affected</th>
-                  <th>Supplier</th>
-                  <th>Pieces Reworked</th>
-                  <th>Time Spent</th>
-                  <th>Notes & Remarks</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${filteredRework.map(rw => {
-                  const rep = users.find(u => u.id === rw.rep_id)?.name || 'Clarence Kuiken';
-                  return `
-                    <tr>
-                      <td>${new Date(rw.created_at).toLocaleDateString()}</td>
-                      <td style="font-weight: bold; color: #3B82F6;">${rep}</td>
-                      <td style="font-weight: bold;">PN ${rw.part_id}</td>
-                      <td style="text-transform: uppercase; font-size: 10px; font-weight: bold; color: #64748b;">${rw.supplier_id}</td>
-                      <td style="font-weight: bold; color: #10b981;">${rw.qty} pcs</td>
-                      <td style="font-weight: bold; color: #0ea5e9;">${Math.round(rw.time_spent_minutes / 60 * 10) / 10} hrs</td>
-                      <td style="color: #475569;">${rw.notes || 'N/A'}</td>
-                    </tr>
-                  `;
-                }).join('')}
-                ${filteredRework.length === 0 ? `
-                  <tr>
-                    <td colspan="7" style="text-align: center; color: #94a3b8; font-style: italic; padding: 24px;">No rework logged on this date.</td>
-                  </tr>
-                ` : ''}
-              </tbody>
-            </table></div>
-
-            <div class="footer">
-              <span>System: IDS Rework Logging Feed</span>
-              <span>CLASSIFICATION: ${conf.level} / ${conf.sub}</span>
-              <span>&copy; 2026 Integrity Driven Solutions Inc.</span>
-            </div>
-          </div>
-          <script>
-            window.onload = function() { window.print(); setTimeout(() => window.close(), 500); }
-          </script>
-        </body>
-      </html>
-    `);
-    printWindow.document.close();
+    handleDownloadReworkFeedReport();
   };
 
   const handleDownloadReworkReport = (rw) => {
@@ -3874,77 +3378,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   };
 
   const handlePrintReworkReport = (rw) => {
-    const conf = getConfidentiality(rw, "rework");
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) return;
-
-    const repName = users.find(u => u.id === rw.rep_id)?.name || 'Clarence Kuiken';
-
-    printWindow.document.write(`
-      <html>
-        <head>
-          <title>IDS Rework Audit - ${rw.id}</title>
-          <style>
-            body { font-family: sans-serif; padding: 40px; color: #1e293b; line-height: 1.6; background: #f8fafc; position: relative; }
-            .card { background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 30px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); position: relative; z-index: 1; }
-            .header-container { display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #3B82F6; padding-bottom: 15px; margin-bottom: 24px; }
-            .logo-section { display: flex; align-items: center; background: #1e3a5f; padding: 6px 14px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
-            .confidentiality-tag { border: 1.5px solid ${conf.color}; background: ${conf.bgHex}; color: ${conf.color}; font-size: 9px; font-weight: 800; padding: 4px 10px; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.05em; text-align: center; }
-            .confidentiality-sub { font-size: 7px; display: block; margin-top: 2px; font-weight: bold; color: ${conf.color}; opacity: 0.8; text-transform: uppercase; }
-            .watermark { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-45deg); font-size: 50px; font-weight: 900; color: rgba(226, 232, 240, 0.25); pointer-events: none; z-index: 0; white-space: nowrap; text-transform: uppercase; font-family: sans-serif; }
-            
-            .grid { display: grid; grid-template-cols: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
-            .field { background: #f8fafc; padding: 10px 14px; border-radius: 10px; border: 1px solid #f1f5f9; }
-            .label { font-size: 9px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 4px; }
-            .val { font-size: 13px; font-weight: 600; color: #0f172a; }
-            .desc { border-top: 1px solid #e2e8f0; padding-top: 20px; margin-top: 20px; }
-            .desc h3 { color: #3B82F6; font-size: 15px; margin-top: 0; margin-bottom: 8px; font-weight: 700; }
-            .desc p { font-size: 13px; color: #334155; margin: 0; white-space: pre-wrap; }
-            .footer { border-top: 1px solid #e2e8f0; padding-top: 12px; margin-top: 40px; font-size: 9px; color: #94a3b8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; display: flex; justify-content: space-between; }
-          </style>
-        </head>
-        <body>
-          <div class="watermark">IDS ${conf.level}</div>
-          <div class="card">
-            <div class="header-container">
-              <div class="logo-section">
-                <img src="${LOGO_BASE64}" style="height: 28px; width: auto; object-fit: contain;" />
-              </div>
-              <div class="confidentiality-tag">
-                ${conf.level}
-                <span class="confidentiality-sub">${conf.sub}</span>
-              </div>
-            </div>
-
-            <div class="grid">
-              <div class="field"><span class="label">Rework ID</span><span class="val">${rw.id}</span></div>
-              <div class="field"><span class="label">Logged By (Rep)</span><span class="val">${repName}</span></div>
-              <div class="field"><span class="label">Date Logged</span><span class="val">${new Date(rw.created_at).toLocaleString()}</span></div>
-              <div class="field"><span class="label">Part Number Reworked</span><span class="val">PN ${rw.part_id}</span></div>
-              <div class="field"><span class="label">Supplier Partner</span><span class="val">${rw.supplier_id?.toUpperCase()}</span></div>
-              <div class="field"><span class="label">Pieces Reworked</span><span class="val">${rw.qty} pcs</span></div>
-              <div class="field"><span class="label">Time Spent (Labor)</span><span class="val">${Math.round(rw.time_spent_minutes / 60 * 10) / 10} hours</span></div>
-              <div class="field" style="grid-column: span 2;"><span class="label">Classification Rationale</span><span class="val" style="font-weight: 500; font-size: 11px; color: ${conf.color};">${conf.reason}</span></div>
-            </div>
-
-            <div class="desc">
-              <h3>Rework Activity Remarks & Notes</h3>
-              <p>${rw.notes || 'No notes recorded for this rework activity.'}</p>
-            </div>
-
-            <div class="footer">
-              <span>System: IDS Rework Records</span>
-              <span>CLASSIFICATION: ${conf.level} / ${conf.sub}</span>
-              <span>&copy; 2026 Integrity Driven Solutions Inc.</span>
-            </div>
-          </div>
-          <script>
-            window.onload = function() { window.print(); setTimeout(() => window.close(), 500); }
-          </script>
-        </body>
-      </html>
-    `);
-    printWindow.document.close();
+    handleDownloadReworkReport(rw);
   };
 
   // --- NEW PDF & CSV DOWNLOAD REPORT GENERATORS (PARTS 2 & 5) ---
@@ -7743,29 +7177,39 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   <h3 className="text-xl font-bold text-text-primary">Weekly REP Activities Report</h3>
                   <span className="text-sm text-text-secondary">Mandatory 5-point daily checklist for shift workers</span>
                 </div>
-                {weeklySignOff ? (
-                  <div className="flex items-center gap-2 text-emerald-600 bg-emerald-50 px-4 py-2 rounded-lg font-bold border border-emerald-200">
-                    <CheckCircle2 className="w-5 h-5" />
-                    <span>Signed Off</span>
-                  </div>
-                ) : (
+                <div className="flex items-center gap-2">
                   <button 
-                    onClick={() => {
-                      const allChecked = Object.values(weeklyChecklists).some(day => 
-                        Object.values(day).some(val => val)
-                      );
-                      if (allChecked) {
-                        setWeeklySignOff(true);
-                      } else {
-                        showToast("Please check off required activities before signoff.", "warning");
-                      }
-                    }}
-                    className="bg-[#3B82F6] hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg flex items-center gap-2 transition-colors cursor-pointer shadow-sm shadow-blue-500/20"
+                    onClick={() => handleDownloadChecklistReport()}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded-lg flex items-center gap-2 transition-colors cursor-pointer shadow-sm"
                   >
-                    <ClipboardCheck className="w-4.5 h-4.5" />
-                    <span>Sign Off Weekly Report</span>
+                    <Download className="w-4.5 h-4.5" />
+                    <span>Download PDF</span>
                   </button>
-                )}
+
+                  {weeklySignOff ? (
+                    <div className="flex items-center gap-2 text-emerald-600 bg-emerald-50 px-4 py-2 rounded-lg font-bold border border-emerald-200">
+                      <CheckCircle2 className="w-5 h-5" />
+                      <span>Signed Off</span>
+                    </div>
+                  ) : (
+                    <button 
+                      onClick={() => {
+                        const allChecked = Object.values(weeklyChecklists).some(day => 
+                          Object.values(day).some(val => val)
+                        );
+                        if (allChecked) {
+                          setWeeklySignOff(true);
+                        } else {
+                          showToast("Please check off required activities before signoff.", "warning");
+                        }
+                      }}
+                      className="bg-[#3B82F6] hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg flex items-center gap-2 transition-colors cursor-pointer shadow-sm shadow-blue-500/20"
+                    >
+                      <ClipboardCheck className="w-4.5 h-4.5" />
+                      <span>Sign Off Weekly Report</span>
+                    </button>
+                  )}
+                </div>
               </div>
               
               <div className="overflow-x-auto w-full mt-4">

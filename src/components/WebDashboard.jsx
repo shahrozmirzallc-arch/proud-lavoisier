@@ -8394,7 +8394,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   {accountingSubTab === 'integrity-sheet' && (
                     <IntegrityWeeklyTimesheet
                       currentUserRole={userRole}
-                      reps={users ? users.filter(u => u && (u.role === 'rep' || u.role === 'qre' || u.is_field_rep || u.role === 'inspector')) : []}
+                      reps={users ? users.filter(u => u && (u.role === 'rep' || u.role === 'qre' || u.role === 'lead' || isFieldRep(u))) : []}
                       suppliers={suppliers || []}
                       plants={plants || []}
                       rates={rates || []}

@@ -172,16 +172,24 @@ function App() {
     };
   }, []);
 
-  // Helper to purge stale keys from storage (preserving offline queues)
+  // Helper to purge stale session keys from storage (preserving data cache and offline queues)
   const clearStaleSessionStorage = () => {
     try {
+      const protectedKeys = [
+        'ids_pulse_db',
+        'ids_pulse_db_version',
+        'ids_pulse_theme',
+        'ids_pulse_daynight',
+        'ids_pulse_offline_queue',
+        'ids_pulse_sqlite_outbox_v2'
+      ];
       Object.keys(sessionStorage).forEach(key => {
-        if (key.startsWith('ids_pulse_') && key !== 'ids_pulse_offline_queue' && key !== 'ids_pulse_sqlite_outbox_v2') {
+        if (key.startsWith('ids_pulse_') && !protectedKeys.includes(key)) {
           sessionStorage.removeItem(key);
         }
       });
       Object.keys(localStorage).forEach(key => {
-        if (key.startsWith('ids_pulse_') && key !== 'ids_pulse_offline_queue' && key !== 'ids_pulse_sqlite_outbox_v2') {
+        if (key.startsWith('ids_pulse_') && !protectedKeys.includes(key)) {
           localStorage.removeItem(key);
         }
       });

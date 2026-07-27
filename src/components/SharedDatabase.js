@@ -105,7 +105,7 @@ export function initializeDB() {
   return data;
 }
 
-// 100% Purge / Reset DB to Completely Clean Production Slate
+// 100% Purge / Reset DB to Completely Clean Production Slate (Local + Supabase Cloud)
 export function resetDB() {
   localStorage.removeItem(STORAGE_KEY);
   localStorage.setItem(DB_VERSION_KEY, CURRENT_DB_VERSION);
@@ -122,6 +122,29 @@ export function resetDB() {
   
   localStorage.setItem(STORAGE_KEY, JSON.stringify(cleanData));
   window.dispatchEvent(new Event('ids_pulse_db_update'));
+
+  // PURGE SUPABASE CLOUD TABLES (RPC + Scoped Delete Fallback)
+  if (supabaseUrl && supabaseAnonKey && !supabaseUrl.includes('placeholder')) {
+    supabase.rpc('purge_demo_data').then(async ({ error }) => {
+      if (error) {
+        console.warn("[Supabase Purge RPC Error]:", error.message, "- running scoped table delete fallback...");
+        const tables = ['suppliers', 'projects', 'rates', 'plants', 'time_entries', 'expense_entries', 'incidents', 'rework_logs', 'shift_reports', 'extra_hours_requests', 'daily_tasks', 'email_logs', 'system_logs', 'rep_activities'];
+        for (const t of tables) {
+          await supabase.from(t).delete().neq('id', '0_impossible_id_preserve_all').catch(() => {});
+        }
+        const essentialIds = ['24', 'owner_1', 'acct_1', 'admin_1', 'lead_diana'];
+        await supabase.from('users').delete().not('id', 'in', `(${essentialIds.map(i => `"${i}"`).join(',')})`).catch(() => {});
+      }
+      
+      // Re-seed essential admin accounts to Supabase
+      for (const admin of ESSENTIAL_ADMIN_USERS) {
+        await supabase.from('users').upsert(admin).catch(() => {});
+      }
+    }).catch(err => {
+      console.error("[Supabase Purge Execution Exception]:", err);
+    });
+  }
+
   return cleanData;
 }
 
@@ -425,11 +448,28 @@ export function saveEntity(type, entity) {
   } else {
     const targetTable = getSupabaseTableName(type);
     if (type === 'systemLogs' || targetTable === 'system_logs') {
-      Promise.resolve(supabase.from(targetTable).upsert(entity)).catch(() => {});
+      supabase.from(targetTable).upsert(entity).catch(() => {});
       return entity;
     }
 
-    Promise.resolve(supabase.from(targetTable).upsert(entity)).catch(() => {});
+    supabase.from(targetTable).upsert(entity).then(({ error }) => {
+      if (error) {
+        console.error(`[Supabase Cloud Upsert Error] Table "${targetTable}":`, error.message);
+        const queue = JSON.parse(localStorage.getItem('ids_pulse_offline_queue') || '[]');
+        if (!queue.some(item => String(item.entity?.id) === String(entity.id))) {
+          queue.push({ type, entity, timestamp: new Date().toISOString(), lastError: error.message });
+          localStorage.setItem('ids_pulse_offline_queue', JSON.stringify(queue));
+        }
+        window.dispatchEvent(new CustomEvent('ids_pulse_toast', { detail: { message: `Cloud Write Warning on ${type}: ${error.message}`, type: 'warning' } }));
+      }
+    }).catch(err => {
+      console.error(`[Supabase Cloud Upsert Exception] Table "${targetTable}":`, err);
+      const queue = JSON.parse(localStorage.getItem('ids_pulse_offline_queue') || '[]');
+      if (!queue.some(item => String(item.entity?.id) === String(entity.id))) {
+        queue.push({ type, entity, timestamp: new Date().toISOString(), lastError: err.message });
+        localStorage.setItem('ids_pulse_offline_queue', JSON.stringify(queue));
+      }
+    });
   }
 
   return entity;

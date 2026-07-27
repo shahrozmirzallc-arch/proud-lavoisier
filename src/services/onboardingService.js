@@ -131,9 +131,11 @@ export async function performAtomicClientOnboarding(rawPayload) {
   const supplierObj = {
     id: supplierId,
     name: validated.supplier_name,
+    contact_name: validated.contact_name || 'Martin Smith',
     contact_person: validated.contact_name || 'Martin Smith',
     contact_email: validated.contact_email || 'martin.smith@magna.com',
     contact_phone: validated.contact_phone || '+1 (416) 555-0199',
+    phone: validated.contact_phone || '+1 (416) 555-0199',
     address: validated.address || '100 Industrial Pkwy, Belleville, ON K8N 5B7',
     allotted_hours: validated.allotted_hours || 100,
     created_at: new Date().toISOString()

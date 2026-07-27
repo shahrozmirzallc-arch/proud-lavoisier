@@ -8392,7 +8392,16 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
                   {/* SUB-TAB: INTEGRITY WEEKLY TIMESHEET (QUICKBOOKS) */}
                   {accountingSubTab === 'integrity-sheet' && (
-                    <IntegrityWeeklyTimesheet currentUserRole={userRole} />
+                    <IntegrityWeeklyTimesheet
+                      currentUserRole={userRole}
+                      reps={users ? users.filter(u => u && (u.role === 'rep' || u.role === 'qre' || u.is_field_rep || u.role === 'inspector')) : []}
+                      suppliers={suppliers || []}
+                      plants={plants || []}
+                      rates={rates || []}
+                      timeEntries={timeEntries || []}
+                      expenseEntries={expenseEntries || []}
+                      currentUser={currentUser || { name: 'Admin', role: userRole }}
+                    />
                   )}
 
                   {/* SUB-TAB: TIMESHEET HISTORY (EDIT) */}

@@ -2221,9 +2221,19 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     .filter(r => showAllDates || r.created_at?.startsWith(selectedDate))
     .reduce((acc, curr) => acc + curr.qty, 0);
 
-  const activeRepsCount = userRole === 'customer'
-    ? new Set(incidents.map(i => i.rep_id).concat(timeEntries.map(t => t.rep_id)).filter(Boolean)).size
-    : users.filter(isFieldRep).length;
+  const activeRepsCount = useMemo(() => {
+    if (userRole === 'customer') {
+      const custIncidents = (incidents || []).filter(i => i.supplier_id === currentUserCustomerId || i.customer_id === currentUserCustomerId);
+      const custTime = (timeEntries || []).filter(t => t.supplier_id === currentUserCustomerId);
+      return new Set(custIncidents.map(i => i.rep_id).concat(custTime.map(t => t.rep_id)).filter(Boolean)).size;
+    }
+    const todayRepIds = new Set([
+      ...(timeEntries || []).filter(t => showAllDates || t.date === selectedDate).map(t => t.rep_id),
+      ...(shiftReports || []).filter(s => showAllDates || s.date?.startsWith(selectedDate) || s.shift_date?.startsWith(selectedDate)).map(s => s.rep_id),
+      ...(projects || []).map(p => p.rep_id)
+    ].filter(Boolean));
+    return todayRepIds.size;
+  }, [userRole, incidents, timeEntries, shiftReports, projects, currentUserCustomerId, showAllDates, selectedDate]);
 
   const totalInspectedPcsToday = useMemo(() => {
     const shiftTotal = (shiftReports || [])

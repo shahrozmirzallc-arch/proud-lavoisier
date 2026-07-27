@@ -1294,8 +1294,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
         part_number: 'AT-4472',
         po_number: 'PO-2026-ATLAS',
         rep_id: newProjRep || '1',
-        billing_rate: newProjBilling,
-        pay_rate: newProjPay,
+        billing_rate: newProjBilling || '90.00',
+        pay_rate: newProjPay || '50.00',
         currency: newProjCurrency || 'USD',
         start_date: newProjStartDate || new Date().toISOString().split('T')[0]
       };

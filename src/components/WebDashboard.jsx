@@ -1972,7 +1972,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
   const handleReset = () => {
     const confirmReset = window.confirm(
-      "Restore Demo Seeds?\n\nThis will reset your local browser demo state back to the default settings (seed incidents, checklists, and timesheets). This is safe and only affects your current browser. Do you want to proceed?"
+      "100% Purge / Reset Database?\n\nThis will completely purge all non-essential company, project, rate, and shift data across local storage AND Supabase cloud database. Essential admin login accounts will be preserved. Do you want to proceed?"
     );
     if (!confirmReset) return;
 
@@ -1980,7 +1980,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     setSelectedIncident(null);
     setSelectedEmailLog(null);
     setSelectedShiftReport(null);
-    showToast("Demo database state restored to defaults.", "info");
+    showToast("Database completely purged clean across local storage and cloud database.", "info");
   };
 
   const handleUpdateStatus = (incidentId, newStatus) => {

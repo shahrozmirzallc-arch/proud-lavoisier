@@ -2729,11 +2729,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
         const conf = getConfidentiality(inc, "incident");
         const doc = new jsPDF();
         
-        // Draw Clean Light background container for the dark text logo image
-        doc.setFillColor(248, 250, 252);
-        doc.setDrawColor(203, 213, 225);
-        doc.setLineWidth(0.5);
-        doc.roundedRect(20, 13, 50, 13, 2, 2, "FD");
+
         doc.addImage(LOGO_BASE64, 'PNG', 22, 14, 46, 11);
         
         // Confidentiality Badge in top right corner
@@ -2909,10 +2905,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     const conf = getConfidentiality(sr, "shift");
     const doc = new jsPDF();
     
-    doc.setFillColor(248, 250, 252);
-    doc.setDrawColor(203, 213, 225);
-    doc.setLineWidth(0.5);
-    doc.roundedRect(20, 13, 50, 13, 2, 2, "FD");
+
     doc.addImage(LOGO_BASE64, 'PNG', 22, 14, 46, 11);
     
     doc.setDrawColor(conf.colorRGB[0], conf.colorRGB[1], conf.colorRGB[2]);
@@ -3174,10 +3167,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     const doc = new jsPDF();
     
     const renderHeader = () => {
-      doc.setFillColor(248, 250, 252);
-      doc.setDrawColor(203, 213, 225);
-      doc.setLineWidth(0.5);
-      doc.roundedRect(20, 13, 50, 13, 2, 2, "FD");
+
       doc.addImage(LOGO_BASE64, 'PNG', 22, 14, 46, 11);
       
       doc.setDrawColor(conf.colorRGB[0], conf.colorRGB[1], conf.colorRGB[2]);
@@ -3356,10 +3346,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     const conf = getConfidentiality(timeEntries, "payroll");
     const doc = new jsPDF();
     
-    doc.setFillColor(248, 250, 252);
-    doc.setDrawColor(203, 213, 225);
-    doc.setLineWidth(0.5);
-    doc.roundedRect(20, 13, 50, 13, 2, 2, "FD");
+
     doc.addImage(LOGO_BASE64, 'PNG', 22, 14, 46, 11);
     
     doc.setDrawColor(conf.colorRGB[0], conf.colorRGB[1], conf.colorRGB[2]);
@@ -3586,10 +3573,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     const conf = getConfidentiality(null, "rework");
     const doc = new jsPDF();
     
-    doc.setFillColor(248, 250, 252);
-    doc.setDrawColor(203, 213, 225);
-    doc.setLineWidth(0.5);
-    doc.roundedRect(20, 13, 50, 13, 2, 2, "FD");
+
     doc.addImage(LOGO_BASE64, 'PNG', 22, 14, 46, 11);
     
     doc.setDrawColor(conf.colorRGB[0], conf.colorRGB[1], conf.colorRGB[2]);
@@ -3780,10 +3764,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     const conf = getConfidentiality(rw, "rework");
     const doc = new jsPDF();
     
-    doc.setFillColor(248, 250, 252);
-    doc.setDrawColor(203, 213, 225);
-    doc.setLineWidth(0.5);
-    doc.roundedRect(20, 13, 50, 13, 2, 2, "FD");
+
     doc.addImage(LOGO_BASE64, 'PNG', 22, 14, 46, 11);
     
     doc.setDrawColor(conf.colorRGB[0], conf.colorRGB[1], conf.colorRGB[2]);

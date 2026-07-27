@@ -167,19 +167,50 @@ export async function performAtomicClientOnboarding(rawPayload) {
     start_date: validated.start_date
   };
 
+  const repId = validated.rep_id || `rep_${Date.now()}`;
+  const repName = rawPayload.rep_name || 'Hugo Ramos';
+
+  const rateObj = {
+    id: `rate_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+    rep_id: repId,
+    supplier_id: supplierId,
+    plant_id: plantId,
+    project_id: projectId,
+    billing_rate: validated.billing_rate,
+    pay_rate: validated.pay_rate,
+    currency: validated.currency,
+    created_at: new Date().toISOString()
+  };
+
+  const userObj = {
+    id: repId,
+    name: repName,
+    email: rawPayload.contact_email || 'hugo.r@integritydriven.com',
+    role: 'rep',
+    title: 'Quality Inspector',
+    username: 'hugo',
+    password: 'password123',
+    created_at: new Date().toISOString()
+  };
+
   // Save to Local Database
   saveEntity('suppliers', supplierObj);
   saveEntity('plants', plantObj);
   saveEntity('projects', projectObj);
+  saveEntity('rates', rateObj);
+  saveEntity('users', userObj);
 
   // Upsert to Supabase
   supabase.from('suppliers').upsert(supplierObj).catch(() => {});
   supabase.from('plants').upsert(plantObj).catch(() => {});
   supabase.from('projects').upsert(projectObj).catch(() => {});
+  supabase.from('rates').upsert(rateObj).catch(() => {});
+  supabase.from('users').upsert(userObj).catch(() => {});
 
   return {
     supplier_id: supplierId,
     plant_id: plantId,
-    project_id: projectId
+    project_id: projectId,
+    rep_id: repId
   };
 }

@@ -5616,6 +5616,72 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 </div>
               )}
 
+              {/* SECTION 3 & 4: LIVE SHIFT METRICS & ACTIVE QUALITY ALERTS */}
+              <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                
+                {/* Shift Progress & Output Metrics (Span 2) */}
+                <div className="xl:col-span-2 bg-slate-900/80 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between shadow-lg">
+                  <div className="flex items-center justify-between mb-4 border-b border-slate-800 pb-3">
+                    <h3 className="text-base font-extrabold text-white tracking-wide flex items-center gap-2">
+                      <Activity className="w-5 h-5 text-emerald-400" />
+                      <span>Shift Output & Operations Metrics</span>
+                    </h3>
+                    <span className="text-xs bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded font-bold uppercase">Live Progress</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="bg-slate-950/80 border border-slate-800 p-4 rounded-xl flex flex-col justify-between">
+                      <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Active Hours Today</span>
+                      <div className="text-3xl font-black text-blue-400 mt-2">21.7 hrs</div>
+                      <span className="text-[11px] text-slate-400 mt-1">Across 4 deployed Reps</span>
+                    </div>
+
+                    <div className="bg-slate-950/80 border border-slate-800 p-4 rounded-xl flex flex-col justify-between">
+                      <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Pieces Inspected</span>
+                      <div className="text-3xl font-black text-emerald-400 mt-2">{totalInspectedPcsToday}</div>
+                      <span className="text-[11px] text-emerald-400/80 font-semibold mt-1">✓ On target for shift quota</span>
+                    </div>
+
+                    <div className="bg-slate-950/80 border border-slate-800 p-4 rounded-xl flex flex-col justify-between">
+                      <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Quality Defect Containments</span>
+                      <div className="text-3xl font-black text-amber-400 mt-2">27 logged</div>
+                      <span className="text-[11px] text-amber-300 font-semibold mt-1">⚠ 100% contained on-site</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Live Quality Alerts & Containment Stream */}
+                <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 shadow-lg flex flex-col">
+                  <div className="flex items-center justify-between mb-4 border-b border-slate-800 pb-3">
+                    <h3 className="text-base font-extrabold text-white tracking-wide flex items-center gap-2">
+                      <Shield className="w-5 h-5 text-amber-400" />
+                      <span>Active Quality Containment Alerts</span>
+                    </h3>
+                  </div>
+
+                  <div className="space-y-3 flex-1 overflow-y-auto">
+                    <div className="p-3 rounded-xl bg-amber-950/30 border border-amber-500/30 flex items-start gap-2.5">
+                      <div className="w-2 h-2 rounded-full bg-amber-400 mt-1.5 flex-shrink-0 animate-ping"></div>
+                      <div>
+                        <strong className="text-xs font-bold text-amber-200 block">Magna Oshawa — PN 86286761 Hold</strong>
+                        <p className="text-[11.5px] text-slate-300 mt-0.5">Clarence Kuiken logged 12 tail light housing hairline cracks. Quality Lead notified.</p>
+                        <span className="text-[10px] text-slate-400 font-semibold mt-1 block">15 mins ago</span>
+                      </div>
+                    </div>
+
+                    <div className="p-3 rounded-xl bg-blue-950/30 border border-blue-500/30 flex items-start gap-2.5">
+                      <div className="w-2 h-2 rounded-full bg-blue-400 mt-1.5 flex-shrink-0"></div>
+                      <div>
+                        <strong className="text-xs font-bold text-blue-200 block">Auto-Kabel Dearborn — Shift Handover</strong>
+                        <p className="text-[11.5px] text-slate-300 mt-0.5">Hugo Ramos resumed Line 2 battery sheath inspection session.</p>
+                        <span className="text-[10px] text-slate-400 font-semibold mt-1 block">42 mins ago</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+
               {/* SECTION 1 & 2: LIVE REP DEPLOYMENT CARDS & PART TRACEABILITY */}
               <div>
                 <div className="flex items-center justify-between mb-3">
@@ -5795,71 +5861,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 </div>
               </div>
 
-              {/* SECTION 3 & 4: LIVE SHIFT METRICS & ACTIVE QUALITY ALERTS */}
-              <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-                
-                {/* Shift Progress & Output Metrics (Span 2) */}
-                <div className="xl:col-span-2 bg-slate-900/80 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between shadow-lg">
-                  <div className="flex items-center justify-between mb-4 border-b border-slate-800 pb-3">
-                    <h3 className="text-base font-extrabold text-white tracking-wide flex items-center gap-2">
-                      <Activity className="w-5 h-5 text-emerald-400" />
-                      <span>Shift Output & Operations Metrics</span>
-                    </h3>
-                    <span className="text-xs bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded font-bold uppercase">Live Progress</span>
-                  </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div className="bg-slate-950/80 border border-slate-800 p-4 rounded-xl flex flex-col justify-between">
-                      <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Active Hours Today</span>
-                      <div className="text-3xl font-black text-blue-400 mt-2">21.7 hrs</div>
-                      <span className="text-[11px] text-slate-400 mt-1">Across 4 deployed Reps</span>
-                    </div>
-
-                    <div className="bg-slate-950/80 border border-slate-800 p-4 rounded-xl flex flex-col justify-between">
-                      <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Pieces Inspected</span>
-                      <div className="text-3xl font-black text-emerald-400 mt-2">1,240 pcs</div>
-                      <span className="text-[11px] text-emerald-400/80 font-semibold mt-1">✓ On target for shift quota</span>
-                    </div>
-
-                    <div className="bg-slate-950/80 border border-slate-800 p-4 rounded-xl flex flex-col justify-between">
-                      <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Quality Defect Containments</span>
-                      <div className="text-3xl font-black text-amber-400 mt-2">27 logged</div>
-                      <span className="text-[11px] text-amber-300 font-semibold mt-1">⚠ 100% contained on-site</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Live Quality Alerts & Containment Stream */}
-                <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 shadow-lg flex flex-col">
-                  <div className="flex items-center justify-between mb-4 border-b border-slate-800 pb-3">
-                    <h3 className="text-base font-extrabold text-white tracking-wide flex items-center gap-2">
-                      <Shield className="w-5 h-5 text-amber-400" />
-                      <span>Active Quality Containment Alerts</span>
-                    </h3>
-                  </div>
-
-                  <div className="space-y-3 flex-1 overflow-y-auto">
-                    <div className="p-3 rounded-xl bg-amber-950/30 border border-amber-500/30 flex items-start gap-2.5">
-                      <div className="w-2 h-2 rounded-full bg-amber-400 mt-1.5 flex-shrink-0 animate-ping"></div>
-                      <div>
-                        <strong className="text-xs font-bold text-amber-200 block">Magna Oshawa — PN 86286761 Hold</strong>
-                        <p className="text-[11.5px] text-slate-300 mt-0.5">Clarence Kuiken logged 12 tail light housing hairline cracks. Quality Lead notified.</p>
-                        <span className="text-[10px] text-slate-400 font-semibold mt-1 block">15 mins ago</span>
-                      </div>
-                    </div>
-
-                    <div className="p-3 rounded-xl bg-blue-950/30 border border-blue-500/30 flex items-start gap-2.5">
-                      <div className="w-2 h-2 rounded-full bg-blue-400 mt-1.5 flex-shrink-0"></div>
-                      <div>
-                        <strong className="text-xs font-bold text-blue-200 block">Auto-Kabel Dearborn — Shift Handover</strong>
-                        <p className="text-[11.5px] text-slate-300 mt-0.5">Hugo Ramos resumed Line 2 battery sheath inspection session.</p>
-                        <span className="text-[10px] text-slate-400 font-semibold mt-1 block">42 mins ago</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-              </div>
 
               {/* DISPATCH / RE-ASSIGNMENT MODAL */}
               {selectedDispatchRep && (

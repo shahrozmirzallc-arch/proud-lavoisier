@@ -362,72 +362,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       });
     }
 
-    if (userRole === 'customer' || userRole === 'qre' || userRole === 'rep') {
-      return []; // Return empty array for non-admin users if zero scoped projects exist
-    }
-
-    return [
-      {
-        name: 'Clarence Kuiken',
-        role: 'Lead Senior Quality Inspector',
-        status: 'ON-SITE / CLOCKED IN',
-        statusColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
-        dotColor: 'bg-emerald-400',
-        plant: 'Magna AutoSystems',
-        location: 'Oshawa, ON (Plant 4)',
-        project: 'GM Tail Light Assembly Audit',
-        parts: ['PN 86286761', 'PN 86291945'],
-        shiftTime: '6.5 hrs active',
-        inspected: '450 pcs',
-        defects: '12 logged',
-        avatarBg: 'bg-blue-600'
-      },
-      {
-        name: 'Hugo Ramos',
-        role: 'Quality Resident Engineer (QRE)',
-        status: 'ON-SITE / CLOCKED IN',
-        statusColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
-        dotColor: 'bg-emerald-400',
-        plant: 'Auto-Kabel North America',
-        location: 'Dearborn, MI (Line 2)',
-        project: 'Ford Battery Sheath Quality Audit',
-        parts: ['AK-BAT-001', 'AK-HAR-294'],
-        shiftTime: '7.0 hrs active',
-        inspected: '380 pcs',
-        defects: '8 logged',
-        avatarBg: 'bg-cyan-600'
-      },
-      {
-        name: 'Nabil El-Sabagh',
-        role: 'Quality Resident Engineer (QRE)',
-        status: 'ON-SITE / CLOCKED IN',
-        statusColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
-        dotColor: 'bg-emerald-400',
-        plant: 'Brose Mexico S.A.',
-        location: 'Queretaro, MX (Assembly B)',
-        project: 'Door Regulator Bracket Inspection',
-        parts: ['BR-REG-502'],
-        shiftTime: '5.2 hrs active',
-        inspected: '290 pcs',
-        defects: '5 logged',
-        avatarBg: 'bg-indigo-600'
-      },
-      {
-        name: 'Rogelio Gutierrez',
-        role: 'Quality Resident Engineer (QRE)',
-        status: 'STANDBY / READY DISPATCH',
-        statusColor: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
-        dotColor: 'bg-amber-400',
-        plant: 'Lear Corporation',
-        location: 'Tuscaloosa, AL',
-        project: 'Mercedes Seat Frame Containment',
-        parts: ['BW-SOL-119'],
-        shiftTime: '3.0 hrs logged',
-        inspected: '120 pcs',
-        defects: '2 logged',
-        avatarBg: 'bg-purple-600'
-      }
-    ];
+    return [];
   }, [projects, users, suppliers, plants]);
   const [weeklyGridData, setWeeklyGridData] = useState({
     'Monday 7/6/2026': { location: 'Magna Brampton', miles: '45', billable_hours: '8.0', shift: 'A', non_billable_hours: '0', per_diem: '25.00', piece_count: '120', warehouse: '0', hilo: '0', gas: '0', trucking: '0', bonus: '0', other_expenses: '0', paid_by_cer: '0', description: 'Sorting automotive harness components', attached: false },
@@ -2300,15 +2235,15 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       .reduce((sum, i) => sum + (parseInt(i.total_inspected || i.quantity || 0) || 0), 0);
 
     const grandTotal = Math.max(shiftTotal, incidentTotal);
-    return grandTotal > 0 ? grandTotal.toLocaleString('en-US') + ' Pcs' : '1,500 Pcs';
+    return grandTotal > 0 ? grandTotal.toLocaleString('en-US') + ' Pcs' : '0 Pcs';
   }, [shiftReports, incidents, showAllDates, selectedDate]);
 
   const qualityPassRateDynamic = useMemo(() => {
     const shifts = (shiftReports || []).filter(s => showAllDates || s.date?.startsWith(selectedDate) || s.shift_date?.startsWith(selectedDate));
-    const totalInspected = shifts.reduce((sum, s) => sum + (parseInt(s.total_inspected || 0) || 0), 0) || 1500;
-    const totalDefects = shifts.reduce((sum, s) => sum + (parseInt(s.total_defects || s.defects_count || 0) || 0), 0) || 38;
+    const totalInspected = shifts.reduce((sum, s) => sum + (parseInt(s.total_inspected || 0) || 0), 0);
+    const totalDefects = shifts.reduce((sum, s) => sum + (parseInt(s.total_defects || s.defects_count || 0) || 0), 0);
 
-    if (totalInspected <= 0) return '97.5%';
+    if (totalInspected <= 0) return '100.0%';
     const passCount = Math.max(0, totalInspected - totalDefects);
     const rate = (passCount / totalInspected) * 100;
     return `${rate.toFixed(1)}%`;
@@ -5506,8 +5441,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div className="bg-slate-950/80 border border-slate-800 p-4 rounded-xl flex flex-col justify-between">
                       <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Active Hours Today</span>
-                      <div className="text-3xl font-black text-blue-400 mt-2">21.7 hrs</div>
-                      <span className="text-[11px] text-slate-400 mt-1">Across 4 deployed Reps</span>
+                      <div className="text-3xl font-black text-blue-400 mt-2">{totalHours.toFixed(1)} hrs</div>
+                      <span className="text-[11px] text-slate-400 mt-1">Across {activeRepsCount} deployed Reps</span>
                     </div>
 
                     <div className="bg-slate-950/80 border border-slate-800 p-4 rounded-xl flex flex-col justify-between">
@@ -5518,7 +5453,9 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
                     <div className="bg-slate-950/80 border border-slate-800 p-4 rounded-xl flex flex-col justify-between">
                       <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Quality Defect Containments</span>
-                      <div className="text-3xl font-black text-amber-400 mt-2">27 logged</div>
+                      <div className="text-3xl font-black text-amber-400 mt-2">
+                        {(incidents || []).filter(i => showAllDates || i.created_at?.startsWith(selectedDate)).length} logged
+                      </div>
                       <span className="text-[11px] text-amber-300 font-semibold mt-1">⚠ 100% contained on-site</span>
                     </div>
                   </div>
@@ -5534,23 +5471,22 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   </div>
 
                   <div className="space-y-3 flex-1 overflow-y-auto">
-                    <div className="p-3 rounded-xl bg-amber-950/30 border border-amber-500/30 flex items-start gap-2.5">
-                      <div className="w-2 h-2 rounded-full bg-amber-400 mt-1.5 flex-shrink-0 animate-ping"></div>
-                      <div>
-                        <strong className="text-xs font-bold text-amber-200 block">Magna Oshawa — PN 86286761 Hold</strong>
-                        <p className="text-[11.5px] text-slate-300 mt-0.5">Clarence Kuiken logged 12 tail light housing hairline cracks. Quality Lead notified.</p>
-                        <span className="text-[10px] text-slate-400 font-semibold mt-1 block">15 mins ago</span>
+                    {(incidents || []).length === 0 ? (
+                      <div className="p-4 rounded-xl bg-slate-950/40 border border-slate-800 text-center text-slate-400 italic text-xs">
+                        No active quality containment holds reported today.
                       </div>
-                    </div>
-
-                    <div className="p-3 rounded-xl bg-blue-950/30 border border-blue-500/30 flex items-start gap-2.5">
-                      <div className="w-2 h-2 rounded-full bg-blue-400 mt-1.5 flex-shrink-0"></div>
-                      <div>
-                        <strong className="text-xs font-bold text-blue-200 block">Auto-Kabel Dearborn — Shift Handover</strong>
-                        <p className="text-[11.5px] text-slate-300 mt-0.5">Hugo Ramos resumed Line 2 battery sheath inspection session.</p>
-                        <span className="text-[10px] text-slate-400 font-semibold mt-1 block">42 mins ago</span>
-                      </div>
-                    </div>
+                    ) : (
+                      (incidents || []).slice(0, 3).map((inc) => (
+                        <div key={inc.id} className="p-3 rounded-xl bg-amber-950/30 border border-amber-500/30 flex items-start gap-2.5">
+                          <div className="w-2 h-2 rounded-full bg-amber-400 mt-1.5 flex-shrink-0 animate-ping"></div>
+                          <div>
+                            <strong className="text-xs font-bold text-amber-200 block">{inc.supplier_id || 'Client'} — PN {inc.part_number || inc.partNumber || 'Hold'}</strong>
+                            <p className="text-[11.5px] text-slate-300 mt-0.5">{inc.description || inc.notes || 'Defect logged.'}</p>
+                            <span className="text-[10px] text-slate-400 font-semibold mt-1 block">{inc.date || inc.created_at?.substring(0, 10)}</span>
+                          </div>
+                        </div>
+                      ))
+                    )}
                   </div>
                 </div>
 
@@ -5567,7 +5503,12 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-                  {dynamicRepCards.map((rep, idx) => (
+                  {dynamicRepCards.length === 0 ? (
+                    <div className="col-span-full bg-slate-900/60 border border-slate-800 p-8 rounded-2xl text-center text-slate-400 italic text-sm">
+                      No active field rep operations deployed. Onboard a field representative or map a client project to view real-time live command metrics.
+                    </div>
+                  ) : (
+                    dynamicRepCards.map((rep, idx) => (
                     <div key={idx} className="bg-slate-900/80 border border-slate-800 hover:border-blue-500/50 rounded-2xl p-4 flex flex-col justify-between gap-3 shadow-lg hover:shadow-blue-500/10 transition-all group">
                       
                       {/* Rep Header */}
@@ -5646,9 +5587,9 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                           )}
                         </div>
                       </div>
-
                     </div>
-                  ))}
+                  ))
+                )}
                 </div>
               </div>
 

@@ -23,9 +23,12 @@ To ensure historical mistakes are never repeated, the agent MUST obey the follow
 - **Zero-Overlap PDF Layout Engine**: All PDF export templates must enforce multiline text wrapping (`doc.splitTextToSize`), dynamic font scaling for long strings (e.g. invoice numbers), auto-truncation for fixed metadata columns, and multi-column height recalculation.
 - **Strict Lint & Zero Undeclared Variables Guardrail**: Never deploy without `npm run build` passing. `no-undef` MUST remain set to `'error'` in `eslint.config.js` and `package.json` MUST enforce `eslint . && vite build` on every build to permanently block undeclared variable runtime crashes.
 - **Zero Main-Thread Blocking & INP Guardrail**: All heavy user interaction handlers (PDF/Excel exports, batch email dispatches, canvas markup) MUST yield execution (`setTimeout` / `requestAnimationFrame`) so UI updates paint in `< 16ms`. Search/filter inputs MUST use `useDeferredValue` or debouncing to prevent keypress latency.
-
 ## 4. Mandatory Browser & UI Navigation Layout Verification
 - **Verified Visual Navigation**: Whenever providing UI navigation instructions or explaining where buttons/tabs are located, the agent MUST inspect the live DOM / codebase / browser to confirm the exact button labels, tab titles, colors, and layout locations before giving instructions to the user.
+
+## 5. Mandatory Business Logic Rationale for Step-by-Step Instructions
+- **Logical Purpose First**: Whenever providing step-by-step testing or operational instructions, the agent MUST explicitly explain the **Logical Reason / Business Purpose** behind why the step is necessary before giving the action items (e.g., *"We start with Step 1 (Project & PO Onboarding) because without creating the client company, plant location, and allocated PO budget first, field quality inspectors will have no active project assignment or PO budget cap to log shift hours against"*).
+
 
 
 

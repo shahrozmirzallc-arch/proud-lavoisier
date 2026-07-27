@@ -5,7 +5,7 @@ import {
   FileSpreadsheet, Calendar, ArrowRight, UserPlus, MapPin, Printer, Download, Eye, Sparkles,
   Milestone, TrendingUp, FolderKanban, PlusCircle, ArrowLeft, Camera, ClipboardCheck, Zap, Building2, ShieldAlert, User, Cpu, Mic, Video
 } from 'lucide-react';
-import { getEntities, saveEntity, resetDB, logSystemEvent, addProject, deleteRate, isFieldRep, syncWithSupabase } from './SharedDatabase';
+import { getEntities, saveEntity, resetDB, logSystemEvent, addProject, deleteRate, isFieldRep, syncWithSupabase, supabase } from './SharedDatabase';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { LOGO_BASE64 } from './LogoBase64';
@@ -279,6 +279,10 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   const [leadRejectReason, setLeadRejectReason] = useState('');
   const [showLeadRejectForm, setShowLeadRejectForm] = useState(false);
   
+  // Password Reset Modal State
+  const [resetPasswordUser, setResetPasswordUser] = useState(null);
+  const [newPasswordInput, setNewPasswordInput] = useState('');
+
   // Accounting Sub-tab Navigation
   const [accountingSubTab, setAccountingSubTab] = useState('log-hours');
 
@@ -8933,6 +8937,22 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                             <span className="text-[13.5px] font-black text-text-primary mt-0.5">{totalRework} pcs</span>
                           </div>
                         </div>
+
+                        <div className="flex items-center justify-between pt-2 border-t border-slate-800">
+                          <div className="text-[11px] text-slate-400">
+                            Username: <strong className="text-cyan-400 font-mono">{u.username || u.email?.split('@')[0] || u.name?.toLowerCase().replace(/\s+/g, '')}</strong>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setResetPasswordUser(u);
+                              setNewPasswordInput(u.password || 'password123');
+                            }}
+                            className="bg-amber-500/20 hover:bg-amber-600 border border-amber-500/40 text-amber-300 hover:text-white font-bold text-[11px] px-2.5 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1 shadow-sm"
+                          >
+                            <span>🔑 Reset Password</span>
+                          </button>
+                        </div>
                       </div>
                     );
                   })}
@@ -11606,6 +11626,66 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
           onClose={() => setShowInvoiceModal(false)}
           invoiceData={previewInvoiceData}
         />
+      )}
+
+      {/* Reset Rep Login Password Modal */}
+      {resetPasswordUser && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-amber-500/40 rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2 text-amber-400">
+                <Lock className="w-5 h-5" />
+                <h3 className="text-base font-extrabold text-white">Reset Rep Login Password</h3>
+              </div>
+              <button onClick={() => setResetPasswordUser(null)} className="text-slate-400 hover:text-white text-lg font-bold cursor-pointer">✕</button>
+            </div>
+
+            <div className="space-y-3 text-left">
+              <div>
+                <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Rep Name</label>
+                <input type="text" readOnly value={resetPasswordUser.name} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-300 font-bold" />
+              </div>
+              <div>
+                <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Login Username / Email</label>
+                <input type="text" readOnly value={resetPasswordUser.username || resetPasswordUser.email?.split('@')[0] || resetPasswordUser.name?.toLowerCase().replace(/\s+/g, '')} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs font-mono text-cyan-400" />
+              </div>
+              <div>
+                <label className="text-[11px] font-bold text-amber-400 uppercase tracking-wider block mb-1">New Login Password *</label>
+                <input 
+                  type="text" 
+                  value={newPasswordInput} 
+                  onChange={(e) => setNewPasswordInput(e.target.value)} 
+                  placeholder="Enter new password (e.g. password123)..." 
+                  className="w-full bg-slate-950 border border-amber-500/50 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-400 font-mono"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">
+              <button onClick={() => setResetPasswordUser(null)} className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-xl cursor-pointer">Cancel</button>
+              <button 
+                onClick={() => {
+                  if (!newPasswordInput.trim()) {
+                    showToast("Password cannot be empty.", "error");
+                    return;
+                  }
+                  const dbUsers = getEntities('users') || [];
+                  const userIdx = dbUsers.findIndex(u => u.id === resetPasswordUser.id);
+                  if (userIdx >= 0) {
+                    dbUsers[userIdx].password = newPasswordInput.trim();
+                    saveEntity('users', dbUsers[userIdx]);
+                    supabase.from('users').upsert(dbUsers[userIdx]).catch(() => {});
+                  }
+                  showToast(`Password updated for ${resetPasswordUser.name}! Login password is now "${newPasswordInput.trim()}".`, "success");
+                  setResetPasswordUser(null);
+                }}
+                className="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white text-xs font-extrabold rounded-xl cursor-pointer shadow-lg shadow-amber-600/20"
+              >
+                Save New Password
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Floating Toast Notification Overlay */}

@@ -262,6 +262,11 @@ function App() {
         if (inputUser === 'shahroz') targetEmail = 'shahroz@goto-ids.com';
         else if (inputUser === 'admin') targetEmail = 'admin@goto-ids.com';
         else if (inputUser === 'greg' || inputUser === 'owner') targetEmail = 'greg@goto-ids.com';
+        else if (inputUser === 'monica') targetEmail = 'monica@goto-ids.com';
+        else if (inputUser === 'donna') targetEmail = 'donna@goto-ids.com';
+        else if (inputUser === 'diana') targetEmail = 'diana@goto-ids.com';
+        else if (inputUser === 'colleen') targetEmail = 'colleen@goto-ids.com';
+        else if (inputUser === 'iris') targetEmail = 'iris@goto-ids.com';
       }
 
       if (!targetEmail) {

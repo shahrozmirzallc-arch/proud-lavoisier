@@ -300,8 +300,24 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   const [weeklyGridSaveMessage, setWeeklyGridSaveMessage] = useState(false);
 
   const dynamicRepCards = useMemo(() => {
-    if (projects && projects.length > 0) {
-      return projects.map((p, idx) => {
+    let scopedProjects = projects || [];
+
+    if (userRole === 'customer') {
+      scopedProjects = scopedProjects.filter(p => 
+        p.supplier_id === currentUserCustomerId || 
+        p.customer_id === currentUserCustomerId ||
+        (p.supplier_id && p.supplier_id.toLowerCase() === (currentUserCustomerId || '').toLowerCase())
+      );
+    } else if (userRole === 'qre' || userRole === 'rep') {
+      scopedProjects = scopedProjects.filter(p => 
+        p.rep_id === currentUserRepId ||
+        p.rep_id === currentUser?.username ||
+        (p.rep_id && p.rep_id.toLowerCase() === (currentUserRepId || currentUser?.username || '').toLowerCase())
+      );
+    }
+
+    if (scopedProjects && scopedProjects.length > 0) {
+      return scopedProjects.map((p, idx) => {
         const repObj = (users || []).find(u => 
           u.id === p.rep_id || 
           u.rep_id === p.rep_id || 
@@ -338,11 +354,15 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
           project: p.name || 'Quality Inspection Audit',
           parts: p.part_number ? [p.part_number] : (p.plants_served ? [p.plants_served].flat() : ['PN AT-4472']),
           shiftTime: 'Active Session',
-          inspected: p.billing_rate ? `$${parseFloat(p.billing_rate).toFixed(2)}/hr` : 'Inspecting',
+          inspected: (userRole === 'customer' || userRole === 'qre' || userRole === 'rep') ? 'Inspecting' : (p.billing_rate ? `$${parseFloat(p.billing_rate).toFixed(2)}/hr` : 'Inspecting'),
           defects: 'Logged',
           avatarBg: colors[idx % colors.length]
         };
       });
+    }
+
+    if (userRole === 'customer' || userRole === 'qre' || userRole === 'rep') {
+      return []; // Return empty array for non-admin users if zero scoped projects exist
     }
 
     return [

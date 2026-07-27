@@ -125,23 +125,46 @@ export function resetDB() {
 
   // PURGE SUPABASE CLOUD TABLES (RPC + Scoped Delete Fallback)
   if (supabaseUrl && supabaseAnonKey && !supabaseUrl.includes('placeholder')) {
-    supabase.rpc('purge_demo_data').then(async ({ error }) => {
+    supabase.rpc('purge_demo_data').then(async ({ data, error }) => {
       if (error) {
         console.warn("[Supabase Purge RPC Error]:", error.message, "- running scoped table delete fallback...");
+        let fallbackFailed = false;
+        let lastFallbackError = error.message;
         const tables = ['suppliers', 'projects', 'rates', 'plants', 'time_entries', 'expense_entries', 'incidents', 'rework_logs', 'shift_reports', 'extra_hours_requests', 'daily_tasks', 'email_logs', 'system_logs', 'rep_activities'];
         for (const t of tables) {
-          await supabase.from(t).delete().neq('id', '0_impossible_id_preserve_all').catch(() => {});
+          const { error: delErr } = await supabase.from(t).delete().neq('id', '0_impossible_id_preserve_all');
+          if (delErr) {
+            fallbackFailed = true;
+            lastFallbackError = delErr.message;
+            console.error(`[Supabase Purge Fallback Error] Table "${t}":`, delErr.message);
+          }
         }
         const essentialIds = ['24', 'owner_1', 'acct_1', 'admin_1', 'lead_diana'];
-        await supabase.from('users').delete().not('id', 'in', `(${essentialIds.map(i => `"${i}"`).join(',')})`).catch(() => {});
+        const { error: userDelErr } = await supabase.from('users').delete().not('id', 'in', `(${essentialIds.map(i => `"${i}"`).join(',')})`);
+        if (userDelErr) {
+          fallbackFailed = true;
+          lastFallbackError = userDelErr.message;
+          console.error(`[Supabase Purge Fallback Error] Table "users":`, userDelErr.message);
+        }
+
+        if (fallbackFailed) {
+          console.error("[Supabase Purge Failed Entirely]:", lastFallbackError);
+          window.dispatchEvent(new CustomEvent('ids_pulse_toast', { detail: { message: `Cloud Purge Warning: ${lastFallbackError}`, type: 'error' } }));
+        } else {
+          window.dispatchEvent(new CustomEvent('ids_pulse_toast', { detail: { message: "Cloud database purged via fallback successfully.", type: 'info' } }));
+        }
+      } else {
+        console.log("[Supabase Purge RPC Success]:", data);
+        window.dispatchEvent(new CustomEvent('ids_pulse_toast', { detail: { message: "Supabase cloud database purged clean!", type: 'success' } }));
       }
       
       // Re-seed essential admin accounts to Supabase
       for (const admin of ESSENTIAL_ADMIN_USERS) {
-        await supabase.from('users').upsert(admin).catch(() => {});
+        await supabase.from('users').upsert(admin).catch(e => console.error("Admin seed error:", e));
       }
     }).catch(err => {
       console.error("[Supabase Purge Execution Exception]:", err);
+      window.dispatchEvent(new CustomEvent('ids_pulse_toast', { detail: { message: `Cloud Purge Exception: ${err.message}`, type: 'error' } }));
     });
   }
 

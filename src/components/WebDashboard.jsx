@@ -1590,14 +1590,13 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     if (forceRoadmapOnly && userRole === 'shahroz') {
       setActiveTab('roadmap');
     } else {
-      if (userRole === 'accountant') {
-        setActiveTab('time-tracking');
-      } else if (userRole === 'qre') {
-        setActiveTab('time-tracking');
-      } else if (['shahroz', 'owner', 'admin'].includes(userRole)) {
+      const isAdminRole = ['shahroz', 'owner', 'admin', 'lead', 'super_admin', 'accountant'].includes((userRole || '').toLowerCase());
+      if (isAdminRole) {
         setActiveTab('command-center');
+      } else if (userRole === 'qre' || userRole === 'rep') {
+        setActiveTab('time-tracking');
       } else {
-        setActiveTab('incidents');
+        setActiveTab('command-center');
       }
     }
     

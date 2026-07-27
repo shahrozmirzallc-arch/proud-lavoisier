@@ -3,7 +3,7 @@ import {
   Shield, Activity, Server, FileText, Users, Mail, DollarSign, Database, 
   Search, Filter, ChevronRight, ChevronDown, X, Clock, CheckCircle2, UserCheck, AlertCircle, AlertTriangle, 
   FileSpreadsheet, Calendar, ArrowRight, UserPlus, MapPin, Printer, Download, Eye, Sparkles,
-  Milestone, TrendingUp, FolderKanban, PlusCircle, ArrowLeft, Camera, ClipboardCheck, Zap, Building2, ShieldAlert, User, Cpu, Mic, Video
+  Milestone, TrendingUp, FolderKanban, PlusCircle, ArrowLeft, Camera, ClipboardCheck, Zap, Building2, ShieldAlert, User, Cpu, Mic, Video, Trash2
 } from 'lucide-react';
 import { getEntities, saveEntity, resetDB, logSystemEvent, addProject, deleteRate, isFieldRep, syncWithSupabase, supabase } from './SharedDatabase';
 import { jsPDF } from 'jspdf';
@@ -1980,7 +1980,10 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     setSelectedIncident(null);
     setSelectedEmailLog(null);
     setSelectedShiftReport(null);
-    showToast("Database completely purged clean across local storage and cloud database.", "info");
+    showToast("Database completely purged clean! Reloading page...", "info");
+    setTimeout(() => {
+      window.location.reload();
+    }, 800);
   };
 
   const handleUpdateStatus = (incidentId, newStatus) => {
@@ -5285,6 +5288,18 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                           <span>User Directory</span>
                         </div>
                         {activeTab === 'users' && <div className="w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_6px_#22d3ee]"></div>}
+                      </button>
+
+                      <button 
+                        onClick={handleReset}
+                        className="w-full h-11 px-3.5 rounded-xl font-bold text-[14.5px] transition-all cursor-pointer flex items-center justify-between border bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 hover:text-rose-100 border-rose-500/40 shadow-sm"
+                        title="Purge all non-essential test data from local storage and Supabase cloud database"
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <Trash2 className="w-4.5 h-4.5 text-rose-400" />
+                          <span>Clean Database (Purge)</span>
+                        </div>
+                        <span className="text-[10px] bg-rose-500/20 text-rose-300 px-1.5 py-0.5 rounded font-mono font-bold">RESET</span>
                       </button>
 
                       {userRole === 'shahroz' && (

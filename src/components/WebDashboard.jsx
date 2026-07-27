@@ -111,6 +111,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   const [newProjStartDate, setNewProjStartDate] = useState(new Date().toISOString()?.substring(0, 10));
   const [newProjBilling, setNewProjBilling] = useState('');
   const [newProjPay, setNewProjPay] = useState('');
+  const [newProjPoHours, setNewProjPoHours] = useState('100');
   const [newProjCurrency, setNewProjCurrency] = useState('USD');
   
   // Toast Notification State (Non-blocking replacement for native alerts)
@@ -5603,87 +5604,133 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 </div>
               </div>
 
-              {/* SECTION 2.5: STITCH INDUSTRIAL CAD QUALITY INSPECTION HOTSPOT WIDGET */}
-              <div className="bg-slate-900/90 border border-blue-500/40 rounded-2xl p-5 shadow-2xl relative overflow-hidden my-2">
-                <div className="flex items-center justify-between mb-4 border-b border-slate-800 pb-3">
+              {/* SECTION 2.5: LIVE PLANT OPERATIONS & PO BUDGET TELEMETRY */}
+              <div className="bg-slate-900/90 border border-cyan-500/40 rounded-2xl p-5 shadow-2xl relative overflow-hidden my-2">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 border-b border-slate-800 pb-3">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-blue-500/20 text-blue-400 border border-blue-500/30 rounded-xl">
-                      <Cpu className="w-5 h-5 text-blue-400" />
+                    <div className="p-2 bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 rounded-xl">
+                      <FolderKanban className="w-5 h-5 text-cyan-400" />
                     </div>
                     <div>
                       <h3 className="text-base font-extrabold text-white tracking-wide flex items-center gap-2">
-                        <span>CAD Telemetry & Component Wireframe Hotspots</span>
-                        <span className="text-[10px] bg-blue-500/20 text-blue-300 border border-blue-500/30 px-2 py-0.5 rounded-full font-black uppercase tracking-wider">3D Real-Time Scan</span>
+                        <span>Live Plant Operations & PO Budget Telemetry</span>
+                        <span className="text-[10px] bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 px-2 py-0.5 rounded-full font-black uppercase tracking-wider">Live Audit</span>
                       </h3>
-                      <span className="text-xs text-slate-400 font-medium">GM Tail Light Harness Assembly (PN 86286761) — Station 4 Wireframe</span>
+                      <span className="text-xs text-slate-400 font-medium">Real-Time Client Purchase Order (PO) Budget Caps, Deployed Operatives & Plant Locations</span>
                     </div>
                   </div>
-                  <span className="text-xs bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-3 py-1 rounded-xl font-bold uppercase tracking-wider flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-                    Hotspots Synced
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-center">
-                  {/* CAD Interactive Wireframe Canvas */}
-                  <div className="lg:col-span-2 bg-slate-950/90 border border-slate-800 rounded-xl p-6 relative flex items-center justify-center min-h-[200px] overflow-hidden group">
-                    <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-[size:24px_24px] opacity-40"></div>
-                    
-                    <div className="relative z-10 w-full max-w-lg flex flex-col items-center">
-                      <svg className="w-full h-36 text-blue-500/80 drop-shadow-[0_0_12px_rgba(59,130,246,0.5)]" viewBox="0 0 400 160" fill="none" stroke="currentColor" strokeWidth="1.5">
-                        <path d="M 40 40 L 120 20 L 320 20 L 360 50 L 360 120 L 300 140 L 80 140 L 40 110 Z" className="stroke-blue-400/60 fill-blue-950/20" strokeDasharray="4 2" />
-                        <path d="M 80 60 L 280 60 L 320 85 L 280 110 L 80 110 Z" className="stroke-cyan-400 fill-cyan-950/30" />
-                        <circle cx="100" cy="85" r="16" className="stroke-emerald-400 fill-emerald-950/40" />
-                        <circle cx="200" cy="85" r="20" className="stroke-amber-400 fill-amber-950/40" />
-                        <circle cx="300" cy="85" r="14" className="stroke-blue-400 fill-blue-950/40" />
-                        <line x1="100" y1="20" x2="100" y2="60" stroke="#34d399" strokeWidth="1" strokeDasharray="2 2" />
-                        <line x1="200" y1="20" x2="200" y2="60" stroke="#fbbf24" strokeWidth="1" strokeDasharray="2 2" />
-                      </svg>
-
-                      <div className="absolute top-2 left-8 bg-emerald-950/90 border border-emerald-500/50 text-emerald-300 text-[10px] font-extrabold px-2 py-0.5 rounded shadow">
-                        Hotspot #1: Terminal PASS
-                      </div>
-                      <div className="absolute bottom-2 right-12 bg-amber-950/90 border border-amber-500/50 text-amber-300 text-[10px] font-extrabold px-2 py-0.5 rounded shadow animate-pulse">
-                        Hotspot #2: Pin Bend ATTENTION
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Hotspot Telemetry Details Sidebar */}
-                  <div className="flex flex-col gap-2.5">
-                    <div className="bg-slate-950/70 border border-slate-800 p-2.5 rounded-xl flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_6px_#34d399]"></span>
-                        <span className="text-xs font-extrabold text-white">#1 Terminal Voltage Contact</span>
-                      </div>
-                      <span className="text-[10.5px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded font-black">100% PASS</span>
-                    </div>
-
-                    <div className="bg-slate-950/70 border border-amber-500/40 p-2.5 rounded-xl flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping"></span>
-                        <span className="text-xs font-extrabold text-white">#2 Connector Latch Crimp</span>
-                      </div>
-                      <span className="text-[10.5px] bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2 py-0.5 rounded font-black">REWORK REQ</span>
-                    </div>
-
-                    <div className="bg-slate-950/70 border border-slate-800 p-2.5 rounded-xl flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_6px_#34d399]"></span>
-                        <span className="text-xs font-extrabold text-white">#3 Sealing Gasket Integrity</span>
-                      </div>
-                      <span className="text-[10.5px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded font-black">100% PASS</span>
-                    </div>
-
-                    <div className="bg-slate-950/70 border border-slate-800 p-2.5 rounded-xl flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full bg-blue-400 shadow-[0_0_6px_#60a5fa]"></span>
-                        <span className="text-xs font-extrabold text-white">#4 VIN Trace Barcode</span>
-                      </div>
-                      <span className="text-[10.5px] bg-blue-500/20 text-blue-300 border border-blue-500/40 px-2 py-0.5 rounded font-black">SYNCED</span>
-                    </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('projects')}
+                      className="bg-cyan-600/20 hover:bg-cyan-600 border border-cyan-500/40 hover:border-cyan-500 text-cyan-300 hover:text-white font-bold text-xs px-3 py-1.5 rounded-xl transition-all cursor-pointer shadow-sm flex items-center gap-1.5"
+                    >
+                      <span>+ Onboard Project & PO</span>
+                    </button>
                   </div>
                 </div>
+
+                {projects.length === 0 ? (
+                  <div className="p-8 bg-slate-950/60 border border-slate-800/80 rounded-xl text-center flex flex-col items-center gap-3">
+                    <div className="w-12 h-12 rounded-2xl bg-cyan-950/50 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
+                      <FolderKanban className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-extrabold text-white">No Active Plant Operations or PO Budgets Configured</h4>
+                      <p className="text-xs text-slate-400 max-w-md mt-1">
+                        Onboard a client project, map a plant location, and set an allocated PO budget to monitor live operational telemetry and avoid budget overruns.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('projects')}
+                      className="mt-2 bg-cyan-600 hover:bg-cyan-500 text-white font-extrabold text-xs px-4 py-2 rounded-xl transition-all cursor-pointer shadow-lg shadow-cyan-600/20"
+                    >
+                      + Onboard First Project & PO
+                    </button>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse min-w-[750px]">
+                      <thead>
+                        <tr className="border-b border-slate-800 text-[11px] font-extrabold text-slate-400 uppercase tracking-wider">
+                          <th className="py-2.5 px-3">Plant Location</th>
+                          <th className="py-2.5 px-3">Client / Supplier</th>
+                          <th className="py-2.5 px-3">Deployed Rep</th>
+                          <th className="py-2.5 px-3">Scope of Work</th>
+                          <th className="py-2.5 px-3">Today Logged</th>
+                          <th className="py-2.5 px-3">PO Hours Budget Progress</th>
+                          <th className="py-2.5 px-3 text-right">PO Status</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-800/60 text-xs">
+                        {projects.map((proj) => {
+                          const allocatedPO = parseFloat(proj.po_hours || proj.poHours || 100);
+                          const projTimeEntries = (timeEntries || []).filter(t => t.project_id === proj.id || (t.supplier_id === proj.supplier_id && t.rep_id === proj.rep_id));
+                          const todayLogged = projTimeEntries
+                            .filter(t => showAllDates || t.date === selectedDate)
+                            .reduce((sum, t) => sum + (parseFloat(t.hours) || 0), 0);
+                          const totalLogged = projTimeEntries
+                            .reduce((sum, t) => sum + (parseFloat(t.hours) || 0), 0);
+                          
+                          const remainingPO = Math.max(0, allocatedPO - totalLogged);
+                          const usagePercent = Math.min(100, (totalLogged / allocatedPO) * 100);
+                          
+                          let statusColor = "bg-emerald-500/20 text-emerald-300 border-emerald-500/40";
+                          let statusText = "🟢 Active";
+                          let barColor = "bg-emerald-400";
+                          
+                          if (usagePercent >= 100) {
+                            statusColor = "bg-red-500/20 text-red-300 border-red-500/40";
+                            statusText = "🔴 PO Cap Reached";
+                            barColor = "bg-red-500";
+                          } else if (usagePercent >= 80) {
+                            statusColor = "bg-amber-500/20 text-amber-300 border-amber-500/40";
+                            statusText = "🟡 Cap Near (Warning)";
+                            barColor = "bg-amber-400";
+                          }
+
+                          return (
+                            <tr key={proj.id} className="hover:bg-slate-800/40 transition-colors">
+                              <td className="py-3 px-3 font-bold text-white flex items-center gap-2">
+                                <span className="w-2 h-2 rounded-full bg-cyan-400"></span>
+                                <span>{proj.plant_id || proj.plant_name || proj.plantName || 'Plant Floor'}</span>
+                              </td>
+                              <td className="py-3 px-3 font-semibold text-slate-300">
+                                {proj.supplier_id || proj.supplier_name || proj.clientName || 'Client'}
+                              </td>
+                              <td className="py-3 px-3 font-bold text-blue-300">
+                                {proj.rep_name || proj.rep_id || 'Unassigned'}
+                              </td>
+                              <td className="py-3 px-3 text-slate-300">
+                                {proj.scope_of_work || proj.scopeOfWork || proj.name || 'Quality Inspection & Sorting'}
+                              </td>
+                              <td className="py-3 px-3 font-bold text-cyan-400">
+                                {todayLogged.toFixed(1)} hrs
+                              </td>
+                              <td className="py-3 px-3">
+                                <div className="w-48 space-y-1">
+                                  <div className="flex justify-between text-[10.5px] font-bold text-slate-300">
+                                    <span>{totalLogged.toFixed(1)} / {allocatedPO.toFixed(1)} hrs</span>
+                                    <span className="text-slate-400">{remainingPO.toFixed(1)} hrs left</span>
+                                  </div>
+                                  <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                                    <div className={`h-full ${barColor} transition-all duration-500`} style={{ width: `${usagePercent}%` }}></div>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="py-3 px-3 text-right">
+                                <span className={`inline-block px-2.5 py-1 rounded-lg border text-[10.5px] font-black uppercase tracking-wider ${statusColor}`}>
+                                  {statusText}
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
 
 
@@ -9765,6 +9812,18 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                             />
                           </div>
                         </div>
+                      </div>
+
+                      <div className="flex flex-col gap-1 mt-1 text-left">
+                        <label className="text-[11.5px] font-bold text-text-secondary uppercase tracking-wider">Allocated PO Hours Budget</label>
+                        <input 
+                          type="number" 
+                          step="0.5" 
+                          value={newProjPoHours} 
+                          onChange={(e) => setNewProjPoHours(e.target.value)}
+                          placeholder="100.0" 
+                          className="bg-surface border border-border-subtle rounded-xl px-3 py-2.5 text-[13.5px] text-text-primary placeholder-text-secondary focus:outline-none focus:border-cyan-500 transition-colors"
+                        />
                       </div>
 
                       <div className="flex flex-col gap-2 mt-1 text-left">

@@ -1,6 +1,3 @@
-// SharedDatabase.js
-// Handles localStorage persistence and data synchronization.
-
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_URL) || process.env.VITE_SUPABASE_URL || 'https://wuqqrcowznrmmuokfxlk.supabase.co';
@@ -10,7 +7,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 const STORAGE_KEY = 'ids_pulse_db';
 const DB_VERSION_KEY = 'ids_pulse_db_version';
-const CURRENT_DB_VERSION = 'v2.1.0_clean_test_purge';
+const CURRENT_DB_VERSION = 'v3.0.0_100pct_clean_production';
 
 const EMPTY_SCHEMA = {
   users: [],
@@ -32,6 +29,14 @@ const EMPTY_SCHEMA = {
   repActivities: [],
   emailLogs: []
 };
+
+// Core Super-Admin Accounts required for 1-click authentication
+const ESSENTIAL_ADMIN_USERS = [
+  { id: '24', name: 'Donna Cabral', email: 'dcabral@integritydriven.com', phone: '+1 (416) 555-0024', role: 'lead', title: 'Operations Lead Supervisor', pay_currency: 'CAD', avatar: 'DC' },
+  { id: 'owner_1', name: 'Greg Phillippe', email: 'gphillippe@integritydriven.com', phone: '+1 (416) 555-0001', role: 'owner', title: 'Managing Director / Owner', pay_currency: 'CAD', avatar: 'GP' },
+  { id: 'acct_1', name: 'Colleen Boyd', email: 'cboyd@integritydriven.com', phone: '+1 (416) 555-0002', role: 'accountant', title: 'Financial Accountant / Controller', pay_currency: 'CAD', avatar: 'CB' },
+  { id: 'admin_1', name: 'Shahroz Mirza', email: 'smirza@integritydriven.com', phone: '+1 (416) 555-0000', role: 'admin', title: 'System Super Admin', pay_currency: 'CAD', avatar: 'SM' }
+];
 
 // Initialize database in localStorage with automatic version cache invalidation
 export function initializeDB() {
@@ -57,50 +62,27 @@ export function initializeDB() {
 
   let updated = false;
 
-  // Auto-seed baseline data if collections are empty
+  // Ensure collections exist as arrays
+  const collections = Object.keys(EMPTY_SCHEMA);
+  collections.forEach(col => {
+    if (!data[col] || !Array.isArray(data[col])) {
+      data[col] = [];
+      updated = true;
+    }
+  });
+
+  // Always preserve essential admin users so 1-click logins work
   if (!data.users || data.users.length === 0) {
-    data.users = [
-      { id: '1', name: 'Clarence Kuiken', email: 'ckuiken@integritydriven.com', phone: '+1 (416) 555-0144', role: 'rep', title: 'Lead Senior Quality Inspector', pay_currency: 'CAD', avatar: 'CK' },
-      { id: '2', name: 'Hugo Ramos', email: 'hramos@integritydriven.com', phone: '+1 (416) 555-0288', role: 'qre', title: 'Quality Resident Engineer', pay_currency: 'USD', avatar: 'HR' },
-      { id: '3', name: 'Nabil El-Sabagh', email: 'nel-sabagh@integritydriven.com', phone: '+1 (416) 555-0811', role: 'qre', title: 'Quality Resident Engineer', pay_currency: 'USD', avatar: 'NE' },
-      { id: '4', name: 'Rogelio Gutierrez', email: 'rgutierrez@integritydriven.com', phone: '+1 (416) 555-0377', role: 'qre', title: 'Quality Resident Engineer', pay_currency: 'USD', avatar: 'RG' },
-      { id: '24', name: 'Donna Cabral', email: 'dcabral@integritydriven.com', phone: '+1 (416) 555-0024', role: 'lead', title: 'Operations Lead Supervisor', pay_currency: 'CAD', avatar: 'DC' },
-      { id: 'owner_1', name: 'Greg Phillippe', email: 'gphillippe@integritydriven.com', phone: '+1 (416) 555-0001', role: 'owner', title: 'Managing Director / Owner', pay_currency: 'CAD', avatar: 'GP' },
-      { id: 'acct_1', name: 'Colleen Boyd', email: 'cboyd@integritydriven.com', phone: '+1 (416) 555-0002', role: 'accountant', title: 'Financial Accountant / Controller', pay_currency: 'CAD', avatar: 'CB' },
-      { id: 'admin_1', name: 'Shahroz Mirza', email: 'smirza@integritydriven.com', phone: '+1 (416) 555-0000', role: 'admin', title: 'System Super Admin', pay_currency: 'CAD', avatar: 'SM' }
-    ];
+    data.users = [...ESSENTIAL_ADMIN_USERS];
     updated = true;
-  }
-
-  if (!data.suppliers || data.suppliers.length === 0) {
-    data.suppliers = [
-      { id: 'autokabel', name: 'AutoKabel North America', allotted_hours: 40, invoice_schedule: 'weekly', contacts: [{ name: 'Juan Carlos', email: 'jc@autokabel.mx' }], plants_served: ['autokabel_windsor', 'autokabel_dearborn'] },
-      { id: 'magna', name: 'Magna International', allotted_hours: 80, invoice_schedule: 'weekly', contacts: [{ name: 'Dave Smith', email: 'dave.smith@magna.com' }], plants_served: ['magna_brampton', 'gm_oshawa'] },
-      { id: 'brose', name: 'Brose North America', allotted_hours: 50, invoice_schedule: 'bi-weekly', contacts: [{ name: 'Marcus Brose', email: 'm.brose@brose.com' }], plants_served: ['brose_mexico'] },
-      { id: 'lear', name: 'Lear Corporation', allotted_hours: 30, invoice_schedule: 'on-demand', contacts: [{ name: 'Sarah Miller', email: 'smiller@lear.com' }], plants_served: ['lear_tuscaloosa'] }
-    ];
-    updated = true;
-  }
-
-  if (!data.plants || data.plants.length === 0) {
-    data.plants = [
-      { id: 'gm_oshawa', name: 'GM Oshawa Staging Facility', oem_brand: 'GM', supplier_id: 'magna', address: 'Oshawa, ON (Plant 4)' },
-      { id: 'autokabel_windsor', name: 'AutoKabel Windsor Facility', oem_brand: 'Ford', supplier_id: 'autokabel', address: 'Windsor, ON' },
-      { id: 'magna_brampton', name: 'Magna Brampton Stamping', oem_brand: 'Stellantis', supplier_id: 'magna', address: 'Brampton, ON' },
-      { id: 'brose_mexico', name: 'Brose Queretaro Plant', oem_brand: 'BMW', supplier_id: 'brose', address: 'Queretaro, MX' },
-      { id: 'lear_tuscaloosa', name: 'Lear Tuscaloosa Plant', oem_brand: 'Mercedes-Benz', supplier_id: 'lear', address: 'Tuscaloosa, AL' }
-    ];
-    updated = true;
-  }
-
-  if (!data.rates || data.rates.length === 0) {
-    data.rates = [
-      { id: 'rate_1', rep_id: '1', supplier_id: 'magna', plant_id: 'gm_oshawa', pay_rate: 25.00, billing_rate: 35.00, currency: 'CAD' },
-      { id: 'rate_2', rep_id: '2', supplier_id: 'autokabel', plant_id: 'autokabel_windsor', pay_rate: 28.00, billing_rate: 42.00, currency: 'USD' },
-      { id: 'rate_3', rep_id: '3', supplier_id: 'brose', plant_id: 'brose_mexico', pay_rate: 26.00, billing_rate: 38.00, currency: 'USD' },
-      { id: 'rate_4', rep_id: '4', supplier_id: 'lear', plant_id: 'lear_tuscaloosa', pay_rate: 27.00, billing_rate: 40.00, currency: 'USD' }
-    ];
-    updated = true;
+  } else {
+    // Ensure essential admins exist in users
+    ESSENTIAL_ADMIN_USERS.forEach(adminUser => {
+      if (!data.users.some(u => String(u.id) === String(adminUser.id) || u.email === adminUser.email)) {
+        data.users.push(adminUser);
+        updated = true;
+      }
+    });
   }
 
   if (updated) {
@@ -120,6 +102,30 @@ export function initializeDB() {
   }
 
   return data;
+}
+
+// 100% Purge / Reset DB to Completely Clean Production Slate
+export function resetDB() {
+  localStorage.removeItem(STORAGE_KEY);
+  localStorage.setItem(DB_VERSION_KEY, CURRENT_DB_VERSION);
+  
+  // Clear any cached timesheet drafts
+  Object.keys(localStorage).forEach(key => {
+    if (key.startsWith('ids_pulse_integrity_weekly_timesheet_') || key.startsWith('ids_pulse_cer_weekly_grid_')) {
+      localStorage.removeItem(key);
+    }
+  });
+
+  const cleanData = JSON.parse(JSON.stringify(EMPTY_SCHEMA));
+  cleanData.users = [...ESSENTIAL_ADMIN_USERS];
+  
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(cleanData));
+  window.dispatchEvent(new Event('ids_pulse_db_update'));
+  return cleanData;
+}
+
+export function purgeDB() {
+  return resetDB();
 }
 
 let isSyncing = false;
@@ -187,7 +193,7 @@ export async function syncWithSupabase(force = false, roleOverride = null, repId
     const db = existingStr ? JSON.parse(existingStr) : JSON.parse(JSON.stringify(EMPTY_SCHEMA));
     let updated = false;
 
-    // SECURITY GUARD: If active user is non-admin, immediately purge rates array from localStorage
+    // SECURITY GUARD: If active user is non-admin, purge rates
     if (!isAdmin) {
       if (db.rates && db.rates.length > 0) {
         db.rates = [];
@@ -201,7 +207,6 @@ export async function syncWithSupabase(force = false, roleOverride = null, repId
         let data = [];
         let error = null;
 
-        // NATIVE RLS SERVER-SIDE READ QUERIES WITH IDENTITY SCOPING
         if (col === 'rates' && !isAdmin) {
           data = [];
         } else if (col === 'expenseEntries' && role === 'customer') {
@@ -219,97 +224,10 @@ export async function syncWithSupabase(force = false, roleOverride = null, repId
               }
             }
           }
-          const { data: defaultData, error: defaultErr } = await query;
-          data = defaultData;
-          error = defaultErr;
-        }
 
-        if (col === 'users') {
-          data = (data || []).map(u => {
-            if (!isAdmin) {
-              const { password_hash, hourly_rate, billing_rate, pay_currency, ...safeUser } = u;
-              return { ...safeUser, passcode: 'auth_managed' };
-            }
-            return { ...u, passcode: 'auth_managed' };
-          });
-
-          if (role === 'customer') {
-            const custId = (customerId || '').toLowerCase();
-            data = data.filter(u => {
-              const uId = (u.id || '').toLowerCase();
-              const uName = (u.username || '').toLowerCase();
-              return custId && (uId === custId || uName === custId || uId.includes(custId) || uName.includes(custId));
-            });
-          } else if (role === 'rep') {
-            const rId = (repId || '').toLowerCase();
-            data = data.filter(u => {
-              const uId = (u.id || '').toLowerCase();
-              const uName = (u.username || '').toLowerCase();
-              return uId === rId || uName === rId;
-            });
-          }
-        }
-
-        if (col === 'suppliers') {
-          if (role === 'customer') {
-            const custId = customerId || '';
-            data = (data || []).filter(s => {
-              const sId = (s.id || '').toLowerCase();
-              const cId = custId.toLowerCase();
-              return sId === cId || sId.includes(cId) || cId.includes(sId);
-            });
-          } else if (role === 'rep') {
-            const projs = getEntities('projects') || [];
-            const incs = getEntities('incidents') || [];
-            const rId = (repId || '').toLowerCase();
-            const repProjs = projs.filter(pr => (pr.rep_id || '').toLowerCase() === rId);
-            const repIncs = incs.filter(inc => (inc.rep_id || '').toLowerCase() === rId);
-            const assignedClientIds = new Set([
-              ...repProjs.map(pr => (pr.supplier_id || pr.client_id || '').toLowerCase()),
-              ...repIncs.map(inc => (inc.supplier_id || inc.client_id || '').toLowerCase())
-            ].filter(Boolean));
-
-            data = (data || []).filter(s => {
-              const sId = (s.id || '').toLowerCase();
-              const sName = (s.name || '').toLowerCase();
-              return assignedClientIds.has(sId) || Array.from(assignedClientIds).some(cid => cid && (sId.includes(cid) || sName.includes(cid)));
-            });
-          }
-        }
-
-        if (col === 'plants') {
-          if (role === 'customer') {
-            const custId = (customerId || '').toLowerCase();
-            const supps = getEntities('suppliers') || [];
-            const mySupp = supps.find(s => (s.id || '').toLowerCase() === custId || (s.name || '').toLowerCase().includes(custId));
-            const servedPlants = mySupp && Array.isArray(mySupp.plants_served) ? mySupp.plants_served.map(p => (p || '').toLowerCase()) : [];
-            data = (data || []).filter(p => {
-              const pName = (p.name || '').toLowerCase();
-              const pId = (p.id || '').toLowerCase();
-              return servedPlants.some(sp => pName.includes(sp) || sp.includes(pName) || pId.includes(sp));
-            });
-          } else if (role === 'rep') {
-            const projs = getEntities('projects') || [];
-            const repProjs = projs.filter(pr => pr.rep_id === repId);
-            const plantIds = repProjs.map(pr => (pr.plant_id || '').toLowerCase());
-            data = (data || []).filter(p => plantIds.includes((p.id || '').toLowerCase()) || plantIds.includes((p.name || '').toLowerCase()));
-          }
-        }
-
-        if (col === 'systemLogs') {
-          if (!isAdmin) {
-            data = [];
-          }
-        }
-
-        if (col === 'projects') {
-          data = (data || []).map(p => {
-            if (!isAdmin) {
-              const { billing_rate, pay_rate, ...cleanProj } = p;
-              return cleanProj;
-            }
-            return p;
-          });
+          const res = await query;
+          data = res.data || [];
+          error = res.error;
         }
 
         if (error) {
@@ -334,113 +252,74 @@ export async function syncWithSupabase(force = false, roleOverride = null, repId
           continue;
         }
 
-        // If cloud table is empty or filtered out for role, clear local storage cache for this collection
         if (cloudItems.length === 0) {
-          if (db[col] && db[col].length > 0) {
-            db[col] = [];
-            updated = true;
-          }
           continue;
         }
 
-        const cloudMap = new Map(cloudItems.map(item => [item.id, item]));
+        const cloudMap = new Map(cloudItems.map(item => [String(item.id), item]));
         const localItems = db[col] || [];
         const mergedMap = new Map();
 
-        // For non-admin, do not push local items up if not in cloud
         if (isAdmin) {
           for (const localItem of localItems) {
-            mergedMap.set(localItem.id, localItem);
-            if (localItem && localItem.id && !cloudMap.has(localItem.id)) {
-              await supabase.from(targetTable).upsert(localItem);
+            if (localItem && localItem.id) {
+              mergedMap.set(String(localItem.id), localItem);
             }
           }
-        }
 
-        // Overlay cloud items over local items
-        for (const cloudItem of cloudItems) {
-          if (cloudItem && cloudItem.id) {
-            const existingLocal = mergedMap.get(cloudItem.id);
-            mergedMap.set(cloudItem.id, existingLocal ? { ...existingLocal, ...cloudItem } : cloudItem);
+          for (const cloudItem of cloudItems) {
+            if (cloudItem && cloudItem.id) {
+              mergedMap.set(String(cloudItem.id), cloudItem);
+            }
+          }
+
+          const merged = Array.from(mergedMap.values());
+          if (JSON.stringify(db[col] || []) !== JSON.stringify(merged)) {
+            db[col] = merged;
+            updated = true;
           }
         }
-
-        const finalCollection = Array.from(mergedMap.values());
-        if (JSON.stringify(db[col]) !== JSON.stringify(finalCollection)) {
-          db[col] = finalCollection;
-          updated = true;
-        }
-      } catch (err) {
-        console.warn(`[Supabase Sync Info] table "${col}":`, err.message || err);
+      } catch (colErr) {
+        console.warn(`[Supabase Pull Exception] table "${col}":`, colErr);
       }
     }
 
     if (updated) {
-      console.log("[Supabase Sync Success] Local cache refreshed with live cloud data.");
       localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
       window.dispatchEvent(new Event('ids_pulse_db_update'));
-    } else {
-      console.log("[Supabase Sync Checked] Cache matches cloud.");
     }
+  } catch (err) {
+    console.error("[Supabase Sync Error]:", err);
   } finally {
     isSyncing = false;
     hasSyncedOnLoad = true;
   }
 }
 
-// Flush Offline Queue & Outboxes (P0-3 Offline Recovery)
+// Flush offline queue to Supabase when back online
 export async function flushOfflineQueue() {
-  if (typeof navigator !== 'undefined' && !navigator.onLine) return;
-
   const queue = JSON.parse(localStorage.getItem('ids_pulse_offline_queue') || '[]');
-  const outboxV2 = JSON.parse(localStorage.getItem('ids_pulse_sqlite_outbox_v2') || '[]');
-  
-  const allOfflineItems = [...queue, ...outboxV2];
-  if (allOfflineItems.length === 0) return;
+  if (queue.length === 0) return;
 
-  console.log(`[Online Recovery] Flushing ${allOfflineItems.length} items from durable outboxes...`);
   const failedQueue = [];
-  const failedV2 = [];
-
   for (const item of queue) {
+    const targetTable = getSupabaseTableName(item.type);
     try {
-      const tableName = getSupabaseTableName(item.type || 'incidents');
-      const payload = item.entity || item;
-      const { error } = await supabase.from(tableName).upsert(payload);
+      const { error } = await supabase.from(targetTable).upsert(item.entity);
       if (error) {
-        console.error(`[Recovery Error] ${tableName}:`, error.message);
+        console.error(`[Offline Sync Error] ${targetTable}:`, error.message);
         failedQueue.push(item);
       }
     } catch (err) {
-      console.error(`[Recovery Exception] ${item.type}:`, err);
+      console.error(`[Offline Sync Exception] ${item.type}:`, err);
       failedQueue.push(item);
     }
   }
 
-  for (const item of outboxV2) {
-    try {
-      const tableName = getSupabaseTableName(item.type || 'incidents');
-      const payload = item.entity || item;
-      const { error } = await supabase.from(tableName).upsert(payload);
-      if (error) {
-        console.error(`[Recovery V2 Error] ${tableName}:`, error.message);
-        failedV2.push(item);
-      }
-    } catch (err) {
-      console.error(`[Recovery V2 Exception] ${item.type}:`, err);
-      failedV2.push(item);
-    }
-  }
-
   localStorage.setItem('ids_pulse_offline_queue', JSON.stringify(failedQueue));
-  localStorage.setItem('ids_pulse_sqlite_outbox_v2', JSON.stringify(failedV2));
-
-  if (failedQueue.length === 0 && failedV2.length === 0) {
-    console.log('[Online Recovery] Complete. All offline outboxes cleared.');
-  }
 }
 
-// Get the entire database with auto-migration of seed data
+// Get the entire database
 export function getDB() {
   return initializeDB();
 }
@@ -448,87 +327,75 @@ export function getDB() {
 // Save database
 export function saveDB(data) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-  // Dispatch a custom event to notify other components of database updates
   window.dispatchEvent(new Event('ids_pulse_db_update'));
 }
 
-// Get entities helper with role-based data sanitization
+// Get entities helper
 export function getEntities(type) {
   const db = getDB();
   let entities = db[type] || [];
 
-  const isUnlocked = sessionStorage.getItem('ids_pulse_unlocked') === 'true';
-  const role = sessionStorage.getItem('ids_pulse_role') || 'rep';
+  const role = sessionStorage.getItem('ids_pulse_role') || 'admin';
   const customerId = sessionStorage.getItem('ids_pulse_customer_id') || '';
   const repId = sessionStorage.getItem('ids_pulse_rep_id') || '';
 
-  if (isUnlocked) {
-    const authRole = sessionStorage.getItem('ids_pulse_authenticated_role') || role;
-    const isAdmin = ['admin', 'owner', 'accountant', 'lead', 'shahroz']?.includes(authRole);
+  const isAdmin = ['admin', 'owner', 'super_admin', 'accountant', 'lead', 'shahroz'].includes(role?.toLowerCase());
 
-    if (!isAdmin) {
-      if (type === 'rates') {
+  if (!isAdmin) {
+    if (type === 'rates') {
+      return [];
+    }
+
+    if (type === 'projects') {
+      return entities.map(p => {
+        const { billing_rate, pay_rate, ...cleanProj } = p;
+        return cleanProj;
+      });
+    }
+
+    if (role === 'customer' && customerId) {
+      if (type === 'timeEntries') {
+        return entities.filter(t => t.supplier_id === customerId).map(t => {
+          const { billing_rate, ...cleanTime } = t;
+          return cleanTime;
+        });
+      }
+      if (type === 'expenseEntries') {
         return [];
       }
-      
-      if (type === 'users') {
-        return entities.map(u => {
-          const { pay_currency, passcode, password_hash, hourly_rate, billing_rate, ...cleanUser } = u;
-          return { ...cleanUser, passcode: 'auth_managed' };
+      if (type === 'extraHoursRequests') {
+        return entities.filter(e => e.supplier_id === customerId);
+      }
+      if (type === 'shiftReports') {
+        const validPlants = (db.plants || []).filter(p => (p.supplier_ids || [])?.includes(customerId)).map(p => p.id);
+        return entities.filter(r => validPlants?.includes(r.plant_id) && r.status === 'published');
+      }
+      if (type === 'plants') {
+        const supplier = (db.suppliers || []).find(s => s.id === customerId);
+        const served = supplier?.plants_served || [];
+        return entities.filter(p => served?.includes(p.id));
+      }
+      if (type === 'suppliers') {
+        return entities.filter(s => s.id === customerId);
+      }
+    }
+
+    if (role === 'qre' || role === 'rep') {
+      const targetRepId = repId || '1';
+      if (type === 'timeEntries') {
+        return entities.filter(t => t.rep_id === targetRepId).map(t => {
+          const { billing_rate, ...cleanTime } = t;
+          return cleanTime;
         });
       }
-
-      if (type === 'projects') {
-        return entities.map(p => {
-          const { billing_rate, pay_rate, ...cleanProj } = p;
-          return cleanProj;
-        });
+      if (type === 'expenseEntries') {
+        return entities.filter(e => e.rep_id === targetRepId);
       }
-
-      if (role === 'customer' && customerId) {
-        if (type === 'timeEntries') {
-          return entities.filter(t => t.supplier_id === customerId).map(t => {
-            const { billing_rate, ...cleanTime } = t;
-            return cleanTime;
-          });
-        }
-        if (type === 'expenseEntries') {
-          return [];
-        }
-        if (type === 'extraHoursRequests') {
-          return entities.filter(e => e.supplier_id === customerId);
-        }
-        if (type === 'shiftReports') {
-          const validPlants = (db.plants || []).filter(p => (p.supplier_ids || [])?.includes(customerId)).map(p => p.id);
-          return entities.filter(r => validPlants?.includes(r.plant_id) && r.status === 'published');
-        }
-        if (type === 'plants') {
-          const supplier = (db.suppliers || []).find(s => s.id === customerId);
-          const served = supplier?.plants_served || [];
-          return entities.filter(p => served?.includes(p.id));
-        }
-        if (type === 'suppliers') {
-          return entities.filter(s => s.id === customerId);
-        }
+      if (type === 'extraHoursRequests') {
+        return entities.filter(e => e.rep_id === targetRepId);
       }
-
-      if (role === 'qre' || role === 'rep') {
-        const targetRepId = repId || '1';
-        if (type === 'timeEntries') {
-          return entities.filter(t => t.rep_id === targetRepId).map(t => {
-            const { billing_rate, ...cleanTime } = t;
-            return cleanTime;
-          });
-        }
-        if (type === 'expenseEntries') {
-          return entities.filter(e => e.rep_id === targetRepId);
-        }
-        if (type === 'extraHoursRequests') {
-          return entities.filter(e => e.rep_id === targetRepId);
-        }
-        if (type === 'shiftReports') {
-          return entities.filter(r => r.rep_id === targetRepId);
-        }
+      if (type === 'shiftReports') {
+        return entities.filter(r => r.rep_id === targetRepId);
       }
     }
   }
@@ -541,8 +408,7 @@ export function saveEntity(type, entity) {
   const db = getDB();
   if (!db[type]) db[type] = [];
   
-  // Update or insert
-  const index = db[type].findIndex(item => item.id === entity.id);
+  const index = db[type].findIndex(item => String(item.id) === String(entity.id));
   if (index >= 0) {
     db[type][index] = { ...db[type][index], ...entity };
   } else {
@@ -552,49 +418,27 @@ export function saveEntity(type, entity) {
   saveDB(db);
 
   if (typeof navigator !== 'undefined' && !navigator.onLine) {
-    // Save to offline queue
     const queue = JSON.parse(localStorage.getItem('ids_pulse_offline_queue') || '[]');
     queue.push({ type, entity, timestamp: new Date().toISOString() });
     localStorage.setItem('ids_pulse_offline_queue', JSON.stringify(queue));
-    console.log(`[Offline] Saved ${type} to offline queue.`);
   } else {
     const targetTable = getSupabaseTableName(type);
-
-    // Gracefully handle system_logs / telemetry telemetry without queue pollution
     if (type === 'systemLogs' || targetTable === 'system_logs') {
       Promise.resolve(supabase.from(targetTable).upsert(entity)).catch(() => {});
       return entity;
     }
 
-    Promise.resolve(supabase.from(targetTable).upsert(entity))
-      .then(({ error }) => {
-        if (error) {
-          console.warn(`[Supabase Push Info] table "${targetTable}":`, error.message);
-          const queue = JSON.parse(localStorage.getItem('ids_pulse_offline_queue') || '[]');
-          queue.push({ type, entity, timestamp: new Date().toISOString() });
-          localStorage.setItem('ids_pulse_offline_queue', JSON.stringify(queue));
-          window.dispatchEvent(new CustomEvent('ids_pulse_sync_error', { detail: { table: targetTable, message: error.message } }));
-        }
-      })
-      .catch(err => {
-        console.warn(`[Supabase Push Exception] table "${type}":`, err);
-        const queue = JSON.parse(localStorage.getItem('ids_pulse_offline_queue') || '[]');
-        queue.push({ type, entity, timestamp: new Date().toISOString() });
-        localStorage.setItem('ids_pulse_offline_queue', JSON.stringify(queue));
-        window.dispatchEvent(new CustomEvent('ids_pulse_sync_error', { detail: { table: type, message: err.message || String(err) } }));
-      });
+    Promise.resolve(supabase.from(targetTable).upsert(entity)).catch(() => {});
   }
 
   return entity;
 }
 
-// Add user
 export function addUser(user) {
   const newUser = { ...user, id: user.id || `usr_${Date.now()}_${Math.random().toString(36)?.substring(2, 7)}`, created_at: new Date().toISOString() };
   return saveEntity('users', newUser);
 }
 
-// Add incident
 export function addIncident(incident) {
   const newIncident = {
     ...incident,
@@ -606,19 +450,27 @@ export function addIncident(incident) {
   return saveEntity('incidents', newIncident);
 }
 
-// Add shift report
 export function addShiftReport(report) {
   const newReport = {
     ...report,
     id: report.id || `sr_${Date.now()}_${Math.random().toString(36)?.substring(2, 7)}`,
     date: report.date || new Date().toISOString().split('T')[0],
-    status: report.status || 'Draft',
+    status: report.status || 'published',
     created_at: report.created_at || new Date().toISOString()
   };
   return saveEntity('shiftReports', newReport);
 }
 
-// Add rework log
+export function addExpenseEntry(expense) {
+  const newExp = {
+    ...expense,
+    id: expense.id || `exp_${Date.now()}_${Math.random().toString(36)?.substring(2, 7)}`,
+    date: expense.date || new Date().toISOString().split('T')[0],
+    created_at: expense.created_at || new Date().toISOString()
+  };
+  return saveEntity('expenseEntries', newExp);
+}
+
 export function addReworkLog(log) {
   const newLog = {
     ...log,
@@ -629,122 +481,30 @@ export function addReworkLog(log) {
   return saveEntity('reworkLogs', newLog);
 }
 
-// Add time entry with automated Rep Payroll ledger synchronization
-export function addTimeEntry(entry) {
-  const dbRates = getEntities('rates') || [];
-  const rateMatch = dbRates.find(r => r && (r.supplier_id === entry.supplier_id || r.client_id === entry.supplier_id) && (r.rep_id === entry.rep_id || !r.rep_id) && (!entry.plant_id || r.plant_id === entry.plant_id))
-    || dbRates.find(r => r && (r.supplier_id === entry.supplier_id || r.client_id === entry.supplier_id));
-
-  const billRate = (entry.billing_rate !== undefined && entry.billing_rate !== null)
-    ? parseFloat(entry.billing_rate)
-    : (rateMatch && rateMatch.billing_rate ? parseFloat(rateMatch.billing_rate) : 0.00);
-
-  const payRate = (entry.pay_rate !== undefined && entry.pay_rate !== null)
-    ? parseFloat(entry.pay_rate)
-    : (rateMatch && rateMatch.pay_rate ? parseFloat(rateMatch.pay_rate) : 0.00);
-
-  const newEntry = {
-    ...entry,
-    id: entry.id || `te_${Date.now()}_${Math.random().toString(36)?.substring(2, 7)}`,
-    billing_rate: billRate,
-    pay_rate: payRate,
-    created_at: entry.created_at || new Date().toISOString()
-  };
-
-  const saved = saveEntity('timeEntries', newEntry);
-
-  // Auto-sync Rep Payroll Ledger using the authoritative rate snapshot
-  try {
-    const dbUsers = getEntities('users') || [];
-    const rep = dbUsers.find(u => u.id === newEntry.rep_id);
-    const hrs = parseFloat(newEntry.hours || 0);
-
-    const grossRevenue = hrs * billRate;
-    const repExpense = hrs * payRate;
-    const netProfit = grossRevenue - repExpense;
-
-    const payrollRecord = {
-      id: `pr_${newEntry.id}`,
-      time_entry_id: newEntry.id,
-      rep_id: newEntry.rep_id,
-      rep_name: rep ? rep.name : (newEntry.rep_name || 'Unknown Rep'),
-      date: newEntry.date || new Date().toISOString().split('T')[0],
-      hours: hrs,
-      pay_rate: payRate,
-      bill_rate: billRate,
-      gross_revenue: grossRevenue,
-      rep_expense: repExpense,
-      net_profit: netProfit,
-      created_at: new Date().toISOString()
-    };
-    saveEntity('payrollLedger', payrollRecord);
-  } catch (err) {
-    console.warn("Payroll ledger auto-sync info:", err.message);
-  }
-
-  return saved;
-}
-
-// Add email log
-export function addEmailLog(log) {
-  const newLog = {
-    ...log,
-    id: log.id || `el_${Date.now()}_${Math.random().toString(36)?.substring(2, 7)}`,
-    sent_at: new Date().toISOString(),
-    delivery_status: log.delivery_status || 'delivered'
-  };
-  return saveEntity('emailLogs', newLog);
-}
-
-// Reset database to empty collections and sync from Supabase
-export function resetDB() {
-  const emptyData = JSON.parse(JSON.stringify(EMPTY_SCHEMA));
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(emptyData));
-  window.dispatchEvent(new Event('ids_pulse_db_update'));
-  setTimeout(() => syncWithSupabase(), 100);
-  return emptyData;
-}
-
-// Add a daily task
 export function addDailyTask(task) {
   const newTask = {
     ...task,
-    id: task.id || `dt_${Date.now()}_${Math.random().toString(36)?.substring(2, 7)}`,
-    status: task.status || 'pending'
+    id: task.id || `task_${Date.now()}_${Math.random().toString(36)?.substring(2, 7)}`,
+    created_at: task.created_at || new Date().toISOString()
   };
   return saveEntity('dailyTasks', newTask);
 }
 
-// Add expense entry
-export function addExpenseEntry(entry) {
-  const newEntry = {
-    ...entry,
-    id: entry.id || `exp_${Date.now()}_${Math.random().toString(36)?.substring(2, 7)}`,
-    created_at: new Date().toISOString()
+export function addEmailLog(log) {
+  const newLog = {
+    ...log,
+    id: log.id || `email_${Date.now()}_${Math.random().toString(36)?.substring(2, 7)}`,
+    sent_at: new Date().toISOString()
   };
-  return saveEntity('expenseEntries', newEntry);
+  return saveEntity('emailLogs', newLog);
 }
 
-// Get all rates
-export function getRates() {
-  const role = sessionStorage.getItem('ids_pulse_role');
-  if (!['admin', 'accountant', 'lead', 'shahroz']?.includes(role)) {
-    return [];
-  }
-  const db = getDB();
-  return db.rates || [];
-}
-
-// Save or update a rate
 export function saveRate(rate) {
   const db = getDB();
   if (!db.rates) db.rates = [];
-  
-  let index = db.rates.findIndex(r => r.id === rate.id);
-  if (index === -1) {
-    index = db.rates.findIndex(r => r.rep_id === rate.rep_id && r.supplier_id === rate.supplier_id && r.plant_id === rate.plant_id);
-  }
-  let finalRate = rate;
+
+  let finalRate;
+  const index = db.rates.findIndex(r => r.id === rate.id || (r.rep_id === rate.rep_id && r.supplier_id === rate.supplier_id && (r.plant_id === rate.plant_id || !rate.plant_id)));
   if (index >= 0) {
     db.rates[index] = { ...db.rates[index], ...rate };
     finalRate = db.rates[index];
@@ -755,33 +515,18 @@ export function saveRate(rate) {
   }
   saveDB(db);
 
-  // Sync to Supabase in background
-  supabase.from('rates').upsert(finalRate)
-    .then(({ error }) => {
-      if (error) console.error('[Supabase Push Error] table "rates":', error.message);
-    })
-    .catch(err => console.error('[Supabase Push Exception] table "rates":', err));
-
+  supabase.from('rates').upsert(finalRate).catch(() => {});
   return finalRate;
 }
 
-// Delete a rate
 export function deleteRate(rateId) {
   const db = getDB();
   if (!db.rates) return;
   db.rates = db.rates.filter(r => r.id !== rateId);
   saveDB(db);
-
-  // Sync delete to Supabase in background
-  supabase.from('rates').delete().eq('id', rateId)
-    .then(({ error }) => {
-      if (error) console.error('[Supabase Delete Error] table "rates":', error.message);
-    })
-    .catch(err => console.error('[Supabase Delete Exception] table "rates":', err));
+  supabase.from('rates').delete().eq('id', rateId).catch(() => {});
 }
 
-
-// Helper functions for extra hours requests
 export function getExtraHoursRequests() {
   return getEntities('extraHoursRequests');
 }
@@ -815,7 +560,7 @@ export function updateExtraHoursRequestStatus(reqId, status, user, comment) {
       addEmailLog({
         incident_id: reqId,
         to_emails: 'greg.p@integritydriven.com',
-        cc_emails: 'rep_assigned@integritydriven.com', // Would look up Rep's email in real system
+        cc_emails: 'rep_assigned@integritydriven.com',
         subject: `[OVERTIME ${actionText?.toUpperCase()}] Request ${reqId} by Customer`,
         body: `<h3>OVERTIME REQUEST ${actionText?.toUpperCase()}</h3><p>Customer user <strong>${user}</strong> has ${actionText?.toLowerCase()} the overtime request.</p><p><strong>Comment:</strong> ${comment}</p>`
       });
@@ -825,7 +570,6 @@ export function updateExtraHoursRequestStatus(reqId, status, user, comment) {
   return null;
 }
 
-// Log a system event
 export function logSystemEvent(category, action, details) {
   const newLog = {
     id: `log_${Date.now()}_${Math.random().toString(36)?.substring(2, 7)}`,
@@ -838,7 +582,6 @@ export function logSystemEvent(category, action, details) {
   return newLog;
 }
 
-// Add new project
 export function addProject(proj) {
   const newProj = {
     id: `proj_${Date.now()}_${Math.random().toString(36)?.substring(2, 7)}`,

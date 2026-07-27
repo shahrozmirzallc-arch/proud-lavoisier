@@ -1572,11 +1572,21 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     const match = dbReports.find(r => r.id === reportId);
     if (match) {
       match.status = 'published';
+      match.approved_for_billing = true;
       saveEntity('shiftReports', match);
       setShiftReports(getEntities('shiftReports'));
       const user = getActiveActorName();
-      logSystemEvent('shift', 'publish_report', `${user} published shift report ${reportId} to Customer Portal.`);
-      showToast("Report published successfully to Customer!", "success");
+      const plantObj = (plants || []).find(p => p.id === match.plant_id);
+      const plantName = plantObj?.name || match.plant_id || 'Plant';
+
+      logSystemEvent('shift', 'publish_report', `${user} published shift report ${reportId} to Customer Portal & routed to Colleen Boyd for customer invoicing.`);
+      
+      addNotification(
+        "💳 Report Approved for Invoicing",
+        `${user} approved shift report for ${plantName}. Routed to Colleen Boyd (Accounting) for customer billing.`,
+        "shift"
+      );
+      showToast("Report approved & routed to Colleen for customer billing!", "success");
     }
   };
 

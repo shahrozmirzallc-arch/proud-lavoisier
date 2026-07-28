@@ -45,3 +45,4 @@ update_*.cjs
 populate_*.cjs
 
 .vercel
+*.bundle

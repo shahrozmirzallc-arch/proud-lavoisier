@@ -109,8 +109,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   const [newProjPlant, setNewProjPlant] = useState('');
   const [newProjDesc, setNewProjDesc] = useState('');
   const [newProjStartDate, setNewProjStartDate] = useState(new Date().toISOString()?.substring(0, 10));
-  const [newProjBilling, setNewProjBilling] = useState('85.00');
-  const [newProjPay, setNewProjPay] = useState('45.00');
+  const [newProjBilling, setNewProjBilling] = useState('');
+  const [newProjPay, setNewProjPay] = useState('');
   const [newProjPoHours, setNewProjPoHours] = useState('100');
   const [newProjCurrency, setNewProjCurrency] = useState('USD');
   
@@ -1272,29 +1272,34 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       showToast("Company name is required.", "error");
       return;
     }
-
-    const effectiveBilling = (newProjBilling && newProjBilling.toString().trim()) ? newProjBilling : '85.00';
-    const effectivePay = (newProjPay && newProjPay.toString().trim()) ? newProjPay : '45.00';
+    if (!newProjBilling || !newProjBilling.toString().trim()) {
+      showToast("Billing Rate / HR is required.", "error");
+      return;
+    }
+    if (!newProjPay || !newProjPay.toString().trim()) {
+      showToast("Pay Rate / HR is required.", "error");
+      return;
+    }
 
     try {
       showToast("Submitting atomic onboarding transaction...", "info");
 
       const payload = {
-        supplier_name: quickClientName,
-        contact_name: quickClientContactName || 'Martin Smith',
-        contact_email: quickClientContactEmail || 'martin.smith@magna.com',
+        supplier_name: quickClientName.trim(),
+        contact_name: quickClientContactName ? quickClientContactName.trim() : '',
+        contact_email: quickClientContactEmail ? quickClientContactEmail.trim() : '',
         contact_phone: '',
-        address: quickClientAddress || '100 Industrial Pkwy, Belleville, ON K8N 5B7',
+        address: quickClientAddress ? quickClientAddress.trim() : '',
         allotted_hours: quickClientAllottedHours || '100',
-        plant_name: newProjPlant || 'Magna Belleville Plant 4',
+        plant_name: newProjPlant ? newProjPlant.trim() : 'Magna Belleville Plant 4',
         plant_city: 'Belleville',
-        plant_address: quickClientAddress || 'Belleville, ON',
-        project_name: newProjDesc || 'Ford F-150 Harness Micro-Switch Inspection',
+        plant_address: quickClientAddress ? quickClientAddress.trim() : 'Belleville, ON',
+        project_name: newProjDesc ? newProjDesc.trim() : `${quickClientName.trim()} Quality Audit`,
         part_number: 'AT-4472',
         po_number: 'PO-2026-MAGNA',
         rep_id: newProjRep || 'rep_clarence',
-        billing_rate: effectiveBilling,
-        pay_rate: effectivePay,
+        billing_rate: newProjBilling.toString().trim(),
+        pay_rate: newProjPay.toString().trim(),
         currency: newProjCurrency || 'CAD',
         start_date: newProjStartDate || new Date().toISOString().split('T')[0]
       };

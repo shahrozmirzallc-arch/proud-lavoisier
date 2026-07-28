@@ -9797,9 +9797,10 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   </div>
 
                   {/* Right Column: Create / Edit Project Form Panel (Span 1) */}
-                  <div className="xl:col-span-1 bg-surface-elevated border border-border-subtle rounded-2xl p-3 flex flex-col min-h-0">
-                    <h3 className="text-[14.5px] font-bold text-text-primary uppercase tracking-wider mb-6 pb-2 border-b border-border-subtle">
-                      Register New Project
+                  <div className="xl:col-span-1 bg-surface-elevated border border-border-subtle rounded-2xl p-4 flex flex-col min-h-0">
+                    <h3 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider mb-3 pb-2 border-b border-border-subtle flex items-center justify-between">
+                      <span>Register New Project</span>
+                      <span className="text-[10px] text-cyan-400 font-mono font-bold bg-cyan-950/40 px-2 py-0.5 rounded border border-cyan-800/40">Quick Onboarding</span>
                     </h3>
                     <form 
                       onSubmit={async (e) => {
@@ -9856,168 +9857,179 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                           showToast(`Registration Failed: ${err.message}`, "error");
                         }
                       }}
-                      className="flex flex-col gap-3 flex-1 overflow-y-auto pr-1 scrollbar-thin"
+                      className="flex flex-col gap-2 flex-1 overflow-y-auto pr-1 scrollbar-thin text-left"
                     >
-                      <div className="flex flex-col gap-1">
-                        <label className="text-[11.5px] font-bold text-text-secondary uppercase tracking-wider">Assign Representative</label>
-                        <select 
-                          value={newProjRep} 
-                          onChange={(e) => {
-                            if (e.target.value === 'ADD_NEW') {
-                              setShowQuickAddRep(true);
-                            } else {
-                              setNewProjRep(e.target.value);
-                            }
-                          }}
-                          className="bg-surface border border-border-subtle rounded-xl px-3 py-2.5 text-[13.5px] text-text-primary focus:outline-none focus:border-cyan-500 transition-colors"
-                        >
-                          <option value="">Select Rep...</option>
-                          {users.filter(isFieldRep).map(u => (
-                            <option key={u.id} value={u.id}>{u.name}</option>
-                          ))}
-                          <option value="ADD_NEW" className="text-cyan-600 font-bold">+ Add New Rep...</option>
-                        </select>
+                      {/* Row 1: Assign Rep & Client/Supplier */}
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Assign Rep</label>
+                          <select 
+                            value={newProjRep} 
+                            onChange={(e) => {
+                              if (e.target.value === 'ADD_NEW') {
+                                setShowQuickAddRep(true);
+                              } else {
+                                setNewProjRep(e.target.value);
+                              }
+                            }}
+                            className="bg-surface border border-border-subtle rounded-lg px-2.5 py-1.5 text-[12px] text-text-primary focus:outline-none focus:border-cyan-500 transition-colors"
+                          >
+                            <option value="">Select Rep...</option>
+                            {users.filter(isFieldRep).map(u => (
+                              <option key={u.id} value={u.id}>{u.name}</option>
+                            ))}
+                            <option value="ADD_NEW" className="text-cyan-600 font-bold">+ Add Rep...</option>
+                          </select>
+                        </div>
+
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Client / Supplier</label>
+                          <select 
+                            value={newProjClient} 
+                            onChange={(e) => {
+                              if (e.target.value === 'ADD_NEW') {
+                                setShowQuickAddClient(true);
+                              } else {
+                                setNewProjClient(e.target.value);
+                              }
+                            }}
+                            className="bg-surface border border-border-subtle rounded-lg px-2.5 py-1.5 text-[12px] text-text-primary focus:outline-none focus:border-cyan-500 transition-colors"
+                          >
+                            <option value="">Select Client...</option>
+                            {suppliers.map(s => (
+                              <option key={s.id} value={s.id}>{s.name}</option>
+                            ))}
+                            <option value="ADD_NEW" className="text-cyan-600 font-bold">+ Add Client...</option>
+                          </select>
+                        </div>
                       </div>
 
-                      <div className="flex flex-col gap-1">
-                        <label className="text-[11.5px] font-bold text-text-secondary uppercase tracking-wider">Client / Supplier</label>
-                        <select 
-                          value={newProjClient} 
-                          onChange={(e) => {
-                            if (e.target.value === 'ADD_NEW') {
-                              setShowQuickAddClient(true);
-                            } else {
-                              setNewProjClient(e.target.value);
-                            }
-                          }}
-                          className="bg-surface border border-border-subtle rounded-xl px-3 py-2.5 text-[13.5px] text-text-primary focus:outline-none focus:border-cyan-500 transition-colors"
-                        >
-                          <option value="">Select Client...</option>
-                          {suppliers.map(s => (
-                            <option key={s.id} value={s.id}>{s.name}</option>
-                          ))}
-                          <option value="ADD_NEW" className="text-cyan-600 font-bold">+ Add New Client...</option>
-                        </select>
+                      {/* Row 2: Plant Location & Start Date */}
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Plant Location</label>
+                          <select 
+                            value={newProjPlant} 
+                            onChange={(e) => {
+                              if (e.target.value === 'ADD_NEW') {
+                                setShowQuickAddPlant(true);
+                              } else {
+                                setNewProjPlant(e.target.value);
+                              }
+                            }}
+                            className="bg-surface border border-border-subtle rounded-lg px-2.5 py-1.5 text-[12px] text-text-primary focus:outline-none focus:border-cyan-500 transition-colors"
+                          >
+                            <option value="">Select Plant...</option>
+                            {plants.map(p => (
+                              <option key={p.id} value={p.id}>{p.name}</option>
+                            ))}
+                            <option value="ADD_NEW" className="text-cyan-600 font-bold">+ Add Plant...</option>
+                          </select>
+                        </div>
+
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Start Date</label>
+                          <input 
+                            type="date" 
+                            value={newProjStartDate} 
+                            onChange={(e) => setNewProjStartDate(e.target.value)}
+                            className="bg-surface border border-border-subtle rounded-lg px-2.5 py-1.5 text-[12px] text-text-primary focus:outline-none focus:border-cyan-500 transition-colors font-mono"
+                          />
+                        </div>
                       </div>
 
+                      {/* Row 3: Scope / Description */}
                       <div className="flex flex-col gap-1">
-                        <label className="text-[11.5px] font-bold text-text-secondary uppercase tracking-wider">Plant Location</label>
-                        <select 
-                          value={newProjPlant} 
-                          onChange={(e) => {
-                            if (e.target.value === 'ADD_NEW') {
-                              setShowQuickAddPlant(true);
-                            } else {
-                              setNewProjPlant(e.target.value);
-                            }
-                          }}
-                          className="bg-surface border border-border-subtle rounded-xl px-3 py-2.5 text-[13.5px] text-text-primary focus:outline-none focus:border-cyan-500 transition-colors"
-                        >
-                          <option value="">Select Plant...</option>
-                          {plants.map(p => (
-                            <option key={p.id} value={p.id}>{p.name}</option>
-                          ))}
-                          <option value="ADD_NEW" className="text-cyan-600 font-bold">+ Add New Plant...</option>
-                        </select>
-                      </div>
-
-                      <div className="flex flex-col gap-1">
-                        <label className="text-[11.5px] font-bold text-text-secondary uppercase tracking-wider">Description / Scope</label>
+                        <label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Description / Scope</label>
                         <input 
                           type="text" 
                           value={newProjDesc} 
                           onChange={(e) => setNewProjDesc(e.target.value)}
                           placeholder="e.g. Line Quality Audit" 
-                          className="bg-surface border border-border-subtle rounded-xl px-3 py-2.5 text-[13.5px] text-text-primary placeholder-text-secondary focus:outline-none focus:border-cyan-500 transition-colors"
+                          className="bg-surface border border-border-subtle rounded-lg px-2.5 py-1.5 text-[12px] text-text-primary placeholder-text-secondary focus:outline-none focus:border-cyan-500 transition-colors"
                         />
                       </div>
 
-                      <div className="flex flex-col gap-1">
-                        <label className="text-[11.5px] font-bold text-text-secondary uppercase tracking-wider">Start Date</label>
-                        <input 
-                          type="date" 
-                          value={newProjStartDate} 
-                          onChange={(e) => setNewProjStartDate(e.target.value)}
-                          className="bg-surface border border-border-subtle rounded-xl px-3 py-2.5 text-[13.5px] text-text-primary focus:outline-none focus:border-cyan-500 transition-colors"
-                        />
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-3">
+                      {/* Row 4: Billing Rate & Pay Rate */}
+                      <div className="grid grid-cols-2 gap-2">
                         <div className="flex flex-col gap-1">
-                          <label className="text-[11.5px] font-bold text-text-secondary uppercase tracking-wider">Billing Rate / Hr</label>
+                          <label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Billing Rate / Hr</label>
                           <div className="relative">
-                            <span className="absolute left-3.5 top-3 text-text-secondary text-[11.5px] font-mono">$</span>
+                            <span className="absolute left-2.5 top-2 text-text-secondary text-[11px] font-mono">$</span>
                             <input 
                               type="number" 
                               step="0.01" 
                               value={newProjBilling} 
                               onChange={(e) => setNewProjBilling(e.target.value)}
                               placeholder="0.00" 
-                              className="w-full bg-surface border border-border-subtle rounded-xl pl-6 pr-3 py-2.5 text-[13.5px] text-text-primary placeholder-text-secondary focus:outline-none focus:border-cyan-500 transition-colors"
+                              className="w-full bg-surface border border-border-subtle rounded-lg pl-5 pr-2.5 py-1.5 text-[12px] text-text-primary placeholder-text-secondary focus:outline-none focus:border-cyan-500 transition-colors font-mono"
                             />
                           </div>
                         </div>
 
                         <div className="flex flex-col gap-1">
-                          <label className="text-[11.5px] font-bold text-text-secondary uppercase tracking-wider">Pay Rate / Hr</label>
+                          <label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Pay Rate / Hr</label>
                           <div className="relative">
-                            <span className="absolute left-3.5 top-3 text-text-secondary text-[11.5px] font-mono">$</span>
+                            <span className="absolute left-2.5 top-2 text-text-secondary text-[11px] font-mono">$</span>
                             <input 
                               type="number" 
                               step="0.01" 
                               value={newProjPay} 
                               onChange={(e) => setNewProjPay(e.target.value)}
                               placeholder="0.00" 
-                              className="w-full bg-surface border border-border-subtle rounded-xl pl-6 pr-3 py-2.5 text-[13.5px] text-text-primary placeholder-text-secondary focus:outline-none focus:border-cyan-500 transition-colors"
+                              className="w-full bg-surface border border-border-subtle rounded-lg pl-5 pr-2.5 py-1.5 text-[12px] text-text-primary placeholder-text-secondary focus:outline-none focus:border-cyan-500 transition-colors font-mono"
                             />
                           </div>
                         </div>
                       </div>
 
-                      <div className="flex flex-col gap-1 mt-1 text-left">
-                        <label className="text-[11.5px] font-bold text-text-secondary uppercase tracking-wider">Allocated PO Hours Budget</label>
-                        <input 
-                          type="number" 
-                          step="0.5" 
-                          value={newProjPoHours} 
-                          onChange={(e) => setNewProjPoHours(e.target.value)}
-                          placeholder="100.0" 
-                          className="bg-surface border border-border-subtle rounded-xl px-3 py-2.5 text-[13.5px] text-text-primary placeholder-text-secondary focus:outline-none focus:border-cyan-500 transition-colors"
-                        />
-                      </div>
+                      {/* Row 5: PO Hours Budget & Currency */}
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="flex flex-col gap-1 text-left">
+                          <label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">PO Hours Budget</label>
+                          <input 
+                            type="number" 
+                            step="0.5" 
+                            value={newProjPoHours} 
+                            onChange={(e) => setNewProjPoHours(e.target.value)}
+                            placeholder="100.0" 
+                            className="bg-surface border border-border-subtle rounded-lg px-2.5 py-1.5 text-[12px] text-text-primary placeholder-text-secondary focus:outline-none focus:border-cyan-500 transition-colors font-mono"
+                          />
+                        </div>
 
-                      <div className="flex flex-col gap-2 mt-1 text-left">
-                        <label className="text-[11.5px] font-bold text-text-secondary uppercase tracking-wider">Billing Currency</label>
-                        <div className="flex gap-3">
-                          <label className="flex items-center gap-2 cursor-pointer text-[13.5px] text-text-primary">
-                            <input 
-                              type="radio" 
-                              name="newProjCurrency" 
-                              checked={newProjCurrency === 'USD'}
-                              onChange={() => setNewProjCurrency('USD')}
-                              className="text-[#3B82F6] focus:ring-[#3B82F6] bg-surface border-border-subtle"
-                            />
-                            USD (US$)
-                          </label>
-                          <label className="flex items-center gap-2 cursor-pointer text-[13.5px] text-text-primary">
-                            <input 
-                              type="radio" 
-                              name="newProjCurrency" 
-                              checked={newProjCurrency === 'CAD'}
-                              onChange={() => setNewProjCurrency('CAD')}
-                              className="text-[#3B82F6] focus:ring-[#3B82F6] bg-surface border-border-subtle"
-                            />
-                            CAD (C$)
-                          </label>
+                        <div className="flex flex-col gap-1 text-left justify-center">
+                          <label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Currency</label>
+                          <div className="flex gap-3 items-center py-1">
+                            <label className="flex items-center gap-1.5 cursor-pointer text-[12px] text-text-primary font-bold">
+                              <input 
+                                type="radio" 
+                                name="newProjCurrency" 
+                                checked={newProjCurrency === 'USD'}
+                                onChange={() => setNewProjCurrency('USD')}
+                                className="text-[#3B82F6] focus:ring-[#3B82F6] bg-surface border-border-subtle"
+                              />
+                              USD ($)
+                            </label>
+                            <label className="flex items-center gap-1.5 cursor-pointer text-[12px] text-text-primary font-bold">
+                              <input 
+                                type="radio" 
+                                name="newProjCurrency" 
+                                checked={newProjCurrency === 'CAD'}
+                                onChange={() => setNewProjCurrency('CAD')}
+                                className="text-[#3B82F6] focus:ring-[#3B82F6] bg-surface border-border-subtle"
+                              />
+                              CAD (C$)
+                            </label>
+                          </div>
                         </div>
                       </div>
 
-                      <div className="pt-4 mt-2 border-t border-slate-800">
+                      <div className="pt-2 mt-1 border-t border-border-subtle">
                         <button 
                           type="submit"
-                          className="stitch-btn w-full h-12 text-sm font-extrabold uppercase tracking-wide cursor-pointer flex justify-center items-center gap-2 shadow-xl"
+                          className="stitch-btn w-full h-10 text-[12px] font-extrabold uppercase tracking-wide cursor-pointer flex justify-center items-center gap-2 shadow-lg rounded-xl transition-all"
                         >
-                          <PlusCircle className="w-5 h-5 text-white" />
+                          <PlusCircle className="w-4 h-4 text-white" />
                           <span>Register Project Assignment</span>
                         </button>
                       </div>

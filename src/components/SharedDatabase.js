@@ -37,7 +37,8 @@ const ESSENTIAL_ADMIN_USERS = [
   { id: 'acct_1', name: 'Colleen Boyd', email: 'cboyd@integritydriven.com', username: 'colleen', phone: '+1 (416) 555-0002', role: 'accountant', title: 'Financial Accountant / Controller', pay_currency: 'CAD', avatar: 'CB' },
   { id: 'admin_1', name: 'Shahroz Mirza', email: 'smirza@integritydriven.com', username: 'shahroz', phone: '+1 (416) 555-0000', role: 'admin', title: 'System Super Admin', pay_currency: 'CAD', avatar: 'SM' },
   { id: 'lead_diana', name: 'Diana Operations Lead', email: 'diana@goto-ids.com', username: 'diana', phone: '+1 (416) 555-0088', role: 'lead', title: 'Operations Lead Supervisor', pay_currency: 'CAD', avatar: 'DL' },
-  { id: 'rep_clarence', name: 'Clarence Kuiken', email: 'ckuiken@integritydriven.com', username: 'clarence', phone: '+1 (416) 555-0099', role: 'rep', title: 'Quality Inspector', pay_currency: 'CAD', avatar: 'CK' }
+  { id: 'rep_clarence', name: 'Clarence Kuiken', email: 'ckuiken@integritydriven.com', username: 'clarence', phone: '+1 (416) 555-0099', role: 'rep', title: 'Quality Inspector', pay_currency: 'CAD', avatar: 'CK' },
+  { id: 'rep_test', name: 'Rep Test Inspector', email: 'rep_test@integritydriven.com', username: 'rep_test', password: 'password123', phone: '+1 (416) 555-0199', role: 'rep', title: 'Quality Inspector', pay_currency: 'CAD', avatar: 'RT' }
 ];
 
 // Initialize database in localStorage with automatic version cache invalidation

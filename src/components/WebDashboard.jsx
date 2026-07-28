@@ -1269,7 +1269,35 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   const handleQuickAddClientSubmit = async (e) => {
     if (e) e.preventDefault();
     if (!quickClientName || !quickClientName.trim()) {
-      showToast("Company name is required.", "error");
+      showToast("Company Name is required.", "error");
+      return;
+    }
+    if (!quickClientContactName || !quickClientContactName.trim()) {
+      showToast("Representative Name is required.", "error");
+      return;
+    }
+    if (!quickClientContactEmail || !quickClientContactEmail.trim()) {
+      showToast("Contact Email is required.", "error");
+      return;
+    }
+    if (!quickClientAddress || !quickClientAddress.trim()) {
+      showToast("Company / Billing Address is required.", "error");
+      return;
+    }
+    if (!quickClientAllottedHours || !quickClientAllottedHours.toString().trim()) {
+      showToast("Allotted Hours Budget is required.", "error");
+      return;
+    }
+    if (!newProjPlant || !newProjPlant.trim()) {
+      showToast("Plant Location is required.", "error");
+      return;
+    }
+    if (!newProjDesc || !newProjDesc.trim()) {
+      showToast("Description / Scope is required.", "error");
+      return;
+    }
+    if (!newProjStartDate) {
+      showToast("Start Date is required.", "error");
       return;
     }
     if (!newProjBilling || !newProjBilling.toString().trim()) {
@@ -1286,22 +1314,22 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
       const payload = {
         supplier_name: quickClientName.trim(),
-        contact_name: quickClientContactName ? quickClientContactName.trim() : '',
-        contact_email: quickClientContactEmail ? quickClientContactEmail.trim() : '',
+        contact_name: quickClientContactName.trim(),
+        contact_email: quickClientContactEmail.trim(),
         contact_phone: '',
-        address: quickClientAddress ? quickClientAddress.trim() : '',
-        allotted_hours: quickClientAllottedHours || '100',
-        plant_name: newProjPlant ? newProjPlant.trim() : 'Magna Belleville Plant 4',
+        address: quickClientAddress.trim(),
+        allotted_hours: quickClientAllottedHours.toString().trim(),
+        plant_name: newProjPlant.trim(),
         plant_city: 'Belleville',
-        plant_address: quickClientAddress ? quickClientAddress.trim() : 'Belleville, ON',
-        project_name: newProjDesc ? newProjDesc.trim() : `${quickClientName.trim()} Quality Audit`,
+        plant_address: quickClientAddress.trim(),
+        project_name: newProjDesc.trim(),
         part_number: 'AT-4472',
         po_number: 'PO-2026-MAGNA',
         rep_id: newProjRep || 'rep_clarence',
         billing_rate: newProjBilling.toString().trim(),
         pay_rate: newProjPay.toString().trim(),
         currency: newProjCurrency || 'CAD',
-        start_date: newProjStartDate || new Date().toISOString().split('T')[0]
+        start_date: newProjStartDate
       };
 
       const result = await performAtomicClientOnboarding(payload);
@@ -11302,35 +11330,38 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   <div className="flex flex-col gap-1">
-                    <label className="text-[10.5px] font-bold text-slate-300 uppercase tracking-wider">Representative Name</label>
+                    <label className="text-[10.5px] font-bold text-slate-300 uppercase tracking-wider">Representative Name *</label>
                     <input 
                       type="text" 
                       value={quickClientContactName} 
                       onChange={(e) => setQuickClientContactName(e.target.value)} 
                       placeholder="e.g. Mike Johnson" 
                       className="stitch-input px-3 py-2 text-[13px] text-white placeholder-slate-500"
+                      required
                     />
                   </div>
                   <div className="flex flex-col gap-1">
-                    <label className="text-[10.5px] font-bold text-slate-300 uppercase tracking-wider">Contact Email</label>
+                    <label className="text-[10.5px] font-bold text-slate-300 uppercase tracking-wider">Contact Email *</label>
                     <input 
                       type="email" 
                       value={quickClientContactEmail} 
                       onChange={(e) => setQuickClientContactEmail(e.target.value)} 
                       placeholder="mike@abc123.com" 
                       className="stitch-input px-3 py-2 text-[13px] text-white placeholder-slate-500"
+                      required
                     />
                   </div>
                 </div>
 
                 <div className="flex flex-col gap-1">
-                  <label className="text-[10.5px] font-bold text-slate-300 uppercase tracking-wider">Company / Billing Address</label>
+                  <label className="text-[10.5px] font-bold text-slate-300 uppercase tracking-wider">Company / Billing Address *</label>
                   <input 
                     type="text" 
                     value={quickClientAddress} 
                     onChange={(e) => setQuickClientAddress(e.target.value)} 
                     placeholder="e.g. 100 Industrial Pkwy, Windsor, ON N9A 6J3" 
                     className="stitch-input px-3 py-2 text-[13px] text-white placeholder-slate-500"
+                    required
                   />
                 </div>
 
@@ -11348,11 +11379,12 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     />
                   </div>
                   <div className="flex flex-col gap-1">
-                    <label className="text-[10.5px] font-bold text-slate-300 uppercase tracking-wider">Invoice Schedule</label>
+                    <label className="text-[10.5px] font-bold text-slate-300 uppercase tracking-wider">Invoice Schedule *</label>
                     <select 
                       value={quickClientSchedule} 
                       onChange={(e) => setQuickClientSchedule(e.target.value)} 
                       className="stitch-input px-3 py-2 text-[13px] text-white"
+                      required
                     >
                       <option value="on-demand">⚡ On Demand</option>
                       <option value="weekly">📅 Weekly</option>
@@ -11372,7 +11404,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   <div className="flex flex-col gap-1">
                     <div className="flex justify-between items-center">
-                      <label className="text-[10.5px] font-bold text-slate-300 uppercase tracking-wider">Assign Field Rep</label>
+                      <label className="text-[10.5px] font-bold text-slate-300 uppercase tracking-wider">Assign Field Rep *</label>
                       <button 
                         type="button" 
                         onClick={() => {
@@ -11399,6 +11431,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                           setNewProjRep(e.target.value);
                         }}
                         className="stitch-input px-3 py-2 text-[13px] text-white"
+                        required
                       >
                         <option value="__new__">➕ Create New Field Inspector...</option>
                         {users && users.filter(isFieldRep).length > 0 ? (
@@ -11446,34 +11479,37 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                           />
                         </div>
                         <div className="flex flex-col gap-1">
-                          <label className="text-[10px] font-bold text-slate-300 uppercase">Email Address</label>
+                          <label className="text-[10px] font-bold text-slate-300 uppercase">Email Address *</label>
                           <input 
                             type="email" 
                             value={inlineRepEmail} 
                             onChange={(e) => setInlineRepEmail(e.target.value)} 
                             placeholder="alex.t@integritydriven.com" 
                             className="stitch-input px-2.5 py-1.5 text-xs text-white"
+                            required={isInlineNewRep}
                           />
                         </div>
                       </div>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <div className="flex flex-col gap-1">
-                          <label className="text-[10px] font-bold text-slate-300 uppercase">Phone Number</label>
+                          <label className="text-[10px] font-bold text-slate-300 uppercase">Phone Number *</label>
                           <input 
                             type="text" 
                             value={inlineRepPhone} 
                             onChange={(e) => setInlineRepPhone(e.target.value)} 
                             placeholder="+1 905-555-0199" 
                             className="stitch-input px-2.5 py-1.5 text-xs text-white"
+                            required={isInlineNewRep}
                           />
                         </div>
                         <div className="flex flex-col gap-1">
-                          <label className="text-[10px] font-bold text-slate-300 uppercase">Title / Role</label>
+                          <label className="text-[10px] font-bold text-slate-300 uppercase">Title / Role *</label>
                           <select 
                             value={inlineRepTitle} 
                             onChange={(e) => setInlineRepTitle(e.target.value)} 
                             className="stitch-input px-2.5 py-1.5 text-xs text-white"
+                            required={isInlineNewRep}
                           >
                             <option value="Quality Inspector">Quality Inspector</option>
                             <option value="Quality Resident Engineer">Quality Resident Engineer</option>
@@ -11485,42 +11521,45 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   )}
 
                   <div className="flex flex-col gap-1">
-                    <label className="text-[10.5px] font-bold text-slate-300 uppercase tracking-wider">Plant Location</label>
+                    <label className="text-[10.5px] font-bold text-slate-300 uppercase tracking-wider">Plant Location *</label>
                     <input 
                       type="text" 
                       value={newProjPlant} 
                       onChange={(e) => setNewProjPlant(e.target.value)} 
                       placeholder="e.g. Magna Oshawa Plant 4" 
                       className="stitch-input px-3 py-2 text-[13px] text-white placeholder-slate-500"
+                      required
                     />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   <div className="flex flex-col gap-1">
-                    <label className="text-[10.5px] font-bold text-slate-300 uppercase tracking-wider">Description / Scope</label>
+                    <label className="text-[10.5px] font-bold text-slate-300 uppercase tracking-wider">Description / Scope *</label>
                     <input 
                       type="text" 
                       value={newProjDesc} 
                       onChange={(e) => setNewProjDesc(e.target.value)} 
                       placeholder="e.g. Line Quality Audit" 
                       className="stitch-input px-3 py-2 text-[13px] text-white placeholder-slate-500"
+                      required
                     />
                   </div>
                   <div className="flex flex-col gap-1">
-                    <label className="text-[10.5px] font-bold text-slate-300 uppercase tracking-wider">Start Date</label>
+                    <label className="text-[10.5px] font-bold text-slate-300 uppercase tracking-wider">Start Date *</label>
                     <input 
                       type="date" 
                       value={newProjStartDate} 
                       onChange={(e) => setNewProjStartDate(e.target.value)} 
                       className="stitch-input px-3 py-2 text-[13px] text-white"
+                      required
                     />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-2.5">
                   <div className="flex flex-col gap-1">
-                    <label className="text-[10.5px] font-bold text-slate-300 uppercase tracking-wider">Billing Rate / HR</label>
+                    <label className="text-[10.5px] font-bold text-slate-300 uppercase tracking-wider">Billing Rate / HR *</label>
                     <div className="relative">
                       <span className="absolute left-3 top-2 text-slate-400 text-xs font-mono">$</span>
                       <input 
@@ -11530,11 +11569,12 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         onChange={(e) => setNewProjBilling(e.target.value)} 
                         placeholder="85.00" 
                         className="stitch-input pl-7 pr-3 py-1.5 text-[13px] text-white"
+                        required
                       />
                     </div>
                   </div>
                   <div className="flex flex-col gap-1">
-                    <label className="text-[10.5px] font-bold text-slate-300 uppercase tracking-wider">Pay Rate / HR</label>
+                    <label className="text-[10.5px] font-bold text-slate-300 uppercase tracking-wider">Pay Rate / HR *</label>
                     <div className="relative">
                       <span className="absolute left-3 top-2 text-slate-400 text-xs font-mono">$</span>
                       <input 
@@ -11544,6 +11584,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         onChange={(e) => setNewProjPay(e.target.value)} 
                         placeholder="45.00" 
                         className="stitch-input pl-7 pr-3 py-1.5 text-[13px] text-white"
+                        required
                       />
                     </div>
                   </div>

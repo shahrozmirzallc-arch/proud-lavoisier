@@ -106,7 +106,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   const [selectedDispatchRepId, setSelectedDispatchRepId] = useState('1');
   
   // New Project Form state
-  const [newProjRep, setNewProjRep] = useState('');
+  const [newProjRep, setNewProjRep] = useState('rep_clarence');
   const [newProjClient, setNewProjClient] = useState('');
   const [newProjPlant, setNewProjPlant] = useState('');
   const [newProjDesc, setNewProjDesc] = useState('');
@@ -1349,11 +1349,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       let isInlineRep = false;
       let newRepUserObj = null;
 
-      if (isInlineNewRep || newProjRep === '__new__') {
-        if (!inlineRepName || !inlineRepName.trim()) {
-          showToast("Inline Inspector Name is required.", "error");
-          return;
-        }
+      if ((isInlineNewRep || newProjRep === '__new__') && inlineRepName && inlineRepName.trim()) {
         newRepUserObj = {
           id: `rep_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
           name: inlineRepName.trim(),
@@ -1370,15 +1366,16 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
         isInlineRep = true;
       } else {
         const allUsers = getEntities('users') || [];
+        const targetRepId = (newProjRep && newProjRep !== '__new__') ? newProjRep : 'rep_clarence';
         const foundRep = allUsers.find(u => 
-          String(u.id) === String(assignedRepId) || 
-          u.username === assignedRepId ||
-          (assignedRepId === '1' && (u.id === 'rep_clarence' || u.name.includes('Clarence')))
+          String(u.id) === String(targetRepId) || 
+          u.username === targetRepId ||
+          (targetRepId === '1' && (u.id === 'rep_clarence' || u.name.includes('Clarence')))
         );
         if (foundRep) {
           assignedRepId = foundRep.id;
           assignedRepName = foundRep.name;
-        } else if (assignedRepId === '1' || assignedRepId === 'rep_clarence') {
+        } else {
           assignedRepId = 'rep_clarence';
           assignedRepName = 'Clarence Kuiken';
         }
@@ -11557,48 +11554,44 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <div className="flex flex-col gap-1">
-                          <label className="text-[10px] font-bold text-slate-300 uppercase">Inspector Name *</label>
+                          <label className="text-[10px] font-bold text-slate-300 uppercase">Inspector Name (Optional)</label>
                           <input 
                             type="text" 
                             value={inlineRepName} 
                             onChange={(e) => setInlineRepName(e.target.value)} 
                             placeholder="e.g. Alex Tremblay" 
                             className="stitch-input px-2.5 py-1.5 text-xs text-white"
-                            required={isInlineNewRep}
                           />
                         </div>
                         <div className="flex flex-col gap-1">
-                          <label className="text-[10px] font-bold text-slate-300 uppercase">Email Address *</label>
+                          <label className="text-[10px] font-bold text-slate-300 uppercase">Email Address (Optional)</label>
                           <input 
                             type="email" 
                             value={inlineRepEmail} 
                             onChange={(e) => setInlineRepEmail(e.target.value)} 
                             placeholder="alex.t@integritydriven.com" 
                             className="stitch-input px-2.5 py-1.5 text-xs text-white"
-                            required={isInlineNewRep}
                           />
                         </div>
                       </div>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <div className="flex flex-col gap-1">
-                          <label className="text-[10px] font-bold text-slate-300 uppercase">Phone Number *</label>
+                          <label className="text-[10px] font-bold text-slate-300 uppercase">Phone Number (Optional)</label>
                           <input 
                             type="text" 
                             value={inlineRepPhone} 
                             onChange={(e) => setInlineRepPhone(e.target.value)} 
                             placeholder="+1 905-555-0199" 
                             className="stitch-input px-2.5 py-1.5 text-xs text-white"
-                            required={isInlineNewRep}
                           />
                         </div>
                         <div className="flex flex-col gap-1">
-                          <label className="text-[10px] font-bold text-slate-300 uppercase">Title / Role *</label>
+                          <label className="text-[10px] font-bold text-slate-300 uppercase">Title / Role (Optional)</label>
                           <select 
                             value={inlineRepTitle} 
                             onChange={(e) => setInlineRepTitle(e.target.value)} 
                             className="stitch-input px-2.5 py-1.5 text-xs text-white"
-                            required={isInlineNewRep}
                           >
                             <option value="Quality Inspector">Quality Inspector</option>
                             <option value="Quality Resident Engineer">Quality Resident Engineer</option>

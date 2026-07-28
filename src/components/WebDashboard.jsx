@@ -1386,6 +1386,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
         setNewProjClient(createdSupplierId);
         setConfigSupplierId(createdSupplierId);
         setSelectedInvoiceSupplier(createdSupplierId);
+        setSelectedCurrencyFilter('all');
       }
 
       addNotification("🏢 Company Onboarded", `Company ${quickClientName} onboarded and Project Assignment registered successfully!`, "shift");

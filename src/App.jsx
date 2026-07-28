@@ -274,6 +274,7 @@ function App() {
         { id: 'owner_1', name: 'Greg Phillippe', email: 'gphillippe@integritydriven.com', username: 'greg', role: 'owner' },
         { id: 'acct_1', name: 'Colleen Boyd', email: 'cboyd@integritydriven.com', username: 'colleen', role: 'accountant' },
         { id: 'rep_clarence', name: 'Clarence Kuiken', email: 'ckuiken@integritydriven.com', username: 'clarence', role: 'rep', title: 'Quality Inspector' },
+        { id: 'cust_1', name: 'Client Partner', email: 'client@fictionalclient.com', username: 'customer', role: 'customer', title: 'Client Quality Manager' },
         ...localUsers
       ];
 
@@ -293,7 +294,8 @@ function App() {
           ((inputUser === 'diana') && (u.id === 'lead_diana' || uName === 'diana')) ||
           ((inputUser === 'greg' || inputUser === 'gphillippe') && u.id === 'owner_1') ||
           ((inputUser === 'colleen' || inputUser === 'cboyd') && u.id === 'acct_1') ||
-          ((inputUser === 'clarence' || inputUser === 'ckuiken') && (u.id === 'rep_clarence' || uName === 'clarence'))
+          ((inputUser === 'clarence' || inputUser === 'ckuiken') && (u.id === 'rep_clarence' || uName === 'clarence')) ||
+          ((inputUser === 'customer' || inputUser === 'client') && (u.id === 'cust_1' || u.role === 'customer'))
         );
       });
 
@@ -314,6 +316,7 @@ function App() {
         else if (inputUser === 'diana') targetEmail = 'diana@goto-ids.com';
         else if (inputUser === 'colleen') targetEmail = 'cboyd@integritydriven.com';
         else if (inputUser === 'clarence') targetEmail = 'ckuiken@integritydriven.com';
+        else if (inputUser === 'customer' || inputUser === 'client') targetEmail = 'client@fictionalclient.com';
       }
 
       // Check explicit Demo Auth flag
@@ -335,7 +338,7 @@ function App() {
           }
           const targetUser = appMeta.username || inputUser;
           const repId = appMeta.rep_id || (targetUser === 'clarence' ? 'rep_clarence' : `rep_${targetUser}`);
-          const custId = appMeta.customer_id || targetUser;
+          const custId = appMeta.customer_id || 'supplier_fictional_101';
 
           setIsUnlocked(true);
           setAuthError(false);

@@ -192,7 +192,7 @@ export default function LoginScreen({ onSignedIn }) {
           {/* Quick 1-Click Login Shortcuts */}
           <div className="mt-4 pt-4 border-t border-slate-700/60">
             <span className="text-[10px] uppercase tracking-wider font-extrabold text-slate-400 block mb-2 text-center">
-              ⚡ Quick 1-Click Test Sign-Ins:
+              Quick 1-Click Test Sign-Ins:
             </span>
             <div className="grid grid-cols-2 gap-2">
               <button
@@ -204,7 +204,7 @@ export default function LoginScreen({ onSignedIn }) {
                 }}
                 className="px-2.5 py-2 rounded-lg bg-indigo-950/70 hover:bg-indigo-900 border border-indigo-500/30 text-indigo-200 text-xs font-bold transition-all text-left flex flex-col cursor-pointer"
               >
-                <span className="text-[11px] font-extrabold text-indigo-300">👤 Clarence Kuiken</span>
+                <span className="text-[11px] font-extrabold text-indigo-300">Clarence Kuiken</span>
                 <span className="text-[9px] text-indigo-400 font-mono">Rep • Quality Inspector</span>
               </button>
               <button
@@ -216,7 +216,7 @@ export default function LoginScreen({ onSignedIn }) {
                 }}
                 className="px-2.5 py-2 rounded-lg bg-sky-950/70 hover:bg-sky-900 border border-sky-500/30 text-sky-200 text-xs font-bold transition-all text-left flex flex-col cursor-pointer"
               >
-                <span className="text-[11px] font-extrabold text-sky-300">👩‍💼 Donna Cabral</span>
+                <span className="text-[11px] font-extrabold text-sky-300">Donna Cabral</span>
                 <span className="text-[9px] text-sky-400 font-mono">Admin • Operations Lead</span>
               </button>
               <button
@@ -228,20 +228,20 @@ export default function LoginScreen({ onSignedIn }) {
                 }}
                 className="px-2.5 py-2 rounded-lg bg-amber-950/70 hover:bg-amber-900 border border-amber-500/30 text-amber-200 text-xs font-bold transition-all text-left flex flex-col cursor-pointer"
               >
-                <span className="text-[11px] font-extrabold text-amber-300">💼 Colleen Boyd</span>
+                <span className="text-[11px] font-extrabold text-amber-300">Colleen Boyd</span>
                 <span className="text-[9px] text-amber-400 font-mono">Accountant • Controller</span>
               </button>
               <button
                 type="button"
                 onClick={() => {
-                  setUsername('greg');
+                  setUsername('customer');
                   setPassword('password123');
-                  onSignedIn({ username: 'greg', password: 'password123' });
+                  onSignedIn({ username: 'customer', password: 'password123' });
                 }}
                 className="px-2.5 py-2 rounded-lg bg-emerald-950/70 hover:bg-emerald-900 border border-emerald-500/30 text-emerald-200 text-xs font-bold transition-all text-left flex flex-col cursor-pointer"
               >
-                <span className="text-[11px] font-extrabold text-emerald-300">👔 Greg Phillippe</span>
-                <span className="text-[9px] text-emerald-400 font-mono">Admin • Owner</span>
+                <span className="text-[11px] font-extrabold text-emerald-300">Client Partner</span>
+                <span className="text-[9px] text-emerald-400 font-mono">Client • Quality Portal</span>
               </button>
             </div>
           </div>

@@ -2157,16 +2157,24 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     const partMatchStr = (inc.part_id || inc.part_number || '').toLowerCase();
     const descMatchStr = (inc.description || inc.notes || '').toLowerCase();
     const areaMatchStr = (inc.area || '').toLowerCase();
+    const repMatchStr = (inc.rep_name || users.find(u => u.id === inc.rep_id)?.name || '').toLowerCase();
     const searchLow = (deferredSearchQuery || '').toLowerCase();
 
     const matchesSearch = !searchLow ||
       partMatchStr.includes(searchLow) ||
       descMatchStr.includes(searchLow) ||
       areaMatchStr.includes(searchLow) ||
+      repMatchStr.includes(searchLow) ||
       (inc.parts_list && inc.parts_list.some(p => p.part_number?.toLowerCase()?.includes(searchLow)));
-    const matchesSupplier = selectedSupplierFilter === 'all' || inc.supplier_id === selectedSupplierFilter;
-    const matchesStatus = selectedStatusFilter === 'all' || inc.status === selectedStatusFilter;
-    const matchesDate = showAllDates || inc.created_at?.startsWith(selectedDate);
+
+    const matchesSupplier = selectedSupplierFilter === 'all' || 
+      inc.supplier_id === selectedSupplierFilter ||
+      (inc.supplier_id && selectedSupplierFilter && inc.supplier_id.toLowerCase().includes(selectedSupplierFilter.toLowerCase().replace(/^sup_/, '')));
+
+    const matchesStatus = selectedStatusFilter === 'all' || inc.status === selectedStatusFilter || !inc.status;
+    const incDateStr = inc.created_at || inc.date || inc.sent_at || '';
+    const matchesDate = showAllDates || !selectedDate || incDateStr.includes(selectedDate);
+
     return matchesSearch && matchesSupplier && matchesStatus && matchesDate;
   });
 
@@ -6790,7 +6798,9 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                             <td className="py-2 px-2 font-medium text-text-primary">
                               {users.find(u => u.id === inc.rep_id)?.name || 'Clarence Kuiken'}
                             </td>
-                            <td className="py-2 px-2 text-[#3B82F6] font-medium">Magna</td>
+                            <td className="py-2 px-2 text-[#3B82F6] font-medium">
+                              {suppliers.find(s => s.id === inc.supplier_id || s.name?.toLowerCase() === (inc.supplier_id || '').toLowerCase())?.name || inc.supplier_id || 'Autokabel'}
+                            </td>
                             <td className="py-2 px-2">
                               <span className={`px-2 py-1 rounded-full text-[10.5px] font-bold ${
                                 inc.status === 'Open' ? 'bg-red-50 text-red-600 border border-red-200' :

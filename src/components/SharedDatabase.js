@@ -41,6 +41,10 @@ const ESSENTIAL_ADMIN_USERS = [
   { id: 'rep_test', name: 'Rep Test Inspector', email: 'rep_test@integritydriven.com', username: 'rep_test', password: 'password123', phone: '+1 (416) 555-0199', role: 'rep', title: 'Quality Inspector', pay_currency: 'CAD', avatar: 'RT' }
 ];
 
+const ESSENTIAL_SUPPLIERS = [
+  { id: 'autokabel', name: 'AutoKabel Systems', code: 'AUTOKABEL', plants_served: ['oshawa', 'plant_1', 'plant_2'], allotted_hours: 40 }
+];
+
 // Initialize database in localStorage with automatic version cache invalidation
 export function initializeDB() {
   const storedVersion = localStorage.getItem(DB_VERSION_KEY);
@@ -83,6 +87,19 @@ export function initializeDB() {
     ESSENTIAL_ADMIN_USERS.forEach(adminUser => {
       if (!data.users.some(u => String(u.id) === String(adminUser.id) || u.email === adminUser.email)) {
         data.users.push(adminUser);
+        updated = true;
+      }
+    });
+  }
+
+  // Ensure essential suppliers exist so client logins map properly
+  if (!data.suppliers || data.suppliers.length === 0) {
+    data.suppliers = [...ESSENTIAL_SUPPLIERS];
+    updated = true;
+  } else {
+    ESSENTIAL_SUPPLIERS.forEach(s => {
+      if (!data.suppliers.some(sup => sup.id === s.id)) {
+        data.suppliers.push(s);
         updated = true;
       }
     });

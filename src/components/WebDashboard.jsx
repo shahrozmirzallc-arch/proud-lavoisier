@@ -1045,19 +1045,31 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       return;
     }
 
+    if (!client || !client.name) {
+      showToast("CRITICAL INVOICE BLOCKER: Customer record missing or invalid.", "error");
+      return;
+    }
+
+    const poNum = invoicePONumber.trim();
+    if (!poNum) {
+      showToast("CRITICAL INVOICE BLOCKER: Purchase Order (PO) number is required for invoice generation.", "warning");
+      return;
+    }
+
     try {
       const items = [];
 
       // 1. Hourly Entries
       (clientEntries || []).forEach(entry => {
-        const repName = users.find(u => u.id === entry.rep_id)?.name || 'Inspector Rep';
+        const repObj = users.find(u => u.id === entry.rep_id);
+        const repName = repObj ? repObj.name : `Rep (${entry.rep_id})`;
         const { billing_rate } = getRepSupplierRates(entry.rep_id, entry.supplier_id, entry.plant_id);
         const sub = (parseFloat(entry.hours) || 0) * (parseFloat(billing_rate) || 0);
 
         items.push({
           quantity: parseFloat(entry.hours) || 0,
           item: 'Contractors Hours',
-          description: `Liaison Quality Audit & On-Demand Representation by ${repName} at ${client?.name || 'Client Plant'}\nPeriod: From ${entry.date || dateRangeStr} to ${entry.date || dateRangeStr}`,
+          description: `Liaison Quality Audit & On-Demand Representation by ${repName} at ${client.name}\nPeriod: From ${entry.date || dateRangeStr} to ${entry.date || dateRangeStr}`,
           um: 'hr',
           priceEach: parseFloat(billing_rate) || 0,
           amount: sub
@@ -1067,7 +1079,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       // 2. Mileage Entries
       (clientEntries || []).forEach(entry => {
         if (entry.mileage_km > 0) {
-          const repName = users.find(u => u.id === entry.rep_id)?.name || 'Inspector Rep';
+          const repObj = users.find(u => u.id === entry.rep_id);
+          const repName = repObj ? repObj.name : `Rep (${entry.rep_id})`;
           const sub = entry.mileage_km * CONFIG_MILEAGE_RATE;
           items.push({
             quantity: entry.mileage_km,
@@ -1082,7 +1095,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
       // 3. Reimbursable Expenses
       (clientExpenses || []).forEach(exp => {
-        const repName = users.find(u => u.id === exp.rep_id)?.name || 'Inspector Rep';
+        const repObj = users.find(u => u.id === exp.rep_id);
+        const repName = repObj ? repObj.name : `Rep (${exp.rep_id})`;
         const sub = parseFloat(exp.amount || 0);
         items.push({
           quantity: 1,
@@ -1095,29 +1109,30 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       });
 
       if (items.length === 0) {
-        showToast("No active line items found for this invoice.", "info");
+        showToast("CRITICAL INVOICE BLOCKER: No un-invoiced line items found for date range.", "info");
         return;
       }
 
-      const invNum = `INV-${client?.name?.substring(0, 2)?.toUpperCase() || 'TC'}-${Math.floor(1000 + Math.random() * 9000)}`;
+      const invNum = `INV-${client.name.substring(0, 2).toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`;
+      const activeUser = getActiveActorName();
 
       const invoiceData = {
         client: client,
         invoiceNum: invNum,
         invoiceDate: new Date().toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: 'numeric' }),
-        poNumber: invoicePONumber.trim() || 'PO-32268',
+        poNumber: poNum,
         terms: 'Net 30',
-        repName: 'Integrity Lead',
+        repName: activeUser,
         shipDate: new Date().toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: 'numeric' }),
         via: 'Direct',
         fob: 'FOB Origin',
-        projectName: client?.name || 'Test Company',
-        shipToText: `Liaison Quality Lead at\n${client?.name || 'Test Company'}`,
+        projectName: client.name,
+        shipToText: `Liaison Quality Lead at\n${client.name}`,
         invoiceToLines: [
-          client?.name || 'Test Company',
-          client?.contact_person ? `Attn: ${client.contact_person}` : 'Attn: Quality Lead',
-          client?.email || 'billing@company.com'
-        ],
+          client.name,
+          client.contact_person ? `Attn: ${client.contact_person}` : '',
+          client.email ? `${client.email}` : ''
+        ].filter(Boolean),
         items: items,
         taxAmount: 0.00,
         currency: selectedInvoiceCurrency,
@@ -1126,8 +1141,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
       const doc = generateIntegrityInvoicePDF(invoiceData);
 
-      const user = getActiveActorName();
-      logSystemEvent('payroll', 'invoice_export', `${user} generated canonical client billing invoice PDF (${invNum}) for ${client?.name}.`);
+      logSystemEvent('payroll', 'invoice_export', `${activeUser} generated canonical client billing invoice PDF (${invNum}) for ${client.name}.`);
       doc.save(`Invoice_${invNum}.pdf`);
     } catch (err) {
       console.error(err);

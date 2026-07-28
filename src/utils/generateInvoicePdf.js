@@ -1,5 +1,5 @@
-import jsPDF from 'jspdf';
-import { LOGO_BASE64 } from '../components/LogoBase64';
+import { jsPDF } from 'jspdf';
+import { LOGO_BASE64 } from '../components/LogoBase64.js';
 
 /**
  * Generates an exact, perfectly aligned PDF invoice matching the Integrity Driven Solutions Inc. template.
@@ -277,6 +277,31 @@ export const generateIntegrityInvoicePDF = ({
     // Advance Y position based on tallest multiline column
     const maxHeight = Math.max(itemLineY, descLineY);
     itemY = maxHeight + 3;
+
+    // Continuation page check if itemY goes beyond 225mm on page
+    if (itemY > 225) {
+      doc.addPage();
+      try {
+        doc.addImage(LOGO_BASE64, 'PNG', marginX, 10, 60, 16);
+      } catch (err) {}
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(20);
+      doc.text('Invoice (Continued)', marginX + contentW, 18, { align: 'right' });
+
+      doc.rect(marginX, 25, contentW, 7);
+      let cX = marginX;
+      itemHeaders.forEach((hdr, idx) => {
+        const w = itemColWidths[idx];
+        if (idx > 0) doc.line(cX, 25, cX, 32);
+        const align = (idx === 0 || idx === 3) ? 'center' : (idx >= 4 ? 'right' : 'left');
+        const posX = align === 'center' ? cX + (w / 2) : (align === 'right' ? cX + w - 3 : cX + 3);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8);
+        doc.text(hdr, posX, 30, { align });
+        cX += w;
+      });
+      itemY = 38;
+    }
   });
 
   y += itemTableH;

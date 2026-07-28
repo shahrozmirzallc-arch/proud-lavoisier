@@ -1044,122 +1044,91 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       showToast("Please select a specific Billing Currency (CAD or USD).", "warning");
       return;
     }
-    const curSymbol = selectedInvoiceCurrency === 'CAD' ? 'C$' : 'US$';
+
     try {
-      const doc = new jsPDF();
-      doc.setFont("Helvetica", "bold");
-      doc.setFontSize(22);
-      doc.text("INVOICE", 14, 20);
+      const items = [];
 
-      doc.setFontSize(10);
-      doc.setFont("Helvetica", "normal");
-      doc.text("Integrity Driven Solutions Inc. (IDS)", 14, 28);
-      doc.text("Email: billing@integritydriven.com | Web: www.integritydriven.com", 14, 33);
+      // 1. Hourly Entries
+      (clientEntries || []).forEach(entry => {
+        const repName = users.find(u => u.id === entry.rep_id)?.name || 'Inspector Rep';
+        const { billing_rate } = getRepSupplierRates(entry.rep_id, entry.supplier_id, entry.plant_id);
+        const sub = (parseFloat(entry.hours) || 0) * (parseFloat(billing_rate) || 0);
 
-      doc.setFont("Helvetica", "bold");
-      doc.text("BILL TO:", 14, 45);
-      doc.setFont("Helvetica", "normal");
-      doc.text(client?.name || 'Unknown Client', 14, 50);
-      doc.text("Billing Schedule: " + (client?.invoice_schedule === 'on-demand' ? 'ON DEMAND (MANUAL)' : (client?.invoice_schedule || 'on-demand')?.toUpperCase()), 14, 55);
+        items.push({
+          quantity: parseFloat(entry.hours) || 0,
+          item: 'Contractors Hours',
+          description: `Liaison Quality Audit & On-Demand Representation by ${repName} at ${client?.name || 'Client Plant'}\nPeriod: From ${entry.date || dateRangeStr} to ${entry.date || dateRangeStr}`,
+          um: 'hr',
+          priceEach: parseFloat(billing_rate) || 0,
+          amount: sub
+        });
+      });
 
-      doc.setFont("Helvetica", "bold");
-      doc.text("INVOICE DETAILS:", 120, 45);
-      doc.setFont("Helvetica", "normal");
-      doc.text("Invoice Period: " + dateRangeStr, 120, 50);
-      doc.text("Date Generated: " + new Date().toLocaleDateString(), 120, 55);
-      if (invoicePONumber.trim() !== '') {
-        doc.text("Purchase Order: " + invoicePONumber.trim(), 120, 60);
+      // 2. Mileage Entries
+      (clientEntries || []).forEach(entry => {
+        if (entry.mileage_km > 0) {
+          const repName = users.find(u => u.id === entry.rep_id)?.name || 'Inspector Rep';
+          const sub = entry.mileage_km * CONFIG_MILEAGE_RATE;
+          items.push({
+            quantity: entry.mileage_km,
+            item: 'Travel Mileage',
+            description: `Authorized Travel Mileage Expense by ${repName} (${entry.date || dateRangeStr})`,
+            um: 'km',
+            priceEach: CONFIG_MILEAGE_RATE,
+            amount: sub
+          });
+        }
+      });
+
+      // 3. Reimbursable Expenses
+      (clientExpenses || []).forEach(exp => {
+        const repName = users.find(u => u.id === exp.rep_id)?.name || 'Inspector Rep';
+        const sub = parseFloat(exp.amount || 0);
+        items.push({
+          quantity: 1,
+          item: 'Reimbursable Expenses',
+          description: `Approved Field Expense Claims & Direct Supplier Receipts (${exp.category || 'Expense'}: ${exp.notes || 'Receipt on File'})`,
+          um: 'ea',
+          priceEach: sub,
+          amount: sub
+        });
+      });
+
+      if (items.length === 0) {
+        showToast("No active line items found for this invoice.", "info");
+        return;
       }
 
-      let y = 70;
-      doc.setFillColor(30, 41, 59);
-      doc.rect(14, y, 182, 8, "F");
-      doc.setFont("Helvetica", "bold");
-      doc.setTextColor(255, 255, 255);
-      doc.text("Item Description", 16, y + 5);
-      doc.text("Hours / Qty", 100, y + 5);
-      doc.text("Rate", 130, y + 5);
-      doc.text("Subtotal", 160, y + 5);
+      const invNum = `INV-${client?.name?.substring(0, 2)?.toUpperCase() || 'TC'}-${Math.floor(1000 + Math.random() * 9000)}`;
 
-      y += 12;
-      doc.setTextColor(0, 0, 0);
-      doc.setFont("Helvetica", "normal");
+      const invoiceData = {
+        client: client,
+        invoiceNum: invNum,
+        invoiceDate: new Date().toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: 'numeric' }),
+        poNumber: invoicePONumber.trim() || 'PO-32268',
+        terms: 'Net 30',
+        repName: 'Integrity Lead',
+        shipDate: new Date().toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: 'numeric' }),
+        via: 'Direct',
+        fob: 'FOB Origin',
+        projectName: client?.name || 'Test Company',
+        shipToText: `Liaison Quality Lead at\n${client?.name || 'Test Company'}`,
+        invoiceToLines: [
+          client?.name || 'Test Company',
+          client?.contact_person ? `Attn: ${client.contact_person}` : 'Attn: Quality Lead',
+          client?.email || 'billing@company.com'
+        ],
+        items: items,
+        taxAmount: 0.00,
+        currency: selectedInvoiceCurrency,
+        gstHstNo: '853120236'
+      };
 
-      let totalBill = 0;
-
-      clientEntries.forEach(entry => {
-        const repName = users.find(u => u.id === entry.rep_id)?.name || 'Rep';
-        const { billing_rate } = getRepSupplierRates(entry.rep_id, entry.supplier_id, entry.plant_id);
-        const sub = entry.hours * billing_rate;
-        totalBill += sub;
-        
-        const descText = `${repName} - Hours worked (${entry.date})`;
-        const wrappedDesc = doc.splitTextToSize(descText, 80);
-        
-        doc.text(wrappedDesc[0] || '', 16, y);
-        doc.text(`${entry.hours} hrs`, 100, y);
-        doc.text(`${curSymbol}${billing_rate.toFixed(2)}/hr`, 130, y);
-        doc.text(`${curSymbol}${sub.toFixed(2)}`, 160, y);
-        
-        for (let k = 1; k < wrappedDesc.length; k++) {
-          y += 5;
-          doc.text(wrappedDesc[k], 16, y);
-        }
-        y += 8;
-      });
-
-      clientEntries.forEach(entry => {
-        if (entry.mileage_km > 0) {
-          const repName = users.find(u => u.id === entry.rep_id)?.name || 'Rep';
-          const sub = entry.mileage_km * CONFIG_MILEAGE_RATE;
-          totalBill += sub;
-          
-          const descText = `${repName} - Travel Mileage (${entry.date})`;
-          const wrappedDesc = doc.splitTextToSize(descText, 80);
-          
-          doc.text(wrappedDesc[0] || '', 16, y);
-          doc.text(`${entry.mileage_km} km`, 100, y);
-          doc.text(`${curSymbol}${CONFIG_MILEAGE_RATE.toFixed(2)}/km`, 130, y);
-          doc.text(`${curSymbol}${sub.toFixed(2)}`, 160, y);
-          
-          for (let k = 1; k < wrappedDesc.length; k++) {
-            y += 5;
-            doc.text(wrappedDesc[k], 16, y);
-          }
-          y += 8;
-        }
-      });
-
-      clientExpenses.forEach(exp => {
-        const repName = users.find(u => u.id === exp.rep_id)?.name || 'Rep';
-        const sub = parseFloat(exp.amount || 0);
-        totalBill += sub;
-        
-        const descText = `${repName} - Reimbursement (${exp.category}: ${exp.notes})`;
-        const wrappedDesc = doc.splitTextToSize(descText, 80);
-        
-        doc.text(wrappedDesc[0] || '', 16, y);
-        doc.text(`1 qty`, 100, y);
-        doc.text(`${curSymbol}${sub.toFixed(2)}`, 130, y);
-        doc.text(`${curSymbol}${sub.toFixed(2)}`, 160, y);
-        
-        for (let k = 1; k < wrappedDesc.length; k++) {
-          y += 5;
-          doc.text(wrappedDesc[k], 16, y);
-        }
-        y += 8;
-      });
-
-      y += 5;
-      doc.line(14, y, 196, y);
-      y += 8;
-      doc.setFont("Helvetica", "bold");
-      doc.text("TOTAL DUE:", 120, y);
-      doc.text(`${curSymbol}${totalBill.toFixed(2)}`, 160, y);
+      const doc = generateIntegrityInvoicePDF(invoiceData);
 
       const user = getActiveActorName();
-      logSystemEvent('payroll', 'invoice_export', `${user} generated client billing invoice PDF for ${client.name}.`);
-      doc.save(`Invoice_${client.name?.replace(/\s+/g, '_')}_${Date.now()}.pdf`);
+      logSystemEvent('payroll', 'invoice_export', `${user} generated canonical client billing invoice PDF (${invNum}) for ${client?.name}.`);
+      doc.save(`Invoice_${invNum}.pdf`);
     } catch (err) {
       console.error(err);
       showToast("Error generating PDF: " + err.message, "error");

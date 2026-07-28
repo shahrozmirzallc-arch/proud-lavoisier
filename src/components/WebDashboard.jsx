@@ -9730,19 +9730,19 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     </div>
                   </div>
 
-                    <div className="flex-1 overflow-auto scrollbar-thin">
-                      <div className="overflow-x-auto w-full"><table className="w-full text-left border-collapse text-[13.5px]">
+                    <div className="flex-1 overflow-y-auto scrollbar-thin">
+                      <table className="w-full text-left border-collapse text-[12px] table-auto">
                         <thead className="bg-surface sticky top-0 z-10 border-b border-border-subtle">
-                          <tr className="font-bold text-text-secondary uppercase tracking-wider">
-                            <th className="py-3.5 px-6">Client/Supplier</th>
-                            <th className="py-3.5 px-6">Project #</th>
-                            <th className="py-3.5 px-6">Description</th>
-                            <th className="py-3.5 px-6">Location</th>
-                            <th className="py-3.5 px-6">Representative</th>
-                            <th className="py-3.5 px-6">Start Date</th>
-                            <th className="py-3.5 px-6 text-right">Billing Rate</th>
-                            <th className="py-3.5 px-6 text-right">Pay Rate</th>
-                            <th className="py-3.5 px-4 text-right">Action</th>
+                          <tr className="font-bold text-text-secondary uppercase tracking-wider text-[10px]">
+                            <th className="py-2.5 px-2.5">Client/Supplier</th>
+                            <th className="py-2.5 px-2">Project #</th>
+                            <th className="py-2.5 px-2.5">Description</th>
+                            <th className="py-2.5 px-2">Location</th>
+                            <th className="py-2.5 px-2">Representative</th>
+                            <th className="py-2.5 px-2">Start Date</th>
+                            <th className="py-2.5 px-2 text-right">Billing Rate</th>
+                            <th className="py-2.5 px-2 text-right">Pay Rate</th>
+                            <th className="py-2.5 px-2 text-right">Action</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-850/40 text-text-primary">
@@ -9776,23 +9776,23 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                   onClick={() => setSelectedProjectId(p.id)}
                                   className="hover:bg-surface transition-colors cursor-pointer group"
                                 >
-                                  <td className="py-3 px-6 font-semibold text-text-primary capitalize group-hover:text-[#3B82F6] transition-colors">{clientName}</td>
-                                  <td className="py-3 px-6 font-mono text-[#3B82F6] font-bold">{p.project_number}</td>
-                                  <td className="py-3 px-6 text-text-secondary">{p.description}</td>
-                                  <td className="py-3 px-6 text-text-primary">{plantName}</td>
-                                  <td className="py-3 px-6 font-medium text-text-primary">{repName}</td>
-                                  <td className="py-3 px-6 text-text-secondary">{p.start_date}</td>
-                                  <td className="py-3 px-6 text-right font-bold text-emerald-600">{formatRateDisplay(p, rates, 'billing')}</td>
-                                  <td className="py-3 px-6 text-right text-text-secondary">{formatRateDisplay(p, rates, 'pay')}</td>
-                                  <td className="py-1 px-2 text-right">
-                                    <button className="text-[10.5px] uppercase font-bold text-[#3B82F6] bg-[#3B82F6]/10 px-2.5 py-1 rounded-lg group-hover:bg-[#3B82F6] group-hover:text-text-primary transition-all whitespace-nowrap">View</button>
+                                  <td className="py-2.5 px-2.5 font-semibold text-text-primary capitalize group-hover:text-[#3B82F6] transition-colors">{clientName}</td>
+                                  <td className="py-2.5 px-2 font-mono text-[#3B82F6] font-bold">{p.project_number}</td>
+                                  <td className="py-2.5 px-2.5 text-text-secondary">{p.description}</td>
+                                  <td className="py-2.5 px-2 text-text-primary">{plantName}</td>
+                                  <td className="py-2.5 px-2 font-medium text-text-primary">{repName}</td>
+                                  <td className="py-2.5 px-2 text-text-secondary whitespace-nowrap">{p.start_date}</td>
+                                  <td className="py-2.5 px-2 text-right font-bold text-emerald-600 whitespace-nowrap">{formatRateDisplay(p, rates, 'billing')}</td>
+                                  <td className="py-2.5 px-2 text-right text-text-secondary whitespace-nowrap">{formatRateDisplay(p, rates, 'pay')}</td>
+                                  <td className="py-2.5 px-2 text-right">
+                                    <button className="text-[10px] uppercase font-bold text-[#3B82F6] bg-[#3B82F6]/10 px-2 py-0.5 rounded group-hover:bg-[#3B82F6] group-hover:text-text-primary transition-all whitespace-nowrap">View</button>
                                   </td>
                                 </tr>
                               );
                             });
                           })()}
                         </tbody>
-                      </table></div>
+                      </table>
                     </div>
                   </div>
 

@@ -1,4 +1,4 @@
-import { supabase, saveEntity } from '../components/SharedDatabase.js';
+import { supabase, saveEntity, getDB } from '../components/SharedDatabase.js';
 
 /**
  * Validates onboarding payload parameters.
@@ -123,8 +123,15 @@ export async function performAtomicClientOnboarding(rawPayload) {
     console.warn("[Onboarding Service] RPC onboard_client_project unavailable, falling back to direct table persistence:", rpcErr);
   }
 
-  // Direct Table & Local Storage Persistence Fallback
-  const supplierId = rawPayload.supplier_id || `sup_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+  // Direct Table & Local Storage Persistence Fallback: Reuse existing supplier if company name matches
+  const dbData = getDB();
+  const currentSuppliers = dbData.suppliers || [];
+  const matchedSupplier = currentSuppliers.find(s => 
+    (rawPayload.supplier_id && String(s.id) === String(rawPayload.supplier_id)) || 
+    (s.name && s.name.toLowerCase().trim() === validated.supplier_name.toLowerCase().trim())
+  );
+
+  const supplierId = matchedSupplier ? matchedSupplier.id : (rawPayload.supplier_id || `sup_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`);
   const plantId = rawPayload.plant_id || `plant_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
   const projectId = `proj_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
 

@@ -1312,7 +1312,13 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     try {
       showToast("Submitting atomic onboarding transaction...", "info");
 
+      const matchedSupplier = suppliers.find(s => 
+        (configSupplierId && s.id === configSupplierId) ||
+        (s.name && s.name.toLowerCase().trim() === quickClientName.trim().toLowerCase())
+      );
+
       const payload = {
+        supplier_id: matchedSupplier ? matchedSupplier.id : null,
         supplier_name: quickClientName.trim(),
         contact_name: quickClientContactName.trim(),
         contact_email: quickClientContactEmail.trim(),

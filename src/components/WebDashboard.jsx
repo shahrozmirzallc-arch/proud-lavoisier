@@ -4456,23 +4456,14 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       };
     }
 
-    // 3. Process commands
-    if (lowerText?.includes('excel') || lowerText?.includes('xlsx')) {
-      action = 'excel';
-      responseText = "🟢 Generating and downloading the styled Excel payroll and audit spreadsheet...";
-    } else if (lowerText?.includes('csv') || lowerText?.includes('quickbooks') || lowerText?.includes('qb')) {
-      action = 'csv';
-      responseText = "🟢 Generating and exporting QuickBooks IIF/CSV formatted timesheets...";
-    } else if (lowerText?.includes('report') || lowerText?.includes('pdf') || lowerText?.includes('download') || lowerText?.includes('timesheet')) {
-      action = 'pdf';
-      responseText = "🟢 Generating and downloading the formal PDF Timesheet & Audit Report...";
-    } else if (lowerText?.includes('audit') || lowerText?.includes('error') || lowerText?.includes('mistake') || lowerText?.includes('number') || lowerText?.includes('defect') || lowerText?.includes('duplicate')) {
+    // 3. Process commands (Audit & Duplicate checks MUST take precedence over generic download/report triggers)
+    if (lowerText?.includes('audit') || lowerText?.includes('scan') || lowerText?.includes('duplicate') || lowerText?.includes('error') || lowerText?.includes('mistake')) {
       action = 'audit';
       const logs = runPulseAiAudit();
       const count = logs.length;
       if (userRole === 'lead') {
         responseText = count > 0 
-          ? `I have completed the Quality Defect audit. ⚠️ Found ${count} potential defect log gaps or duplicate entries in the system. I have flagged them in the Audit Center.`
+          ? `I have completed the Quality Defect audit. ⚠️ Found ${count} potential defect log gaps or duplicate entries in the system.`
           : "I have successfully audited the Quality Defect logs. 🟢 All entries are complete, and no duplicate defects or missing supplier QM contacts were found!";
       } else if (userRole === 'accountant') {
         responseText = count > 0 
@@ -4483,6 +4474,15 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
           ? `I have completed the full system audit. ⚠️ Found ${count} potential data anomalies or missing fields in the database.`
           : "I have completed the full system audit. 🟢 All database records, supplier rates, and incident logs are clean!";
       }
+    } else if (lowerText?.includes('excel') || lowerText?.includes('xlsx')) {
+      action = 'excel';
+      responseText = "🟢 Generating and downloading the styled Excel payroll and audit spreadsheet...";
+    } else if (lowerText?.includes('csv') || lowerText?.includes('quickbooks') || lowerText?.includes('qb')) {
+      action = 'csv';
+      responseText = "🟢 Generating and exporting QuickBooks IIF/CSV formatted timesheets...";
+    } else if (lowerText?.includes('pdf') || lowerText?.includes('download report') || lowerText?.includes('download pdf')) {
+      action = 'pdf';
+      responseText = "🟢 Generating and downloading the formal PDF Timesheet & Audit Report...";
     } else {
       if (userRole === 'lead') {
         responseText = "I'm not sure how to process that request. As Quality Lead, you can ask me to: \n1. 'Audit the database for defect mistakes' \n2. 'Download the Timesheet PDF report'";
@@ -8392,7 +8392,14 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                               onChange={(e) => setWeeklyGridDate(e.target.value)}
                               className="bg-surface border border-border-subtle rounded-lg px-2.5 py-1.5 text-text-primary font-mono text-center w-28 focus:outline-none"
                             />
-                            <button className="px-2 py-1 bg-surface-elevated border border-border-subtle rounded text-text-secondary text-[11px]">...</button>
+                            <button 
+                              type="button"
+                              onClick={() => setWeeklyGridDate(new Date().toISOString().split('T')[0])} 
+                              title="Reset date picker to today" 
+                              className="px-2.5 py-1.5 bg-surface-elevated hover:bg-slate-800 border border-border-subtle rounded-lg text-text-primary text-[11px] font-bold cursor-pointer transition-colors"
+                            >
+                              Today
+                            </button>
                           </div>
                         </div>
 
@@ -8737,7 +8744,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                     <td className="py-2 text-text-primary font-bold">{s.name}</td>
                                     <td className="py-2 font-mono text-slate-450">{s.id?.toUpperCase()}</td>
                                     <td className="py-2 font-bold text-cyan-400">{s.allotted_hours ? `${s.allotted_hours} hrs` : '20 hrs'}</td>
-                                    <td className="py-2">{s.contacts.map(c => c.name).join(", ")}</td>
+                                    <td className="py-2">{(Array.isArray(s.contacts) ? s.contacts : []).map(c => c?.name || c).filter(Boolean).join(", ") || (s.contact_name || 'Primary Contact')}</td>
                                     <td className="py-2"><span className={`px-2 py-1 rounded text-[10.5px] font-bold uppercase ${s.invoice_schedule === 'on-demand' ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-500/40' : 'bg-amber-50 text-amber-600'}`}>{s.invoice_schedule === 'on-demand' ? '⚡ ON DEMAND (MANUAL)' : (s.invoice_schedule || 'ON DEMAND')}</span></td>
                                   </tr>
                                 ))}
@@ -11846,10 +11853,10 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
               <div>
                 <label className="text-[11px] font-bold text-amber-400 uppercase tracking-wider block mb-1">New Login Password *</label>
                 <input 
-                  type="text" 
+                  type="password" 
                   value={newPasswordInput} 
                   onChange={(e) => setNewPasswordInput(e.target.value)} 
-                  placeholder="Enter new password (e.g. password123)..." 
+                  placeholder="Enter new secure password..." 
                   className="w-full bg-slate-950 border border-amber-500/50 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-400 font-mono"
                 />
               </div>
@@ -11868,9 +11875,10 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   if (userIdx >= 0) {
                     dbUsers[userIdx].password = newPasswordInput.trim();
                     saveEntity('users', dbUsers[userIdx]);
-                    supabase.from('users').upsert(dbUsers[userIdx]).catch(() => {});
+                    Promise.resolve(supabase.from('users').upsert(dbUsers[userIdx])).catch(err => console.warn("[User Password Upsert Warning]:", err));
                   }
-                  showToast(`Password updated for ${resetPasswordUser.name}! Login password is now "${newPasswordInput.trim()}".`, "success");
+                  showToast(`Password updated successfully for ${resetPasswordUser.name}!`, "success");
+                  setNewPasswordInput('');
                   setResetPasswordUser(null);
                 }}
                 className="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white text-xs font-extrabold rounded-xl cursor-pointer shadow-lg shadow-amber-600/20"

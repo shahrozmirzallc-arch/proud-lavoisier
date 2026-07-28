@@ -163,7 +163,12 @@ export function resetDB() {
       
       // Re-seed essential admin accounts to Supabase
       for (const admin of ESSENTIAL_ADMIN_USERS) {
-        await supabase.from('users').upsert(admin).catch(e => console.error("Admin seed error:", e));
+        try {
+          const { error: seedErr } = await supabase.from('users').upsert(admin);
+          if (seedErr) console.error("Admin seed error:", seedErr.message);
+        } catch (e) {
+          console.error("Admin seed exception:", e);
+        }
       }
     }).catch(err => {
       console.error("[Supabase Purge Execution Exception]:", err);
@@ -475,11 +480,12 @@ export function saveEntity(type, entity) {
   } else {
     const targetTable = getSupabaseTableName(type);
     if (type === 'systemLogs' || targetTable === 'system_logs') {
-      supabase.from(targetTable).upsert(entity).catch(() => {});
+      Promise.resolve(supabase.from(targetTable).upsert(entity)).catch(() => {});
       return entity;
     }
 
-    supabase.from(targetTable).upsert(entity).then(({ error }) => {
+    Promise.resolve(supabase.from(targetTable).upsert(entity)).then((res) => {
+      const error = res?.error;
       if (error) {
         console.error(`[Supabase Cloud Upsert Error] Table "${targetTable}":`, error.message);
         const queue = JSON.parse(localStorage.getItem('ids_pulse_offline_queue') || '[]');
@@ -583,7 +589,7 @@ export function saveRate(rate) {
   }
   saveDB(db);
 
-  supabase.from('rates').upsert(finalRate).catch(() => {});
+  Promise.resolve(supabase.from('rates').upsert(finalRate)).catch(err => console.warn("[Rates Upsert Warning]:", err));
   return finalRate;
 }
 
@@ -592,7 +598,7 @@ export function deleteRate(rateId) {
   if (!db.rates) return;
   db.rates = db.rates.filter(r => r.id !== rateId);
   saveDB(db);
-  supabase.from('rates').delete().eq('id', rateId).catch(() => {});
+  Promise.resolve(supabase.from('rates').delete().eq('id', rateId)).catch(err => console.warn("[Rates Delete Warning]:", err));
 }
 
 export function getExtraHoursRequests() {

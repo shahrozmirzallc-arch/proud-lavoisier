@@ -264,12 +264,11 @@ function App() {
     try {
       clearStaleSessionStorage();
 
-      // 1. Direct Local User & Essential Admin Validation (Bulletproof 100% Success)
       const dbData = JSON.parse(localStorage.getItem('ids_pulse_db') || '{}');
       const localUsers = dbData.users || [];
       
       const allKnownUsers = [
-        { id: 'admin_1', name: 'Shahroz Mirza', email: 'smirza@integritydriven.com', username: 'shahroz', role: 'admin' },
+        { id: 'admin_1', name: 'Shahroz Mirza', email: 'smirza@integritydriven.com', username: 'shahroz', role: 'super_admin' },
         { id: '24', name: 'Donna Cabral', email: 'dcabral@integritydriven.com', username: 'donna', role: 'lead' },
         { id: 'lead_diana', name: 'Diana Operations Lead', email: 'diana@goto-ids.com', username: 'diana', role: 'lead' },
         { id: 'owner_1', name: 'Greg Phillippe', email: 'gphillippe@integritydriven.com', username: 'greg', role: 'owner' },
@@ -294,89 +293,93 @@ function App() {
           ((inputUser === 'diana') && (u.id === 'lead_diana' || uName === 'diana')) ||
           ((inputUser === 'greg' || inputUser === 'gphillippe') && u.id === 'owner_1') ||
           ((inputUser === 'colleen' || inputUser === 'cboyd') && u.id === 'acct_1') ||
-          ((inputUser === 'clarence' || inputUser === 'ckuiken') && (u.id === 'rep_clarence' || uName === 'clarence')) ||
-          (inputUser === 'hugo' && (u.name?.toLowerCase().includes('hugo') || u.id === 'hugo'))
+          ((inputUser === 'clarence' || inputUser === 'ckuiken') && (u.id === 'rep_clarence' || uName === 'clarence'))
         );
       });
 
-      if (matchedUser) {
-        if (rawPw && rawPw.length > 0) {
+      // Reject deactivated users
+      if (matchedUser && (matchedUser.is_deactivated || matchedUser.status === 'deactivated')) {
+        console.warn("[Auth Security]: Deactivated user login rejected:", inputUser);
+        setAuthError(true);
+        return false;
+      }
+
+      // Determine target email for authenticating with Supabase Auth
+      let targetEmail = matchedUser?.email || (inputUser.includes('@') ? inputUser : null);
+      if (!targetEmail) {
+        if (inputUser === 'shahroz') targetEmail = 'smirza@integritydriven.com';
+        else if (inputUser === 'admin') targetEmail = 'admin@goto-ids.com';
+        else if (inputUser === 'greg' || inputUser === 'owner') targetEmail = 'gphillippe@integritydriven.com';
+        else if (inputUser === 'donna') targetEmail = 'dcabral@integritydriven.com';
+        else if (inputUser === 'diana') targetEmail = 'diana@goto-ids.com';
+        else if (inputUser === 'colleen') targetEmail = 'cboyd@integritydriven.com';
+        else if (inputUser === 'clarence') targetEmail = 'ckuiken@integritydriven.com';
+      }
+
+      // Check explicit Demo Auth flag
+      const isDemoAuthEnabled = typeof import.meta !== 'undefined' && (import.meta.env?.VITE_ENABLE_DEMO_AUTH === 'true' || import.meta.env?.DEV);
+
+      // Attempt Real Supabase Auth Authentication
+      if (targetEmail) {
+        const { data: authData, error: authErr } = await supabase.auth.signInWithPassword({
+          email: targetEmail,
+          password: rawPw
+        });
+
+        if (!authErr && authData?.session && authData?.user) {
+          const user = authData.user;
+          const appMeta = user.app_metadata || {};
+          let loginType = appMeta.role || matchedUser?.role || 'customer';
+          if (targetEmail === 'smirza@integritydriven.com' || inputUser === 'shahroz') {
+            loginType = 'super_admin';
+          }
+          const targetUser = appMeta.username || inputUser;
+          const repId = appMeta.rep_id || (targetUser === 'clarence' ? 'rep_clarence' : `rep_${targetUser}`);
+          const custId = appMeta.customer_id || targetUser;
+
           setIsUnlocked(true);
           setAuthError(false);
-          const rRole = matchedUser.role || (matchedUser.id === 'admin_1' ? 'admin' : (matchedUser.id === 'owner_1' ? 'owner' : (matchedUser.id === 'acct_1' ? 'accountant' : 'lead')));
-          setUserRole(rRole);
-          setCurrentUser(matchedUser);
-          if (rRole === 'rep') {
-            setCurrentUserRepId(matchedUser.id);
+          setUserRole(loginType);
+          setCurrentUser({
+            id: loginType === 'rep' ? repId : (matchedUser?.id || custId),
+            name: appMeta.full_name || matchedUser?.name || targetUser,
+            email: user.email,
+            role: loginType
+          });
+
+          if (loginType === 'rep') {
+            setCurrentUserRepId(repId);
             setLayoutMode('phone-only');
           } else {
             setLayoutMode('dashboard-only');
           }
+
+          syncWithSupabase(true, loginType, loginType === 'rep' ? repId : '', loginType === 'customer' ? custId : '', authData.session.access_token);
           return true;
         }
       }
 
-      // 2. Supabase Cloud Auth Fallback
-      let { data: rpcEmail } = await supabase.rpc('get_auth_email_by_username', { p_username: inputUser });
-      let targetEmail = rpcEmail || (inputUser.includes('@') ? inputUser : null);
-      if (!targetEmail) {
-        if (inputUser === 'shahroz') targetEmail = 'shahroz@goto-ids.com';
-        else if (inputUser === 'admin') targetEmail = 'admin@goto-ids.com';
-        else if (inputUser === 'greg' || inputUser === 'owner') targetEmail = 'greg@goto-ids.com';
-        else if (inputUser === 'monica') targetEmail = 'monica@goto-ids.com';
-        else if (inputUser === 'donna') targetEmail = 'donna@goto-ids.com';
-        else if (inputUser === 'diana') targetEmail = 'diana@goto-ids.com';
-        else if (inputUser === 'colleen') targetEmail = 'colleen@goto-ids.com';
-        else if (inputUser === 'iris') targetEmail = 'iris@goto-ids.com';
+      // Controlled Demo Fallback (ONLY if explicit VITE_ENABLE_DEMO_AUTH flag or DEV mode AND valid demo password 'password123')
+      if (isDemoAuthEnabled && matchedUser && rawPw === 'password123') {
+        const normRole = matchedUser.username === 'shahroz' || matchedUser.id === 'admin_1' ? 'super_admin' : (matchedUser.role || 'lead');
+        setIsUnlocked(true);
+        setAuthError(false);
+        setUserRole(normRole);
+        setCurrentUser(matchedUser);
+        if (normRole === 'rep') {
+          setCurrentUserRepId(matchedUser.id);
+          setLayoutMode('phone-only');
+        } else {
+          setLayoutMode('dashboard-only');
+        }
+        return true;
       }
 
-      if (!targetEmail) {
-        setAuthError(true);
-        return false;
-      }
-
-      let { data: authData, error: authErr } = await supabase.auth.signInWithPassword({
-        email: targetEmail,
-        password: rawPw
-      });
-
-      if (authErr || !authData?.session || !authData?.user) {
-        setAuthError(true);
-        return false;
-      }
-
-      const user = authData.user;
-      const appMeta = user.app_metadata || {};
-      const loginType = appMeta.role || 'customer';
-      const targetUser = appMeta.username || inputUser;
-      const repId = appMeta.rep_id || (targetUser === 'clarence' ? '1' : `rep_${targetUser}`);
-      const custId = appMeta.customer_id || targetUser;
-
-      setIsUnlocked(true);
-      setAuthError(false);
-      setCurrentUser(user);
-
-      if (['admin', 'owner', 'accountant', 'lead', 'shahroz', 'super_admin'].includes(loginType)) {
-        const reactRole = targetUser === 'greg' ? 'owner' : (targetUser === 'colleen' ? 'accountant' : (targetUser === 'shahroz' ? 'shahroz' : loginType));
-        setUserRole(reactRole);
-        setLayoutMode('dashboard-only');
-        syncWithSupabase(true, reactRole, '', '', authData.session.access_token);
-      } else if (loginType === 'rep') {
-        setDayNight('day');
-        setUserRole('rep');
-        setCurrentUserRepId(repId);
-        setLayoutMode('phone-only');
-        syncWithSupabase(true, 'rep', repId, '', authData.session.access_token);
-      } else if (loginType === 'customer') {
-        setDayNight('day');
-        setUserRole('customer');
-        setCurrentUserCustomerId(custId);
-        setLayoutMode('dashboard-only');
-        syncWithSupabase(true, 'customer', '', custId, authData.session.access_token);
-      }
-      return true;
+      // WRONG PASSWORD / UNKNOWN USER -> REJECT!
+      setAuthError(true);
+      return false;
     } catch (err) {
-      console.error("[Supabase Auth Error]:", err);
+      console.error("[Supabase Auth Execution Error]:", err);
       setAuthError(true);
       return false;
     }

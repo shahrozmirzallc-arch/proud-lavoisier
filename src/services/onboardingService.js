@@ -282,14 +282,23 @@ export async function performAtomicClientOnboarding(rawPayload) {
   // NO PHANTOM USER OBJECT CREATION! Only save inline new rep if explicitly requested
   if (rawPayload.is_inline_new_rep && rawPayload.new_rep_user) {
     saveEntity('users', rawPayload.new_rep_user);
-    supabase.from('users').upsert(rawPayload.new_rep_user).catch(() => {});
+    Promise.resolve(supabase.from('users').upsert(rawPayload.new_rep_user)).catch(e => console.warn("[Supabase Cloud Rep Sync Warning]:", e));
   }
 
-  // Upsert to Supabase
-  supabase.from('suppliers').upsert(supplierObj).catch(() => {});
-  supabase.from('plants').upsert(plantObj).catch(() => {});
-  supabase.from('projects').upsert(projectObj).catch(() => {});
-  supabase.from('rates').upsert(rateObj).catch(() => {});
+  // Upsert to Supabase with Promise.resolve safety
+  Promise.allSettled([
+    Promise.resolve(supabase.from('suppliers').upsert(supplierObj)),
+    Promise.resolve(supabase.from('plants').upsert(plantObj)),
+    Promise.resolve(supabase.from('projects').upsert(projectObj)),
+    Promise.resolve(supabase.from('rates').upsert(rateObj))
+  ]).then((results) => {
+    results.forEach((res, idx) => {
+      if (res.status === 'rejected' || (res.value && res.value.error)) {
+        const err = res.reason || res.value?.error;
+        console.warn(`[Supabase Onboarding Upsert ${idx}] Warning:`, err?.message || err);
+      }
+    });
+  });
 
   window.dispatchEvent(new Event('ids_pulse_db_update'));
 

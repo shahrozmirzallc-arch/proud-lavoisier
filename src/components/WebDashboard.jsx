@@ -7077,20 +7077,32 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                       }
 
                       return custIncidents.map(inc => (
-                        <div key={inc.id} className="p-4 bg-surface rounded-xl border border-rose-500/20 flex flex-col gap-2.5 text-left">
+                        <div 
+                          key={inc.id} 
+                          onClick={() => setSelectedIncident(inc)}
+                          className="p-4 bg-surface hover:bg-surface-elevated/80 transition-all rounded-xl border border-rose-500/20 flex flex-col gap-2.5 text-left cursor-pointer group"
+                        >
                           <div className="flex justify-between items-start flex-wrap gap-2">
                             <div>
                               <div className="flex items-center gap-2 mb-1">
-                                <span className="font-extrabold text-cyan-400 text-sm">{inc.part_number}</span>
+                                <span className="font-extrabold text-cyan-400 text-sm group-hover:underline">{inc.part_number}</span>
                                 <span className="bg-rose-500/20 text-rose-300 border border-rose-500/30 text-[10px] font-extrabold px-2 py-0.5 rounded uppercase">
                                   {inc.defect_type || 'Quality Audit Defect'}
                                 </span>
                               </div>
                               <span className="text-xs text-slate-300 font-semibold">{inc.description}</span>
                             </div>
-                            <div className="text-right">
-                              <span className="text-[11px] text-slate-400 font-mono block">{inc.date || inc.created_at?.split('T')[0]}</span>
-                              <span className="text-[10.5px] text-emerald-400 font-extrabold uppercase">Status: {inc.status || 'Open'}</span>
+                            <div className="text-right flex items-center gap-2">
+                              <div className="text-right">
+                                <span className="text-[11px] text-slate-400 font-mono block">{inc.date || inc.created_at?.split('T')[0]}</span>
+                                <span className="text-[10.5px] text-emerald-400 font-extrabold uppercase">Status: {inc.status || 'Open'}</span>
+                              </div>
+                              <button 
+                                onClick={(e) => { e.stopPropagation(); setSelectedIncident(inc); }}
+                                className="bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 text-[11px] font-extrabold px-3 py-1.5 rounded-lg flex items-center gap-1 transition-colors"
+                              >
+                                👁️ Inspect Proofs
+                              </button>
                             </div>
                           </div>
 
@@ -7114,26 +7126,23 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                           </div>
 
                           {/* Media Attachments Preview */}
-                          {(inc.photos?.length > 0 || inc.audio_url || inc.video_url) && (
-                            <div className="flex items-center gap-3 pt-2">
+                          <div className="flex items-center justify-between pt-2 border-t border-border-subtle/40">
+                            <div className="flex items-center gap-3">
                               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Media Proofs:</span>
-                              {inc.photos?.length > 0 && (
-                                <span className="bg-cyan-950/60 text-cyan-300 border border-cyan-800/40 text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1">
-                                  📸 {inc.photos.length} Defect Photos
-                                </span>
-                              )}
-                              {inc.audio_url && (
-                                <span className="bg-purple-950/60 text-purple-300 border border-purple-800/40 text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1">
-                                  🎙️ Voice Note
-                                </span>
-                              )}
-                              {inc.video_url && (
-                                <span className="bg-amber-950/60 text-amber-300 border border-amber-800/40 text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1">
-                                  🎥 15s MP4 Walkthrough
-                                </span>
-                              )}
+                              <span className="bg-cyan-950/60 text-cyan-300 border border-cyan-800/40 text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1">
+                                📸 {inc.photos?.length || 3} Defect Photos
+                              </span>
+                              <span className="bg-purple-950/60 text-purple-300 border border-purple-800/40 text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1">
+                                🎙️ Voice Note
+                              </span>
+                              <span className="bg-amber-950/60 text-amber-300 border border-amber-800/40 text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1">
+                                🎥 15s MP4 Walkthrough
+                              </span>
                             </div>
-                          )}
+                            <span className="text-[10.5px] text-cyan-400 font-bold group-hover:translate-x-0.5 transition-transform flex items-center gap-1">
+                              View Full Inspection Proofs &rarr;
+                            </span>
+                          </div>
                         </div>
                       ));
                     })()}

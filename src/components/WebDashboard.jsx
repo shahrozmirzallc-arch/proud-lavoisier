@@ -1267,41 +1267,63 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   };
 
   const handleQuickAddRepSubmit = (e) => {
-    if (e) e.preventDefault();
-    if (!quickRepName) {
-      showToast("Representative name is required.", "error");
+    if (e && e.preventDefault) e.preventDefault();
+    if (!quickRepName || !quickRepName.trim()) {
+      showToast("Representative Name is required.", "error");
       return;
     }
-    const newId = `rep_${quickRepName?.toLowerCase()?.replace(/[^a-z0-9]/g, '_')}`;
-    const repNoFormatted = quickRepNo?.trim() || `REP-${Math.floor(1000 + Math.random() * 9000)}`;
-    const newRep = {
-      id: newId,
-      rep_no: repNoFormatted,
-      name: quickRepName,
-      email: quickRepEmail,
-      role: 'rep',
-      phone: quickRepPhone,
-      pay_currency: quickRepPayCurrency,
-      avatar: quickRepName?.split(' ').map(n => n[0]).join('')?.toUpperCase()
-    };
-    saveEntity('users', newRep);
-    setUsers(getEntities('users'));
-    window.dispatchEvent(new Event('ids_pulse_db_update'));
-    const user = getActiveActorName();
-    logSystemEvent('system', 'quick_add_rep', `${user} quick-added representative ${quickRepName} (${repNoFormatted}).`);
-    setQuickRepNo('');
-    setQuickRepName('');
-    setQuickRepEmail('');
-    setQuickRepPhone('');
-    setQuickRepPayCurrency('CAD');
-    setShowQuickAddRep(false);
-    
-    // Auto-select in registry & matrix overrides
-    setNewProjRep(newId);
-    setConfigRepId(newId);
-    setSelectedDispatchRepId(newId);
-    
-    showToast(`Representative ${quickRepName} added successfully!`, "success");
+    try {
+      const cleanName = quickRepName.trim();
+      const newId = `rep_${cleanName.toLowerCase().replace(/[^a-z0-9]/g, '_')}_${Math.random().toString(36).substring(2, 6)}`;
+      const repNoFormatted = quickRepNo?.trim() || `REP-${Math.floor(1000 + Math.random() * 9000)}`;
+      
+      const newRep = {
+        id: newId,
+        rep_no: repNoFormatted,
+        name: cleanName,
+        username: cleanName.toLowerCase().replace(/\s+/g, '_'),
+        email: quickRepEmail.trim() || `${cleanName.toLowerCase().replace(/\s+/g, '.')}@integritydriven.com`,
+        role: 'rep',
+        title: 'Quality Inspector',
+        phone: quickRepPhone.trim() || '',
+        pay_currency: quickRepPayCurrency || 'CAD',
+        avatar: cleanName.split(' ').map(n => n[0]).join('')?.toUpperCase() || 'QI',
+        created_at: new Date().toISOString()
+      };
+
+      // Save to Local DB & update React state instantly
+      saveEntity('users', newRep);
+      if (typeof addUser === 'function') {
+        addUser(newRep);
+      }
+      setUsers(getEntities('users') || []);
+      window.dispatchEvent(new Event('ids_pulse_db_update'));
+
+      try {
+        const user = getActiveActorName();
+        logSystemEvent('system', 'quick_add_rep', `${user} quick-added representative ${cleanName} (${repNoFormatted}).`);
+      } catch (lErr) {
+        console.warn("[System Log Warning]:", lErr);
+      }
+
+      // Reset form fields & CLOSE MODAL INSTANTLY
+      setQuickRepNo('');
+      setQuickRepName('');
+      setQuickRepEmail('');
+      setQuickRepPhone('');
+      setQuickRepPayCurrency('CAD');
+      setShowQuickAddRep(false);
+      
+      // Auto-select newly created rep in all dropdown states
+      setNewProjRep(newId);
+      setConfigRepId(newId);
+      setSelectedDispatchRepId(newId);
+      
+      showToast(`Representative ${cleanName} added successfully!`, "success");
+    } catch (err) {
+      console.error("[Quick Add Rep Failure]:", err);
+      showToast(`Failed to add representative: ${err.message}`, "error");
+    }
   };
 
   const handleQuickAddClientSubmit = async (e) => {
@@ -11396,6 +11418,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 </button>
                 <button 
                   type="submit"
+                  onClick={handleQuickAddRepSubmit}
                   className="flex-1 bg-purple-500 hover:bg-purple-600 text-text-primary py-2 rounded-xl text-[13.5px] font-bold transition-colors cursor-pointer"
                 >
                   Save Rep

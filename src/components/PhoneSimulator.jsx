@@ -141,40 +141,61 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
     const allPlants = getEntities('plants');
     setPlants(allPlants);
 
-    const initRepSession = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session && session.user) {
-          const appMeta = session.user.app_metadata || {};
-          const username = appMeta.username || session.user.email?.split('@')[0] || 'clarence';
-          const repId = appMeta.rep_id || (username === 'clarence' ? '1' : `rep_${username}`);
-          const dbUsers = getEntities('users') || [];
-          const found = dbUsers.find(u => u.id === repId || u.username === username || u.email === session.user.email) || {
-            id: repId || '1',
-            name: appMeta.username || username || 'Clarence Kuiken',
-            email: session.user.email,
-            role: 'rep'
-          };
-          setCurrentUser(found);
-          setEmail(found.email || session.user.email || '');
-          setIsLoggedIn(true);
-          setActiveScreen('home');
-        } else if (propUser) {
-          setCurrentUser(propUser);
-          setIsLoggedIn(true);
-          setActiveScreen('home');
-        }
-      } catch (err) {
-        console.error('[PhoneSimulator Session Error]:', err);
-      }
-    };
+    if (propUser) {
+      setCurrentUser(propUser);
+      setIsLoggedIn(true);
+      setActiveScreen('home');
+    }
+  }, [dbUpdateTrigger, propUser]);
 
-    initRepSession();
+  useEffect(() => {
+    if (!currentUser) return;
+    const repIdStr = String(currentUser.id || '');
+    const activePlantId = selectedPlant || '';
 
     const allTasks = getEntities('dailyTasks') || [];
-    const repTasks = allTasks.filter(t => t.rep_id === '1' && t.date === '2026-06-01');
-    setDailyTasks(repTasks);
-  }, [dbUpdateTrigger, propUser]);
+    const allProjects = getEntities('projects') || [];
+
+    // 1. Explicit daily tasks assigned to this representative
+    const explicitRepTasks = allTasks.filter(t => 
+      t && (
+        String(t.rep_id) === repIdStr || 
+        t.rep_id === currentUser.id ||
+        (t.rep_name && currentUser.name && t.rep_name.toLowerCase() === currentUser.name.toLowerCase()) ||
+        t.rep_id === 'all'
+      )
+    );
+
+    // 2. Project Scope of Work tasks from projects assigned to this representative
+    const projectScopeTasks = allProjects
+      .filter(p => p && (
+        String(p.rep_id) === repIdStr || 
+        p.rep_id === currentUser.id ||
+        (p.rep_name && currentUser.name && p.rep_name.toLowerCase() === currentUser.name.toLowerCase()) ||
+        (activePlantId && p.plant_id === activePlantId)
+      ))
+      .map(p => {
+        const taskTitle = p.project_name || p.description || 'Quality Audit & Field Representation';
+        const locationName = p.plant_name || p.supplier_name || 'Plant Location';
+        return {
+          id: `proj_scope_${p.id}`,
+          rep_id: currentUser.id,
+          task: `[Project Scope] ${taskTitle} (${locationName})`,
+          status: p.status === 'completed' ? 'completed' : 'pending',
+          isProjectScope: true
+        };
+      });
+
+    // Deduplicate and combine tasks
+    const taskMap = new Map();
+    [...projectScopeTasks, ...explicitRepTasks].forEach(t => {
+      if (t && t.id && !taskMap.has(t.id)) {
+        taskMap.set(t.id, t);
+      }
+    });
+
+    setDailyTasks(Array.from(taskMap.values()));
+  }, [dbUpdateTrigger, currentUser, selectedPlant]);
 
   const getActiveClientForPlant = () => {
     if (!currentUser) return 'No client assigned';

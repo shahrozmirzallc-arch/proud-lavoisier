@@ -1372,7 +1372,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
         return;
       }
 
-      await syncWithSupabase(true);
+      await syncWithSupabase(true, userRole);
 
       const createdSupplierId = result.supplier_id;
       setQuickClientName('');
@@ -9783,7 +9783,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                             return;
                           }
 
-                          await syncWithSupabase(true);
+                          await syncWithSupabase(true, userRole);
                           showToast("Project registered successfully!", "success");
                           setNewProjDesc('');
                           setNewProjBilling('');

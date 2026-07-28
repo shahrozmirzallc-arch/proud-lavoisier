@@ -99,8 +99,10 @@ export function initializeDB() {
   }
 
   // Trigger Supabase background sync ONCE on initial application load
+  // Read real role from sessionStorage so admin/lead/accountant get rates synced
   if (!hasSyncedOnLoad && !isSyncing) {
-    setTimeout(() => syncWithSupabase(), 100);
+    const storedRole = (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('ids_pulse_role')) || null;
+    setTimeout(() => syncWithSupabase(false, storedRole), 100);
   }
 
   return data;
@@ -140,7 +142,7 @@ export function resetDB() {
             console.error(`[Supabase Purge Fallback Error] Table "${t}":`, delErr.message);
           }
         }
-        const essentialIds = ['24', 'owner_1', 'acct_1', 'admin_1', 'lead_diana'];
+        const essentialIds = ['24', 'owner_1', 'acct_1', 'admin_1', 'lead_diana', 'rep_clarence'];
         const { error: userDelErr } = await supabase.from('users').delete().not('id', 'in', `(${essentialIds.map(i => `"${i}"`).join(',')})`);
         if (userDelErr) {
           fallbackFailed = true;
@@ -210,8 +212,9 @@ export async function syncWithSupabase(force = false, roleOverride = null, repId
   }
 
   isSyncing = true;
-  const authRole = roleOverride || 'rep';
-  const role = roleOverride || 'rep';
+  const storedSessionRole = (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('ids_pulse_role')) || 'rep';
+  const authRole = roleOverride || storedSessionRole;
+  const role = roleOverride || storedSessionRole;
   const repId = repIdOverride || '';
   const customerId = customerIdOverride || '';
   const token = sessionTokenOverride || '';

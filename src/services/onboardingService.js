@@ -93,9 +93,17 @@ export async function performAtomicClientOnboarding(rawPayload) {
     };
   }
 
+  // CLIENT-SIDE DEDUP: Check for existing supplier by name to prevent duplicates
+  const dbDataPre = getDB();
+  const existingSupplier = (dbDataPre.suppliers || []).find(s =>
+    (rawPayload.supplier_id && String(s.id) === String(rawPayload.supplier_id)) ||
+    (s.name && s.name.toLowerCase().trim() === validated.supplier_name.toLowerCase().trim())
+  );
+  const dedupSupplierId = existingSupplier ? existingSupplier.id : (rawPayload.supplier_id || null);
+
   try {
     const { data, error } = await supabase.rpc('onboard_client_project', {
-      p_supplier_id: rawPayload.supplier_id || null,
+      p_supplier_id: dedupSupplierId,
       p_supplier_name: validated.supplier_name,
       p_contact_name: validated.contact_name || null,
       p_contact_email: validated.contact_email || null,
@@ -117,6 +125,69 @@ export async function performAtomicClientOnboarding(rawPayload) {
     });
 
     if (!error && data) {
+      // RPC succeeded — write all entities to LOCAL DB so they're immediately available
+      const rpcSupplierId = data.supplier_id || dedupSupplierId || `sup_${Date.now()}`;
+      const rpcPlantId = data.plant_id || rawPayload.plant_id || `plant_${Date.now()}`;
+      const rpcProjectId = data.project_id || `proj_${Date.now()}`;
+
+      // Write supplier locally (reuse if deduped, create if new)
+      saveEntity('suppliers', {
+        id: rpcSupplierId,
+        name: validated.supplier_name,
+        contact_name: validated.contact_name,
+        contact_email: validated.contact_email,
+        contact_phone: validated.contact_phone,
+        address: validated.address,
+        allotted_hours: validated.allotted_hours,
+        created_at: new Date().toISOString()
+      });
+
+      // Write plant locally
+      saveEntity('plants', {
+        id: rpcPlantId,
+        name: validated.plant_name,
+        city: validated.plant_city,
+        address: validated.plant_address,
+        supplier_ids: [rpcSupplierId],
+        created_at: new Date().toISOString()
+      });
+
+      // Write project locally
+      saveEntity('projects', {
+        id: rpcProjectId,
+        name: validated.project_name,
+        supplier_id: rpcSupplierId,
+        supplier_name: validated.supplier_name,
+        client_id: rpcSupplierId,
+        plant_id: rpcPlantId,
+        plant_name: validated.plant_name,
+        rep_id: validated.rep_id,
+        rep_name: rawPayload.rep_name || '',
+        scope_of_work: validated.project_name,
+        po_hours: validated.allotted_hours,
+        billing_rate: validated.billing_rate,
+        pay_rate: validated.pay_rate,
+        currency: validated.currency,
+        status: 'Active',
+        start_date: validated.start_date
+      });
+
+      // Write rate locally — THIS IS THE CRITICAL FIX for rates=0
+      saveEntity('rates', {
+        id: data.rate_id || `rate_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+        rep_id: validated.rep_id,
+        supplier_id: rpcSupplierId,
+        plant_id: rpcPlantId,
+        project_id: rpcProjectId,
+        billing_rate: validated.billing_rate,
+        pay_rate: validated.pay_rate,
+        currency: validated.currency,
+        created_at: new Date().toISOString()
+      });
+
+      // Fire UI update event
+      window.dispatchEvent(new Event('ids_pulse_db_update'));
+
       return data;
     }
   } catch (rpcErr) {

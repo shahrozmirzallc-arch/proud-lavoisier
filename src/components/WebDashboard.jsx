@@ -5069,8 +5069,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 </div>
 
                 {/* GROUP 2: QUALITY & OPERATIONS */}
-                {(userRole !== 'accountant' || activeTab === 'incidents' || activeTab === 'heatmap' || activeTab === 'daily-planner' || activeTab === 'shift-logs' || activeTab === 'daily-checklists' || activeTab === 'rework-logs') && (
-                  <div className="p-2.5 rounded-2xl bg-slate-900/50 border border-slate-800/70 shadow-sm flex flex-col gap-1.5">
+                <div className="p-2.5 rounded-2xl bg-slate-900/50 border border-slate-800/70 shadow-sm flex flex-col gap-1.5">
                     <div 
                       onClick={() => toggleGroup('quality')}
                       className="text-[11px] font-extrabold text-sky-400 uppercase tracking-wider px-2 py-1 flex items-center justify-between cursor-pointer select-none hover:text-sky-300 transition-colors"
@@ -5198,7 +5197,6 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                       </>
                     )}
                   </div>
-                )}
 
                 {/* GROUP 3: FINANCIALS & AUDIT */}
                 <div className="p-2.5 rounded-2xl bg-slate-900/50 border border-slate-800/70 shadow-sm flex flex-col gap-1.5">

@@ -5,7 +5,7 @@ import {
   FileSpreadsheet, Calendar, ArrowRight, UserPlus, MapPin, Printer, Download, Eye, Sparkles,
   Milestone, TrendingUp, FolderKanban, PlusCircle, ArrowLeft, Camera, ClipboardCheck, Zap, Building2, ShieldAlert, User, Cpu, Mic, Video, Trash2
 } from 'lucide-react';
-import { getEntities, saveEntity, resetDB, logSystemEvent, addProject, deleteRate, isFieldRep, syncWithSupabase, supabase } from './SharedDatabase';
+import { getEntities, saveEntity, resetDB, logSystemEvent, addProject, deleteRate, isFieldRep, syncWithSupabase, supabase, addUser } from './SharedDatabase';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { LOGO_BASE64 } from './LogoBase64';
@@ -1344,6 +1344,46 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
         (s.name && s.name.toLowerCase().trim() === quickClientName.trim().toLowerCase())
       );
 
+      let assignedRepId = newProjRep || 'rep_clarence';
+      let assignedRepName = '';
+      let isInlineRep = false;
+      let newRepUserObj = null;
+
+      if (isInlineNewRep || newProjRep === '__new__') {
+        if (!inlineRepName || !inlineRepName.trim()) {
+          showToast("Inline Inspector Name is required.", "error");
+          return;
+        }
+        newRepUserObj = {
+          id: `rep_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+          name: inlineRepName.trim(),
+          email: inlineRepEmail.trim() || `${inlineRepName.toLowerCase().replace(/\s+/g, '.')}@integritydriven.com`,
+          phone: inlineRepPhone.trim() || '',
+          role: 'rep',
+          title: inlineRepTitle || 'Quality Inspector',
+          username: inlineRepName.toLowerCase().replace(/\s+/g, '_'),
+          created_at: new Date().toISOString()
+        };
+        addUser(newRepUserObj);
+        assignedRepId = newRepUserObj.id;
+        assignedRepName = newRepUserObj.name;
+        isInlineRep = true;
+      } else {
+        const allUsers = getEntities('users') || [];
+        const foundRep = allUsers.find(u => 
+          String(u.id) === String(assignedRepId) || 
+          u.username === assignedRepId ||
+          (assignedRepId === '1' && (u.id === 'rep_clarence' || u.name.includes('Clarence')))
+        );
+        if (foundRep) {
+          assignedRepId = foundRep.id;
+          assignedRepName = foundRep.name;
+        } else if (assignedRepId === '1' || assignedRepId === 'rep_clarence') {
+          assignedRepId = 'rep_clarence';
+          assignedRepName = 'Clarence Kuiken';
+        }
+      }
+
       const payload = {
         supplier_id: matchedSupplier ? matchedSupplier.id : null,
         supplier_name: quickClientName.trim(),
@@ -1356,13 +1396,16 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
         plant_city: 'Belleville',
         plant_address: quickClientAddress.trim(),
         project_name: newProjDesc.trim(),
-        part_number: 'AT-4472',
-        po_number: 'PO-2026-MAGNA',
-        rep_id: newProjRep || 'rep_clarence',
+        part_number: '',
+        po_number: '',
+        rep_id: assignedRepId,
+        rep_name: assignedRepName,
         billing_rate: newProjBilling.toString().trim(),
         pay_rate: newProjPay.toString().trim(),
         currency: newProjCurrency || 'CAD',
-        start_date: newProjStartDate
+        start_date: newProjStartDate,
+        is_inline_new_rep: isInlineRep,
+        new_rep_user: newRepUserObj
       };
 
       const result = await performAtomicClientOnboarding(payload);
@@ -9760,6 +9803,11 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         const clientObj = suppliers.find(s => s.id === newProjClient);
                         const plantObj = plants.find(p => p.id === newProjPlant);
 
+                        const allUsers = getEntities('users') || [];
+                        const foundRep = allUsers.find(u => String(u.id) === String(newProjRep) || u.username === newProjRep);
+                        const resolvedRepId = foundRep ? foundRep.id : (newProjRep === '1' ? 'rep_clarence' : newProjRep);
+                        const resolvedRepName = foundRep ? foundRep.name : (resolvedRepId === 'rep_clarence' ? 'Clarence Kuiken' : '');
+
                         try {
                           showToast("Submitting atomic project registration...", "info");
 
@@ -9769,10 +9817,11 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                             plant_id: newProjPlant,
                             plant_name: plantObj?.name || newProjPlant,
                             project_name: newProjDesc || `${clientObj?.name || newProjClient} Quality Audit`,
-                            rep_id: newProjRep,
+                            rep_id: resolvedRepId,
+                            rep_name: resolvedRepName,
                             billing_rate: newProjBilling,
                             pay_rate: newProjPay,
-                            currency: newProjCurrency || 'USD',
+                            currency: newProjCurrency || 'CAD',
                             start_date: newProjStartDate || new Date().toISOString().split('T')[0]
                           };
 
@@ -11453,7 +11502,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                           const nextState = !isInlineNewRep;
                           setIsInlineNewRep(nextState);
                           if (nextState) setNewProjRep('__new__');
-                          else setNewProjRep('1');
+                          else setNewProjRep('rep_clarence');
                         }} 
                         className="text-[10px] font-extrabold text-[#3B82F6] hover:text-blue-300 underline cursor-pointer"
                       >
@@ -11482,10 +11531,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                           ))
                         ) : (
                           <>
-                            <option value="1">Clarence Kuiken (Lead Senior Inspector)</option>
-                            <option value="2">Hugo Ramos (Quality Resident Engineer)</option>
-                            <option value="3">Nabil El-Sabagh (Quality Resident Engineer)</option>
-                            <option value="4">Rogelio Gutierrez (Quality Inspector)</option>
+                            <option value="rep_clarence">Clarence Kuiken (Lead Senior Inspector)</option>
+                            <option value="lead_diana">Diana Operations Lead</option>
                           </>
                         )}
                       </select>
@@ -11501,7 +11548,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         </span>
                         <button 
                           type="button" 
-                          onClick={() => { setIsInlineNewRep(false); setNewProjRep('1'); }}
+                          onClick={() => { setIsInlineNewRep(false); setNewProjRep('rep_clarence'); }}
                           className="text-[10px] font-bold text-slate-400 hover:text-white"
                         >
                           ✕ Cancel Inline Rep

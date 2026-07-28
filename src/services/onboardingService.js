@@ -24,6 +24,8 @@ export function validateOnboardingPayload(payload) {
     throw new Error("Validation Error: Pay rate must be a valid non-negative number.");
   }
 
+  const repId = payload.rep_id || 'rep_clarence';
+
   return {
     supplier_name: supplierName.trim(),
     project_name: projectName.trim(),
@@ -33,15 +35,16 @@ export function validateOnboardingPayload(payload) {
     contact_email: payload.contact_email?.trim() || '',
     contact_phone: payload.contact_phone?.trim() || '',
     address: payload.address?.trim() || '',
-    plant_name: payload.plant_name?.trim() || 'Windsor Plant 1',
-    plant_city: payload.plant_city?.trim() || 'Windsor',
-    plant_address: payload.plant_address?.trim() || payload.address?.trim() || 'Windsor, ON',
-    part_number: payload.part_number?.trim() || 'AT-4472',
-    po_number: payload.po_number?.trim() || 'PO-2026-ATLAS',
-    rep_id: payload.rep_id || '1',
-    currency: payload.currency || 'USD',
+    plant_name: payload.plant_name?.trim() || '',
+    plant_city: payload.plant_city?.trim() || '',
+    plant_address: payload.plant_address?.trim() || payload.address?.trim() || '',
+    part_number: payload.part_number?.trim() || '',
+    po_number: payload.po_number?.trim() || '',
+    rep_id: repId,
+    rep_name: payload.rep_name?.trim() || '',
+    currency: payload.currency || 'CAD',
     start_date: payload.start_date || new Date().toISOString().split('T')[0],
-    allotted_hours: parseFloat(payload.allotted_hours) || 40
+    allotted_hours: parseFloat(payload.allotted_hours) || 0
   };
 }
 
@@ -83,7 +86,19 @@ export function formatRateDisplay(project, ratesList = [], type = 'billing') {
  * Executes atomic client onboarding via Supabase RPC with fallback to direct table persistence.
  */
 export async function performAtomicClientOnboarding(rawPayload) {
+  const dbDataPre = getDB();
   const validated = validateOnboardingPayload(rawPayload);
+
+  // Resolve rep_name if not explicitly passed
+  let resolvedRepName = validated.rep_name;
+  if (!resolvedRepName && validated.rep_id) {
+    const matchedRep = (dbDataPre.users || []).find(u => String(u.id) === String(validated.rep_id) || u.username === validated.rep_id);
+    if (matchedRep) {
+      resolvedRepName = matchedRep.name;
+    } else if (validated.rep_id === 'rep_clarence' || validated.rep_id === '1') {
+      resolvedRepName = 'Clarence Kuiken';
+    }
+  }
 
   if (typeof navigator !== 'undefined' && navigator && navigator.onLine === false) {
     return {
@@ -94,7 +109,6 @@ export async function performAtomicClientOnboarding(rawPayload) {
   }
 
   // CLIENT-SIDE DEDUP: Check for existing supplier by name to prevent duplicates
-  const dbDataPre = getDB();
   const existingSupplier = (dbDataPre.suppliers || []).find(s =>
     (rawPayload.supplier_id && String(s.id) === String(rawPayload.supplier_id)) ||
     (s.name && s.name.toLowerCase().trim() === validated.supplier_name.toLowerCase().trim())
@@ -130,16 +144,18 @@ export async function performAtomicClientOnboarding(rawPayload) {
       const rpcPlantId = data.plant_id || rawPayload.plant_id || `plant_${Date.now()}`;
       const rpcProjectId = data.project_id || `proj_${Date.now()}`;
 
-      // Write supplier locally (reuse if deduped, create if new)
+      // Write supplier locally (reuse existing if deduped)
       saveEntity('suppliers', {
         id: rpcSupplierId,
         name: validated.supplier_name,
-        contact_name: validated.contact_name,
-        contact_email: validated.contact_email,
-        contact_phone: validated.contact_phone,
-        address: validated.address,
-        allotted_hours: validated.allotted_hours,
-        created_at: new Date().toISOString()
+        contact_name: validated.contact_name || (existingSupplier?.contact_name || ''),
+        contact_person: validated.contact_name || (existingSupplier?.contact_person || ''),
+        contact_email: validated.contact_email || (existingSupplier?.contact_email || ''),
+        contact_phone: validated.contact_phone || (existingSupplier?.contact_phone || ''),
+        phone: validated.contact_phone || (existingSupplier?.phone || ''),
+        address: validated.address || (existingSupplier?.address || ''),
+        allotted_hours: validated.allotted_hours || (existingSupplier?.allotted_hours || 0),
+        created_at: existingSupplier?.created_at || new Date().toISOString()
       });
 
       // Write plant locally
@@ -162,7 +178,7 @@ export async function performAtomicClientOnboarding(rawPayload) {
         plant_id: rpcPlantId,
         plant_name: validated.plant_name,
         rep_id: validated.rep_id,
-        rep_name: rawPayload.rep_name || '',
+        rep_name: resolvedRepName,
         scope_of_work: validated.project_name,
         po_hours: validated.allotted_hours,
         billing_rate: validated.billing_rate,
@@ -172,7 +188,7 @@ export async function performAtomicClientOnboarding(rawPayload) {
         start_date: validated.start_date
       });
 
-      // Write rate locally — THIS IS THE CRITICAL FIX for rates=0
+      // Write rate locally
       saveEntity('rates', {
         id: data.rate_id || `rate_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
         rep_id: validated.rep_id,
@@ -185,7 +201,6 @@ export async function performAtomicClientOnboarding(rawPayload) {
         created_at: new Date().toISOString()
       });
 
-      // Fire UI update event
       window.dispatchEvent(new Event('ids_pulse_db_update'));
 
       return data;
@@ -195,8 +210,7 @@ export async function performAtomicClientOnboarding(rawPayload) {
   }
 
   // Direct Table & Local Storage Persistence Fallback: Reuse existing supplier if company name matches
-  const dbData = getDB();
-  const currentSuppliers = dbData.suppliers || [];
+  const currentSuppliers = dbDataPre.suppliers || [];
   const matchedSupplier = currentSuppliers.find(s => 
     (rawPayload.supplier_id && String(s.id) === String(rawPayload.supplier_id)) || 
     (s.name && s.name.toLowerCase().trim() === validated.supplier_name.toLowerCase().trim())
@@ -209,21 +223,21 @@ export async function performAtomicClientOnboarding(rawPayload) {
   const supplierObj = {
     id: supplierId,
     name: validated.supplier_name,
-    contact_name: validated.contact_name || 'Martin Smith',
-    contact_person: validated.contact_name || 'Martin Smith',
-    contact_email: validated.contact_email || 'martin.smith@magna.com',
-    contact_phone: validated.contact_phone || '+1 (416) 555-0199',
-    phone: validated.contact_phone || '+1 (416) 555-0199',
-    address: validated.address || '100 Industrial Pkwy, Belleville, ON K8N 5B7',
-    allotted_hours: validated.allotted_hours || 100,
-    created_at: new Date().toISOString()
+    contact_name: validated.contact_name || (matchedSupplier?.contact_name || ''),
+    contact_person: validated.contact_name || (matchedSupplier?.contact_person || ''),
+    contact_email: validated.contact_email || (matchedSupplier?.contact_email || ''),
+    contact_phone: validated.contact_phone || (matchedSupplier?.contact_phone || ''),
+    phone: validated.contact_phone || (matchedSupplier?.phone || ''),
+    address: validated.address || (matchedSupplier?.address || ''),
+    allotted_hours: validated.allotted_hours || (matchedSupplier?.allotted_hours || 0),
+    created_at: matchedSupplier?.created_at || new Date().toISOString()
   };
 
   const plantObj = {
     id: plantId,
     name: validated.plant_name,
-    city: validated.plant_city || 'Belleville',
-    address: validated.plant_address || '100 Industrial Pkwy, Belleville, ON',
+    city: validated.plant_city,
+    address: validated.plant_address,
     supplier_ids: [supplierId],
     created_at: new Date().toISOString()
   };
@@ -237,9 +251,9 @@ export async function performAtomicClientOnboarding(rawPayload) {
     plant_id: plantId,
     plant_name: validated.plant_name,
     rep_id: validated.rep_id,
-    rep_name: rawPayload.rep_name || 'Hugo Ramos',
+    rep_name: resolvedRepName,
     scope_of_work: validated.project_name,
-    po_hours: validated.allotted_hours || 100,
+    po_hours: validated.allotted_hours,
     billing_rate: validated.billing_rate,
     pay_rate: validated.pay_rate,
     currency: validated.currency,
@@ -247,29 +261,15 @@ export async function performAtomicClientOnboarding(rawPayload) {
     start_date: validated.start_date
   };
 
-  const repId = validated.rep_id || `rep_${Date.now()}`;
-  const repName = rawPayload.rep_name || 'Hugo Ramos';
-
   const rateObj = {
     id: `rate_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
-    rep_id: repId,
+    rep_id: validated.rep_id,
     supplier_id: supplierId,
     plant_id: plantId,
     project_id: projectId,
     billing_rate: validated.billing_rate,
     pay_rate: validated.pay_rate,
     currency: validated.currency,
-    created_at: new Date().toISOString()
-  };
-
-  const userObj = {
-    id: repId,
-    name: repName,
-    email: rawPayload.contact_email || 'hugo.r@integritydriven.com',
-    role: 'rep',
-    title: 'Quality Inspector',
-    username: 'hugo',
-    password: 'password123',
     created_at: new Date().toISOString()
   };
 
@@ -278,19 +278,25 @@ export async function performAtomicClientOnboarding(rawPayload) {
   saveEntity('plants', plantObj);
   saveEntity('projects', projectObj);
   saveEntity('rates', rateObj);
-  saveEntity('users', userObj);
+
+  // NO PHANTOM USER OBJECT CREATION! Only save inline new rep if explicitly requested
+  if (rawPayload.is_inline_new_rep && rawPayload.new_rep_user) {
+    saveEntity('users', rawPayload.new_rep_user);
+    supabase.from('users').upsert(rawPayload.new_rep_user).catch(() => {});
+  }
 
   // Upsert to Supabase
   supabase.from('suppliers').upsert(supplierObj).catch(() => {});
   supabase.from('plants').upsert(plantObj).catch(() => {});
   supabase.from('projects').upsert(projectObj).catch(() => {});
   supabase.from('rates').upsert(rateObj).catch(() => {});
-  supabase.from('users').upsert(userObj).catch(() => {});
+
+  window.dispatchEvent(new Event('ids_pulse_db_update'));
 
   return {
     supplier_id: supplierId,
     plant_id: plantId,
     project_id: projectId,
-    rep_id: repId
+    rep_id: validated.rep_id
   };
 }

@@ -565,7 +565,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       return { billing_rate: 0.00, pay_rate: 0.00, currency: 'USD', is_configured: false };
     }
 
-    // Single Source of Truth: Read ONLY from rates table
+    // 1. Read from rates table
     const dbRates = getEntities('rates') || [];
     let rateMatch = null;
     if (plant_id) {
@@ -584,13 +584,34 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       return {
         billing_rate: isNaN(bRate) ? 0.00 : bRate,
         pay_rate: isNaN(pRate) ? 0.00 : pRate,
-        currency: rateMatch.currency || 'USD',
+        currency: rateMatch.currency || 'CAD',
         is_configured: true
       };
     }
 
-    // No rate configured in rates table: return 0.00 (NO project fallback, NO hardcoded 32/22)
-    return { billing_rate: 0.00, pay_rate: 0.00, currency: 'USD', is_configured: false };
+    // 2. Fallback to projects table if rates table has no match
+    const dbProjects = getEntities('projects') || [];
+    let projMatch = null;
+    if (plant_id) {
+      projMatch = dbProjects.find(p => p && (p.supplier_id === supplier_id || p.client_id === supplier_id) && p.plant_id === plant_id);
+    }
+    if (!projMatch) {
+      projMatch = dbProjects.find(p => p && (p.supplier_id === supplier_id || p.client_id === supplier_id));
+    }
+
+    if (projMatch && (projMatch.billing_rate !== undefined && projMatch.billing_rate !== null && projMatch.billing_rate !== '')) {
+      const bRate = parseFloat(projMatch.billing_rate);
+      const pRate = parseFloat(projMatch.pay_rate);
+      return {
+        billing_rate: isNaN(bRate) ? 0.00 : bRate,
+        pay_rate: isNaN(pRate) ? 0.00 : pRate,
+        currency: projMatch.currency || 'CAD',
+        is_configured: true
+      };
+    }
+
+    // No rate configured in rates or projects table
+    return { billing_rate: 0.00, pay_rate: 0.00, currency: 'CAD', is_configured: false };
   };
 
   const getRepPayCurrency = (rep_id) => {

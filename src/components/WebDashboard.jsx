@@ -76,6 +76,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   const [showQuickAddPlant, setShowQuickAddPlant] = useState(false);
   
   // Quick Add Rep Form State
+  const [quickRepNo, setQuickRepNo] = useState('');
   const [quickRepName, setQuickRepName] = useState('');
   const [quickRepEmail, setQuickRepEmail] = useState('');
   const [quickRepPhone, setQuickRepPhone] = useState('');
@@ -89,6 +90,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   const [quickClientSchedule, setQuickClientSchedule] = useState('on-demand');
   const [quickClientAddress, setQuickClientAddress] = useState('');
   const [isInlineNewRep, setIsInlineNewRep] = useState(false);
+  const [inlineRepNo, setInlineRepNo] = useState('');
   const [inlineRepName, setInlineRepName] = useState('');
   const [inlineRepEmail, setInlineRepEmail] = useState('');
   const [inlineRepPhone, setInlineRepPhone] = useState('');
@@ -1260,8 +1262,10 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       return;
     }
     const newId = `rep_${quickRepName?.toLowerCase()?.replace(/[^a-z0-9]/g, '_')}`;
+    const repNoFormatted = quickRepNo?.trim() || `REP-${Math.floor(1000 + Math.random() * 9000)}`;
     const newRep = {
       id: newId,
+      rep_no: repNoFormatted,
       name: quickRepName,
       email: quickRepEmail,
       role: 'rep',
@@ -1271,8 +1275,10 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     };
     saveEntity('users', newRep);
     setUsers(getEntities('users'));
+    window.dispatchEvent(new Event('ids_pulse_db_update'));
     const user = getActiveActorName();
-    logSystemEvent('system', 'quick_add_rep', `${user} quick-added representative ${quickRepName}.`);
+    logSystemEvent('system', 'quick_add_rep', `${user} quick-added representative ${quickRepName} (${repNoFormatted}).`);
+    setQuickRepNo('');
     setQuickRepName('');
     setQuickRepEmail('');
     setQuickRepPhone('');
@@ -1915,118 +1921,115 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
   // Load data dynamically and detect new submissions for toasts
   useEffect(() => {
-    const currentInc = getEntities('incidents') || [];
-    const currentRework = getEntities('reworkLogs') || [];
-    const currentShift = getEntities('shiftReports') || [];
-    const currentExpenses = getEntities('expenseEntries') || [];
+    const refreshAllStateData = () => {
+      const currentInc = getEntities('incidents') || [];
+      const currentRework = getEntities('reworkLogs') || [];
+      const currentShift = getEntities('shiftReports') || [];
+      const currentExpenses = getEntities('expenseEntries') || [];
 
-    // Check if this is the initial data load
-    if (prevIncidentsCount.current === null) {
-      prevIncidentsCount.current = currentInc.length;
-      prevReworkCount.current = currentRework.length;
-      prevShiftReportsCount.current = currentShift.length;
-      prevExpenseEntriesCount.current = currentExpenses.length;
-      
-      const initialMap = {};
-      currentShift.forEach(sr => {
-        if (sr) initialMap[sr.id] = sr.status;
-      });
-      prevShiftReportsMap.current = initialMap;
-    } else {
-      // Detect new quality incident
-      if (currentInc.length > prevIncidentsCount.current) {
-        const newInc = currentInc[currentInc.length - 1];
-        const partPN = newInc?.parts_list?.[0]?.part_number || newInc?.part_id || 'Unknown';
-        const rep = getEntities('users')?.find(u => u.id === newInc.rep_id)?.name || 'Clarence Kuiken';
-        
-        addNotification(
-          "⚠️ New Defect Incident!",
-          `${rep} reported a defect on Part #${partPN} in ${newInc.area}.`,
-          "defect"
-        );
+      // Check if this is the initial data load
+      if (prevIncidentsCount.current === null) {
         prevIncidentsCount.current = currentInc.length;
-      }
-
-      // Detect new rework entry
-      if (currentRework.length > prevReworkCount.current) {
-        const newRework = currentRework[currentRework.length - 1];
-        const rep = getEntities('users')?.find(u => u.id === newRework.rep_id)?.name || 'Clarence Kuiken';
-        addNotification(
-          "🔧 Rework Entry Logged",
-          `${rep} completed ${newRework.qty_reworked} pcs of Part #${newRework.part_number}.`,
-          "rework"
-        );
         prevReworkCount.current = currentRework.length;
-      }
+        prevShiftReportsCount.current = currentShift.length;
+        prevExpenseEntriesCount.current = currentExpenses.length;
+        
+        const initialMap = {};
+        currentShift.forEach(sr => {
+          if (sr) initialMap[sr.id] = sr.status;
+        });
+        prevShiftReportsMap.current = initialMap;
+      } else {
+        // Detect new quality incident
+        if (currentInc.length > prevIncidentsCount.current) {
+          const newInc = currentInc[currentInc.length - 1];
+          const partPN = newInc?.parts_list?.[0]?.part_number || newInc?.part_id || 'Unknown';
+          const rep = getEntities('users')?.find(u => u.id === newInc.rep_id)?.name || 'Clarence Kuiken';
+          
+          addNotification(
+            "⚠️ New Defect Incident!",
+            `${rep} reported a defect on Part #${partPN} in ${newInc.area}.`,
+            "defect"
+          );
+          prevIncidentsCount.current = currentInc.length;
+        }
 
-      // Track shift status transitions or new submissions
-      const prevShiftsMap = prevShiftReportsMap.current || {};
-      currentShift.forEach(sr => {
-        if (!sr) return;
-        const prevStatus = prevShiftsMap[sr.id];
-        if (prevStatus === undefined) {
-          // New shift report added
-          const rep = getEntities('users')?.find(u => u.id === sr.rep_id)?.name || 'Clarence Kuiken';
-          if (sr.status === 'Draft') {
+        // Detect new rework entry
+        if (currentRework.length > prevReworkCount.current) {
+          const newRework = currentRework[currentRework.length - 1];
+          const rep = getEntities('users')?.find(u => u.id === newRework.rep_id)?.name || 'Clarence Kuiken';
+          addNotification(
+            "🔧 New Rework Logged",
+            `${rep} logged ${newRework.qty || 0} reworked parts.`,
+            "rework"
+          );
+          prevReworkCount.current = currentRework.length;
+        }
+
+        // Detect new shift report OR status change
+        currentShift.forEach(sr => {
+          if (!sr) return;
+          const prevStatus = prevShiftReportsMap.current[sr.id];
+          if (!prevStatus) {
+            // Brand new shift report created
+            const rep = getEntities('users')?.find(u => u.id === sr.rep_id)?.name || 'Clarence Kuiken';
             addNotification(
-              "🟢 Rep Started Shift",
-              `${rep} clocked in and started their shift walkthrough.`,
+              "📝 Shift Report Created",
+              `${rep} started a new shift report (${sr.status || 'Draft'}).`,
               "shift"
             );
-            logSystemEvent('shift', 'clock_in', `${rep} clocked in and draft shift report created.`);
-          } else {
+            logSystemEvent('shift', 'created', `${rep} initiated daily shift report walkthrough.`);
+          } else if (prevStatus === 'Draft' && sr.status === 'Sent') {
+            // Draft was submitted/completed
+            const rep = getEntities('users')?.find(u => u.id === sr.rep_id)?.name || 'Clarence Kuiken';
             addNotification(
               "📝 Shift Report Submitted",
               `${rep} completed their shift. Total Hours: ${sr.total_hours || 8.0} hrs.`,
               "shift"
             );
-            logSystemEvent('shift', 'completed', `${rep} completed their shift report walkthrough.`);
+            logSystemEvent('shift', 'completed', `${rep} completed and sent their shift report walkthrough.`);
           }
-        } else if (prevStatus === 'Draft' && sr.status === 'Sent') {
-          // Draft was submitted/completed
-          const rep = getEntities('users')?.find(u => u.id === sr.rep_id)?.name || 'Clarence Kuiken';
+        });
+        
+        // Update prevShiftReportsMap and count
+        const newMap = {};
+        currentShift.forEach(sr => {
+          if (sr) newMap[sr.id] = sr.status;
+        });
+        prevShiftReportsMap.current = newMap;
+        prevShiftReportsCount.current = currentShift.length;
+
+        // Detect new expense entry
+        if (currentExpenses.length > prevExpenseEntriesCount.current) {
+          const newExpense = currentExpenses[currentExpenses.length - 1];
+          const rep = getEntities('users')?.find(u => u.id === newExpense.rep_id)?.name || 'Clarence Kuiken';
           addNotification(
-            "📝 Shift Report Submitted",
-            `${rep} completed their shift. Total Hours: ${sr.total_hours || 8.0} hrs.`,
-            "shift"
+            "💵 New Expense Logged",
+            `${rep} logged a ${newExpense.category} expense of $${parseFloat(newExpense.amount).toFixed(2)}.`,
+            "expense"
           );
-          logSystemEvent('shift', 'completed', `${rep} completed and sent their shift report walkthrough.`);
+          prevExpenseEntriesCount.current = currentExpenses.length;
         }
-      });
-      
-      // Update prevShiftReportsMap and count
-      const newMap = {};
-      currentShift.forEach(sr => {
-        if (sr) newMap[sr.id] = sr.status;
-      });
-      prevShiftReportsMap.current = newMap;
-      prevShiftReportsCount.current = currentShift.length;
-
-      // Detect new expense entry
-      if (currentExpenses.length > prevExpenseEntriesCount.current) {
-        const newExpense = currentExpenses[currentExpenses.length - 1];
-        const rep = getEntities('users')?.find(u => u.id === newExpense.rep_id)?.name || 'Clarence Kuiken';
-        addNotification(
-          "💵 New Expense Logged",
-          `${rep} logged a ${newExpense.category} expense of $${parseFloat(newExpense.amount).toFixed(2)}.`,
-          "expense"
-        );
-        prevExpenseEntriesCount.current = currentExpenses.length;
       }
-    }
 
-    // Set state values
-    setIncidents(currentInc);
-    setEmailLogs(getEntities('emailLogs') || []);
-    setReworkLogs(currentRework);
-    setTimeEntries(getEntities('timeEntries') || []);
-    setExpenseEntries(currentExpenses);
-    setUsers(getEntities('users') || []);
-    setSuppliers(getEntities('suppliers') || []);
-    setShiftReports(currentShift);
-    setDailyTasks(getEntities('dailyTasks') || []);
-    setPlants(getEntities('plants') || []);
-    setProjects(getEntities('projects') || []);
+      // Set state values
+      setIncidents(currentInc);
+      setEmailLogs(getEntities('emailLogs') || []);
+      setReworkLogs(currentRework);
+      setTimeEntries(getEntities('timeEntries') || []);
+      setExpenseEntries(currentExpenses);
+      setUsers(getEntities('users') || []);
+      setSuppliers(getEntities('suppliers') || []);
+      setShiftReports(currentShift);
+      setDailyTasks(getEntities('dailyTasks') || []);
+      setPlants(getEntities('plants') || []);
+      setProjects(getEntities('projects') || []);
+      setRates(getEntities('rates') || []);
+    };
+
+    refreshAllStateData();
+    window.addEventListener('ids_pulse_db_update', refreshAllStateData);
+    return () => window.removeEventListener('ids_pulse_db_update', refreshAllStateData);
   }, [dbUpdateTrigger]);
 
   const handleReset = () => {
@@ -11264,6 +11267,16 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
               <button onClick={() => setShowQuickAddRep(false)} className="text-text-secondary hover:text-text-primary text-[14.5px]">✕</button>
             </div>
             <form onSubmit={handleQuickAddRepSubmit} className="flex flex-col gap-3">
+              <div className="flex flex-col gap-1">
+                <label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Rep No. (Employee / Rep ID)</label>
+                <input 
+                  type="text" 
+                  value={quickRepNo} 
+                  onChange={(e) => setQuickRepNo(e.target.value)} 
+                  placeholder="e.g. REP-2026-042 (Auto-generated if blank)" 
+                  className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary placeholder-text-secondary focus:outline-none focus:border-purple-500 font-mono"
+                />
+              </div>
               <div className="flex flex-col gap-1">
                 <label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Full Name</label>
                 <input 

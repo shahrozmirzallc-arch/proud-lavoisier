@@ -388,7 +388,19 @@ export default function IntegrityWeeklyTimesheet({
 
   // Approval Handler
   const handleApprove = () => {
-    const approverName = currentUser?.name || currentUser?.username || 'Super Admin';
+    // Role Gate: Only Accountant, Owner, or Super Admin can approve financial timesheets
+    if (!['accountant', 'owner', 'super_admin', 'admin'].includes(currentUserRole)) {
+      alert("Access Denied: Quality Leads and Field Representatives are not authorized to approve financial timesheets.");
+      return;
+    }
+
+    // Zero-hour check
+    if (calcGrandTotalHours() === 0 && calcTotalExpenses() === 0) {
+      alert("Cannot approve a zero-hour timesheet. At least one worked hour or approved expense item is required.");
+      return;
+    }
+
+    const approverName = currentUser?.name || currentUser?.username || 'Authorized Financial Admin';
     const updatedApproval = {
       ...approvalInfo,
       approvedBy: approverName,
@@ -429,6 +441,11 @@ export default function IntegrityWeeklyTimesheet({
 
   // QuickBooks Time (formerly TSheets) CSV Export Engine
   const handleQuickBooksExport = () => {
+    if (calcGrandTotalHours() === 0 && calcTotalExpenses() === 0) {
+      alert("No eligible approved records found for QuickBooks CSV export.");
+      return;
+    }
+
     let csvContent = "data:text/csv;charset=utf-8,";
     csvContent += `"Employee","Date","Customer","Service Item","Hours","Billable","Notes","Rate","Total Pay"\n`;
 

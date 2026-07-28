@@ -2555,7 +2555,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   };
 
   const handlePrintReport = (inc) => {
-    handleDownloadReport(inc);
+    if (!inc) return;
+    window.print();
   };
 
   const handleGenerateCerReport = () => {
@@ -3055,7 +3056,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   };
 
   const handlePrintShiftReport = (sr) => {
-    handleDownloadShiftReport(sr);
+    if (!sr) return;
+    window.print();
   };
 
   const handleDownloadSupplierDirectoryReport = () => {
@@ -3161,7 +3163,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   };
 
   const handlePrintSupplierDirectoryReport = () => {
-    handleDownloadSupplierDirectoryReport();
+    window.print();
   };
 
   const handleDownloadTimesheetReport = () => {
@@ -3284,100 +3286,70 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   };
 
   const handleDownloadReworkFeedReport = () => {
-    const conf = getConfidentiality(null, "rework");
-    const doc = new jsPDF();
-    
+    const conf = getConfidentiality(reworkLogs, "rework");
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'letter' });
 
-    doc.addImage(LOGO_BASE64, 'PNG', 22, 14, 46, 11);
-    
-    doc.setDrawColor(conf.colorRGB[0], conf.colorRGB[1], conf.colorRGB[2]);
-    doc.setFillColor(conf.bgRGB[0], conf.bgRGB[1], conf.bgRGB[2]);
-    doc.rect(130, 14, 60, 11, "FD");
-    
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(8);
-    doc.setTextColor(conf.colorRGB[0], conf.colorRGB[1], conf.colorRGB[2]);
-    doc.text(conf.level, 160, 19.5, { align: "center" });
-    
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(5.5);
-    doc.text(conf.sub, 160, 23, { align: "center" });
-
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(26);
-    doc.setTextColor(248, 250, 252);
-    doc.text(`IDS ${conf.level}`, 25, 140, { angle: 45 });
-
-    doc.setDrawColor(30, 58, 95); 
-    doc.setLineWidth(1.2);
-    doc.line(20, 33, 190, 33);
+    doc.addImage(LOGO_BASE64, 'PNG', 14, 10, 46, 11);
 
     doc.setFont("helvetica", "bold");
     doc.setFontSize(14);
     doc.setTextColor(30, 58, 95);
-    doc.text("Supplier Defect Rework Summary Feed Report", 20, 44);
+    doc.text("Supplier Defect Rework Summary Feed Report", 14, 28);
 
-    let y = 54;
-    
-    doc.setFillColor(241, 245, 249);
-    doc.rect(20, y, 170, 7, "F");
-    
     doc.setFont("helvetica", "bold");
     doc.setFontSize(8);
-    doc.setTextColor(71, 85, 105);
-    doc.text("Date Logged", 22, y + 5);
-    doc.text("Field Rep", 46, y + 5);
-    doc.text("Part ID", 80, y + 5);
-    doc.text("Supplier", 100, y + 5);
-    doc.text("Qty", 122, y + 5);
-    doc.text("Hours", 137, y + 5);
-    doc.text("Rework Narrative / Notes", 152, y + 5);
-    
-    y += 7;
+    doc.setTextColor(conf.colorRGB[0], conf.colorRGB[1], conf.colorRGB[2]);
+    doc.text(conf.level, 250, 15, { align: "center" });
 
-    const filteredRework = reworkLogs.filter(rw => showAllDates || rw.created_at?.startsWith(selectedDate));
+    doc.setDrawColor(30, 58, 95); 
+    doc.setLineWidth(1.2);
+    doc.line(14, 32, 265, 32);
 
-    filteredRework.forEach((rw) => {
-      const rep = users.find(u => u.id === rw.rep_id)?.name || 'Clarence Kuiken';
+    const filteredRework = (reworkLogs || []).filter(rw => showAllDates || rw.created_at?.startsWith(selectedDate) || rw.date?.startsWith(selectedDate));
 
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(8);
-      doc.setTextColor(15, 23, 42);
-      doc.text(new Date(rw.created_at).toLocaleDateString(), 22, y + 5);
-      doc.text(rep, 46, y + 5);
-      doc.text(`PN ${rw.part_id}`, 80, y + 5);
-      doc.text(rw.supplier_id?.toUpperCase(), 100, y + 5);
-      
-      doc.setFont("helvetica", "bold");
-      doc.text(`${rw.qty} pcs`, 122, y + 5);
-      doc.text(`${Math.round(rw.time_spent_minutes / 60 * 10) / 10} hrs`, 137, y + 5);
-      
-      doc.setFont("helvetica", "normal");
-      doc.setTextColor(100, 116, 139);
-      const notes = rw.notes || 'N/A';
-      const splitNotes = doc.splitTextToSize(notes, 36);
-      doc.text(splitNotes[0] + (splitNotes.length > 1 ? "..." : ""), 152, y + 5);
-      
-      y += 8;
+    const head = [['Date Logged', 'Field Rep', 'Part ID', 'Supplier', 'Quantity', 'Hours', 'Full Rework Narrative / Notes']];
+    const body = filteredRework.map(rw => {
+      const rep = users.find(u => u.id === rw.rep_id)?.name || rw.rep_id || 'N/A';
+      return [
+        rw.date || (rw.created_at ? new Date(rw.created_at).toLocaleDateString() : 'N/A'),
+        rep,
+        `PN ${rw.part_id || 'N/A'}`,
+        rw.supplier_id ? rw.supplier_id.toUpperCase() : 'N/A',
+        `${rw.qty || 0} pcs`,
+        `${Math.round((rw.time_spent_minutes || 0) / 60 * 10) / 10} hrs`,
+        rw.notes || rw.description || 'No rework notes recorded'
+      ];
     });
 
-    if (filteredRework.length === 0) {
-      doc.setFont("helvetica", "italic");
-      doc.setFontSize(10);
-      doc.setTextColor(148, 163, 184);
-      doc.text("No rework logged on this date.", 25, y + 10);
-    }
+    autoTable(doc, {
+      startY: 36,
+      margin: { left: 14, right: 14 },
+      head: head,
+      body: body.length > 0 ? body : [['-', '-', '-', '-', '-', '-', 'No rework logged on this date.']],
+      styles: { fontSize: 9.5, cellPadding: 3, overflow: 'linebreak' },
+      headStyles: { fillColor: [30, 58, 95], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 10 },
+      columnStyles: {
+        0: { cellWidth: 28 },
+        1: { cellWidth: 38 },
+        2: { cellWidth: 32 },
+        3: { cellWidth: 32 },
+        4: { cellWidth: 22, halign: 'center' },
+        5: { cellWidth: 22, halign: 'center' },
+        6: { cellWidth: 'auto', overflow: 'linebreak' }
+      },
+      showHead: 'everyPage',
+      rowPageBreak: 'avoid'
+    });
 
-    doc.setDrawColor(226, 232, 240);
-    doc.setLineWidth(0.5);
-    doc.line(20, 274, 190, 274);
-    
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(8);
-    doc.setTextColor(148, 163, 184);
-    doc.text("Generated by IDS Rework Feed Auditor | Date: " + new Date().toLocaleDateString(), 20, 281);
-    doc.text("Page 1 of 1", 190, 281, { align: "right" });
-    doc.text(`CLASSIFICATION: ${conf.level} / ${conf.sub}`, 105, 286, { align: "center" });
+    const pageCount = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      doc.setTextColor(148, 163, 184);
+      doc.text(`Generated by IDS Rework Feed Auditor | Date: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`, 14, 200);
+      doc.text(`Page ${i} of ${pageCount}`, 265, 200, { align: "right" });
+    }
 
     doc.save(`IDS_Rework_Audit_Feed_${selectedDate}.pdf`);
   };

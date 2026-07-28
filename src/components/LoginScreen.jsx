@@ -266,6 +266,28 @@ export default function LoginScreen({ onSignedIn }) {
                 disabled={submitting}
                 onClick={async () => {
                   setError('');
+                  setUsername('autokabel');
+                  setPassword('password123');
+                  setSubmitting(true);
+                  try {
+                    const res = await onSignedIn({ username: 'autokabel', password: 'password123' });
+                    if (!res) setError('Could not sign in as AutoKabel Client.');
+                  } catch {
+                    setError('Authentication error occurred.');
+                  } finally {
+                    setSubmitting(false);
+                  }
+                }}
+                className="px-2.5 py-2 rounded-lg bg-cyan-950/70 hover:bg-cyan-900 border border-cyan-500/30 text-cyan-200 text-xs font-bold transition-all text-left flex flex-col cursor-pointer disabled:opacity-50"
+              >
+                <span className="text-[11px] font-extrabold text-cyan-300">AutoKabel Client</span>
+                <span className="text-[9px] text-cyan-400 font-mono">AutoKabel • Quality Portal</span>
+              </button>
+              <button
+                type="button"
+                disabled={submitting}
+                onClick={async () => {
+                  setError('');
                   setUsername('customer');
                   setPassword('password123');
                   setSubmitting(true);

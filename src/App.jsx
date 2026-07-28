@@ -276,6 +276,7 @@ function App() {
         { id: 'rep_clarence', name: 'Clarence Kuiken', email: 'ckuiken@integritydriven.com', username: 'clarence', role: 'rep', title: 'Quality Inspector' },
         { id: 'rep_test', name: 'Rep Test Inspector', email: 'rep_test@integritydriven.com', username: 'rep_test', password: 'password123', role: 'rep', title: 'Quality Inspector' },
         { id: 'cust_1', name: 'Client Partner', email: 'client@fictionalclient.com', username: 'customer', role: 'customer', title: 'Client Quality Manager' },
+        { id: 'autokabel', name: 'AutoKabel Quality Manager', email: 'quality@autokabel.com', username: 'autokabel', password: 'password123', role: 'customer', title: 'Autokabel Client Partner', supplier_id: 'autokabel' },
         ...localUsers
       ];
 
@@ -308,6 +309,7 @@ function App() {
           ((inputUser === 'greg' || inputUser === 'gphillippe' || inputUser === 'owner' || inputUser === 'director') && (u.id === 'owner_1' || uRole === 'owner')) ||
           ((inputUser === 'colleen' || inputUser === 'cboyd' || inputUser === 'accountant' || inputUser === 'accounting' || inputUser === 'controller') && (u.id === 'acct_1' || uRole === 'accountant')) ||
           ((inputUser === 'clarence' || inputUser === 'ckuiken' || inputUser === 'rep' || inputUser === 'inspector' || inputUser === 'qre') && (u.id === 'rep_clarence' || uRole === 'rep')) ||
+          ((inputUser === 'autokabel' || inputUser === 'autokabel_client' || inputUser === 'autokabel_north_america') && (u.id === 'autokabel' || uName === 'autokabel')) ||
           ((inputUser === 'customer' || inputUser === 'client' || inputUser === 'partner' || inputUser === 'gm') && (u.id === 'cust_1' || uRole === 'customer'))
         );
       });
@@ -393,10 +395,14 @@ function App() {
         if (normRole === 'rep' || matchedUser.id?.startsWith('rep_')) {
           setCurrentUserRepId(matchedUser.id);
           setLayoutMode('phone-only');
+        } else if (normRole === 'customer') {
+          const targetCustId = matchedUser.supplier_id || matchedUser.customer_id || matchedUser.id || 'autokabel';
+          setCurrentUserCustomerId(targetCustId);
+          setLayoutMode('dashboard-only');
         } else {
           setLayoutMode('dashboard-only');
         }
-        syncWithSupabase(true, normRole, normRole === 'rep' ? matchedUser.id : '', normRole === 'customer' ? (matchedUser.customer_id || 'supplier_fictional_101') : '');
+        syncWithSupabase(true, normRole, normRole === 'rep' ? matchedUser.id : '', normRole === 'customer' ? (matchedUser.supplier_id || matchedUser.customer_id || matchedUser.id || 'autokabel') : '');
         return true;
       }
 

@@ -1740,6 +1740,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
         setActiveTab('command-center');
       } else if (userRole === 'qre' || userRole === 'rep') {
         setActiveTab('time-tracking');
+      } else if (userRole === 'customer') {
+        setActiveTab('customer-portal');
       } else {
         setActiveTab('command-center');
       }
@@ -5468,7 +5470,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
         <div className="flex-1 bg-surface-elevated border border-border-subtle rounded-2xl p-6 sm:p-8 flex flex-col min-h-0">
           {/* TAB 0.5: LIVE REP OPERATIONS & PROJECT COMMAND CENTER */}
-          {activeTab === 'command-center' && (
+          {activeTab === 'command-center' && userRole !== 'customer' && (
             <div className="flex-1 flex flex-col gap-6 min-h-0 text-left overflow-y-auto pr-1">
               
               {/* TOP EXECUTIVE BANNER */}
@@ -7050,6 +7052,94 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   </div>
                 </div>
 
+                {/* 4. Active Quality Containment Alerts & Incident Defect Reports */}
+                <div className="bg-surface-elevated border border-border-subtle p-6 sm:p-8 rounded-2xl flex flex-col gap-3 mt-1">
+                  <div className="flex justify-between items-center border-b border-border-subtle pb-3">
+                    <h4 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider flex items-center gap-2">
+                      <AlertCircle className="w-4.5 h-4.5 text-rose-500" /> Active Quality Containment Alerts & Incident Defect Reports
+                    </h4>
+                    <span className="bg-rose-500/10 text-rose-400 border border-rose-500/30 text-[10.5px] font-extrabold px-2.5 py-0.5 rounded-full uppercase">
+                      {(incidents || []).filter(i => i.supplier_id === currentUserCustomerId || i.supplier_id === 'autokabel' || (i.supplier_name || '').toLowerCase().includes('autokabel')).length} Logged Incidents
+                    </span>
+                  </div>
+
+                  <div className="flex flex-col gap-3">
+                    {(() => {
+                      const custIncidents = (incidents || []).filter(i => 
+                        i.supplier_id === currentUserCustomerId || 
+                        i.supplier_id === 'autokabel' || 
+                        (i.supplier_name || '').toLowerCase().includes('autokabel') ||
+                        (currentUserCustomerId === 'autokabel' && (i.rep_id === 'rep_test' || i.rep_name?.includes('Rep Test')))
+                      );
+
+                      if (custIncidents.length === 0) {
+                        return <div className="text-center py-8 text-slate-550 italic">No active incident reports logged for your account.</div>;
+                      }
+
+                      return custIncidents.map(inc => (
+                        <div key={inc.id} className="p-4 bg-surface rounded-xl border border-rose-500/20 flex flex-col gap-2.5 text-left">
+                          <div className="flex justify-between items-start flex-wrap gap-2">
+                            <div>
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="font-extrabold text-cyan-400 text-sm">{inc.part_number}</span>
+                                <span className="bg-rose-500/20 text-rose-300 border border-rose-500/30 text-[10px] font-extrabold px-2 py-0.5 rounded uppercase">
+                                  {inc.defect_type || 'Quality Audit Defect'}
+                                </span>
+                              </div>
+                              <span className="text-xs text-slate-300 font-semibold">{inc.description}</span>
+                            </div>
+                            <div className="text-right">
+                              <span className="text-[11px] text-slate-400 font-mono block">{inc.date || inc.created_at?.split('T')[0]}</span>
+                              <span className="text-[10.5px] text-emerald-400 font-extrabold uppercase">Status: {inc.status || 'Open'}</span>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-border-subtle text-[11px]">
+                            <div className="bg-surface-elevated p-2 rounded border border-border-subtle">
+                              <span className="text-slate-400 block text-[9.5px] uppercase font-bold">Plant Location</span>
+                              <span className="text-white font-bold">{inc.area || 'Assembly Line'}</span>
+                            </div>
+                            <div className="bg-surface-elevated p-2 rounded border border-border-subtle">
+                              <span className="text-slate-400 block text-[9.5px] uppercase font-bold">Defect Quantity</span>
+                              <span className="text-amber-400 font-bold">{inc.quantity || inc.parts_list?.[0]?.qty || 1} Pcs</span>
+                            </div>
+                            <div className="bg-surface-elevated p-2 rounded border border-border-subtle">
+                              <span className="text-slate-400 block text-[9.5px] uppercase font-bold">Reporting Inspector</span>
+                              <span className="text-cyan-300 font-bold">{inc.rep_name || 'Rep Test Inspector'}</span>
+                            </div>
+                            <div className="bg-surface-elevated p-2 rounded border border-border-subtle">
+                              <span className="text-slate-400 block text-[9.5px] uppercase font-bold">Classification</span>
+                              <span className="text-rose-400 font-bold">{inc.concern_classification || 'PRR Containment'}</span>
+                            </div>
+                          </div>
+
+                          {/* Media Attachments Preview */}
+                          {(inc.photos?.length > 0 || inc.audio_url || inc.video_url) && (
+                            <div className="flex items-center gap-3 pt-2">
+                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Media Proofs:</span>
+                              {inc.photos?.length > 0 && (
+                                <span className="bg-cyan-950/60 text-cyan-300 border border-cyan-800/40 text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1">
+                                  📸 {inc.photos.length} Defect Photos
+                                </span>
+                              )}
+                              {inc.audio_url && (
+                                <span className="bg-purple-950/60 text-purple-300 border border-purple-800/40 text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1">
+                                  🎙️ Voice Note
+                                </span>
+                              )}
+                              {inc.video_url && (
+                                <span className="bg-amber-950/60 text-amber-300 border border-amber-800/40 text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1">
+                                  🎥 15s MP4 Walkthrough
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      ));
+                    })()}
+                  </div>
+                </div>
+
               </div>
             </div>
           )}
@@ -7245,66 +7335,80 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
               </div>
 
               <div className="flex-1 overflow-y-auto scrollbar-thin pr-1 flex flex-col gap-3">
-                {shiftReports.filter(sr => {
-                  if (userRole === 'customer') {
-                    const customerPlants = suppliers.find(s => s.id === currentUserCustomerId)?.plants_served || [];
-                    return sr.status?.toLowerCase() === 'published' && customerPlants?.includes(sr.plant_id);
-                  }
-                  return true;
-                }).map(sr => (
-                  <div key={sr.id} className="bg-surface-elevated border border-border-subtle rounded-2xl p-3 flex justify-between items-center hover:border-border-subtle transition-colors">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-[#3B82F6]/60 flex items-center justify-center text-text-primary border border-[#3B82F6]/20 flex-shrink-0">
-                        <Calendar className="w-5 h-5 text-[#3B82F6]" />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h4 className="text-[14.5px] font-bold text-text-primary leading-none">Shift Walkthrough Report</h4>
-                          <span className="text-[10.5px] bg-surface-elevated border border-border-subtle text-text-secondary px-2 py-1 rounded-full font-bold">
-                            {sr.date}
-                          </span>
-                          {sr.status === 'published' && (
-                            <span className="text-[12.5px] bg-emerald-50 border border-emerald-300 text-emerald-600 px-2 py-1 rounded font-bold uppercase tracking-wider">
-                              Published
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-[13.5px] text-text-secondary mt-1.5">
-                          Rep: <span className="text-text-primary font-semibold">{users.find(u => u.id === sr.rep_id)?.name}</span> | 
-                          Plant: <span className="text-text-primary font-semibold">{plants.find(p => p.id === sr.plant_id)?.name || sr.plant_id}</span>
-                        </p>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-2">
-                      {['admin', 'owner', 'accountant', 'lead', 'shahroz']?.includes(userRole) && sr.status !== 'published' && (
-                        <button 
-                          onClick={() => handlePublishReport(sr.id)}
-                          className="bg-emerald-500 hover:bg-emerald-600 text-slate-950 py-2 px-3 rounded-xl text-[13.5px] font-bold transition-all cursor-pointer flex items-center gap-1 flex-shrink-0"
-                        >
-                          <CheckCircle2 className="w-3.5 h-3.5 text-slate-950" />
-                          <span>Publish to Customer</span>
-                        </button>
-                      )}
-                      
-                      <button 
-                        onClick={() => handleDownloadCustomerSafeReport(sr)}
-                        className="bg-emerald-600 hover:bg-emerald-700 text-white border border-emerald-500/30 py-2 px-3 rounded-xl text-[13.5px] font-bold transition-all cursor-pointer flex items-center gap-1 flex-shrink-0"
-                      >
-                        <Download className="w-3.5 h-3.5" />
-                        <span>Download PDF</span>
-                      </button>
+                {(() => {
+                  const filteredShifts = shiftReports.filter(sr => {
+                    if (userRole === 'customer') {
+                      const customerPlants = suppliers.find(s => s.id === currentUserCustomerId)?.plants_served || [];
+                      return sr.status?.toLowerCase() === 'published' && customerPlants?.includes(sr.plant_id);
+                    }
+                    return true;
+                  });
 
-                      <button 
-                        onClick={() => setSelectedShiftReport(sr)}
-                        className="bg-[#3B82F6] hover:bg-[#3B82F6]/85 text-white border border-[#3B82F6]/30 py-2 px-4 rounded-xl text-[13.5px] font-bold transition-all cursor-pointer flex items-center gap-1 flex-shrink-0"
-                      >
-                        <Eye className="w-3.5 h-3.5" />
-                        <span>Review details</span>
-                      </button>
+                  if (filteredShifts.length === 0) {
+                    return (
+                      <div className="bg-surface-elevated border border-border-subtle rounded-2xl p-8 text-center flex flex-col items-center justify-center gap-3 my-auto">
+                        <Calendar className="w-10 h-10 text-[#3B82F6] opacity-70" />
+                        <h4 className="text-[15px] font-bold text-text-primary">Shift Walkthrough Log Feed Active</h4>
+                        <p className="text-[12.5px] text-text-secondary max-w-md">End-of-shift reports submitted by representatives on site (Clarence Kuiken, Rep Test Inspector) are automatically synced here for review, PDF export, and customer publishing.</p>
+                      </div>
+                    );
+                  }
+
+                  return filteredShifts.map(sr => (
+                    <div key={sr.id} className="bg-surface-elevated border border-border-subtle rounded-2xl p-3 flex justify-between items-center hover:border-border-subtle transition-colors">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-[#3B82F6]/60 flex items-center justify-center text-text-primary border border-[#3B82F6]/20 flex-shrink-0">
+                          <Calendar className="w-5 h-5 text-[#3B82F6]" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h4 className="text-[14.5px] font-bold text-text-primary leading-none">Shift Walkthrough Report</h4>
+                            <span className="text-[10.5px] bg-surface-elevated border border-border-subtle text-text-secondary px-2 py-1 rounded-full font-bold">
+                              {sr.date}
+                            </span>
+                            {sr.status === 'published' && (
+                              <span className="text-[12.5px] bg-emerald-50 border border-emerald-300 text-emerald-600 px-2 py-1 rounded font-bold uppercase tracking-wider">
+                                Published
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[13.5px] text-text-secondary mt-1.5">
+                            Rep: <span className="text-text-primary font-semibold">{users.find(u => u.id === sr.rep_id)?.name}</span> | 
+                            Plant: <span className="text-text-primary font-semibold">{plants.find(p => p.id === sr.plant_id)?.name || sr.plant_id}</span>
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center gap-2">
+                        {['admin', 'owner', 'accountant', 'lead', 'shahroz']?.includes(userRole) && sr.status !== 'published' && (
+                          <button 
+                            onClick={() => handlePublishReport(sr.id)}
+                            className="bg-emerald-500 hover:bg-emerald-600 text-slate-950 py-2 px-3 rounded-xl text-[13.5px] font-bold transition-all cursor-pointer flex items-center gap-1 flex-shrink-0"
+                          >
+                            <CheckCircle2 className="w-3.5 h-3.5 text-slate-950" />
+                            <span>Publish to Customer</span>
+                          </button>
+                        )}
+                        
+                        <button 
+                          onClick={() => handleDownloadCustomerSafeReport(sr)}
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white border border-emerald-500/30 py-2 px-3 rounded-xl text-[13.5px] font-bold transition-all cursor-pointer flex items-center gap-1 flex-shrink-0"
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                          <span>Download PDF</span>
+                        </button>
+
+                        <button 
+                          onClick={() => setSelectedShiftReport(sr)}
+                          className="bg-[#3B82F6] hover:bg-[#3B82F6]/85 text-white border border-[#3B82F6]/30 py-2 px-4 rounded-xl text-[13.5px] font-bold transition-all cursor-pointer flex items-center gap-1 flex-shrink-0"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                          <span>Review details</span>
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ));
+                })()}
               </div>
             </div>
           )}

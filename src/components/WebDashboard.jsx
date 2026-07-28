@@ -1227,21 +1227,30 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       showToast("Representative name is required.", "error");
       return;
     }
-    const newId = `rep_${newRepName?.toLowerCase()?.replace(/[^a-z0-9]/g, '_')}`;
+    const cleanName = newRepName.trim();
+    const newId = `rep_${cleanName.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
     const newRep = {
       id: newId,
-      name: newRepName,
-      email: newRepEmail,
+      name: cleanName,
+      username: cleanName.toLowerCase().replace(/[^a-z0-9]/g, '_'),
+      password: 'password123',
+      email: newRepEmail.trim() || `${cleanName.toLowerCase().replace(/[^a-z0-9]/g, '.')}@integritydriven.com`,
       role: 'rep',
-      phone: newRepPhone,
-      pay_currency: newRepPayCurrency,
-      avatar: newRepName?.split(' ').map(n => n[0]).join('')?.toUpperCase()
+      title: 'Quality Inspector',
+      phone: newRepPhone.trim() || '',
+      pay_currency: newRepPayCurrency || 'CAD',
+      avatar: cleanName.split(' ').map(n => n[0]).join('')?.toUpperCase() || 'QI',
+      created_at: new Date().toISOString()
     };
     saveEntity('users', newRep);
-    setUsers(getEntities('users'));
+    if (typeof addUser === 'function') {
+      addUser(newRep);
+    }
+    setUsers(getEntities('users') || []);
+    window.dispatchEvent(new Event('ids_pulse_db_update'));
     
     const userRep = getActiveActorName();
-    logSystemEvent('system', 'create_representative', `${userRep} onboarded representative ${newRepName} (${newRepPayCurrency}).`);
+    logSystemEvent('system', 'create_representative', `${userRep} onboarded representative ${cleanName} (${newRepPayCurrency}).`);
 
     setNewRepName('');
     setNewRepEmail('');
@@ -1265,8 +1274,9 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
         id: newId,
         rep_no: repNoFormatted,
         name: cleanName,
-        username: cleanName.toLowerCase().replace(/\s+/g, '_'),
-        email: quickRepEmail.trim() || `${cleanName.toLowerCase().replace(/\s+/g, '.')}@integritydriven.com`,
+        username: cleanName.toLowerCase().replace(/[^a-z0-9]/g, '_'),
+        password: 'password123',
+        email: quickRepEmail.trim() || `${cleanName.toLowerCase().replace(/[^a-z0-9]/g, '.')}@integritydriven.com`,
         role: 'rep',
         title: 'Quality Inspector',
         phone: quickRepPhone.trim() || '',

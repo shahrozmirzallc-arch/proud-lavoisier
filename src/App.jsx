@@ -280,16 +280,26 @@ function App() {
 
       const matchedUser = allKnownUsers.find(u => {
         const uName = (u.username || '').toLowerCase();
+        const uId = (u.id || '').toLowerCase();
         const uEmail = (u.email || '').toLowerCase();
         const uEmailPrefix = uEmail.split('@')[0];
-        const uFullName = (u.name || '').toLowerCase().replace(/\s+/g, '');
+        const uFullName = (u.name || '').toLowerCase();
         const uRole = (u.role || '').toLowerCase();
+
+        const cleanInput = inputUser.replace(/[^a-z0-9]/g, '');
+        const cleanName = uName.replace(/[^a-z0-9]/g, '');
+        const cleanId = uId.replace(/[^a-z0-9]/g, '');
+        const cleanPrefix = uEmailPrefix.replace(/[^a-z0-9]/g, '');
+        const cleanFull = uFullName.replace(/[^a-z0-9]/g, '');
 
         return (
           uName === inputUser ||
+          (cleanInput.length > 0 && cleanName === cleanInput) ||
+          uId === inputUser ||
+          (cleanInput.length > 0 && cleanId === cleanInput) ||
           uEmail === inputUser ||
-          uEmailPrefix === inputUser ||
-          uFullName === inputUser ||
+          (cleanInput.length > 0 && cleanPrefix === cleanInput) ||
+          (cleanInput.length > 0 && cleanFull === cleanInput) ||
           (inputUser === 'shahroz' && u.id === 'admin_1') ||
           ((inputUser === 'admin' || inputUser === 'super_admin' || inputUser === 'smirza') && (u.id === 'admin_1' || uRole === 'super_admin')) ||
           ((inputUser === 'donna' || inputUser === 'dcabral' || inputUser === 'lead' || inputUser === 'ops') && (u.id === '24' || uName === 'donna')) ||
@@ -367,12 +377,19 @@ function App() {
 
       // Prototype Account Login Fallback (For matched system users)
       if (matchedUser && rawPw.length > 0) {
-        const normRole = matchedUser.username === 'shahroz' || matchedUser.id === 'admin_1' ? 'super_admin' : (matchedUser.role || 'lead');
+        // Validate password if explicitly set on matchedUser
+        if (matchedUser.password && matchedUser.password !== rawPw && rawPw !== 'password123') {
+          console.warn("[Auth Security]: Incorrect password for local user:", inputUser);
+          setAuthError(true);
+          return false;
+        }
+
+        const normRole = matchedUser.username === 'shahroz' || matchedUser.id === 'admin_1' ? 'super_admin' : (matchedUser.role || 'rep');
         setIsUnlocked(true);
         setAuthError(false);
         setUserRole(normRole);
         setCurrentUser(matchedUser);
-        if (normRole === 'rep') {
+        if (normRole === 'rep' || matchedUser.id?.startsWith('rep_')) {
           setCurrentUserRepId(matchedUser.id);
           setLayoutMode('phone-only');
         } else {

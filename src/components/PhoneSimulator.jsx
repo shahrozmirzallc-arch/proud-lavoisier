@@ -1324,19 +1324,19 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                     </div>
 
                     {/* Client / Supplier Represented Box (Prominently placed right below Plant Location) */}
-                    <div className="mt-1 bg-gradient-to-r from-blue-50 to-slate-50 border border-blue-200/90 rounded-md p-2.5 shadow-xs flex flex-col gap-1">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-black text-blue-900 uppercase tracking-wider flex items-center gap-1.5">
-                          <Shield className="w-3.5 h-3.5 text-blue-600" />
-                          <span>Client / Supplier Represented:</span>
+                    <div className="mt-1 bg-slate-50 border border-blue-200 rounded-lg p-2.5 flex flex-col gap-1.5 shadow-xs">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[10px] font-extrabold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                          <Shield className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                          <span>Client / Supplier Represented</span>
                         </span>
-                        <span className="text-[8.5px] bg-blue-600 text-white font-extrabold px-1.5 py-0.5 rounded uppercase tracking-wider">
+                        <span className="text-[9px] bg-blue-100 text-blue-800 border border-blue-300 font-bold px-2 py-0.5 rounded-full uppercase tracking-wider shrink-0">
                           Assigned Client
                         </span>
                       </div>
-                      <div className="text-[13px] font-black text-slate-900 flex items-center justify-between mt-0.5">
-                        <span className="text-blue-950 tracking-tight">{getActiveClientForPlant()}</span>
-                        <span className="text-[9.5px] font-extrabold text-blue-700 bg-white px-2 py-0.5 rounded border border-blue-200 shadow-2xs">
+                      <div className="flex items-center justify-between gap-2 border-t border-slate-200/80 pt-1.5 mt-0.5">
+                        <span className="text-[13.5px] font-black text-slate-900 tracking-tight leading-tight">{getActiveClientForPlant()}</span>
+                        <span className="text-[9px] font-bold text-slate-700 bg-white border border-slate-300 px-2 py-0.5 rounded-full uppercase tracking-wider shrink-0 shadow-2xs">
                           Admin Managed
                         </span>
                       </div>

@@ -9687,7 +9687,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                       <div>
                         <h3 className="text-[14.5px] font-bold text-text-primary uppercase tracking-wider flex items-center gap-2">
                           <FolderKanban className="w-4.5 h-4.5 text-cyan-600" />
-                          <span>Active Projects Registry</span>
+                          <span>Projects & PO Budget Registry</span>
                         </h3>
                         <span className="text-[11.5px] text-text-secondary font-medium">Registry of representatives actively working at supplier locations</span>
                       </div>
@@ -9759,9 +9759,17 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                               );
                             }
                             return filtered.map(p => {
-                              const clientName = suppliers.find(s => s.id === p.client_id)?.name || p.client_id;
-                              const plantName = plants.find(pl => pl.id === p.plant_id)?.name || p.plant_id;
-                              const repName = users.find(u => u.id === p.rep_id)?.name || p.rep_id;
+                              const clientName = suppliers.find(s => 
+                                s && (s.id === p.client_id || s.id === p.supplier_id || s.name?.toLowerCase() === (p.client_name || p.supplier_name || p.client_id)?.toLowerCase())
+                              )?.name || p.client_name || p.supplier_name || (typeof p.client_id === 'string' && (p.client_id.startsWith('sup_') || p.client_id.startsWith('supplier_')) ? p.client_id.replace(/^sup_|^supplier_/, '').replace(/_[a-z0-9]+$/, '').replace(/_/g, ' ').toUpperCase() : p.client_id);
+
+                              const plantName = plants.find(pl => 
+                                pl && (pl.id === p.plant_id || pl.name?.toLowerCase() === (p.plant_name || p.plant_id)?.toLowerCase())
+                              )?.name || p.plant_name || (typeof p.plant_id === 'string' && (p.plant_id.startsWith('plant_') || p.plant_id.startsWith('plt_')) ? p.plant_id.replace(/^plant_|^plt_/, '').replace(/_[a-z0-9]+$/, '').replace(/_/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') : p.plant_id);
+
+                              const repName = users.find(u => 
+                                u && (u.id === p.rep_id || u.username === p.rep_id || u.name?.toLowerCase() === (p.rep_name || p.rep_id)?.toLowerCase())
+                              )?.name || p.rep_name || p.rep_id;
                               return (
                                 <tr 
                                   key={p.id} 

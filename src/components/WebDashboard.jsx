@@ -2717,9 +2717,10 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
             doc.setTextColor(15, 23, 42);
           }
           const displayVal = (f.val === undefined || f.val === null || f.val === 'undefined') ? 'N/A' : String(f.val);
-          doc.text(displayVal, 72, y);
+          const splitVal = doc.splitTextToSize(displayVal, 115);
+          doc.text(splitVal, 72, y);
           
-          y += 9.5;
+          y += Math.max(8.5, splitVal.length * 4.5);
         });
         
         if (inc.parts_list && inc.parts_list.length > 0) {
@@ -2880,9 +2881,11 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       } else {
         doc.setTextColor(15, 23, 42);
       }
-      doc.text(String(f.val), 72, y);
+      const valStr = (f.val === undefined || f.val === null || f.val === 'undefined') ? 'N/A' : String(f.val);
+      const splitVal = doc.splitTextToSize(valStr, 115);
+      doc.text(splitVal, 72, y);
       
-      y += 9;
+      y += Math.max(8.5, splitVal.length * 4.5);
     });
 
     y = 108;

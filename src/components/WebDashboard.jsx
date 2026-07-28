@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useDeferredValue, useMemo } from 'r
 import { 
   Shield, Activity, Server, FileText, Users, Mail, DollarSign, Database, 
   Search, Filter, ChevronRight, ChevronDown, X, Clock, CheckCircle2, UserCheck, AlertCircle, AlertTriangle, 
-  FileSpreadsheet, Calendar, ArrowRight, UserPlus, MapPin, Printer, Download, Eye, Sparkles,
+  FileSpreadsheet, Calendar, ArrowRight, UserPlus, MapPin, Printer, Download, Eye, EyeOff, Sparkles,
   Milestone, TrendingUp, FolderKanban, PlusCircle, ArrowLeft, Camera, ClipboardCheck, Zap, Building2, ShieldAlert, User, Cpu, Mic, Video, Trash2, History, Lock
 } from 'lucide-react';
 import { getEntities, saveEntity, resetDB, logSystemEvent, addProject, deleteRate, isFieldRep, syncWithSupabase, supabase, addUser } from './SharedDatabase';
@@ -285,6 +285,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   // Password Reset Modal State
   const [resetPasswordUser, setResetPasswordUser] = useState(null);
   const [newPasswordInput, setNewPasswordInput] = useState('');
+  const [showResetPasswordToggle, setShowResetPasswordToggle] = useState(false);
 
   // Accounting Sub-tab Navigation
   const [accountingSubTab, setAccountingSubTab] = useState('log-hours');
@@ -11807,18 +11808,37 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
               </div>
               <div>
                 <label className="text-[11px] font-bold text-amber-400 uppercase tracking-wider block mb-1">New Login Password *</label>
-                <input 
-                  type="password" 
-                  value={newPasswordInput} 
-                  onChange={(e) => setNewPasswordInput(e.target.value)} 
-                  placeholder="Enter new secure password..." 
-                  className="w-full bg-slate-950 border border-amber-500/50 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-400 font-mono"
-                />
+                <div className="relative flex items-center">
+                  <input 
+                    type={showResetPasswordToggle ? "text" : "password"} 
+                    value={newPasswordInput} 
+                    onChange={(e) => setNewPasswordInput(e.target.value)} 
+                    placeholder="Enter new secure password..." 
+                    className="w-full bg-slate-950 border border-amber-500/50 rounded-xl pl-3 pr-10 py-2 text-xs text-white focus:outline-none focus:border-amber-400 font-mono"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowResetPasswordToggle(!showResetPasswordToggle)}
+                    className="absolute right-2.5 text-slate-400 hover:text-amber-400 p-1 cursor-pointer transition-colors"
+                    title={showResetPasswordToggle ? "Hide Password" : "View Password"}
+                    aria-label={showResetPasswordToggle ? "Hide password text" : "View password text"}
+                  >
+                    {showResetPasswordToggle ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
               </div>
             </div>
 
             <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">
-              <button onClick={() => setResetPasswordUser(null)} className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-xl cursor-pointer">Cancel</button>
+              <button 
+                onClick={() => {
+                  setResetPasswordUser(null);
+                  setShowResetPasswordToggle(false);
+                }} 
+                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-xl cursor-pointer"
+              >
+                Cancel
+              </button>
               <button 
                 onClick={() => {
                   if (!newPasswordInput.trim()) {
@@ -11834,6 +11854,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   }
                   showToast(`Password updated successfully for ${resetPasswordUser.name}!`, "success");
                   setNewPasswordInput('');
+                  setShowResetPasswordToggle(false);
                   setResetPasswordUser(null);
                 }}
                 className="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white text-xs font-extrabold rounded-xl cursor-pointer shadow-lg shadow-amber-600/20"

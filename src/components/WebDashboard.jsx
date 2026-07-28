@@ -95,6 +95,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   const [inlineRepEmail, setInlineRepEmail] = useState('');
   const [inlineRepPhone, setInlineRepPhone] = useState('');
   const [inlineRepTitle, setInlineRepTitle] = useState('Quality Inspector');
+  const [isOnboardingSubmitting, setIsOnboardingSubmitting] = useState(false);
 
   // Quick Add Plant Form State
   const [quickPlantName, setQuickPlantName] = useState('');
@@ -309,6 +310,16 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
   const dynamicRepCards = useMemo(() => {
     let scopedProjects = projects || [];
+
+    // Deduplicate project cards by unique (supplier, plant, project_name, rep) key
+    const uniqueProjectsMap = new Map();
+    scopedProjects.forEach(p => {
+      const key = `${p.supplier_id || p.supplier_name}_${p.plant_id || p.plant_name}_${p.name || p.project_name}_${p.rep_id || p.rep_name}`;
+      if (!uniqueProjectsMap.has(key)) {
+        uniqueProjectsMap.set(key, p);
+      }
+    });
+    scopedProjects = Array.from(uniqueProjectsMap.values());
 
     if (userRole === 'customer') {
       scopedProjects = scopedProjects.filter(p => 
@@ -1336,6 +1347,9 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       return;
     }
 
+    if (isOnboardingSubmitting) return;
+    setIsOnboardingSubmitting(true);
+
     try {
       showToast("Submitting atomic onboarding transaction...", "info");
 
@@ -1409,12 +1423,14 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
       if (result && result.isOffline) {
         showToast(result.message, "warning");
+        setIsOnboardingSubmitting(false);
         return;
       }
 
-      await syncWithSupabase(true, userRole);
+      const createdSupplierId = result ? result.supplier_id : null;
 
-      const createdSupplierId = result.supplier_id;
+      // INSTANT MODAL CLOSURE & FORM RESET
+      setShowQuickAddClient(false);
       setQuickClientName('');
       setQuickClientContactName('');
       setQuickClientContactEmail('');
@@ -1426,7 +1442,9 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       setInlineRepEmail('');
       setInlineRepPhone('');
       setInlineRepTitle('Quality Inspector');
-      setShowQuickAddClient(false);
+
+      // Update local state immediately
+      setProjects(getEntities('projects') || []);
 
       if (createdSupplierId) {
         setNewProjClient(createdSupplierId);
@@ -1437,9 +1455,14 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
       addNotification("🏢 Company Onboarded", `Company ${quickClientName} onboarded and Project Assignment registered successfully!`, "shift");
       showToast(`Company ${quickClientName} onboarded successfully!`, "success");
+
+      // Background non-blocking sync to Supabase
+      syncWithSupabase(true, userRole).catch(sErr => console.warn("[Background Sync]:", sErr));
     } catch (err) {
       console.error("[Onboarding Failure]:", err);
       showToast(`Onboarding Failed: ${err.message}`, "error");
+    } finally {
+      setIsOnboardingSubmitting(false);
     }
   };
 
@@ -11684,10 +11707,17 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 </button>
                 <button 
                   type="submit"
-                  className="stitch-btn flex-1 h-11 text-xs font-extrabold uppercase tracking-wide cursor-pointer flex items-center justify-center gap-2 shadow-lg"
+                  disabled={isOnboardingSubmitting}
+                  className="stitch-btn flex-1 h-11 text-xs font-extrabold uppercase tracking-wide cursor-pointer flex items-center justify-center gap-2 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <PlusCircle className="w-4 h-4 text-white" />
-                  <span>Onboard Company & Register Project Assignment</span>
+                  {isOnboardingSubmitting ? (
+                    <span>Submitting Onboarding...</span>
+                  ) : (
+                    <>
+                      <PlusCircle className="w-4 h-4 text-white" />
+                      <span>Onboard Company & Register Project Assignment</span>
+                    </>
+                  )}
                 </button>
               </div>
             </form>

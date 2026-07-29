@@ -1738,9 +1738,6 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
         setActiveTab('command-center');
       }
     }
-    
-    setIsRoadmapLocked(true);
-    setIsBudgetLocked(true);
 
     setPulseAiChat([
       {

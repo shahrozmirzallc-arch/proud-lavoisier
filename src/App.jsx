@@ -538,17 +538,6 @@ function App() {
                       <Monitor className="w-3.5 h-3.5" />
                       <span className="hidden md:inline">Dashboard Only</span>
                     </button>
-                    {['shahroz', 'super_admin', 'admin', 'owner'].includes(userRole) && (
-                      <button 
-                        type="button"
-                        onClick={() => setLayoutMode('roadmap-only')}
-                        className={`flex items-center gap-1.5 text-[10px] font-bold py-1.5 px-3 rounded-md transition-all cursor-pointer ${layoutMode === 'roadmap-only' ? 'bg-[#1e3a5f] text-[#22d3ee] border border-[#22d3ee]/20' : 'text-text-secondary hover:text-text-primary'}`}
-                        title="Show Launch Roadmap Only"
-                      >
-                        <Milestone className="w-3.5 h-3.5" />
-                        <span className="hidden md:inline">Launch Roadmap</span>
-                      </button>
-                    )}
                     <button 
                       type="button"
                       onClick={() => setLayoutMode('side-by-side')}
@@ -619,14 +608,6 @@ function App() {
                  "Greg's Admin Dashboard (Web CRM Portal)"}
               </span>
               <ErrorBoundary><WebDashboard dbUpdateTrigger={dbUpdateTrigger} userRole={userRole} currentUserRepId={currentUserRepId} currentUserCustomerId={currentUserCustomerId} currentUser={currentUser} layoutMode={layoutMode} /></ErrorBoundary>
-            </div>
-          )}
-
-          {/* Launch Roadmap Column */}
-          {(!isMobileDevice && layoutMode === 'roadmap-only' && ['shahroz', 'super_admin', 'admin', 'owner'].includes(userRole)) && (
-            <div className="flex-1 w-full flex flex-col min-h-0">
-              <span className="text-[10px] text-text-secondary font-bold uppercase tracking-wider mb-2 pl-2">IDS Pulse Project Launch Roadmap & Timeline</span>
-              <ErrorBoundary><WebDashboard dbUpdateTrigger={dbUpdateTrigger} forceRoadmapOnly={true} userRole={userRole} currentUser={currentUser} layoutMode={layoutMode} /></ErrorBoundary>
             </div>
           )}
 

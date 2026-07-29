@@ -60,10 +60,28 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
   const [capturedPhotos, setCapturedPhotos] = useState({
     wide: null,
     medium: null,
-    closeup: null
+    closeup: null,
+    photo4: null,
+    photo5: null,
+    photo6: null,
+    photo7: null,
+    photo8: null,
+    photo9: null,
+    photo10: null
   });
   const [showDrawingCanvas, setShowDrawingCanvas] = useState(false);
-  const [annotatedPhotos, setAnnotatedPhotos] = useState({ wide: null, medium: null, closeup: null });
+  const [annotatedPhotos, setAnnotatedPhotos] = useState({
+    wide: null,
+    medium: null,
+    closeup: null,
+    photo4: null,
+    photo5: null,
+    photo6: null,
+    photo7: null,
+    photo8: null,
+    photo9: null,
+    photo10: null
+  });
   const [drawingTarget, setDrawingTarget] = useState('closeup'); // 'wide' | 'medium' | 'closeup'
   const [scannedPartsList, setScannedPartsList] = useState([]);
   const [scanningType, setScanningType] = useState(null); // 'barcode' | 'qr' | null
@@ -503,7 +521,14 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
     const images = {
       wide: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=800&q=80',
       medium: 'https://images.unsplash.com/photo-1542282088-fe8426682b8f?auto=format&fit=crop&w=800&q=80',
-      closeup: 'https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?auto=format&fit=crop&w=800&q=80'
+      closeup: 'https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?auto=format&fit=crop&w=800&q=80',
+      photo4: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80',
+      photo5: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=800&q=80',
+      photo6: 'https://images.unsplash.com/photo-1581092335397-9583fe92d232?auto=format&fit=crop&w=800&q=80',
+      photo7: 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=800&q=80',
+      photo8: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=800&q=80',
+      photo9: 'https://images.unsplash.com/photo-1581092580497-e0d23cbdf1dc?auto=format&fit=crop&w=800&q=80',
+      photo10: 'https://images.unsplash.com/photo-1581092162384-8987c1d64718?auto=format&fit=crop&w=800&q=80'
     };
 
     setCapturedPhotos(prev => ({ ...prev, [type]: images[type] }));
@@ -628,16 +653,30 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
 
   // AUTO-FILL CLARENCE DEMO INCIDENT
   const autofillClarenceDemo = () => {
-    // Fill photos
+    // Fill photos (10 photos total)
     setCapturedPhotos({
       wide: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=800&q=80',
       medium: 'https://images.unsplash.com/photo-1542282088-fe8426682b8f?auto=format&fit=crop&w=800&q=80',
-      closeup: 'https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?auto=format&fit=crop&w=800&q=80'
+      closeup: 'https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?auto=format&fit=crop&w=800&q=80',
+      photo4: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80',
+      photo5: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=800&q=80',
+      photo6: 'https://images.unsplash.com/photo-1581092335397-9583fe92d232?auto=format&fit=crop&w=800&q=80',
+      photo7: 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=800&q=80',
+      photo8: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=800&q=80',
+      photo9: 'https://images.unsplash.com/photo-1581092580497-e0d23cbdf1dc?auto=format&fit=crop&w=800&q=80',
+      photo10: 'https://images.unsplash.com/photo-1581092162384-8987c1d64718?auto=format&fit=crop&w=800&q=80'
     });
     setAnnotatedPhotos({
       wide: null,
       medium: null,
-      closeup: 'https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?auto=format&fit=crop&w=800&q=80'
+      closeup: 'https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?auto=format&fit=crop&w=800&q=80',
+      photo4: null,
+      photo5: null,
+      photo6: null,
+      photo7: null,
+      photo8: null,
+      photo9: null,
+      photo10: null
     });
     
     // Fill coordinates
@@ -675,13 +714,11 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
 
   // SUBMIT INCIDENT AND SEND EMAIL
   const handleSendIncident = () => {
-    // P0-4 Evidence Guard (3 Photos + Video Walkthrough + Audio Voice Memo)
-    const hasWide = !!(capturedPhotos.wide || annotatedPhotos.wide);
-    const hasMedium = !!(capturedPhotos.medium || annotatedPhotos.medium);
-    const hasCloseup = !!(capturedPhotos.closeup || annotatedPhotos.closeup);
+    // P0-4 Evidence Guard (Up to 10 Photos + Video Walkthrough + Audio Voice Memo)
+    const capturedCount = Object.keys(capturedPhotos).filter(k => capturedPhotos[k] || annotatedPhotos[k]).length;
 
-    if (!hasWide || !hasMedium || !hasCloseup) {
-      showToast("Completeness Error: Wide, Medium, and Close-up evidence photos are required before sending!", "warning");
+    if (capturedCount < 3) {
+      showToast("Completeness Error: At least 3 evidence photos are required before sending!", "warning");
       return;
     }
 
@@ -740,8 +777,15 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
           photos: [
             { id: 'ph_w', url: annotatedPhotos.wide || capturedPhotos.wide, type: 'Wide' },
             { id: 'ph_m', url: annotatedPhotos.medium || capturedPhotos.medium, type: 'Medium' },
-            { id: 'ph_c', url: annotatedPhotos.closeup || capturedPhotos.closeup, type: 'Closeup' }
-          ],
+            { id: 'ph_c', url: annotatedPhotos.closeup || capturedPhotos.closeup, type: 'Closeup' },
+            { id: 'ph_4', url: annotatedPhotos.photo4 || capturedPhotos.photo4, type: 'Angle B' },
+            { id: 'ph_5', url: annotatedPhotos.photo5 || capturedPhotos.photo5, type: 'Serial #' },
+            { id: 'ph_6', url: annotatedPhotos.photo6 || capturedPhotos.photo6, type: 'Container Tag' },
+            { id: 'ph_7', url: annotatedPhotos.photo7 || capturedPhotos.photo7, type: 'Batch Tag' },
+            { id: 'ph_8', url: annotatedPhotos.photo8 || capturedPhotos.photo8, type: 'Assembly Area' },
+            { id: 'ph_9', url: annotatedPhotos.photo9 || capturedPhotos.photo9, type: 'Good Part Comp' },
+            { id: 'ph_10', url: annotatedPhotos.photo10 || capturedPhotos.photo10, type: 'Hold Tag' }
+          ].filter(p => !!p.url),
           concern_classification: concernClassification,
           defect_returned: isReturningDefect,
           sort_required: isSortRequired,
@@ -1585,11 +1629,9 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
               <button onClick={() => setIncStep(3)} className={`py-2 font-bold ${incStep === 3 ? 'text-blue-700 border-b-2 border-blue-600 bg-blue-50' : 'text-slate-600'}`}>3. Describe</button>
               <button 
                 onClick={() => {
-                  const hasWide = !!(capturedPhotos.wide || annotatedPhotos.wide);
-                  const hasMedium = !!(capturedPhotos.medium || annotatedPhotos.medium);
-                  const hasCloseup = !!(capturedPhotos.closeup || annotatedPhotos.closeup);
-                  if (!hasWide || !hasMedium || !hasCloseup) {
-                    showToast("Completeness Error: Please capture Wide, Medium, and Close-up evidence photos first!", "warning");
+                  const capturedCount = Object.keys(capturedPhotos).filter(k => capturedPhotos[k] || annotatedPhotos[k]).length;
+                  if (capturedCount < 3) {
+                    showToast("Completeness Error: Please capture at least 3 evidence photos first!", "warning");
                     return;
                   }
                   setIncStep(4);
@@ -1607,161 +1649,102 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
               {incStep === 1 && (
                 <div className="flex flex-col gap-3">
                   <div className="flex justify-between items-center">
-                    <span className="text-[11.5px] text-blue-700 font-bold uppercase tracking-wider">Step 1: Suspect Material Visual Proof</span>
-                    <span className="text-[10.5px] text-slate-600">Min 3 photos recommended</span>
+                    <span className="text-[11.5px] text-blue-700 font-bold uppercase tracking-wider">Step 1: Visual Proof (10 Slots)</span>
+                    <span className="text-[10.5px] text-slate-600">Up to 10 photos supported</span>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-2">
-                    {/* Photo 1: Wide */}
-                    <div 
-                      onClick={() => {
-                        if (!capturedPhotos.wide) {
-                          captureMockPhoto('wide');
-                        } else {
-                          setDrawingTarget('wide');
-                          setShowDrawingCanvas(true);
-                        }
-                      }}
-                      className="aspect-square bg-white border border-slate-300 rounded-sm flex flex-col items-center justify-center text-center cursor-pointer p-1 relative overflow-hidden group hover:border-blue-500 transition-colors"
-                    >
-                      {annotatedPhotos.wide || capturedPhotos.wide ? (
-                        <>
-                          <img src={annotatedPhotos.wide || capturedPhotos.wide} className="w-full h-full object-cover" alt="Wide" />
-                          {annotatedPhotos.wide ? (
-                            <span className="absolute bottom-1 right-1 bg-red-600 text-[12.5px] text-white px-1 py-1 rounded-sm font-bold shadow-sm">Marked</span>
-                          ) : (
-                            <span className="absolute bottom-1 right-1 bg-white/90 text-[12.5px] text-green-700 border border-green-200 px-1 py-1 rounded-sm shadow-sm font-bold">Wide</span>
-                          )}
-                          {annotatedPhotos.wide && (
-                            <span className="absolute top-1 left-1 bg-white/90 rounded-sm p-1 border border-slate-200 shadow-sm"><RotateCcw className="w-2.5 h-2.5 text-slate-700" /></span>
-                          )}
-                        </>
-                      ) : (
-                        <>
-                          <Camera className="w-6 h-6 text-slate-600 mb-1" />
-                          <span className="text-[10.5px] font-bold text-slate-700">Wide Shot</span>
-                          <span className="text-[10.5px] mt-0.5">(Box Label)</span>
-                        </>
-                      )}
-                    </div>
+                  <div className="grid grid-cols-5 gap-1.5">
+                    {[
+                      { key: 'wide', label: 'Wide', sub: 'Box Tag' },
+                      { key: 'medium', label: 'Medium', sub: 'Part' },
+                      { key: 'closeup', label: 'Close-Up', sub: 'Defect' },
+                      { key: 'photo4', label: 'Photo 4', sub: 'Angle B' },
+                      { key: 'photo5', label: 'Photo 5', sub: 'Serial #' },
+                      { key: 'photo6', label: 'Photo 6', sub: 'Container' },
+                      { key: 'photo7', label: 'Photo 7', sub: 'Batch' },
+                      { key: 'photo8', label: 'Photo 8', sub: 'Assembly' },
+                      { key: 'photo9', label: 'Photo 9', sub: 'Compare' },
+                      { key: 'photo10', label: 'Photo 10', sub: 'Hold Tag' }
+                    ].map((slot) => {
+                      const isCaptured = !!(annotatedPhotos[slot.key] || capturedPhotos[slot.key]);
+                      const photoSrc = annotatedPhotos[slot.key] || capturedPhotos[slot.key];
+                      const isAnnotated = !!annotatedPhotos[slot.key];
 
-                    {/* Photo 2: Medium */}
-                    <div 
-                      onClick={() => {
-                        if (!capturedPhotos.medium) {
-                          captureMockPhoto('medium');
-                        } else {
-                          setDrawingTarget('medium');
-                          setShowDrawingCanvas(true);
-                        }
-                      }}
-                      className="aspect-square bg-white border border-slate-300 rounded-sm flex flex-col items-center justify-center text-center cursor-pointer p-1 relative overflow-hidden group hover:border-blue-500 transition-colors"
-                    >
-                      {annotatedPhotos.medium || capturedPhotos.medium ? (
-                        <>
-                          <img src={annotatedPhotos.medium || capturedPhotos.medium} className="w-full h-full object-cover" alt="Medium" />
-                          {annotatedPhotos.medium ? (
-                            <span className="absolute bottom-1 right-1 bg-red-600 text-[12.5px] text-white px-1 py-1 rounded-sm font-bold shadow-sm">Marked</span>
+                      return (
+                        <div 
+                          key={slot.key}
+                          onClick={() => {
+                            if (!capturedPhotos[slot.key]) {
+                              captureMockPhoto(slot.key);
+                            } else {
+                              setDrawingTarget(slot.key);
+                              setShowDrawingCanvas(true);
+                            }
+                          }}
+                          className={`aspect-square bg-white border rounded-sm flex flex-col items-center justify-center text-center cursor-pointer p-0.5 relative overflow-hidden group transition-colors ${
+                            isCaptured ? 'border-green-400' : 'border-slate-300 hover:border-blue-500'
+                          }`}
+                        >
+                          {isCaptured ? (
+                            <>
+                              <img src={photoSrc} className="w-full h-full object-cover" alt={slot.label} />
+                              {isAnnotated ? (
+                                <span className="absolute bottom-0.5 right-0.5 bg-red-600 text-[9px] text-white px-0.5 py-0.2 rounded-xs font-bold leading-none">Marked</span>
+                              ) : (
+                                <span className="absolute bottom-0.5 right-0.5 bg-white/90 text-[9px] text-green-700 border border-green-200 px-0.5 py-0.2 rounded-xs shadow-xs font-bold leading-none">{slot.label}</span>
+                              )}
+                              {isAnnotated && (
+                                <span className="absolute top-0.5 left-0.5 bg-white/90 rounded-xs p-0.5 border border-slate-200"><RotateCcw className="w-2 h-2 text-slate-700" /></span>
+                              )}
+                            </>
                           ) : (
-                            <span className="absolute bottom-1 right-1 bg-white/90 text-[12.5px] text-green-700 border border-green-200 px-1 py-1 rounded-sm shadow-sm font-bold">Med</span>
+                            <>
+                              <Camera className="w-4 h-4 text-slate-500 mb-0.5" />
+                              <span className="text-[10px] font-bold text-slate-700 leading-tight">{slot.label}</span>
+                              <span className="text-[9px] text-slate-400 leading-tight">{slot.sub}</span>
+                            </>
                           )}
-                          {annotatedPhotos.medium && (
-                            <span className="absolute top-1 left-1 bg-white/90 rounded-sm p-1 border border-slate-200 shadow-sm"><RotateCcw className="w-2.5 h-2.5 text-slate-700" /></span>
-                          )}
-                        </>
-                      ) : (
-                        <>
-                          <Camera className="w-6 h-6 text-slate-600 mb-1" />
-                          <span className="text-[10.5px] font-bold text-slate-700">Medium</span>
-                          <span className="text-[10.5px] mt-0.5">(Part View)</span>
-                        </>
-                      )}
-                    </div>
-
-                    {/* Photo 3: Close-up */}
-                    <div 
-                      onClick={() => {
-                        if (!capturedPhotos.closeup) {
-                          captureMockPhoto('closeup');
-                        } else {
-                          setDrawingTarget('closeup');
-                          setShowDrawingCanvas(true);
-                        }
-                      }}
-                      className="aspect-square bg-white border border-slate-300 rounded-sm flex flex-col items-center justify-center text-center cursor-pointer p-1 relative overflow-hidden group hover:border-blue-500 transition-colors"
-                    >
-                      {annotatedPhotos.closeup || capturedPhotos.closeup ? (
-                        <>
-                          <img src={annotatedPhotos.closeup || capturedPhotos.closeup} className="w-full h-full object-cover" alt="Closeup" />
-                          {annotatedPhotos.closeup ? (
-                            <span className="absolute bottom-1 right-1 bg-red-600 text-[12.5px] text-white px-1 py-1 rounded-sm font-bold shadow-sm">Marked</span>
-                          ) : (
-                            <span className="absolute bottom-1 right-1 bg-white/90 text-[12.5px] text-green-700 border border-green-200 px-1 py-1 rounded-sm shadow-sm font-bold">Close-Up</span>
-                          )}
-                          {annotatedPhotos.closeup && (
-                            <span className="absolute top-1 left-1 bg-white/90 rounded-sm p-1 border border-slate-200 shadow-sm"><RotateCcw className="w-2.5 h-2.5 text-slate-700" /></span>
-                          )}
-                        </>
-                      ) : (
-                        <>
-                          <Camera className="w-6 h-6 text-slate-600 mb-1" />
-                          <span className="text-[10.5px] font-bold text-slate-700">Close-Up</span>
-                          <span className="text-[10.5px] mt-0.5">(Defect itself)</span>
-                        </>
-                      )}
-                    </div>
+                        </div>
+                      );
+                    })}
                   </div>
 
                   {/* Annotation Actions Row */}
-                  {(capturedPhotos.wide || capturedPhotos.medium || capturedPhotos.closeup) && (
+                  {Object.values(capturedPhotos).some(Boolean) && (
                     <div className="flex flex-col gap-1 w-full bg-slate-50 p-2 rounded-sm border border-slate-200">
-                      <span className="text-[12.5px] text-slate-700 font-bold uppercase tracking-wider pl-0.5 block mb-1">Annotate Defect Photo</span>
-                      <div className="grid grid-cols-3 gap-1.5">
-                        <button
-                          type="button"
-                          disabled={!capturedPhotos.wide}
-                          onClick={() => {
-                            setDrawingTarget('wide');
-                            setShowDrawingCanvas(true);
-                          }}
-                          className={`py-1 rounded-sm text-[10.5px] font-bold border transition-colors ${
-                            capturedPhotos.wide 
-                              ? 'bg-white border-slate-300 text-blue-700 hover:bg-slate-50 cursor-pointer shadow-sm' 
-                              : 'bg-slate-100 border-slate-200 text-slate-600 cursor-not-allowed opacity-60'
-                          }`}
-                        >
-                          ✏️ Wide
-                        </button>
-                        <button
-                          type="button"
-                          disabled={!capturedPhotos.medium}
-                          onClick={() => {
-                            setDrawingTarget('medium');
-                            setShowDrawingCanvas(true);
-                          }}
-                          className={`py-1 rounded-sm text-[10.5px] font-bold border transition-colors ${
-                            capturedPhotos.medium 
-                              ? 'bg-white border-slate-300 text-blue-700 hover:bg-slate-50 cursor-pointer shadow-sm' 
-                              : 'bg-slate-100 border-slate-200 text-slate-600 cursor-not-allowed opacity-60'
-                          }`}
-                        >
-                          ✏️ Med
-                        </button>
-                        <button
-                          type="button"
-                          disabled={!capturedPhotos.closeup}
-                          onClick={() => {
-                            setDrawingTarget('closeup');
-                            setShowDrawingCanvas(true);
-                          }}
-                          className={`py-1 rounded-sm text-[10.5px] font-bold border transition-colors ${
-                            capturedPhotos.closeup 
-                              ? 'bg-blue-600 border-blue-700 text-white hover:bg-blue-700 cursor-pointer shadow-sm' 
-                              : 'bg-slate-100 border-slate-200 text-slate-600 cursor-not-allowed opacity-60'
-                          }`}
-                        >
-                          ✏️ Close-Up
-                        </button>
+                      <span className="text-[11px] text-slate-700 font-bold uppercase tracking-wider pl-0.5 block mb-1">Annotate Defect Photo</span>
+                      <div className="grid grid-cols-5 gap-1">
+                        {[
+                          { key: 'wide', label: 'Wide' },
+                          { key: 'medium', label: 'Med' },
+                          { key: 'closeup', label: 'Close' },
+                          { key: 'photo4', label: 'P4' },
+                          { key: 'photo5', label: 'P5' },
+                          { key: 'photo6', label: 'P6' },
+                          { key: 'photo7', label: 'P7' },
+                          { key: 'photo8', label: 'P8' },
+                          { key: 'photo9', label: 'P9' },
+                          { key: 'photo10', label: 'P10' }
+                        ].map(slot => (
+                          <button
+                            key={slot.key}
+                            type="button"
+                            disabled={!capturedPhotos[slot.key]}
+                            onClick={() => {
+                              setDrawingTarget(slot.key);
+                              setShowDrawingCanvas(true);
+                            }}
+                            className={`py-1 rounded-sm text-[9.5px] font-bold border transition-colors ${
+                              capturedPhotos[slot.key] 
+                                ? drawingTarget === slot.key
+                                  ? 'bg-blue-600 border-blue-700 text-white cursor-pointer shadow-xs'
+                                  : 'bg-white border-slate-300 text-blue-700 hover:bg-slate-50 cursor-pointer shadow-xs' 
+                                : 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed opacity-50'
+                            }`}
+                          >
+                            ✏️ {slot.label}
+                          </button>
+                        ))}
                       </div>
                     </div>
                   )}
@@ -1882,7 +1865,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                   </div>
 
                   <button 
-                    disabled={!capturedPhotos.wide || !capturedPhotos.medium || !capturedPhotos.closeup}
+                    disabled={Object.values(capturedPhotos).filter(Boolean).length < 3}
                     onClick={() => setIncStep(2)}
                     className="phone-btn-primary mt-4"
                   >

@@ -41,9 +41,7 @@ const ESSENTIAL_ADMIN_USERS = [
   { id: 'rep_test', name: 'Rep Test Inspector', email: 'rep_test@integritydriven.com', username: 'rep_test', password: 'password123', phone: '+1 (416) 555-0199', role: 'rep', title: 'Quality Inspector', pay_currency: 'CAD', avatar: 'RT' }
 ];
 
-const ESSENTIAL_SUPPLIERS = [
-  { id: 'autokabel', name: 'AutoKabel Systems', code: 'AUTOKABEL', plants_served: ['oshawa', 'plant_1', 'plant_2'], allotted_hours: 40 }
-];
+const ESSENTIAL_SUPPLIERS = [];
 
 // Initialize database in localStorage with automatic version cache invalidation
 export function initializeDB() {
@@ -90,42 +88,6 @@ export function initializeDB() {
         updated = true;
       }
     });
-  }
-
-  // Ensure essential suppliers exist so client logins map properly
-  if (!data.suppliers || data.suppliers.length === 0) {
-    data.suppliers = [...ESSENTIAL_SUPPLIERS];
-    updated = true;
-  } else {
-    ESSENTIAL_SUPPLIERS.forEach(s => {
-      if (!data.suppliers.some(sup => sup.id === s.id)) {
-        data.suppliers.push(s);
-        updated = true;
-      }
-    });
-  }
-
-  // Ensure initial un-invoiced time entries exist for AutoKabel Systems so Accountant Invoicing Control populates by default
-  if (!data.timeEntries || data.timeEntries.length === 0 || !data.timeEntries.some(t => t.supplier_id === 'autokabel' && !t.invoiced)) {
-    if (!data.timeEntries) data.timeEntries = [];
-    data.timeEntries.push(
-      {
-        id: 'te_seed_autokabel_1',
-        rep_id: 'rep_test',
-        rep_name: 'Rep Test Inspector',
-        supplier_id: 'autokabel',
-        supplier_name: 'AutoKabel Systems',
-        plant_id: 'oshawa',
-        date: new Date().toISOString().split('T')[0],
-        hours: 8.0,
-        mileage_km: 0,
-        billing_rate: 45.00,
-        notes: 'Visual Audit & Crimp Defect Hold',
-        invoiced: false,
-        created_at: new Date().toISOString()
-      }
-    );
-    updated = true;
   }
 
   if (updated) {

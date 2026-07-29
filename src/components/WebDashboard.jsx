@@ -4838,7 +4838,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
             </span>
           </div>
           
-          {['admin', 'owner', 'accountant', 'lead', 'shahroz']?.includes(userRole) ? (
+          {['admin', 'owner', 'accountant', 'lead', 'shahroz', 'super_admin']?.includes(userRole) ? (
             <div className="bg-gradient-to-br from-purple-950/50 via-slate-900/90 to-slate-900/90 border border-purple-500/30 hover:border-purple-400/60 shadow-lg shadow-purple-950/20 rounded-2xl p-3.5 flex flex-col justify-between h-28 transition-all group">
               <div>
                 <span className="text-[10.5px] font-extrabold text-purple-300 uppercase tracking-wider block">Supplier Invoice Billable</span>
@@ -5090,7 +5090,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
             )}
 
             {/* ADMIN / MANAGEMENT GROUPED SIDEBAR BUTTONS */}
-            {['admin', 'owner', 'accountant', 'lead', 'shahroz']?.includes(userRole) && (
+            {['admin', 'owner', 'accountant', 'lead', 'shahroz', 'super_admin']?.includes(userRole) && (
               <div className="flex flex-col gap-3">
                 
                 {/* GROUP 1: AI INTELLIGENCE */}

@@ -538,7 +538,7 @@ function App() {
                       <Monitor className="w-3.5 h-3.5" />
                       <span className="hidden md:inline">Dashboard Only</span>
                     </button>
-                    {userRole === 'shahroz' && (
+                    {['shahroz', 'super_admin', 'admin', 'owner'].includes(userRole) && (
                       <button 
                         type="button"
                         onClick={() => setLayoutMode('roadmap-only')}
@@ -623,7 +623,7 @@ function App() {
           )}
 
           {/* Launch Roadmap Column */}
-          {(!isMobileDevice && layoutMode === 'roadmap-only' && userRole === 'shahroz') && (
+          {(!isMobileDevice && layoutMode === 'roadmap-only' && ['shahroz', 'super_admin', 'admin', 'owner'].includes(userRole)) && (
             <div className="flex-1 w-full flex flex-col min-h-0">
               <span className="text-[10px] text-text-secondary font-bold uppercase tracking-wider mb-2 pl-2">IDS Pulse Project Launch Roadmap & Timeline</span>
               <ErrorBoundary><WebDashboard dbUpdateTrigger={dbUpdateTrigger} forceRoadmapOnly={true} userRole={userRole} currentUser={currentUser} layoutMode={layoutMode} /></ErrorBoundary>

@@ -1691,18 +1691,19 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   // Launch Roadmap States
   const [roadmapTeamType, setRoadmapTeamType] = useState('onshore');
   const [activeRoadmapPhase, setActiveRoadmapPhase] = useState(1);
-  const [isBudgetLocked, setIsBudgetLocked] = useState(userRole !== 'shahroz');
+  const isAdminOrOwner = ['shahroz', 'super_admin', 'admin', 'owner', 'lead', 'accountant'].includes(userRole) || userRole !== 'rep';
+  const [isBudgetLocked, setIsBudgetLocked] = useState(true);
   const [budgetPassword, setBudgetPassword] = useState('');
   const [budgetLockError, setBudgetLockError] = useState(false);
-  const [isRoadmapLocked, setIsRoadmapLocked] = useState(userRole !== 'shahroz');
+  const [isRoadmapLocked, setIsRoadmapLocked] = useState(true);
   const [roadmapPassword, setRoadmapPassword] = useState('');
   const [roadmapLockError, setRoadmapLockError] = useState(false);
 
   const getWelcomeText = (role) => {
     if (role === 'shahroz') {
       return "Welcome back, Shahroz Mirza! I am Pulse AI. As Super Admin, you have complete system control. I can audit timesheets, verify defect metrics, run duplicate defect scans, or compile financial reports for you.";
-    } else if (role === 'admin' || role === 'owner') {
-      return "Welcome back, Greg Phillippe! I am Pulse AI. As Admin, I can audit timesheets for mistakes, verify defect records, and prepare compliance exports for you.";
+    } else if (role === 'admin' || role === 'owner' || role === 'super_admin') {
+      return "Welcome back, System Admin! I am Pulse AI. As Admin, I can audit timesheets for mistakes, verify defect records, and prepare compliance exports for you.";
     } else if (role === 'accountant') {
       return "Welcome back, Colleen Boyd! I am Pulse AI. As Accountant, I can verify timesheets for numerical errors, flag missing receipts, and calculate grand billing totals.";
     } else if (role === 'lead') {
@@ -1732,7 +1733,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   const [isAuditing, setIsAuditing] = useState(false);
 
     useEffect(() => {
-    if (forceRoadmapOnly && userRole === 'shahroz') {
+    if (forceRoadmapOnly && isAdminOrOwner) {
       setActiveTab('roadmap');
     } else {
       const isAdminRole = ['shahroz', 'owner', 'admin', 'lead', 'super_admin', 'accountant'].includes((userRole || '').toLowerCase());
@@ -1747,13 +1748,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       }
     }
     
-    if (userRole === 'shahroz') {
-      setIsRoadmapLocked(false);
-      setIsBudgetLocked(false);
-    } else {
-      setIsRoadmapLocked(true);
-      setIsBudgetLocked(true);
-    }
+    setIsRoadmapLocked(true);
+    setIsBudgetLocked(true);
 
     setPulseAiChat([
       {
@@ -5426,7 +5422,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         <span className="text-[10px] bg-rose-500/20 text-rose-300 px-1.5 py-0.5 rounded font-mono font-bold">RESET</span>
                       </button>
 
-                      {userRole === 'shahroz' && (
+                      {isAdminOrOwner && (
                         <button 
                           onClick={() => setActiveTab('roadmap')}
                           className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14.5px] transition-all cursor-pointer flex items-center justify-between border ${
@@ -5443,7 +5439,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         </button>
                       )}
 
-                      {userRole === 'shahroz' && (
+                      {isAdminOrOwner && (
                         <button 
                           onClick={() => setActiveTab('system-logs')}
                           className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14.5px] transition-all cursor-pointer flex items-center justify-between border ${
@@ -9333,7 +9329,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
           )}
 
           {/* TAB 7: LAUNCH ROADMAP & TIMELINE */}
-          {activeTab === 'roadmap' && userRole === 'shahroz' && (
+          {activeTab === 'roadmap' && isAdminOrOwner && (
             <div className="flex-1 flex flex-col gap-3 min-h-0 relative">
               {isRoadmapLocked && (
                 <div className="absolute inset-0 bg-surface backdrop-blur-[6px] rounded-2xl flex flex-col items-center justify-center z-30 px-6 py-8 text-center border border-border-subtle">
@@ -10333,7 +10329,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
 
           {/* TAB 8: SYSTEM EVENTS LOGS */}
-          {activeTab === 'system-logs' && userRole === 'shahroz' && (
+          {activeTab === 'system-logs' && isAdminOrOwner && (
             <div className="flex-1 flex flex-col gap-3 min-h-0 text-left">
               <div className="flex justify-between items-center pb-2 border-b border-border-subtle flex-shrink-0">
                 <div>
@@ -10360,7 +10356,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     <span>Export CSV</span>
                   </button>
 
-                  {userRole === 'shahroz' && (
+                  {isAdminOrOwner && (
                     <button 
                       onClick={() => {
                         localStorage.setItem('ids_pulse_db', JSON.stringify({

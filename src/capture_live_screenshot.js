@@ -7,19 +7,20 @@ async function capture() {
   console.log("Launching browser for Command Center capture...");
   const browser = await puppeteer.launch({
     headless: "new",
+    args: ['--no-sandbox', '--disable-setuid-sandbox'],
     defaultViewport: { width: 1536, height: 1100 }
   });
   const page = await browser.newPage();
   
   console.log("Navigating to https://proud-lavoisier.vercel.app...");
-  await page.goto('https://proud-lavoisier.vercel.app', { waitUntil: 'networkidle0' });
+  await page.goto('https://proud-lavoisier.vercel.app', { waitUntil: 'domcontentloaded', timeout: 30000 });
   await sleep(2000);
   
   const userField = await page.$('#login-username');
   if (userField) {
     console.log("Entering credentials for shahroz...");
     await page.type('#login-username', 'shahroz');
-    await page.type('#login-password', 'Shahroz123$');
+    await page.type('#login-password', 'Shahroz121$');
     await sleep(500);
     
     console.log("Submitting login form...");

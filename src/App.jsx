@@ -268,7 +268,7 @@ function App() {
       const localUsers = dbData.users || [];
       
       const allKnownUsers = [
-        { id: 'admin_1', name: 'Shahroz Mirza', email: 'smirza@integritydriven.com', username: 'shahroz', role: 'super_admin' },
+        { id: 'admin_1', name: 'Shahroz Mirza', email: 'smirza@integritydriven.com', username: 'shahroz', password: 'Shahroz121$', role: 'super_admin' },
         { id: '24', name: 'Donna Cabral', email: 'dcabral@integritydriven.com', username: 'donna', role: 'lead' },
         { id: 'lead_diana', name: 'Diana Operations Lead', email: 'diana@goto-ids.com', username: 'diana', role: 'lead' },
         { id: 'owner_1', name: 'Greg Phillippe', email: 'gphillippe@integritydriven.com', username: 'greg', role: 'owner' },
@@ -380,8 +380,14 @@ function App() {
 
       // Prototype Account Login Fallback (For matched system users)
       if (matchedUser && rawPw.length > 0) {
-        // Validate password if explicitly set on matchedUser
-        if (matchedUser.password && matchedUser.password !== rawPw && rawPw !== 'password123') {
+        // Enforce strict custom password for Super Admin Shahroz
+        if (matchedUser.username === 'shahroz' || matchedUser.id === 'admin_1') {
+          if (rawPw !== 'Shahroz121$') {
+            console.warn("[Auth Security]: Incorrect password for Super Admin shahroz");
+            setAuthError(true);
+            return false;
+          }
+        } else if (matchedUser.password && matchedUser.password !== rawPw && rawPw !== 'password123') {
           console.warn("[Auth Security]: Incorrect password for local user:", inputUser);
           setAuthError(true);
           return false;

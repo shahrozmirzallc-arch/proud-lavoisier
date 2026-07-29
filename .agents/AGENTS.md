@@ -36,3 +36,9 @@ To ensure historical mistakes are never repeated, the agent MUST obey the follow
 - **Logo Requirement**: Every human-readable IDS Pulse report and document MUST carry the approved official company logo (`src/config/brandingConfig.js` / `LOGO_BASE64`).
 - **Zero Text Truncation**: Ellipsis (`...`) or text clipping is strictly prohibited for report data.
 - **Automated Verification**: No report may ship unless automated branding and layout tests (`tests/report_branding_and_layout_gate.test.js`) pass.
+
+## 7. HARD SECURITY RULE: SHAHROZ MIRZA SUPER-ADMIN PROTECTION
+- **Sole Super-Admin**: Shahroz Mirza (`shahroz`) is the ONLY unalterable System Super-Admin.
+- **Strict Password Lock**: The password for `shahroz` is locked to `Shahroz121$`.
+- **Zero Override / Zero Exposure**: No AI agent, automated script, normalization function, or demo fallback may ever touch, change, reset, overwrite, or expose the credentials or access rights of Shahroz Mirza (`shahroz`).
+

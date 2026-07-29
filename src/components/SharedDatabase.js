@@ -504,34 +504,51 @@ export function getEntities(type) {
 export function saveEntity(type, entity) {
   const db = getDB();
   if (!db[type]) db[type] = [];
+
+  let normalizedEntity = { ...entity };
+  if (type === 'users') {
+    const rawName = (entity.name || entity.username || entity.email || 'User').trim();
+    const defaultUsername = entity.username 
+      ? entity.username.toLowerCase().trim().replace(/\s+/g, '_')
+      : (entity.name ? entity.name.toLowerCase().trim().replace(/[^a-z0-9]/g, '_') : (entity.email ? entity.email.split('@')[0] : String(entity.id)));
+
+    normalizedEntity = {
+      role: 'rep',
+      title: 'Quality Inspector',
+      ...entity,
+      name: rawName,
+      username: defaultUsername,
+      password: entity.password || 'password123'
+    };
+  }
   
-  const index = db[type].findIndex(item => String(item.id) === String(entity.id));
+  const index = db[type].findIndex(item => String(item.id) === String(normalizedEntity.id));
   if (index >= 0) {
-    db[type][index] = { ...db[type][index], ...entity };
+    db[type][index] = { ...db[type][index], ...normalizedEntity };
   } else {
-    db[type].push(entity);
+    db[type].push(normalizedEntity);
   }
   
   saveDB(db);
 
   if (typeof navigator !== 'undefined' && !navigator.onLine) {
     const queue = JSON.parse(localStorage.getItem('ids_pulse_offline_queue') || '[]');
-    queue.push({ type, entity, timestamp: new Date().toISOString() });
+    queue.push({ type, entity: normalizedEntity, timestamp: new Date().toISOString() });
     localStorage.setItem('ids_pulse_offline_queue', JSON.stringify(queue));
   } else {
     const targetTable = getSupabaseTableName(type);
     if (type === 'systemLogs' || targetTable === 'system_logs') {
-      Promise.resolve(supabase.from(targetTable).upsert(entity)).catch(() => {});
-      return entity;
+      Promise.resolve(supabase.from(targetTable).upsert(normalizedEntity)).catch(() => {});
+      return normalizedEntity;
     }
 
-    Promise.resolve(supabase.from(targetTable).upsert(entity)).then((res) => {
+    Promise.resolve(supabase.from(targetTable).upsert(normalizedEntity)).then((res) => {
       const error = res?.error;
       if (error) {
         console.error(`[Supabase Cloud Upsert Error] Table "${targetTable}":`, error.message);
         const queue = JSON.parse(localStorage.getItem('ids_pulse_offline_queue') || '[]');
-        if (!queue.some(item => String(item.entity?.id) === String(entity.id))) {
-          queue.push({ type, entity, timestamp: new Date().toISOString(), lastError: error.message });
+        if (!queue.some(item => String(item.entity?.id) === String(normalizedEntity.id))) {
+          queue.push({ type, entity: normalizedEntity, timestamp: new Date().toISOString(), lastError: error.message });
           localStorage.setItem('ids_pulse_offline_queue', JSON.stringify(queue));
         }
         window.dispatchEvent(new CustomEvent('ids_pulse_toast', { detail: { message: `Cloud Write Warning on ${type}: ${error.message}`, type: 'warning' } }));
@@ -539,18 +556,32 @@ export function saveEntity(type, entity) {
     }).catch(err => {
       console.error(`[Supabase Cloud Upsert Exception] Table "${targetTable}":`, err);
       const queue = JSON.parse(localStorage.getItem('ids_pulse_offline_queue') || '[]');
-      if (!queue.some(item => String(item.entity?.id) === String(entity.id))) {
-        queue.push({ type, entity, timestamp: new Date().toISOString(), lastError: err.message });
+      if (!queue.some(item => String(item.entity?.id) === String(normalizedEntity.id))) {
+        queue.push({ type, entity: normalizedEntity, timestamp: new Date().toISOString(), lastError: err.message });
         localStorage.setItem('ids_pulse_offline_queue', JSON.stringify(queue));
       }
     });
   }
 
-  return entity;
+  return normalizedEntity;
 }
 
 export function addUser(user) {
-  const newUser = { ...user, id: user.id || `usr_${Date.now()}_${Math.random().toString(36)?.substring(2, 7)}`, created_at: new Date().toISOString() };
+  const rawName = (user.name || user.username || user.email || 'User').trim();
+  const defaultUsername = user.username 
+    ? user.username.toLowerCase().trim().replace(/\s+/g, '_')
+    : (user.name ? user.name.toLowerCase().trim().replace(/[^a-z0-9]/g, '_') : (user.email ? user.email.split('@')[0] : user.id));
+
+  const newUser = {
+    role: 'rep',
+    title: 'Quality Inspector',
+    ...user,
+    name: rawName,
+    username: defaultUsername,
+    password: user.password || 'password123',
+    id: user.id || `usr_${Date.now()}_${Math.random().toString(36)?.substring(2, 7)}`,
+    created_at: user.created_at || new Date().toISOString()
+  };
   return saveEntity('users', newUser);
 }
 

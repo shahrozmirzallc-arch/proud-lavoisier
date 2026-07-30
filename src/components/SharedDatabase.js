@@ -90,6 +90,30 @@ export function initializeDB() {
     });
   }
 
+  // Ensure customer accounts exist for all suppliers so client portal logins work out of the box
+  if (data.suppliers && Array.isArray(data.suppliers)) {
+    data.suppliers.forEach(sup => {
+      if (sup && sup.id) {
+        const custUsername = sup.id.toLowerCase().replace(/[^a-z0-9]/g, '_');
+        if (!data.users.some(u => u.role === 'customer' && (u.supplier_id === sup.id || u.username === custUsername))) {
+          data.users.push({
+            id: `user_cust_${sup.id}`,
+            name: sup.contact_name || sup.contact_person || `${sup.name} Quality Manager`,
+            email: sup.contact_email || `${custUsername}@client.com`,
+            username: custUsername,
+            password: 'password123',
+            role: 'customer',
+            supplier_id: sup.id,
+            customer_id: sup.id,
+            title: `${sup.name} Quality Partner`,
+            created_at: new Date().toISOString()
+          });
+          updated = true;
+        }
+      }
+    });
+  }
+
   if (updated) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     window.dispatchEvent(new Event('ids_pulse_db_update'));

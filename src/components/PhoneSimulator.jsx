@@ -765,10 +765,16 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
         
         const partsHtml = defaultPartsList.map(p => `<li><strong>PN ${p.part_number}</strong>: ${p.description} (Qty: ${p.qty}) [Bin: ${p.bin}]</li>`).join("");
 
+        const suppliersList = getEntities('suppliers') || [];
+        const plantSupplier = suppliersList.find(s => s.plants_served && Array.isArray(s.plants_served) && s.plants_served.includes(selectedPlant))?.id;
+        const resolvedSupplierId = (defaultPartsList[0]?.supplier_id && defaultPartsList[0]?.supplier_id !== 'magna' && defaultPartsList[0]?.supplier_id !== 'unknown') 
+          ? defaultPartsList[0].supplier_id 
+          : (plantSupplier || 'magna');
+
         const newInc = {
           rep_id: currentUser.id,
           plant_id: selectedPlant,
-          supplier_id: defaultPartsList[0]?.supplier_id || 'magna',
+          supplier_id: resolvedSupplierId,
           part_id: defaultPartsList[0]?.part_number || '86286761', // fallback for single-value legacy references
           area: selectedArea,
           description: description || `Incident in ${selectedArea}`,
@@ -1023,14 +1029,19 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
   // SUBMIT REWORK LOG
   const handleReworkSubmit = (e) => {
     e.preventDefault();
-    const partsList = getEntities('parts');
+    const partsList = getEntities('parts') || [];
     const part = partsList.find(p => p.part_number === reworkPN) || { id: 'unknown', part_number: reworkPN, supplier_id: 'magna' };
+    const suppliersList = getEntities('suppliers') || [];
+    const plantSupplier = suppliersList.find(s => s.plants_served && Array.isArray(s.plants_served) && s.plants_served.includes(selectedPlant))?.id;
+    const resolvedReworkSupplierId = (part.supplier_id && part.supplier_id !== 'magna' && part.supplier_id !== 'unknown')
+      ? part.supplier_id 
+      : (plantSupplier || 'magna');
 
     addReworkLog({
       rep_id: currentUser.id,
       plant_id: selectedPlant,
-      supplier_id: part.supplier_id,
-      part_id: part.id,
+      supplier_id: resolvedReworkSupplierId,
+      part_id: part.id || part.part_number,
       qty: reworkQty,
       time_spent_minutes: reworkHours * 60,
       notes: reworkNotes

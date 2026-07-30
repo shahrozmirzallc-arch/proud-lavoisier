@@ -1,4 +1,4 @@
-import { supabase, saveEntity, getDB } from '../components/SharedDatabase.js';
+import { supabase, saveEntity, getDB, addUser } from '../components/SharedDatabase.js';
 
 /**
  * Validates onboarding payload parameters.
@@ -201,6 +201,26 @@ export async function performAtomicClientOnboarding(rawPayload) {
         created_at: new Date().toISOString()
       });
 
+      // Write customer user account locally & sync so client company logins work immediately
+      const customerUsername = validated.supplier_name.toLowerCase().replace(/[^a-z0-9]/g, '_');
+      const customerUserObj = {
+        id: `user_cust_${rpcSupplierId}`,
+        name: validated.contact_name || `${validated.supplier_name} Quality Manager`,
+        email: validated.contact_email || `${customerUsername}@client.com`,
+        username: customerUsername,
+        password: 'password123',
+        role: 'customer',
+        supplier_id: rpcSupplierId,
+        customer_id: rpcSupplierId,
+        title: 'Client Quality Manager',
+        created_at: new Date().toISOString()
+      };
+      saveEntity('users', customerUserObj);
+      if (typeof addUser === 'function') {
+        addUser(customerUserObj);
+      }
+      Promise.resolve(supabase.from('users').upsert(customerUserObj)).catch(e => console.warn("[Supabase Cloud Customer Sync Warning]:", e));
+
       window.dispatchEvent(new Event('ids_pulse_db_update'));
 
       return data;
@@ -279,7 +299,24 @@ export async function performAtomicClientOnboarding(rawPayload) {
   saveEntity('projects', projectObj);
   saveEntity('rates', rateObj);
 
-  // NO PHANTOM USER OBJECT CREATION! Only save inline new rep if explicitly requested
+  // Create & save Customer User Account for the onboarded Client Company
+  const customerUsername = validated.supplier_name.toLowerCase().replace(/[^a-z0-9]/g, '_');
+  const customerUserObj = {
+    id: `user_cust_${supplierId}`,
+    name: validated.contact_name || `${validated.supplier_name} Quality Manager`,
+    email: validated.contact_email || `${customerUsername}@client.com`,
+    username: customerUsername,
+    password: 'password123',
+    role: 'customer',
+    supplier_id: supplierId,
+    customer_id: supplierId,
+    title: 'Client Quality Manager',
+    created_at: new Date().toISOString()
+  };
+  saveEntity('users', customerUserObj);
+  Promise.resolve(supabase.from('users').upsert(customerUserObj)).catch(e => console.warn("[Supabase Cloud Customer Sync Warning]:", e));
+
+  // Save inline new rep if explicitly requested
   if (rawPayload.is_inline_new_rep && rawPayload.new_rep_user) {
     saveEntity('users', rawPayload.new_rep_user);
     Promise.resolve(supabase.from('users').upsert(rawPayload.new_rep_user)).catch(e => console.warn("[Supabase Cloud Rep Sync Warning]:", e));

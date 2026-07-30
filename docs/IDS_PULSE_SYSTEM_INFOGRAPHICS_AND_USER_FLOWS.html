@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IDS Pulse — System Infographics & User Flow Diagrams</title>
+  <!-- Google Fonts & Mermaid JS -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.min.js"></script>
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'dark',
+      themeVariables: {
+        darkMode: true,
+        background: '#0f172a',
+        primaryColor: '#2563eb',
+        primaryTextColor: '#f8fafc',
+        primaryBorderColor: '#3b82f6',
+        lineColor: '#64748b',
+        secondaryColor: '#1e293b',
+        tertiaryColor: '#090d16'
+      }
+    });
+  </script>
+  <style>
+    :root {
+      --bg-main: #0b0f19;
+      --bg-card: #111827;
+      --bg-card-hover: #1f2937;
+      --border-color: #1f293d;
+      --border-accent: #3b82f6;
+      --text-primary: #f9fafb;
+      --text-secondary: #9ca3af;
+      --text-muted: #6b7280;
+      --accent-blue: #3b82f6;
+      --accent-green: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-purple: #8b5cf6;
+      --accent-rose: #f43f5e;
+      --accent-cyan: #06b6d4;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-main);
+      color: var(--text-primary);
+      line-height: 1.6;
+      padding: 30px 20px;
+    }
+
+    .container {
+      max-width: 1300px;
+      margin: 0 auto;
+    }
+
+    /* Header Styling */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--border-color);
+      margin-bottom: 32px;
+    }
+
+    .logo-container {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .logo-badge {
+      background: linear-gradient(135deg, #1e3a8a, #3b82f6);
+      color: #fff;
+      font-weight: 800;
+      font-size: 14px;
+      padding: 6px 14px;
+      border-radius: 8px;
+      letter-spacing: 1px;
+    }
+
+    .header-title h1 {
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      background: linear-gradient(90deg, #ffffff, #93c5fd);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .header-title p {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .header-meta {
+      text-align: right;
+      font-size: 12px;
+      color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Navigation Tabs */
+    .nav-tabs {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 32px;
+      overflow-x: auto;
+      padding-bottom: 8px;
+    }
+
+    .tab-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      padding: 10px 20px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+
+    .tab-btn:hover, .tab-btn.active {
+      background: #1e293b;
+      color: #fff;
+      border-color: var(--border-accent);
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+    }
+
+    /* Section Cards */
+    .section-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 28px;
+      margin-bottom: 32px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .section-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 16px;
+    }
+
+    .icon-blue { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
+    .icon-green { background: rgba(16, 185, 129, 0.15); color: #34d399; }
+    .icon-amber { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
+    .icon-purple { background: rgba(139, 92, 246, 0.15); color: #c084fc; }
+    .icon-rose { background: rgba(244, 63, 94, 0.15); color: #fb7185; }
+
+    .section-header h2 {
+      font-size: 18px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .section-header p {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    /* Infographic Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .stat-card {
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      border-radius: 12px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+    }
+
+    .stat-value {
+      font-size: 20px;
+      font-weight: 800;
+      color: #fff;
+    }
+
+    .stat-desc {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    /* Mermaid Container */
+    .mermaid-container {
+      background: #090d16;
+      border: 1px solid #1e293b;
+      border-radius: 12px;
+      padding: 24px;
+      overflow-x: auto;
+      display: flex;
+      justify-content: center;
+    }
+
+    /* Flow Step Visualizer */
+    .flow-steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-top: 20px;
+    }
+
+    .step-box {
+      background: #1e293b;
+      border-left: 4px solid var(--accent-blue);
+      border-radius: 8px;
+      padding: 16px;
+    }
+
+    .step-box.green { border-left-color: var(--accent-green); }
+    .step-box.amber { border-left-color: var(--accent-amber); }
+    .step-box.purple { border-left-color: var(--accent-purple); }
+    .step-box.rose { border-left-color: var(--accent-rose); }
+
+    .step-num {
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+
+    .step-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 6px;
+    }
+
+    .step-details {
+      font-size: 12px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    /* Footer */
+    footer {
+      text-align: center;
+      padding-top: 30px;
+      border-top: 1px solid var(--border-color);
+      color: var(--text-muted);
+      font-size: 12px;
+    }
+
+    @media (max-width: 768px) {
+      header { flex-direction: column; align-items: flex-start; gap: 16px; }
+      .header-meta { text-align: left; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- HEADER -->
+  <header>
+    <div class="logo-container">
+      <div class="logo-badge">IDS PULSE</div>
+      <div class="header-title">
+        <h1>System Architecture & User Flow Diagrams</h1>
+        <p>Integrity Driven Solutions Inc. — Quality Audit, Incident Tracking & Operations Suite</p>
+      </div>
+    </div>
+    <div class="header-meta">
+      <div>DOCUMENT VER: 2.4.0</div>
+      <div>GENERATED: Local Standard</div>
+    </div>
+  </header>
+
+  <!-- NAVIGATION TABS -->
+  <div class="nav-tabs">
+    <button class="tab-btn active" onclick="scrollToSection('architecture')">🏛️ System Architecture</button>
+    <button class="tab-btn" onclick="scrollToSection('rep-flow')">📱 Field Rep Flow</button>
+    <button class="tab-btn" onclick="scrollToSection('donna-flow')">💻 Operations Lead (Donna)</button>
+    <button class="tab-btn" onclick="scrollToSection('finance-flow')">📊 Financial & Invoicing (Colleen)</button>
+    <button class="tab-btn" onclick="scrollToSection('client-flow')">🏭 Customer Portal Flow</button>
+    <button class="tab-btn" onclick="scrollToSection('sync-engine')">⚡ Offline & Data Sync Engine</button>
+  </div>
+
+  <!-- SECTION 1: SYSTEM ARCHITECTURE OVERVIEW -->
+  <div id="architecture" class="section-card">
+    <div class="section-header">
+      <div class="section-icon icon-blue">🏛️</div>
+      <div>
+        <h2>1. System High-Level Architecture & Modules Overview</h2>
+        <p>Complete structural infographic of IDS Pulse web apps, mobile apps, databases, and background services.</p>
+      </div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <span class="stat-label">Mobile App</span>
+        <span class="stat-value" style="color: #60a5fa;">PhoneSimulator</span>
+        <span class="stat-desc">Field Rep dispatch, QR/Barcode scanning, 10-photo/video/audio evidence capture</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Web Command Center</span>
+        <span class="stat-value" style="color: #34d399;">WebDashboard</span>
+        <span class="stat-desc">Donna's live portal, PO budget caps, incident audit matrix, shift output logs</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Financial Suite</span>
+        <span class="stat-value" style="color: #fbbf24;">Invoicing & Audit</span>
+        <span class="stat-desc">Colleen's weekly timesheets, supplier billable hours, rates & PDF exporter</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Database Sync</span>
+        <span class="stat-value" style="color: #c084fc;">SharedDatabase</span>
+        <span class="stat-desc">LocalStorage + Supabase Cloud DB, offline outbox, event-driven updates</span>
+      </div>
+    </div>
+
+    <div class="mermaid-container">
+      <pre class="mermaid">
+      graph TD
+        subgraph CLIENT_LAYER ["📱 Client Layer"]
+          REP["📱 Field Quality Inspector (Mobile App)"]
+          ADMIN["💻 Operations Lead Supervisor (Donna)"]
+          ACCT["📊 Financial Accountant (Colleen)"]
+          CUST["🏭 Supplier Quality Director (Customer Portal)"]
+        end
+
+        subgraph APP_CORE ["🚀 Application Core"]
+          PS["PhoneSimulator.jsx<br/>(Shift Clock, Barcode Scan, Media Evidence)"]
+          WD["WebDashboard.jsx<br/>(Live Command Center, Defect Feed, PO Telemetry)"]
+          TSS["IntegrityWeeklyTimesheet.jsx<br/>(Rate Calculation & Billable Hours)"]
+          INV["InvoiceModal.jsx<br/>(PDF Export & Client Invoicing)"]
+        end
+
+        subgraph STORAGE_SYNC ["💾 Data & Resilience Layer"]
+          SDB["SharedDatabase.js<br/>(LocalStorage DB & Event Bus)"]
+          NSS["nativeStorageService.js<br/>(Durable Offline Outbox)"]
+          SB["☁️ Supabase Cloud DB<br/>(PostgreSQL Realtime Storage)"]
+        end
+
+        REP --> PS
+        ADMIN --> WD
+        ACCT --> TSS
+        ACCT --> INV
+        CUST --> WD
+
+        PS --> SDB
+        PS --> NSS
+        WD --> SDB
+        TSS --> SDB
+
+        NSS -->|Auto Flush on Reconnect| SB
+        SDB <-->|Bi-Directional Sync| SB
+      </pre>
+    </div>
+  </div>
+
+  <!-- SECTION 2: FIELD REP USER FLOW -->
+  <div id="rep-flow" class="section-card">
+    <div class="section-header">
+      <div class="section-icon icon-green">📱</div>
+      <div>
+        <h2>2. Field Quality Inspector (Rep) — Shift & Incident Flow</h2>
+        <p>End-to-end workflow for field quality reps from clock-in to suspect material logging and shift summary.</p>
+      </div>
+    </div>
+
+    <div class="flow-steps">
+      <div class="step-box green">
+        <div class="step-num">Step 1</div>
+        <div class="step-title">Shift Onboarding</div>
+        <div class="step-details">Select assigned plant (e.g., AutoKabel Windsor), select supplier, and tap <strong>CLOCK IN TO SHIFT</strong>.</div>
+      </div>
+      <div class="step-box green">
+        <div class="step-num">Step 2</div>
+        <div class="step-title">Scan & Defect Log</div>
+        <div class="step-details">Scan part barcode / bin QR. Auto-fills Part # (e.g. 86286761). Select area discovered & describe defect.</div>
+      </div>
+      <div class="step-box green">
+        <div class="step-num">Step 3</div>
+        <div class="step-title">Evidence Capture</div>
+        <div class="step-details">Attach 3+ high-res photos (Wide, Medium, Closeup), 15s MP4 video walkthrough, and voice audio memo.</div>
+      </div>
+      <div class="step-box green">
+        <div class="step-num">Step 4</div>
+        <div class="step-title">Immediate Alert</div>
+        <div class="step-details">Tap <strong>RELEASE INCIDENT REPORT</strong>. Triggers system event & logs supplier email notification.</div>
+      </div>
+      <div class="step-box green">
+        <div class="step-num">Step 5</div>
+        <div class="step-title">Rework & Clock Out</div>
+        <div class="step-details">Log sorted pcs & rework hours. Submit End-of-Shift Summary & <strong>CLOCK OUT</strong>.</div>
+      </div>
+    </div>
+
+    <div class="mermaid-container" style="margin-top: 24px;">
+      <pre class="mermaid">
+      flowchart LR
+        A[🔒 Log In] --> B[⏱️ Clock In to Plant Shift]
+        B --> C{Action Needed?}
+        C -->|Defect Discovered| D[⚠️ Tap New Suspect Material]
+        C -->|Rework Sorting| E[⏱️ Log Rework Hours]
+        C -->|Travel/Meals| F[🧾 Log Expenses]
+        C -->|End of Shift| G[📋 Submit Shift Summary & Clock Out]
+
+        D --> D1[📷 Scan Part Barcode & Bin QR]
+        D1 --> D2[📝 Enter Description & Location]
+        D2 --> D3[📸 Capture 3+ Photos, Video & Voice]
+        D3 --> D4{Network Online?}
+        D4 -->|Yes| D5[🚀 Save Incident & Send Email Log]
+        D4 -->|No| D6[📦 Queue in Durable Outbox]
+      </pre>
+    </div>
+  </div>
+
+  <!-- SECTION 3: DONNA'S OPERATIONS LEAD FLOW -->
+  <div id="donna-flow" class="section-card">
+    <div class="section-header">
+      <div class="section-icon icon-amber">💻</div>
+      <div>
+        <h2>3. Operations Lead Supervisor (Donna) — Control & Audit Flow</h2>
+        <p>Real-time command center oversight, PO budget caps, inspector dispatches, and quality approvals.</p>
+      </div>
+    </div>
+
+    <div class="flow-steps">
+      <div class="step-box amber">
+        <div class="step-num">Phase A</div>
+        <div class="step-title">Command Center</div>
+        <div class="step-details">Monitor live active Rep dispatches, plant locations, active shift hours, and quality pass rates.</div>
+      </div>
+      <div class="step-box amber">
+        <div class="step-num">Phase B</div>
+        <div class="step-title">Incident Audit</div>
+        <div class="step-details">Review incoming suspect material alerts. Inspect high-res photos, play audio notes, and stream 15s MP4 video.</div>
+      </div>
+      <div class="step-box amber">
+        <div class="step-num">Phase C</div>
+        <div class="step-title">Budget Telemetry</div>
+        <div class="step-details">Track real-time Client Purchase Order (PO) budget progress bars, allocated hours, and remaining caps.</div>
+      </div>
+      <div class="step-box amber">
+        <div class="step-num">Phase D</div>
+        <div class="step-title">Report & Export</div>
+        <div class="step-details">Approve/Reject extra hours requests, perform rep handovers, and export official client PDF quality summaries.</div>
+      </div>
+    </div>
+
+    <div class="mermaid-container" style="margin-top: 24px;">
+      <pre class="mermaid">
+      flowchart TD
+        A[🖥️ Open Web Dashboard] --> B[📡 Live Command Center]
+        B --> C[🚨 Active Quality Alerts]
+        B --> D[📊 Live PO Budget Telemetry]
+        B --> E[👥 Rep Directory & Dispatches]
+
+        C --> C1[👁️ Open Incident Inspector]
+        C1 --> C2[📸 Review 10 Photo Angles]
+        C1 --> C3[🔊 Play Voice Memo Audio]
+        C1 --> C4[🎥 Watch 15s Video Walkthrough]
+        C1 --> C5{Decision}
+        C5 -->|Approved| C6[📄 Download/Print Official PDF]
+        C5 -->|Reject| C7[↩️ Return to Rep with Reason]
+      </pre>
+    </div>
+  </div>
+
+  <!-- SECTION 4: COLLEEN'S FINANCIAL FLOW -->
+  <div id="finance-flow" class="section-card">
+    <div class="section-header">
+      <div class="section-icon icon-purple">📊</div>
+      <div>
+        <h2>4. Financial Accountant (Colleen) — Invoicing & Rates Flow</h2>
+        <p>Time entry aggregation, billable client calculation, PO budget reconciliation, and PDF invoice generation.</p>
+      </div>
+    </div>
+
+    <div class="mermaid-container">
+      <pre class="mermaid">
+      sequenceDiagram
+        autonumber
+        actor Rep as Field Rep
+        actor Colleen as Colleen (Accountant)
+        participant DB as Shared Database
+        actor Client as AutoKabel / Client
+
+        Rep->>DB: Log Shift Hours & Rework Pcs
+        Colleen->>DB: Open Invoicing Control & Timesheets
+        DB-->>Colleen: Load Uninvoiced Time Entries (e.g. 8.0 hrs @ C$45/hr)
+        Colleen->>Colleen: Select Client Company (AutoKabel Systems)
+        Colleen->>Colleen: Review Billable Subtotal & HST (13%)
+        Colleen->>DB: Click Generate Official PDF Invoice
+        DB-->>Colleen: Output Branded PDF Invoice (IDS Logo, Zero Truncation)
+        Colleen->>Client: Send Invoice & PO Telemetry Report
+      </pre>
+    </div>
+  </div>
+
+  <!-- SECTION 5: CUSTOMER PORTAL FLOW -->
+  <div id="client-flow" class="section-card">
+    <div class="section-header">
+      <div class="section-icon icon-rose">🏭</div>
+      <div>
+        <h2>5. Customer Portal — Quality Director Transparency Flow</h2>
+        <p>1-click fast login for client quality leads to inspect real-time plant floor containments and evidence.</p>
+      </div>
+    </div>
+
+    <div class="flow-steps">
+      <div class="step-box rose">
+        <div class="step-num">Step 1</div>
+        <div class="step-title">1-Click Client Login</div>
+        <div class="step-details">Quality Director logs in with customer credentials (e.g. AutoKabel Systems portal view).</div>
+      </div>
+      <div class="step-box rose">
+        <div class="step-num">Step 2</div>
+        <div class="step-title">Containment Feed</div>
+        <div class="step-details">View active suspect material alerts specific to their plant locations & part numbers.</div>
+      </div>
+      <div class="step-box rose">
+        <div class="step-num">Step 3</div>
+        <div class="step-title">Inspect Proofs</div>
+        <div class="step-details">Tap <strong>👁️ Inspect Proofs</strong> to view high-res defect photos, video walkthroughs, and audio memos.</div>
+      </div>
+      <div class="step-box rose">
+        <div class="step-num">Step 4</div>
+        <div class="step-title">PO Cap Visibility</div>
+        <div class="step-details">Monitor allocated PO hours vs consumed shift hours in real-time.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 6: OFFLINE & SYNC ENGINE FLOW -->
+  <div id="sync-engine" class="section-card">
+    <div class="section-header">
+      <div class="section-icon icon-blue">⚡</div>
+      <div>
+        <h2>6. Offline Resiliency & Cloud Sync Pipeline</h2>
+        <p>Durable local outbox queuing, UUID tracking references, network detection, and Supabase cloud flush.</p>
+      </div>
+    </div>
+
+    <div class="mermaid-container">
+      <pre class="mermaid">
+      flowchart TD
+        A[📱 Rep Submits Incident/Report] --> B{Network Connected?}
+        B -->|Online| C[☁️ Direct Upsert to Supabase DB]
+        C --> D[✉️ Generate System Email Log]
+        
+        B -->|Offline| E[📦 nativeStorageService.stageIncidentLocally]
+        E --> F[🆔 Generate Tracking Ref: LOCAL-INC-2026-XXXX]
+        F --> G[💾 Store in localStorage Queue: ids_pulse_offline_queue]
+        G --> H[🔔 Show Offline Confirmation Modal to Rep]
+
+        H --> I[📡 Device Reconnects to Internet]
+        I --> J[⚡ Trigger window.addEventListener('online')]
+        J --> K[🔄 Execute flushOfflineQueue()]
+        K --> L[☁️ Batch Upsert Queue to Supabase DB]
+        L --> M[✅ Remove Synced Items from Local Outbox]
+      </pre>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    <p>IDS Pulse Operations & Quality Suite — Integrity Driven Solutions Inc. © 2026</p>
+    <p style="margin-top: 4px; font-family: 'JetBrains Mono', monospace;">Official System Infographics & Architecture Reference Document</p>
+  </footer>
+
+</div>
+
+<script>
+  function scrollToSection(id) {
+    const el = document.getElementById(id);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' });
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      event.target.classList.add('active');
+    }
+  }
+</script>
+
+</body>
+</html>

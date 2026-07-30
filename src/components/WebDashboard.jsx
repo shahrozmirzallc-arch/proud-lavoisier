@@ -5601,7 +5601,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         <div key={inc.id} className="p-3 rounded-xl bg-amber-950/30 border border-amber-500/30 flex items-start gap-2.5">
                           <div className="w-2 h-2 rounded-full bg-amber-400 mt-1.5 flex-shrink-0 animate-ping"></div>
                           <div>
-                            <strong className="text-xs font-bold text-amber-200 block">{inc.supplier_id || 'Client'} — PN {inc.part_number || inc.partNumber || 'Hold'}</strong>
+                            <strong className="text-xs font-bold text-amber-200 block">{suppliers.find(s => s.id === inc.supplier_id || s.name?.toLowerCase() === (inc.supplier_id || '').toLowerCase())?.name || inc.supplier_name || (inc.supplier_id ? inc.supplier_id.replace(/^sup_/, '').replace(/_/g, ' ') : 'Client Company')} — PN {inc.part_number || inc.partNumber || 'Hold'}</strong>
                             <p className="text-[11.5px] text-slate-300 mt-0.5">{inc.description || inc.notes || 'Defect logged.'}</p>
                             <span className="text-[10px] text-slate-400 font-semibold mt-1 block">{inc.date || inc.created_at?.substring(0, 10)}</span>
                           </div>
@@ -5800,17 +5800,23 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                             barColor = "bg-amber-400";
                           }
 
+                          const plantNameDisplay = proj.plant_name || proj.plantName || plants.find(pl => pl.id === proj.plant_id || pl.name?.toLowerCase() === (proj.plant_id || '').toLowerCase())?.name || (proj.plant_id ? proj.plant_id.replace(/^plant_/, '').replace(/_/g, ' ') : 'Plant Floor');
+
+                          const supplierNameDisplay = proj.supplier_name || proj.client_name || proj.clientName || suppliers.find(s => s.id === proj.supplier_id || s.id === proj.client_id || s.name?.toLowerCase() === (proj.supplier_id || '').toLowerCase())?.name || (proj.supplier_id ? proj.supplier_id.replace(/^sup_/, '').replace(/_/g, ' ') : 'Client Company');
+
+                          const repNameDisplay = proj.rep_name || users.find(u => String(u.id) === String(proj.rep_id) || u.username === proj.rep_id || u.name?.toLowerCase() === (proj.rep_id || '').toLowerCase())?.name || (proj.rep_id ? proj.rep_id.replace(/^rep_/, '').replace(/_/g, ' ') : 'Unassigned Rep');
+
                           return (
                             <tr key={proj.id} className="hover:bg-slate-800/40 transition-colors">
                               <td className="py-3 px-3 font-bold text-white flex items-center gap-2">
                                 <span className="w-2 h-2 rounded-full bg-cyan-400"></span>
-                                <span>{proj.plant_id || proj.plant_name || proj.plantName || 'Plant Floor'}</span>
+                                <span>{plantNameDisplay}</span>
                               </td>
                               <td className="py-3 px-3 font-semibold text-slate-300">
-                                {proj.supplier_id || proj.supplier_name || proj.clientName || 'Client'}
+                                {supplierNameDisplay}
                               </td>
                               <td className="py-3 px-3 font-bold text-blue-300">
-                                {proj.rep_name || proj.rep_id || 'Unassigned'}
+                                {repNameDisplay}
                               </td>
                               <td className="py-3 px-3 text-slate-300">
                                 {proj.scope_of_work || proj.scopeOfWork || proj.name || 'Quality Inspection & Sorting'}

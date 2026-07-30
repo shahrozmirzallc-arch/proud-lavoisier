@@ -8704,8 +8704,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                       <div className="font-mono text-[10px] text-text-secondary">{t.id}</div>
                                       <div className="font-bold text-text-primary">{t.date}</div>
                                     </td>
-                                    <td className="p-3 font-semibold text-text-primary">{users.find(u => u.id === t.rep_id)?.name || t.rep_id}</td>
-                                    <td className="p-3 text-text-secondary">{suppliers.find(s => s.id === t.supplier_id)?.name || t.supplier_id}</td>
+                                    <td className="p-3 font-semibold text-text-primary">{users.find(u => u.id === t.rep_id || u.username === t.rep_id)?.name || t.rep_name || t.rep_id}</td>
+                                    <td className="p-3 text-text-secondary">{suppliers.find(s => s.id === t.supplier_id || s.name?.toLowerCase() === (t.supplier_id || '').toLowerCase())?.name || t.supplier_name || (t.supplier_id ? t.supplier_id.replace(/^sup_/, '').replace(/_/g, ' ') : 'Client Company')}</td>
                                     <td className="p-3 font-mono font-bold">{t.hours}</td>
                                     <td className="p-3">
                                       <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${t.status === 'approved' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-amber-500/10 text-amber-500'}`}>
@@ -8755,10 +8755,10 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                       <div className="font-mono text-[10px] text-text-secondary">{e.id}</div>
                                       <div className="font-bold text-text-primary">{e.date}</div>
                                     </td>
-                                    <td className="p-3 font-semibold text-text-primary">{users.find(u => u.id === e.rep_id)?.name || e.rep_id}</td>
+                                    <td className="p-3 font-semibold text-text-primary">{users.find(u => u.id === e.rep_id || u.username === e.rep_id)?.name || e.rep_name || e.rep_id}</td>
                                     <td className="p-3">
                                       <div className="font-bold text-text-primary">{e.category}</div>
-                                      <div className="text-[11px] text-text-secondary">{suppliers.find(s => s.id === e.supplier_id)?.name || 'Internal'}</div>
+                                      <div className="text-[11px] text-text-secondary">{suppliers.find(s => s.id === e.supplier_id || s.name?.toLowerCase() === (e.supplier_id || '').toLowerCase())?.name || e.supplier_name || 'Internal'}</div>
                                     </td>
                                     <td className="p-3 font-mono font-bold text-emerald-500">\${e.amount}</td>
                                     <td className="p-3">
@@ -9285,7 +9285,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                             <td className="py-2.5 px-3 font-medium">{new Date(rw.created_at).toLocaleDateString()}</td>
                             <td className="py-2.5 px-3 text-[#3B82F6] font-semibold">{rep}</td>
                             <td className="py-2.5 px-3 font-semibold text-text-primary">PN {rw.part_id}</td>
-                            <td className="py-2.5 px-3 uppercase text-[11.5px] text-slate-450 font-bold">{rw.supplier_id}</td>
+                            <td className="py-2.5 px-3 uppercase text-[11.5px] text-slate-450 font-bold">{suppliers.find(s => s.id === rw.supplier_id || s.name?.toLowerCase() === (rw.supplier_id || '').toLowerCase())?.name || rw.supplier_name || (rw.supplier_id ? rw.supplier_id.replace(/^sup_/, '').replace(/_/g, ' ') : 'AutoKabel')}</td>
                             <td className="py-2.5 px-3 font-bold text-text-primary text-center bg-emerald-500/5">{rw.qty} pcs</td>
                             <td className="py-2.5 px-3 font-bold text-amber-600">{Math.round(rw.time_spent_minutes / 60 * 10) / 10} hrs</td>
                             <td className="py-2.5 px-3 text-text-secondary max-w-[200px] truncate" title={rw.notes}>{rw.notes}</td>
@@ -9995,7 +9995,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 <div className="bg-slate-900/90 border border-slate-800 p-3.5 rounded-2xl flex flex-col gap-1">
                   <span className="text-[10.5px] text-slate-400 font-bold uppercase tracking-wider">Plant & Area</span>
                   <span className="text-sm font-extrabold text-slate-100 leading-snug">
-                    {suppliers.find(s => s.id === selectedIncident.supplier_id)?.name || selectedIncident.supplier_name || selectedIncident.supplier_id || 'Plant'}
+                    {suppliers.find(s => s.id === selectedIncident.supplier_id || s.name?.toLowerCase() === (selectedIncident.supplier_id || '').toLowerCase())?.name || selectedIncident.supplier_name || (selectedIncident.supplier_id ? selectedIncident.supplier_id.replace(/^sup_/, '').replace(/_/g, ' ') : 'Client Company')}
                   </span>
                   <span className="text-[10px] text-slate-400 font-semibold">{selectedIncident.area || 'Factory Floor'}</span>
                 </div>
@@ -10402,7 +10402,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 <div className="bg-surface p-3 rounded-xl border border-border-subtle">
                   <span className="text-[10.5px] text-text-secondary font-bold uppercase tracking-wider block">Supplier Partner</span>
                   <span className="text-[13.5px] font-extrabold text-[#3B82F6] mt-1 block uppercase">
-                    {selectedReworkLog.supplier_id}
+                    {suppliers.find(s => s.id === selectedReworkLog.supplier_id || s.name?.toLowerCase() === (selectedReworkLog.supplier_id || '').toLowerCase())?.name || selectedReworkLog.supplier_name || (selectedReworkLog.supplier_id ? selectedReworkLog.supplier_id.replace(/^sup_/, '').replace(/_/g, ' ') : 'AutoKabel Systems')}
                   </span>
                 </div>
                 <div className="bg-surface p-3 rounded-xl border border-border-subtle bg-emerald-500/5 border-emerald-500/10">

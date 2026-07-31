@@ -37,8 +37,8 @@ const ESSENTIAL_ADMIN_USERS = [
   { id: 'acct_1', name: 'Colleen Boyd', email: 'cboyd@integritydriven.com', username: 'colleen', phone: '+1 (416) 555-0002', role: 'accountant', title: 'Financial Accountant / Controller', pay_currency: 'CAD', avatar: 'CB' },
   { id: 'admin_1', name: 'Shahroz Mirza', email: 'smirza@integritydriven.com', username: 'shahroz', password: 'Shahroz121$', phone: '+1 (416) 555-0000', role: 'super_admin', title: 'System Super Admin', pay_currency: 'CAD', avatar: 'SM' },
   { id: 'lead_diana', name: 'Diana Operations Lead', email: 'diana@goto-ids.com', username: 'diana', phone: '+1 (416) 555-0088', role: 'lead', title: 'Operations Lead Supervisor', pay_currency: 'CAD', avatar: 'DL' },
-  { id: 'rep_clarence', name: 'Clarence Kuiken', email: 'ckuiken@integritydriven.com', username: 'clarence', phone: '+1 (416) 555-0099', role: 'rep', title: 'Quality Inspector', pay_currency: 'CAD', avatar: 'CK' },
-  { id: 'rep_test', name: 'Rep Test Inspector', email: 'rep_test@integritydriven.com', username: 'rep_test', password: 'password123', phone: '+1 (416) 555-0199', role: 'rep', title: 'Quality Inspector', pay_currency: 'CAD', avatar: 'RT' }
+  { id: 'rep_clarence', name: 'Clarence Kuiken', email: 'ckuiken@integritydriven.com', username: 'clarence', phone: '+1 (416) 555-0099', role: 'rep', title: 'Quality Liaison Rep', pay_currency: 'CAD', avatar: 'CK' },
+  { id: 'rep_test', name: 'Rep Test Inspector', email: 'rep_test@integritydriven.com', username: 'rep_test', password: 'password123', phone: '+1 (416) 555-0199', role: 'rep', title: 'Quality Liaison Rep', pay_currency: 'CAD', avatar: 'RT' }
 ];
 
 const ESSENTIAL_SUPPLIERS = [];
@@ -231,6 +231,50 @@ export function isFieldRep(user) {
   const role = (user.role || '').toLowerCase();
   const title = (user.title || '').toLowerCase();
   return role === 'rep' || role === 'qre' || title.includes('rep') || title.includes('quality') || title.includes('inspector') || title.includes('engineer');
+}
+
+/**
+ * Requirement 4: One canonical accounting eligibility check helper
+ * Determines if a time entry is eligible to enter PO Telemetry, Weekly Timesheets, Payroll,
+ * Invoices, QuickBooks CSVs, and Financial Totals.
+ * 
+ * Rules:
+ * A. Regular allocated hours: hour_type = 'regular' (or default) AND status = 'recorded' (or legacy approved)
+ * B. Approved overtime: hour_type = 'overtime' AND (status = 'client_approved' OR client_review_status = 'approved')
+ */
+export function isEntryAccountingEligible(entry) {
+  if (!entry) return false;
+
+  const hourType = (entry.hour_type || 'regular').toLowerCase();
+  const status = (entry.status || '').toLowerCase();
+  const clientReviewStatus = (entry.client_review_status || '').toLowerCase();
+
+  // A. Regular allocated hours:
+  const isRegularType = hourType === 'regular';
+  const isRecordedOrLegacyApproved = 
+    status === 'recorded' || 
+    status === 'approved' || 
+    (!status && (entry.invoiced || entry.source === 'legacy_session' || entry.source === 'admin_adjustment'));
+
+  if (isRegularType && isRecordedOrLegacyApproved) {
+    return true;
+  }
+
+  // B. Approved overtime:
+  const isOvertimeType = hourType === 'overtime';
+  const isClientApprovedOvertime = 
+    status === 'client_approved' || 
+    clientReviewStatus === 'approved';
+
+  if (isOvertimeType && isClientApprovedOvertime) {
+    return true;
+  }
+
+  return false;
+}
+
+export function isEntryApproved(entry) {
+  return isEntryAccountingEligible(entry);
 }
 
 // Supabase Async Sync Engine with Role-Based Data Isolation

@@ -5,7 +5,7 @@ import {
   FileSpreadsheet, Calendar, ArrowRight, UserPlus, MapPin, Printer, Download, Eye, EyeOff, Sparkles,
   Milestone, TrendingUp, FolderKanban, PlusCircle, ArrowLeft, Camera, ClipboardCheck, Zap, Building2, ShieldAlert, User, Cpu, Mic, Video, Trash2, History, Lock
 } from 'lucide-react';
-import { getEntities, saveEntity, resetDB, logSystemEvent, addProject, deleteRate, isFieldRep, syncWithSupabase, supabase, addUser } from './SharedDatabase';
+import { getEntities, saveEntity, resetDB, logSystemEvent, addProject, deleteRate, isFieldRep, syncWithSupabase, supabase, addUser, isEntryAccountingEligible } from './SharedDatabase';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { LOGO_BASE64 } from './LogoBase64';
@@ -94,7 +94,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   const [inlineRepName, setInlineRepName] = useState('');
   const [inlineRepEmail, setInlineRepEmail] = useState('');
   const [inlineRepPhone, setInlineRepPhone] = useState('');
-  const [inlineRepTitle, setInlineRepTitle] = useState('Quality Inspector');
+  const [inlineRepTitle, setInlineRepTitle] = useState('Quality Liaison Rep');
   const [isOnboardingSubmitting, setIsOnboardingSubmitting] = useState(false);
 
   // Quick Add Plant Form State
@@ -122,6 +122,109 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 3500);
+  };
+
+  // Admin Hours Review Queue State & Action Handlers
+  const [reviewModalState, setReviewModalState] = useState({ show: false, action: null, entry: null, notes: '' });
+  const [reviewSearchTerm, setReviewSearchTerm] = useState('');
+
+  // Client Overtime Review State & Handlers
+  const [clientReviewModalState, setClientReviewModalState] = useState({ show: false, action: null, entry: null, comment: '' });
+  const [clientReviewSupplierFilter, setClientReviewSupplierFilter] = useState('all');
+
+  const resolveProjectTitle = (projId) => {
+    if (!projId) return 'Record unavailable';
+    const proj = (projects || []).find(p => p && (String(p.id) === String(projId) || p.title === projId || p.name === projId));
+    if (proj && (proj.title || proj.name)) return proj.title || proj.name;
+    return String(projId) || 'Record unavailable';
+  };
+
+  const handleClientApproveOvertime = async (entry) => {
+    const isClientRole = currentUser?.role === 'client' || userRole === 'customer';
+    if (!isClientRole && currentUser?.role !== 'admin' && currentUser?.role !== 'owner') {
+      showToast("Only authorized Client Managers may approve overtime.", "warning");
+      return;
+    }
+
+    if (supabase && typeof supabase.rpc === 'function' && process.env.VITE_SUPABASE_URL !== 'YOUR_SUPABASE_URL') {
+      try {
+        const { data, error } = await supabase.rpc('review_client_overtime_atomic', {
+          p_time_entry_id: String(entry.id),
+          p_action: 'approved',
+          p_comment: ''
+        });
+        if (error) {
+          showToast(`Server authorization error: ${error.message}`, 'error');
+          return;
+        }
+      } catch (err) {
+        console.warn('RPC execution exception, applying local update:', err);
+      }
+    }
+
+    const updated = {
+      ...entry,
+      status: 'client_approved',
+      client_review_status: 'approved',
+      client_reviewed_by: currentUser?.name || currentUser?.username || 'Client Manager',
+      client_reviewed_at: new Date().toISOString()
+    };
+    saveEntity('timeEntries', updated);
+    setTimeEntries(prev => prev.map(e => e.id === entry.id ? updated : e));
+    logSystemEvent('hours', 'client_approve_ot', `Client approved overtime for entry #${entry.id}`);
+    showToast(`Overtime approved for ${entry.rep_id || 'Rep'}`, 'success');
+    if (dbUpdateTrigger) dbUpdateTrigger(Date.now());
+  };
+
+  const handleClientConfirmReviewAction = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    if (!clientReviewModalState.entry || !clientReviewModalState.action) return;
+    if (!clientReviewModalState.comment || !clientReviewModalState.comment.trim()) {
+      showToast('A comment is required for return or rejection.', 'warning');
+      return;
+    }
+
+    const isClientRole = currentUser?.role === 'client' || userRole === 'customer';
+    if (!isClientRole && currentUser?.role !== 'admin' && currentUser?.role !== 'owner') {
+      showToast("Only authorized Client Managers may perform overtime actions.", "warning");
+      return;
+    }
+
+    const action = clientReviewModalState.action;
+    const entry = clientReviewModalState.entry;
+    const comment = clientReviewModalState.comment.trim();
+
+    if (supabase && typeof supabase.rpc === 'function' && process.env.VITE_SUPABASE_URL !== 'YOUR_SUPABASE_URL') {
+      try {
+        const { data, error } = await supabase.rpc('review_client_overtime_atomic', {
+          p_time_entry_id: String(entry.id),
+          p_action: action,
+          p_comment: comment
+        });
+        if (error) {
+          showToast(`Server authorization error: ${error.message}`, 'error');
+          return;
+        }
+      } catch (err) {
+        console.warn('RPC execution exception, applying local update:', err);
+      }
+    }
+
+    const newStatus = action === 'returned' ? 'client_returned' : 'client_rejected';
+    const updated = {
+      ...entry,
+      status: newStatus,
+      client_review_status: action,
+      client_reviewed_by: currentUser?.name || currentUser?.username || 'Client Manager',
+      client_reviewed_at: new Date().toISOString(),
+      client_review_comment: comment
+    };
+    saveEntity('timeEntries', updated);
+    setTimeEntries(prev => prev.map(e => e.id === entry.id ? updated : e));
+    logSystemEvent('hours', `client_ot_${action}`, `Time entry #${entry.id} overtime ${action}: ${comment}`);
+    showToast(`Overtime ${action === 'returned' ? 'returned for correction' : 'rejected'}.`, 'info');
+    setClientReviewModalState({ show: false, action: null, entry: null, comment: '' });
+    if (dbUpdateTrigger) dbUpdateTrigger(Date.now());
   };
 
   // Navigation & UI Ergonomics Mode ('inspector' vs 'admin')
@@ -288,7 +391,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   const [showResetPasswordToggle, setShowResetPasswordToggle] = useState(false);
 
   // Accounting Sub-tab Navigation
-  const [accountingSubTab, setAccountingSubTab] = useState('log-hours');
+  const [accountingSubTab, setAccountingSubTab] = useState('review-queue');
 
   // Daily Checklists State
   const [weeklyChecklists, setWeeklyChecklists] = useState({
@@ -311,33 +414,35 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
   const resolveSupplierName = (val, suppliersList = []) => {
     const strVal = String(val || '').trim();
-    if (!strVal) return 'AutoKabel Systems';
-    if (strVal === '1' || strVal === 'sup_1' || strVal.toLowerCase().includes('autokabel')) return 'AutoKabel Systems';
-    if (strVal === '2' || strVal === 'sup_2' || strVal.toLowerCase().includes('magna')) return 'Magna International';
-    if (strVal === '3' || strVal === 'sup_3' || strVal.toLowerCase().includes('hutchinson')) return 'Hutchinson Fluid';
-    const found = suppliersList.find(s => 
+    if (!strVal) return 'Record unavailable';
+    const list = (suppliersList && suppliersList.length > 0) ? suppliersList : (suppliers || []);
+    const found = list.find(s => 
       String(s.id) === strVal || 
       s.id === `sup_${strVal}` ||
       (s.name && s.name.toLowerCase() === strVal.toLowerCase()) ||
       (s.code && s.code.toLowerCase() === strVal.toLowerCase())
     );
-    if (found?.name && found.name !== strVal && found.name !== '1') return found.name;
-    return strVal.replace(/^sup_/, '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    if (found && found.name) return found.name;
+    if (strVal === '1' || strVal === 'sup_1') return 'AutoKabel Systems';
+    if (strVal === '2' || strVal === 'sup_2') return 'Magna International';
+    if (strVal === '3' || strVal === 'sup_3') return 'Hutchinson Fluid';
+    return strVal || 'Record unavailable';
   };
 
   const resolvePlantName = (val, plantsList = []) => {
     const strVal = String(val || '').trim();
-    if (!strVal) return 'Windsor Plant 1';
-    if (strVal === '1' || strVal === 'plant_1' || strVal === 'plant_windsor_1' || strVal.toLowerCase().includes('windsor')) return 'Windsor Plant 1';
-    if (strVal === '2' || strVal === 'plant_2' || strVal.toLowerCase().includes('brampton')) return 'Brampton Plant 2';
-    if (strVal === '3' || strVal === 'plant_3' || strVal.toLowerCase().includes('oshawa')) return 'GM Oshawa Plant';
-    const found = plantsList.find(p => 
+    if (!strVal) return 'Record unavailable';
+    const list = (plantsList && plantsList.length > 0) ? plantsList : (plants || []);
+    const found = list.find(p => 
       String(p.id) === strVal || 
       p.id === `plant_${strVal}` ||
       (p.name && p.name.toLowerCase() === strVal.toLowerCase())
     );
-    if (found?.name && found.name !== strVal && found.name !== '1') return found.name;
-    return strVal.replace(/^plant_|^plt_/, '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    if (found && found.name) return found.name;
+    if (strVal === '1' || strVal === 'plant_1' || strVal === 'plant_windsor_1') return 'Windsor Plant 1';
+    if (strVal === '2' || strVal === 'plant_2') return 'Brampton Plant 2';
+    if (strVal === '3' || strVal === 'plant_3') return 'GM Oshawa Plant';
+    return strVal || 'Record unavailable';
   };
 
   const dynamicRepCards = useMemo(() => {
@@ -658,6 +763,19 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       return 'USD';
     }
     return 'CAD';
+  };
+
+  // Centralized Relational Resolvers (Section 9 Compliance)
+  const resolveRepName = (repId) => {
+    if (!repId) return "Record unavailable";
+    const u = (users || []).find(user => String(user.id) === String(repId) || String(user.auth_id) === String(repId));
+    if (u && u.name) return u.name;
+    return "Record unavailable";
+  };
+
+  const resolvePartNumber = (partNo) => {
+    if (!partNo) return "Record unavailable";
+    return String(partNo);
   };
 
   // Look up project currency for expenses based on rep & supplier combination
@@ -1030,7 +1148,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     setTimeout(() => {
       let count = 0;
       suppliers.filter(Boolean).forEach(clientObj => {
-        const cEntries = timeEntries.filter(t => t && t.supplier_id === clientObj.id && !t.invoiced && (getRepSupplierRates(t.rep_id, t.supplier_id, t.plant_id).currency === selectedInvoiceCurrency));
+        const cEntries = timeEntries.filter(t => t && t.supplier_id === clientObj.id && !t.invoiced && isEntryAccountingEligible(t) && (getRepSupplierRates(t.rep_id, t.supplier_id, t.plant_id).currency === selectedInvoiceCurrency));
         const cExpenses = expenseEntries.filter(e => e && e.supplier_id === clientObj.id && !e.invoiced && e.status === 'approved' && (getExpenseCurrency(e) === selectedInvoiceCurrency));
         
         if (cEntries.length > 0 || cExpenses.length > 0) {
@@ -1257,7 +1375,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       password: 'password123',
       email: newRepEmail.trim() || `${cleanName.toLowerCase().replace(/[^a-z0-9]/g, '.')}@integritydriven.com`,
       role: 'rep',
-      title: 'Quality Inspector',
+      title: 'Quality Liaison Rep',
       phone: newRepPhone.trim() || '',
       pay_currency: newRepPayCurrency || 'CAD',
       avatar: cleanName.split(' ').map(n => n[0]).join('')?.toUpperCase() || 'QI',
@@ -1299,7 +1417,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
         password: 'password123',
         email: quickRepEmail.trim() || `${cleanName.toLowerCase().replace(/[^a-z0-9]/g, '.')}@integritydriven.com`,
         role: 'rep',
-        title: 'Quality Inspector',
+        title: 'Quality Liaison Rep',
         phone: quickRepPhone.trim() || '',
         pay_currency: quickRepPayCurrency || 'CAD',
         avatar: cleanName.split(' ').map(n => n[0]).join('')?.toUpperCase() || 'QI',
@@ -1407,7 +1525,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
           email: inlineRepEmail.trim() || `${inlineRepName.toLowerCase().replace(/\s+/g, '.')}@integritydriven.com`,
           phone: inlineRepPhone.trim() || '',
           role: 'rep',
-          title: inlineRepTitle || 'Quality Inspector',
+          title: inlineRepTitle || 'Quality Liaison Rep',
           username: inlineRepName.toLowerCase().replace(/\s+/g, '_'),
           created_at: new Date().toISOString()
         };
@@ -1478,7 +1596,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       setInlineRepName('');
       setInlineRepEmail('');
       setInlineRepPhone('');
-      setInlineRepTitle('Quality Inspector');
+      setInlineRepTitle('Quality Liaison Rep');
 
       // Update local state immediately
       setProjects(getEntities('projects') || []);
@@ -1596,70 +1714,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     showToast("Extra hours request filed! Pending approval.", "success");
   };
 
-  const handleCustomerApproval = (reqId, statusAction) => {
-    if (statusAction === 'reject' && !customerApprovalComment.trim()) {
-      showToast("A rejection reason is mandatory when rejecting extra hours!", "warning");
-      return;
-    }
-    const dbReqs = getEntities('extraHoursRequests');
-    const match = dbReqs.find(r => r.id === reqId);
-    if (match) {
-      match.status = statusAction === 'approve' ? 'pending_admin' : 'rejected_by_customer';
-      match.customer_comment = customerApprovalComment;
-      if (!match.history) match.history = [];
-      match.history.push({
-        status: match.status,
-        user: suppliers.find(s => s.id === currentUserCustomerId)?.name || 'Customer Manager',
-        timestamp: new Date().toISOString(),
-        comment: customerApprovalComment || (statusAction === 'approve' ? 'Customer approved.' : 'Customer rejected.')
-      });
-      saveEntity('extraHoursRequests', match);
-      setExtraHoursRequests(getEntities('extraHoursRequests'));
-      const user = suppliers.find(s => s.id === currentUserCustomerId)?.name || 'Customer Manager';
-      logSystemEvent('payroll', 'customer_overtime_approval', `Customer ${user} ${statusAction}d overtime request ${reqId} for ${match.hours} hrs.`);
-      setCustomerApprovalComment('');
-      showToast(`Request ${statusAction === 'approve' ? 'Approved' : 'Rejected'}!`, "success");
-    }
-  };
 
-  const handleAdminApproval = (reqId, statusAction) => {
-    const dbReqs = getEntities('extraHoursRequests');
-    const match = dbReqs.find(r => r.id === reqId);
-    if (match) {
-      match.status = statusAction === 'approve' ? 'approved' : 'rejected_by_admin';
-      match.admin_comment = adminApprovalComment;
-      if (!match.history) match.history = [];
-      match.history.push({
-        status: match.status,
-        user: 'Admin Manager',
-        timestamp: new Date().toISOString(),
-        comment: adminApprovalComment || (statusAction === 'approve' ? 'Admin approved.' : 'Admin rejected.')
-      });
-      
-      if (statusAction === 'approve') {
-        const newTime = {
-          id: `te_${Date.now()}`,
-          rep_id: match.rep_id,
-          supplier_id: match.supplier_id,
-          plant_id: match.plant_id,
-          date: match.date,
-          hours: match.hours,
-          notes: `[APPROVED EXTRA HOURS]: ${match.reason}`,
-          invoiced: false,
-          created_at: new Date().toISOString()
-        };
-        saveEntity('timeEntries', newTime);
-        setTimeEntries(getEntities('timeEntries'));
-      }
-
-      saveEntity('extraHoursRequests', match);
-      setExtraHoursRequests(getEntities('extraHoursRequests'));
-      const user = getActiveActorName();
-      logSystemEvent('payroll', 'admin_overtime_approval', `${user} ${statusAction}d overtime request ${reqId} for Rep ${match.rep_id}.`);
-      setAdminApprovalComment('');
-      showToast(`Request ${statusAction === 'approve' ? 'Approved & Added' : 'Rejected'}!`, "success");
-    }
-  };
 
   const handleAdminExpenseApproval = (expId, statusAction) => {
     const dbExps = getEntities('expenseEntries');
@@ -1686,11 +1741,11 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       const plantObj = (plants || []).find(p => p.id === match.plant_id);
       const plantName = plantObj?.name || match.plant_id || 'Plant';
 
-      logSystemEvent('shift', 'publish_report', `${user} published shift report ${reportId} to Customer Portal & routed to Colleen Boyd for customer invoicing.`);
+      logSystemEvent('shift', 'publish_report', `${user} published daily quality report ${reportId} to Customer Portal & routed to Colleen Boyd for customer invoicing.`);
       
       addNotification(
         "💳 Report Approved for Invoicing",
-        `${user} approved shift report for ${plantName}. Routed to Colleen Boyd (Accounting) for customer billing.`,
+        `${user} approved daily quality report for ${plantName}. Routed to Colleen Boyd (Accounting) for customer billing.`,
         "shift"
       );
       showToast("Report approved & routed to Colleen for customer billing!", "success");
@@ -2060,20 +2115,20 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
             // Brand new shift report created
             const rep = getEntities('users')?.find(u => u.id === sr.rep_id)?.name || 'Clarence Kuiken';
             addNotification(
-              "📝 Shift Report Created",
-              `${rep} started a new shift report (${sr.status || 'Draft'}).`,
+              "📝 Daily Quality Report Created",
+              `${rep} started a new daily quality report (${sr.status || 'Draft'}).`,
               "shift"
             );
-            logSystemEvent('shift', 'created', `${rep} initiated daily shift report walkthrough.`);
+            logSystemEvent('shift', 'created', `${rep} initiated daily quality report walkthrough.`);
           } else if (prevStatus === 'Draft' && sr.status === 'Sent') {
             // Draft was submitted/completed
             const rep = getEntities('users')?.find(u => u.id === sr.rep_id)?.name || 'Clarence Kuiken';
             addNotification(
-              "📝 Shift Report Submitted",
-              `${rep} completed their shift. Total Hours: ${sr.total_hours || 8.0} hrs.`,
+              "📝 Daily Quality Report Submitted",
+              `${rep} completed their daily quality report. Total Hours: ${sr.total_hours || 8.0} hrs.`,
               "shift"
             );
-            logSystemEvent('shift', 'completed', `${rep} completed and sent their shift report walkthrough.`);
+            logSystemEvent('shift', 'completed', `${rep} completed and sent their daily quality report walkthrough.`);
           }
         });
         
@@ -2328,7 +2383,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
         list.push({
           time: sr.sent_at ? new Date(sr.sent_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '05:30 PM',
           date: sr.date,
-          title: 'Shift Report Submitted',
+          title: 'Daily Quality Report Submitted',
           desc: `Walkthrough sent for ${sr.plant_id === 'gm_oshawa' ? 'GM Oshawa' : 'Hutchinson'} | Rep: ${repName}`,
           color: 'border-emerald-500',
           timestamp: sr.sent_at || `${sr.date}T17:30:00Z`
@@ -2423,27 +2478,29 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     return `${rate.toFixed(1)}%`;
   }, [shiftReports, showAllDates, selectedDate]);
   
-  // Hours and Mileage cost calculation (Colleen's Phase 1 utility)
-  const ratePerKm = CONFIG_MILEAGE_RATE;
-  const totalMileage = timeEntries
-    .filter(t => showAllDates || t.date === selectedDate)
-    .reduce((acc, curr) => acc + curr.mileage_km, 0);
+  // Hours and Mileage cost calculation (strictly accounting-eligible time entries: regular recorded or client approved overtime)
+  const approvedTimeEntries = (timeEntries || []).filter(isEntryAccountingEligible);
 
-  const totalHours = timeEntries
-    .filter(t => showAllDates || t.date === selectedDate)
-    .reduce((acc, curr) => acc + curr.hours, 0);
+  const ratePerKm = CONFIG_MILEAGE_RATE;
+  const totalMileage = approvedTimeEntries
+    .filter(t => showAllDates || (t.date || t.work_date) === selectedDate)
+    .reduce((acc, curr) => acc + (parseFloat(curr.mileage_km) || 0), 0);
+
+  const totalHours = approvedTimeEntries
+    .filter(t => showAllDates || (t.date || t.work_date) === selectedDate)
+    .reduce((acc, curr) => acc + (parseFloat(curr.hours) || 0), 0);
   
   const totalMileageCost = totalMileage * ratePerKm;
-  const totalHoursCost = (timeEntries || []).reduce((acc, curr) => acc + ((curr.hours || 0) * ((curr.billing_rate !== undefined && curr.billing_rate !== null) ? parseFloat(curr.billing_rate) : getRepSupplierRates(curr.rep_id, curr.supplier_id, curr.plant_id).billing_rate)), 0);
+  const totalHoursCost = approvedTimeEntries.reduce((acc, curr) => acc + ((curr.hours || 0) * ((curr.billing_rate !== undefined && curr.billing_rate !== null) ? parseFloat(curr.billing_rate) : getRepSupplierRates(curr.rep_id, curr.supplier_id, curr.plant_id).billing_rate)), 0);
   const totalInvoicedEst = totalMileageCost + totalHoursCost;
 
   // Dynamic currency-aware totals for Admin billing overview
-  const activeEntries = timeEntries.filter(t => showAllDates || t.date === selectedDate);
+  const activeEntries = approvedTimeEntries.filter(t => showAllDates || (t.date || t.work_date) === selectedDate);
   const cadInvoicedTotal = activeEntries
     .filter(t => getRepSupplierRates(t.rep_id, t.supplier_id, t.plant_id).currency === 'CAD')
     .reduce((acc, curr) => {
       const rates = getRepSupplierRates(curr.rep_id, curr.supplier_id, curr.plant_id);
-      return acc + (curr.hours * rates.billing_rate) + (curr.mileage_km * CONFIG_MILEAGE_RATE);
+      return acc + ((curr.hours || 0) * rates.billing_rate) + ((curr.mileage_km || 0) * CONFIG_MILEAGE_RATE);
     }, 0);
     
   const usdInvoicedTotal = activeEntries
@@ -2786,7 +2843,6 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
           { label: "Report Date:", val: formattedDate || 'N/A' },
           { label: "Affected Part Number:", val: partSubject || 'N/A' },
           { label: "Area Discovered:", val: inc.area || 'N/A' },
-          { label: "Defect Coordinates:", val: (inc.defect_location_x !== undefined && inc.defect_location_x !== null) ? `X: ${inc.defect_location_x} | Y: ${inc.defect_location_y}` : 'N/A' },
           { label: "Immediate Action:", val: inc.action_taken || 'N/A' },
           { label: "Supplier QM Contact:", val: inc.supplier_contact || 'N/A' },
           { label: "Review Status Level:", val: inc.status || 'N/A' },
@@ -3222,9 +3278,10 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     doc.text("TOTAL MILEAGE CLAIMED", 82, 57);
     doc.text("ESTIMATED INVOICE COST", 138, 57);
 
-    const totalHoursVal = timeEntries.reduce((acc, curr) => acc + curr.hours, 0);
-    const totalMileageVal = timeEntries.reduce((acc, curr) => acc + curr.mileage_km, 0);
-    const totalInvoicedEstVal = (timeEntries || []).reduce((acc, curr) => acc + ((curr.hours || 0) * ((curr.billing_rate !== undefined && curr.billing_rate !== null) ? parseFloat(curr.billing_rate) : getRepSupplierRates(curr.rep_id, curr.supplier_id, curr.plant_id).billing_rate)) + ((curr.mileage_km || 0) * CONFIG_MILEAGE_RATE), 0);
+    const eligibleEntries = (timeEntries || []).filter(isEntryAccountingEligible);
+    const totalHoursVal = eligibleEntries.reduce((acc, curr) => acc + (curr.hours || 0), 0);
+    const totalMileageVal = eligibleEntries.reduce((acc, curr) => acc + (curr.mileage_km || 0), 0);
+    const totalInvoicedEstVal = eligibleEntries.reduce((acc, curr) => acc + ((curr.hours || 0) * ((curr.billing_rate !== undefined && curr.billing_rate !== null) ? parseFloat(curr.billing_rate) : getRepSupplierRates(curr.rep_id, curr.supplier_id, curr.plant_id).billing_rate)) + ((curr.mileage_km || 0) * CONFIG_MILEAGE_RATE), 0);
 
     doc.setFont("helvetica", "bold");
     doc.setFontSize(12);
@@ -3255,7 +3312,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     
     y += 7;
 
-    timeEntries.forEach((entry) => {
+    eligibleEntries.forEach((entry) => {
       const rep = users.find(u => u.id === entry.rep_id)?.name || 'Unknown Rep';
       const mileageCost = entry.mileage_km * CONFIG_MILEAGE_RATE;
       const rate = (entry.billing_rate !== undefined && entry.billing_rate !== null) ? parseFloat(entry.billing_rate) : getRepSupplierRates(entry.rep_id, entry.supplier_id, entry.plant_id).billing_rate;
@@ -3642,7 +3699,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(11);
     doc.setTextColor(3, 29, 55);
-    doc.text('Shift Summary & Quality Verification Notes', 14, y);
+    doc.text('Daily Quality Summary & Verification Notes', 14, y);
 
     y += 6;
     doc.setFont('helvetica', 'normal');
@@ -3822,11 +3879,10 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     doc.setLineWidth(0.8);
     doc.line(14, 27, 196, 27);
 
-    const head = [['Incident ID', 'Part Number', 'Coordinates (X,Y)', 'Defect Area / Component', 'Discovered Date']];
+    const head = [['Incident ID', 'Part Number', 'Defect Area / Component', 'Discovered Date']];
     const body = (incidents || []).map(inc => [
       inc.id || 'N/A',
       inc.parts_list?.[0]?.part_number || inc.part_id || 'N/A',
-      (inc.defect_location_x !== undefined && inc.defect_location_x !== null) ? `X: ${inc.defect_location_x} | Y: ${inc.defect_location_y}` : 'X: Center | Y: Top',
       inc.area || 'Surface Scratch / Dent',
       inc.date || todayStr
     ]);
@@ -3865,7 +3921,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     doc.line(14, 27, 196, 27);
 
     const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-    const head = [['Day / Shift Date', 'Safety Inspection', 'Tool Calibration', 'Part Containment', 'Shift Summary Log', 'Sign-Off Status']];
+    const head = [['Day / Shift Date', 'Safety Inspection', 'Tool Calibration', 'Part Containment', 'Daily Quality Log', 'Sign-Off Status']];
     const body = days.map(day => {
       const dayData = weeklyChecklists[day] || {};
       return [
@@ -3873,7 +3929,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
         dayData['Safety Inspection'] || dayData['1'] ? '✓ COMPLETED' : 'PENDING',
         dayData['Tool Calibration'] || dayData['2'] ? '✓ COMPLETED' : 'PENDING',
         dayData['Part Containment'] || dayData['3'] ? '✓ COMPLETED' : 'PENDING',
-        dayData['Shift Summary Log'] || dayData['4'] ? '✓ COMPLETED' : 'PENDING',
+        dayData['Daily Quality Log'] || dayData['Shift Summary Log'] || dayData['4'] ? '✓ COMPLETED' : 'PENDING',
         weeklySignOff ? 'SIGNED OFF' : 'IN PROGRESS'
       ];
     });
@@ -3912,7 +3968,9 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
         `Employee/Rep Name,Date,Plant,Hours,Mileage (KM),Mileage Cost ($0.73),Total Billing`
       ];
       
-      const rows = (timeEntries || []).filter(entry => entry).map(entry => {
+      const eligibleTimeEntries = (timeEntries || []).filter(isEntryAccountingEligible);
+
+      const rows = eligibleTimeEntries.map(entry => {
         const rep = users.find(u => u && u.id === entry.rep_id);
         const repName = rep ? rep.name : 'Unknown Rep';
         const plant = entry.plant_id === 'gm_oshawa' ? 'GM Oshawa Plant' : 'Hutchinson Plant';
@@ -3950,16 +4008,16 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       csvLines.push(...overtimeRows);
       
       // Calculate sums for the spreadsheet summary footer block
-      const totalHours = (timeEntries || []).filter(Boolean).reduce((acc, curr) => acc + (curr.hours || 0), 0) + 
+      const totalHours = eligibleTimeEntries.reduce((acc, curr) => acc + (curr.hours || 0), 0) + 
                          expenseEntries.filter(e => e.category === 'Overtime Request' && (e.status === 'approved_customer' || e.status === 'approved_admin')).reduce((acc, curr) => acc + (curr.amount || 0), 0);
-      const totalMileage = (timeEntries || []).filter(Boolean).reduce((acc, curr) => acc + (curr.mileage_km || 0), 0);
+      const totalMileage = eligibleTimeEntries.reduce((acc, curr) => acc + (curr.mileage_km || 0), 0);
       const totalMileageCost = totalMileage * CONFIG_MILEAGE_RATE;
-      const totalInvoicedEst = (timeEntries || []).reduce((acc, curr) => acc + ((curr.hours || 0) * ((curr.billing_rate !== undefined && curr.billing_rate !== null) ? parseFloat(curr.billing_rate) : getRepSupplierRates(curr.rep_id, curr.supplier_id, curr.plant_id).billing_rate)), 0) + totalMileageCost;
+      const totalInvoicedEst = eligibleTimeEntries.reduce((acc, curr) => acc + ((curr.hours || 0) * ((curr.billing_rate !== undefined && curr.billing_rate !== null) ? parseFloat(curr.billing_rate) : getRepSupplierRates(curr.rep_id, curr.supplier_id, curr.plant_id).billing_rate)), 0) + totalMileageCost;
 
       csvLines.push(``); // blank separator
       csvLines.push(`====================================================================================================`);
       csvLines.push(`REPORT SUMMARY & STATISTICS`);
-      csvLines.push(`Total Payroll Records:,${timeEntries.length + overtimeRows.length}`);
+      csvLines.push(`Total Payroll Records:,${eligibleTimeEntries.length + overtimeRows.length}`);
       csvLines.push(`Total Billing Hours Worked:,${totalHours.toFixed(2)} hrs`);
       csvLines.push(`Total Mileage Claimed:,${totalMileage.toFixed(2)} km`);
       csvLines.push(`Total Mileage Reimbursement:,${totalMileageCost.toFixed(2)} USD`);
@@ -4087,7 +4145,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       }
 
       // 4. Data Rows
-      timeEntries.forEach((entry, idx) => {
+      const eligibleTimeEntries = (timeEntries || []).filter(isEntryAccountingEligible);
+      eligibleTimeEntries.forEach((entry, idx) => {
         const rIdx = 11 + idx;
         const row = worksheet.getRow(rIdx);
         const rep = users.find(u => u.id === entry.rep_id);
@@ -4138,19 +4197,19 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       });
 
       // 5. Total Row
-      const totalHours = (timeEntries || []).filter(Boolean).reduce((acc, curr) => acc + (curr.hours || 0), 0);
-      const totalMileage = (timeEntries || []).filter(Boolean).reduce((acc, curr) => acc + (curr.mileage_km || 0), 0);
+      const totalHours = eligibleTimeEntries.reduce((acc, curr) => acc + (curr.hours || 0), 0);
+      const totalMileage = eligibleTimeEntries.reduce((acc, curr) => acc + (curr.mileage_km || 0), 0);
       const totalMileageCost = totalMileage * CONFIG_MILEAGE_RATE;
-      const totalInvoicedEst = (timeEntries || []).filter(Boolean).reduce((acc, curr) => {
+      const totalInvoicedEst = eligibleTimeEntries.reduce((acc, curr) => {
         const rObj = (rates || []).find(r => r.rep_id === curr.rep_id);
         const rVal = rObj?.billing_rate || rObj?.hourly_rate || 28.00;
         return acc + ((curr.hours || 0) * rVal);
       }, 0) + totalMileageCost;
 
-      const totalRowIdx = 11 + timeEntries.length;
+      const totalRowIdx = 11 + eligibleTimeEntries.length;
       const totalRow = worksheet.getRow(totalRowIdx);
       totalRow.values = [
-        `Total (${timeEntries.length} Rep${timeEntries.length > 1 ? 's' : ''})`,
+        `Total (${eligibleTimeEntries.length} Record${eligibleTimeEntries.length > 1 ? 's' : ''})`,
         '',
         '',
         totalHours,
@@ -4648,7 +4707,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 const repId = currentUserRepId || appMeta.rep_id;
                 const repObj = (users || []).find(u => u.id === repId || u.username === targetUsername);
                 fullName = repObj?.name || userMeta.full_name || 'Field Inspector';
-                title = repObj?.title || 'Quality Inspector';
+                title = repObj?.title || 'Quality Liaison Rep';
                 initials = fullName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) || 'QI';
               } else {
                 const dbUser = (users || []).find(u => u.username === targetUsername || u.email === currentUser?.email);
@@ -4968,7 +5027,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   >
                     <div className="flex items-center gap-2.5">
                       <Calendar className="w-4.5 h-4.5 text-[#3B82F6]" />
-                      <span>Shift Summaries Log</span>
+                      <span>Daily Quality Reports Feed</span>
                     </div>
                     {activeTab === 'shift-logs' && <div className="w-2 h-2 rounded-full bg-[#3B82F6] shadow-[0_0_6px_#3b82f6]"></div>}
                   </button>
@@ -5224,7 +5283,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         >
                           <div className="flex items-center gap-2.5">
                             <Calendar className="w-4.5 h-4.5 text-[#3B82F6]" />
-                            <span>Shift Summaries Log</span>
+                            <span>Daily Quality Reports Feed</span>
                           </div>
                           {activeTab === 'shift-logs' && <div className="w-2 h-2 rounded-full bg-[#3B82F6] shadow-[0_0_6px_#3b82f6]"></div>}
                         </button>
@@ -5797,7 +5856,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                       <tbody className="divide-y divide-slate-800/60 text-xs">
                         {projects.map((proj) => {
                           const allocatedPO = parseFloat(proj.po_hours || proj.poHours || 100);
-                          const projTimeEntries = (timeEntries || []).filter(t => t.project_id === proj.id || (t.supplier_id === proj.supplier_id && t.rep_id === proj.rep_id));
+                          const projTimeEntries = (timeEntries || []).filter(t => (t.project_id === proj.id || (t.supplier_id === proj.supplier_id && t.rep_id === proj.rep_id)) && isEntryAccountingEligible(t));
                           const todayLogged = projTimeEntries
                             .filter(t => showAllDates || t.date === selectedDate)
                             .reduce((sum, t) => sum + (parseFloat(t.hours) || 0), 0);
@@ -6906,7 +6965,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                       
                       // Calculate unbilled hours logged in cycle
                       const unbilledHours = timeEntries
-                        .filter(t => t.plant_id === pId && t.supplier_id === currentUserCustomerId && !t.invoiced)
+                        .filter(t => t.plant_id === pId && t.supplier_id === currentUserCustomerId && !t.invoiced && isEntryAccountingEligible(t))
                         .reduce((acc, curr) => acc + curr.hours, 0);
 
                       return (
@@ -6962,51 +7021,57 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                       <AlertCircle className="w-4.5 h-4.5 text-amber-600" /> Overtime & Extra Hours Approvals Queue
                     </h4>
                     <div className="flex flex-col gap-3 max-h-[350px] overflow-y-auto pr-1">
-                      {extraHoursRequests.filter(r => r.supplier_id === currentUserCustomerId && r.status === 'pending_customer').length === 0 ? (
-                        <div className="text-center py-8 text-slate-550 italic">No pending extra hours requests.</div>
-                      ) : (
-                        extraHoursRequests.filter(r => r.supplier_id === currentUserCustomerId && r.status === 'pending_customer').map(req => (
-                          <div key={req.id} className="p-3 bg-surface rounded-xl border border-border-subtle flex flex-col gap-2">
-                            <div className="flex justify-between items-center text-[11.5px]">
-                              <span className="font-extrabold text-text-primary uppercase">{req.userName}</span>
-                              <span className="text-amber-600 font-extrabold">{req.hours} hrs requested</span>
-                            </div>
-                            <div className="text-[11.5px] text-text-secondary"><strong className="text-text-secondary uppercase tracking-wider">Location:</strong> {plants.find(p => p.id === req.plant_id)?.name || req.plant_id}</div>
-                            <div className="text-[11.5px] text-text-secondary"><strong className="text-text-secondary uppercase tracking-wider">Reason:</strong> "{req.reason}"</div>
-                            
-                            <div className="flex flex-col gap-2 mt-2 pt-2 border-t border-border-subtle">
-                              <input 
-                                type="text" 
-                                placeholder="Add optional approval/rejection comment..." 
-                                value={customerApprovalComment}
-                                onChange={(e) => setCustomerApprovalComment(e.target.value)}
-                                className="w-full bg-surface-elevated border border-border-subtle rounded-lg px-2.5 py-1.5 text-[11.5px] text-text-primary focus:outline-none"
-                              />
-                              <div className="flex gap-2 justify-end">
+                      {(() => {
+                        const pendingOtList = timeEntries.filter(t => t && t.supplier_id === currentUserCustomerId && (t.hour_type === 'overtime' || t.overtime_hours > 0) && (t.status === 'client_pending' || !t.client_review_status || t.client_review_status === 'pending'));
+
+                        if (pendingOtList.length === 0) {
+                          return <div className="text-center py-8 text-slate-550 italic">No pending overtime entries requiring review.</div>;
+                        }
+
+                        return pendingOtList.map(entry => {
+                          const repObj = users.find(u => String(u.id) === String(entry.rep_id) || u.username === entry.rep_id);
+                          const repName = repObj?.name || entry.rep_id || 'Representative';
+
+                          return (
+                            <div key={entry.id} className="p-3 bg-surface rounded-xl border border-border-subtle flex flex-col gap-2">
+                              <div className="flex justify-between items-center text-[11.5px]">
+                                <span className="font-extrabold text-text-primary uppercase">{repName}</span>
+                                <span className="text-amber-600 font-extrabold">+{parseFloat(entry.overtime_hours || entry.hours || 0).toFixed(1)} hrs OT</span>
+                              </div>
+                              <div className="text-[11.5px] text-text-secondary"><strong className="text-text-secondary uppercase tracking-wider">Project:</strong> {resolveProjectTitle(entry.project_id)}</div>
+                              <div className="text-[11.5px] text-text-secondary"><strong className="text-text-secondary uppercase tracking-wider">Summary:</strong> "{entry.work_summary || entry.work_type || 'Routine Inspection'}"</div>
+                              
+                              <div className="flex gap-2 justify-end mt-2 pt-2 border-t border-border-subtle">
                                 <button 
-                                  onClick={() => handleCustomerApproval(req.id, 'approve')}
-                                  className="px-3 py-1 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-[10.5px] uppercase rounded"
+                                  onClick={() => setClientReviewModalState({ show: true, action: 'returned', entry, comment: '' })}
+                                  className="px-2.5 py-1 bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500/30 font-bold text-[10.5px] uppercase rounded cursor-pointer"
                                 >
-                                  Approve Request
+                                  Return
                                 </button>
                                 <button 
-                                  onClick={() => handleCustomerApproval(req.id, 'reject')}
-                                  className="px-3 py-1 bg-rose-500 hover:bg-rose-600 text-text-primary font-bold text-[10.5px] uppercase rounded"
+                                  onClick={() => setClientReviewModalState({ show: true, action: 'rejected', entry, comment: '' })}
+                                  className="px-2.5 py-1 bg-rose-500/20 text-rose-300 border border-rose-500/40 hover:bg-rose-500/30 font-bold text-[10.5px] uppercase rounded cursor-pointer"
                                 >
                                   Reject
                                 </button>
+                                <button 
+                                  onClick={() => handleClientApproveOvertime(entry)}
+                                  className="px-3 py-1 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-[10.5px] uppercase rounded cursor-pointer"
+                                >
+                                  Approve OT
+                                </button>
                               </div>
                             </div>
-                          </div>
-                        ))
-                      )}
+                          );
+                        });
+                      })()}
                     </div>
                   </div>
 
                   {/* 3. Published Shift Summaries Log */}
                   <div className="bg-surface-elevated border border-border-subtle p-6 sm:p-8 rounded-2xl flex flex-col gap-3">
                     <h4 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider border-b border-border-subtle pb-2 flex items-center gap-2">
-                      <FileText className="w-4.5 h-4.5 text-[#3B82F6]" /> Published Quality Shift Reports
+                      <FileText className="w-4.5 h-4.5 text-[#3B82F6]" /> Published Daily Quality Reports
                     </h4>
                     <div className="flex flex-col gap-3 max-h-[350px] overflow-y-auto pr-1">
                       {(() => {
@@ -7014,7 +7079,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         const customerReports = shiftReports.filter(r => r.status?.toLowerCase() === 'published' && customerPlants?.includes(r.plant_id));
                         
                         if (customerReports.length === 0) {
-                          return <div className="text-center py-8 text-slate-550 italic">No published shift logs available.</div>;
+                          return <div className="text-center py-8 text-slate-550 italic">No published daily quality reports available.</div>;
                         }
                         
                         return customerReports.map(report => {
@@ -7053,18 +7118,13 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                       <AlertCircle className="w-4.5 h-4.5 text-rose-500" /> Active Quality Containment Alerts & Incident Defect Reports
                     </h4>
                     <span className="bg-rose-500/10 text-rose-400 border border-rose-500/30 text-[10.5px] font-extrabold px-2.5 py-0.5 rounded-full uppercase">
-                      {(incidents || []).filter(i => i.supplier_id === currentUserCustomerId || i.supplier_id === 'autokabel' || (i.supplier_name || '').toLowerCase().includes('autokabel')).length} Logged Incidents
+                      {(incidents || []).filter(i => i && i.supplier_id === currentUserCustomerId).length} Logged Incidents
                     </span>
                   </div>
 
                   <div className="flex flex-col gap-3">
                     {(() => {
-                      const custIncidents = (incidents || []).filter(i => 
-                        i.supplier_id === currentUserCustomerId || 
-                        i.supplier_id === 'autokabel' || 
-                        (i.supplier_name || '').toLowerCase().includes('autokabel') ||
-                        (currentUserCustomerId === 'autokabel' && (i.rep_id === 'rep_test' || i.rep_name?.includes('Rep Test')))
-                      );
+                      const custIncidents = (incidents || []).filter(i => i && i.supplier_id === currentUserCustomerId);
 
                       if (custIncidents.length === 0) {
                         return <div className="text-center py-8 text-slate-550 italic">No active incident reports logged for your account.</div>;
@@ -7166,11 +7226,10 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     Pending Action Requests
                   </h4>
                   {(() => {
-                    const pendingExtraHours = extraHoursRequests.filter(r => (r.supplier_id === currentUserCustomerId || r.supplier_id === 'test_company') && (r.status === 'pending_customer' || r.status === 'pending'));
-                    const pendingExpenses = expenseEntries.filter(e => e.status === 'pending_customer');
-                    const allPending = [...pendingExtraHours, ...pendingExpenses];
+                    const pendingOtEntries = timeEntries.filter(t => t && t.supplier_id === currentUserCustomerId && (t.hour_type === 'overtime' || t.overtime_hours > 0) && (t.status === 'client_pending' || !t.client_review_status || t.client_review_status === 'pending'));
+                    const pendingExpenses = expenseEntries.filter(e => e && e.supplier_id === currentUserCustomerId && e.status === 'pending_customer');
 
-                    if (allPending.length === 0) {
+                    if (pendingOtEntries.length === 0 && pendingExpenses.length === 0) {
                       return (
                         <div className="flex flex-col items-center justify-center p-6 bg-surface-elevated border border-border-subtle rounded-2xl">
                           <CheckCircle2 className="w-8 h-8 text-emerald-500 mb-2" />
@@ -7180,141 +7239,138 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                       );
                     }
 
-                    return allPending.map(req => {
-                      const rep = users.find(u => u.id === req.rep_id || u.id === req.user_id) || { name: req.user_name || req.userName || 'Clarence Kuiken' };
-                      const hoursAmount = req.hours || req.amount || 30;
-                      const costImpact = (hoursAmount * 45).toFixed(2);
-                      
-                      return (
-                        <div key={req.id} className="stitch-panel p-4 flex flex-col gap-3">
-                          <div className="flex justify-between items-start border-b border-border-subtle pb-3">
-                            <div>
-                              <div className="flex items-center gap-2 mb-1">
-                                <span className="px-2 py-0.5 bg-amber-500/20 border border-amber-500/40 text-amber-400 text-[10.5px] font-bold uppercase rounded-md">
-                                  {req.category || 'Overtime Request'}
-                                </span>
-                                <span className="text-[11.5px] text-text-secondary font-mono">{req.created_at || req.date || '2026-07-26'}</span>
+                    return (
+                      <div className="flex flex-col gap-3">
+                        {pendingOtEntries.map(entry => {
+                          const repObj = users.find(u => String(u.id) === String(entry.rep_id) || u.username === entry.rep_id);
+                          const repName = repObj?.name || entry.rep_id || 'Quality Representative';
+
+                          return (
+                            <div key={entry.id} className="stitch-panel p-4 flex flex-col gap-3">
+                              <div className="flex justify-between items-start border-b border-border-subtle pb-3">
+                                <div>
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <span className="px-2 py-0.5 bg-amber-500/20 border border-amber-500/40 text-amber-400 text-[10.5px] font-bold uppercase rounded-md">
+                                      Overtime Review
+                                    </span>
+                                    <span className="text-[11.5px] text-text-secondary font-mono">📅 {entry.work_date || entry.date || 'Today'}</span>
+                                  </div>
+                                  <h4 className="text-sm font-bold text-text-primary flex items-center gap-1.5">
+                                    <User className="w-4 h-4 text-amber-500" />
+                                    {repName}
+                                  </h4>
+                                </div>
+                                <div className="flex flex-col items-end text-right">
+                                  <span className="text-[10px] text-text-secondary font-bold uppercase">Requested OT</span>
+                                  <span className="text-sm font-black text-amber-400">+{parseFloat(entry.overtime_hours || entry.hours || 0).toFixed(1)} Hours</span>
+                                </div>
                               </div>
-                              <h4 className="text-sm font-bold text-text-primary flex items-center gap-1.5">
-                                <User className="w-4 h-4 text-amber-500" />
-                                {rep.name}
-                              </h4>
-                            </div>
-                            <div className="flex flex-col items-end text-right">
-                              <span className="text-[10px] text-text-secondary font-bold uppercase">Requested Amount</span>
-                              <span className="text-sm font-black text-amber-400">+{hoursAmount} Hours</span>
-                            </div>
-                          </div>
-                          
-                          <div className="flex flex-col gap-1">
-                            <span className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Reason for Request</span>
-                            <p className="text-xs text-text-primary leading-relaxed bg-surface-elevated p-2.5 rounded-lg border border-border-subtle">
-                              {req.reason || req.notes || "Job 77667 sorting expanded due to edge burr inspection."}
-                            </p>
-                          </div>
-                          
-                          <div className="flex items-center justify-between mt-1 pt-3 border-t border-border-subtle">
-                            <div className="flex items-center gap-2 px-3 py-1 bg-amber-950/40 border border-amber-900/60 rounded-lg">
-                              <DollarSign className="w-4 h-4 text-amber-400" />
-                              <div className="flex flex-col">
-                                <span className="text-[10px] font-bold text-amber-400 uppercase">Estimated Cost Impact</span>
-                                <span className="text-xs font-bold text-amber-300">${costImpact} USD ($45.00/hr)</span>
+                              
+                              <div className="flex flex-col gap-1">
+                                <span className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Project / Work Summary</span>
+                                <p className="text-xs text-text-primary leading-relaxed bg-surface-elevated p-2.5 rounded-lg border border-border-subtle">
+                                  <strong>Project:</strong> {resolveProjectTitle(entry.project_id)}<br/>
+                                  <strong>Summary:</strong> {entry.work_summary || entry.work_type || "Routine quality activities exceeding allocation limit."}
+                                </p>
+                              </div>
+                              
+                              <div className="flex items-center justify-between mt-1 pt-3 border-t border-border-subtle">
+                                <div className="text-xs text-text-secondary">
+                                  Plant: <span className="font-bold text-text-primary">{resolvePlantName(entry.plant_id)}</span>
+                                </div>
+                                
+                                <div className="flex items-center gap-2">
+                                  <button 
+                                    onClick={() => setClientReviewModalState({ show: true, action: 'returned', entry, comment: '' })}
+                                    className="px-3.5 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 font-bold text-xs rounded-lg transition-colors cursor-pointer"
+                                  >
+                                    ↩ Return
+                                  </button>
+                                  <button 
+                                    onClick={() => setClientReviewModalState({ show: true, action: 'rejected', entry, comment: '' })}
+                                    className="px-3.5 py-1.5 bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 font-bold text-xs rounded-lg transition-colors cursor-pointer"
+                                  >
+                                    <X className="w-4 h-4 inline mr-1" /> Reject
+                                  </button>
+                                  <button 
+                                    onClick={() => handleClientApproveOvertime(entry)}
+                                    className="px-3.5 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-xs rounded-lg transition-colors flex items-center gap-1 cursor-pointer shadow-md shadow-emerald-900/40"
+                                  >
+                                    <CheckCircle2 className="w-4 h-4" /> Approve
+                                  </button>
+                                </div>
                               </div>
                             </div>
-                            
-                            <div className="flex items-center gap-2">
-                              <button 
-                                onClick={() => handleCustomerApproval(req.id, 'reject')}
-                                className="px-3.5 py-1.5 bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 font-bold text-xs rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
-                              >
-                                <X className="w-4 h-4" /> Reject
-                              </button>
-                              <button 
-                                onClick={() => handleCustomerApproval(req.id, 'approve')}
-                                className="px-3.5 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-xs rounded-lg transition-colors flex items-center gap-1 cursor-pointer shadow-md shadow-emerald-900/40"
-                              >
-                                <CheckCircle2 className="w-4 h-4" /> Approve Request
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    });
+                          );
+                        })}
+                      </div>
+                    );
                   })()}
                 </div>
 
-                {/* 2. Historical Approvals & Decision Audit Trail Table */}
+                {/* 2. Overtime & Expense Decision Audit Trail Table */}
                 <div className="flex flex-col gap-3 pt-4 border-t border-border-subtle">
                   <div className="flex justify-between items-center">
                     <h4 className="text-xs font-bold text-text-primary uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
                       <FileText className="w-4 h-4 text-sky-400" /> Overtime & Expense Decision Audit Log
                     </h4>
-                    <span className="text-[11px] text-slate-400 font-mono">Real-Time Decision Log</span>
+                    <span className="text-[11px] text-slate-400 font-mono">Real-Time Audit Trail</span>
                   </div>
 
                   <div className="bg-surface-elevated border border-border-subtle rounded-2xl overflow-hidden shadow-xl">
                     <table className="w-full text-left text-xs text-text-primary border-collapse">
                       <thead>
                         <tr className="bg-surface border-b border-border-subtle text-[10.5px] uppercase font-bold text-slate-400 tracking-wider">
-                          <th className="p-3">Date & Timestamp</th>
-                          <th className="p-3">Inspector / QRE</th>
-                          <th className="p-3">Category & Job</th>
-                          <th className="p-3 text-right">Requested Overtime</th>
-                          <th className="p-3 text-right">Cost Impact</th>
-                          <th className="p-3 text-center">Decision Status</th>
-                          <th className="p-3">Client Approval Notes</th>
+                          <th className="p-3">Work Date & Rep</th>
+                          <th className="p-3">Project & Plant</th>
+                          <th className="p-3 text-right">Overtime Hours</th>
+                          <th className="p-3 text-center">Client Decision</th>
+                          <th className="p-3">Client Notes / Comment</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-border-subtle font-medium">
                         {(() => {
-                          const completedExtraHours = extraHoursRequests.filter(r => (r.supplier_id === currentUserCustomerId || r.supplier_id === 'test_company') && (r.status === 'approved' || r.status === 'approved_customer' || r.status === 'rejected'));
-                          const completedExpenses = expenseEntries.filter(e => e.status === 'approved_customer' || e.status === 'rejected');
-                          const allCompleted = [...completedExtraHours, ...completedExpenses];
+                          const completedOt = timeEntries.filter(t => t && t.supplier_id === currentUserCustomerId && (t.hour_type === 'overtime' || t.overtime_hours > 0) && (t.status === 'client_approved' || t.status === 'client_returned' || t.status === 'client_rejected' || t.client_review_status === 'approved' || t.client_review_status === 'returned' || t.client_review_status === 'rejected'));
 
-                          // Ensure default Job 77667 approved record is present if list is empty
-                          const displayLogs = allCompleted.length > 0 ? allCompleted : [
-                            {
-                              id: 'ehr_77667_01',
-                              created_at: '2026-07-26 09:16',
-                              user_name: 'Clarence Kuiken',
-                              category: 'Overtime Budget Request',
-                              job_no: '77667',
-                              hours: 30.0,
-                              status: 'approved',
-                              notes: 'Approved +30.0 extra hours. Job 77667 total budget expanded to 65.0 hours.'
-                            }
-                          ];
+                          if (completedOt.length === 0) {
+                            return (
+                              <tr>
+                                <td colSpan={5} className="p-6 text-center text-slate-500 italic">
+                                  No completed overtime decisions logged yet.
+                                </td>
+                              </tr>
+                            );
+                          }
 
-                          return displayLogs.map(item => {
-                            const hoursVal = item.hours || item.amount || 30.0;
-                            const costVal = (hoursVal * 45.0).toFixed(2);
-                            const isApproved = item.status === 'approved' || item.status === 'approved_customer';
+                          return completedOt.map(item => {
+                            const repObj = users.find(u => String(u.id) === String(item.rep_id) || u.username === item.rep_id);
+                            const isApproved = item.status === 'client_approved' || item.client_review_status === 'approved';
+                            const isReturned = item.status === 'client_returned' || item.client_review_status === 'returned';
 
                             return (
-                              <tr key={item.id} className="hover:bg-surface/50 transition-colors">
-                                <td className="p-3 font-mono text-[11px] text-slate-400">{item.created_at || item.date || '2026-07-26'}</td>
-                                <td className="p-3 font-bold text-slate-100">{item.user_name || item.userName || 'Clarence Kuiken'}</td>
+                              <tr key={item.id} className="hover:bg-surface/60 transition-colors">
                                 <td className="p-3">
-                                  <div className="flex flex-col">
-                                    <span className="font-bold text-sky-400">{item.category || 'Overtime Request'}</span>
-                                    <span className="text-[10px] text-slate-400 font-mono">Job #77667</span>
-                                  </div>
+                                  <div className="font-bold text-text-primary">{repObj?.name || item.rep_id}</div>
+                                  <div className="text-[10.5px] font-mono text-purple-300">📅 {item.work_date || item.date}</div>
                                 </td>
-                                <td className="p-3 text-right font-black text-amber-400">+{hoursVal} Hrs</td>
-                                <td className="p-3 text-right font-bold text-emerald-400">${costVal}</td>
+                                <td className="p-3">
+                                  <div className="font-bold text-text-primary">{resolveProjectTitle(item.project_id)}</div>
+                                  <div className="text-[10.5px] text-text-secondary">{resolvePlantName(item.plant_id)}</div>
+                                </td>
+                                <td className="p-3 text-right font-mono font-bold text-amber-300">
+                                  +{parseFloat(item.overtime_hours || item.hours || 0).toFixed(1)} hrs
+                                </td>
                                 <td className="p-3 text-center">
-                                  {isApproved ? (
-                                    <span className="inline-flex items-center gap-1 text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2.5 py-1 rounded-full font-bold uppercase tracking-wider">
-                                      <CheckCircle2 className="w-3 h-3 text-emerald-400" /> Approved
-                                    </span>
-                                  ) : (
-                                    <span className="inline-flex items-center gap-1 text-[10px] bg-rose-500/20 text-rose-300 border border-rose-500/40 px-2.5 py-1 rounded-full font-bold uppercase tracking-wider">
-                                      <X className="w-3 h-3 text-rose-400" /> Rejected
-                                    </span>
-                                  )}
+                                  <span className={`px-2 py-0.5 rounded font-extrabold text-[10.5px] ${
+                                    isApproved ? 'bg-emerald-500/20 text-emerald-300' :
+                                    isReturned ? 'bg-amber-500/20 text-amber-300' :
+                                    'bg-rose-500/20 text-rose-300'
+                                  }`}>
+                                    {isApproved ? '✓ Approved' : isReturned ? '↩ Returned' : '✕ Rejected'}
+                                  </span>
                                 </td>
-                                <td className="p-3 text-xs text-slate-300 max-w-xs truncate" title={item.notes || item.reason}>
-                                  {item.notes || item.reason || 'Approved +30.0 extra hours for sorting.'}
+                                <td className="p-3 text-text-secondary text-[11px] max-w-xs break-words">
+                                  {item.client_review_comment ? `"${item.client_review_comment}"` : <span className="text-slate-500 italic">No comment</span>}
                                 </td>
                               </tr>
                             );
@@ -7333,8 +7389,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
           {activeTab === 'shift-logs' && (
             <div className="flex-1 flex flex-col gap-3 min-h-0">
               <div className="flex justify-between items-center pb-2 border-b border-border-subtle flex-shrink-0">
-                <h3 className="text-[14.5px] font-bold text-text-primary uppercase tracking-wider">End-Of-Shift Walkthrough logs</h3>
-                <span className="text-[11.5px] text-text-secondary font-medium">Auto-aggregated shift logs from rep phones</span>
+                <h3 className="text-[14.5px] font-bold text-text-primary uppercase tracking-wider">Daily Quality Report Walkthrough Logs</h3>
+                <span className="text-[11.5px] text-text-secondary font-medium">Auto-aggregated daily quality reports from rep phones</span>
               </div>
 
               <div className="flex-1 overflow-y-auto scrollbar-thin pr-1 flex flex-col gap-3">
@@ -7351,8 +7407,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     return (
                       <div className="bg-surface-elevated border border-border-subtle rounded-2xl p-8 text-center flex flex-col items-center justify-center gap-3 my-auto">
                         <Calendar className="w-10 h-10 text-[#3B82F6] opacity-70" />
-                        <h4 className="text-[15px] font-bold text-text-primary">Shift Walkthrough Log Feed Active</h4>
-                        <p className="text-[12.5px] text-text-secondary max-w-md">End-of-shift reports submitted by representatives on site (Clarence Kuiken, Rep Test Inspector) are automatically synced here for review, PDF export, and customer publishing.</p>
+                        <h4 className="text-[15px] font-bold text-text-primary">Daily Quality Reports Feed Active</h4>
+                        <p className="text-[12.5px] text-text-secondary max-w-md">Daily quality reports submitted by representatives on site (Clarence Kuiken, Rep Test Inspector) are automatically synced here for review, PDF export, and customer publishing.</p>
                       </div>
                     );
                   }
@@ -7610,17 +7666,9 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   {/* Sub-tabs */}
                   <div className="flex gap-2 bg-surface p-1 rounded-xl border border-border-subtle">
                     <button
-                      onClick={() => setAccountingSubTab('log-hours')}
-                      className={`px-3 py-1.5 rounded-lg text-[11.5px] font-bold transition-all cursor-pointer ${
-                        accountingSubTab === 'log-hours' ? 'bg-[#3B82F6] text-text-primary' : 'text-text-secondary hover:text-text-primary'
-                      }`}
-                    >
-                      Log Hours & Expenses
-                    </button>
-                    <button
                       onClick={() => setAccountingSubTab('extra-hours')}
                       className={`px-3 py-1.5 rounded-lg text-[11.5px] font-bold transition-all cursor-pointer ${
-                        accountingSubTab === 'extra-hours' ? 'bg-[#3B82F6] text-text-primary' : 'text-text-secondary hover:text-text-primary'
+                        (accountingSubTab === 'extra-hours' || accountingSubTab === 'log-hours') ? 'bg-[#3B82F6] text-text-primary' : 'text-text-secondary hover:text-text-primary'
                       }`}
                     >
                       Request Overtime / Extra Hours
@@ -7638,119 +7686,6 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
                 {/* Scrollable area */}
                 <div className="flex-1 overflow-y-auto scrollbar-thin pr-1 flex flex-col gap-3">
-                  {accountingSubTab === 'log-hours' && (
-                    <div className="grid grid-cols-2 gap-3">
-                      {/* QRE log hours form */}
-                      <form onSubmit={(e) => {
-                        handleLogHoursSubmit(e);
-                      }} className="bg-surface-elevated border border-border-subtle p-6 sm:p-8 rounded-2xl flex flex-col gap-3 text-left">
-                        <h4 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider border-b border-border-subtle pb-2 flex items-center gap-2">
-                          <Clock className="w-4.5 h-4.5 text-[#3B82F6]" /> Log My Hours & Mileage
-                        </h4>
-                        <div className="flex flex-col gap-1">
-                          <span className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Representative</span>
-                          <span className="text-[13.5px] text-text-primary bg-surface px-3 py-2 rounded-xl border border-border-subtle font-semibold">
-                            {users.find(u => u.id === currentUserRepId)?.name || 'Me'}
-                          </span>
-                        </div>
-                        <div className="flex flex-col gap-1">
-                          <label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Client (Supplier)</label>
-                          <select value={logHoursSupplierId} onChange={(e) => {
-                            setLogHoursSupplierId(e.target.value);
-                            setLogHoursRepId(currentUserRepId);
-                          }} className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary focus:outline-none focus:border-[#3B82F6]">
-                            {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                          </select>
-                        </div>
-                        <div className="grid grid-cols-2 gap-3">
-                          <div className="flex flex-col gap-1">
-                            <label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Date</label>
-                            <input type="date" value={logHoursDate} onChange={(e) => setLogHoursDate(e.target.value)} className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary" />
-                          </div>
-                          <div className="flex flex-col gap-1">
-                            <label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Hours Worked</label>
-                            <input type="number" step="0.5" placeholder="8.0" value={logHoursQty} onChange={(e) => setLogHoursQty(e.target.value)} className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary" />
-                          </div>
-                        </div>
-                        <div className="flex flex-col gap-1">
-                          <label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Mileage (KM)</label>
-                          <input type="number" placeholder="KM travelled" value={logHoursMileage} onChange={(e) => setLogHoursMileage(e.target.value)} className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary" />
-                        </div>
-                        <div className="flex flex-col gap-1">
-                          <label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Notes / Activity summary</label>
-                          <input type="text" placeholder="Detail the sort activity" value={logHoursNotes} onChange={(e) => setLogHoursNotes(e.target.value)} className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary" />
-                        </div>
-                        <button type="submit" className="bg-[#3B82F6] hover:bg-[#3B82F6]/90 text-text-primary font-bold py-2 rounded-xl text-[13.5px] cursor-pointer transition-colors mt-2">Log Hours</button>
-                      </form>
-
-                      {/* QRE log expense form */}
-                      <form onSubmit={(e) => {
-                        handleLogExpenseSubmit(e);
-                      }} className="bg-surface-elevated border border-border-subtle p-6 sm:p-8 rounded-2xl flex flex-col gap-3 text-left h-fit">
-                        <h4 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider border-b border-border-subtle pb-2 flex items-center gap-2">
-                          <DollarSign className="w-4.5 h-4.5 text-emerald-600" /> Log My Expense Claim
-                        </h4>
-                        <div className="flex flex-col gap-1">
-                          <span className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Representative</span>
-                          <span className="text-[13.5px] text-text-primary bg-surface px-3 py-2 rounded-xl border border-border-subtle font-semibold">
-                            {users.find(u => u.id === currentUserRepId)?.name || 'Me'}
-                          </span>
-                        </div>
-                        <div className="flex flex-col gap-1">
-                          <label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Client (Supplier)</label>
-                          <select value={logExpSupplierId} onChange={(e) => {
-                            setLogExpSupplierId(e.target.value);
-                            setLogExpRepId(currentUserRepId);
-                          }} className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary focus:outline-none">
-                            {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                          </select>
-                        </div>
-                        <div className="grid grid-cols-2 gap-3">
-                          <div className="flex flex-col gap-1">
-                            <label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Date</label>
-                            <input type="date" value={logExpDate} onChange={(e) => setLogExpDate(e.target.value)} className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary" />
-                          </div>
-                          <div className="flex flex-col gap-1">
-                            <label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Expense Group</label>
-                            <select value={logExpGroup} onChange={(e) => setLogExpGroup(e.target.value)} className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary">
-                              <option value={EXPENSE_GROUPS.EXTERNAL}>{EXPENSE_GROUPS.EXTERNAL}</option>
-                              <option value={EXPENSE_GROUPS.INTERNAL}>{EXPENSE_GROUPS.INTERNAL}</option>
-                            </select>
-                          </div>
-                        </div>
-                        <div className="grid grid-cols-2 gap-3">
-                          <div className="flex flex-col gap-1">
-                            <label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Category</label>
-                            <select value={logExpCategory} onChange={(e) => setLogExpCategory(e.target.value)} className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary">
-                              {EXPENSE_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-                            </select>
-                          </div>
-                          <div className="flex flex-col gap-1">
-                            <label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Amount ($)</label>
-                            <input type="number" step="0.01" placeholder="0.00" value={logExpAmount} onChange={(e) => setLogExpAmount(e.target.value)} className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary" />
-                          </div>
-                        </div>
-                        <div className="flex flex-col gap-1">
-                          <label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Observations / Notes</label>
-                          <input type="text" placeholder="Purpose of expense" value={logExpNotes} onChange={(e) => setLogExpNotes(e.target.value)} className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary" />
-                        </div>
-                        <div className="flex flex-col gap-1">
-                          <label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Receipt / Photo</label>
-                          <div className="flex items-center gap-2">
-                            <button type="button" onClick={() => setSelectedReceiptPhoto('captured_receipt.jpg')} className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[12px] text-text-primary flex items-center gap-2 flex-1 justify-center hover:bg-surface-elevated">
-                              <Camera className="w-4 h-4 text-[#10B981]" /> {selectedReceiptPhoto ? 'Photo Attached' : 'Capture Receipt'}
-                            </button>
-                            {selectedReceiptPhoto && (
-                              <button type="button" onClick={() => setSelectedReceiptPhoto(null)} className="p-2 bg-red-500/10 text-red-500 rounded-xl hover:bg-red-500/20">
-                                <X className="w-4 h-4" />
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                        <button type="submit" className="bg-[#10B981] hover:bg-[#10B981]/90 text-text-primary font-bold py-2 rounded-xl text-[13.5px] cursor-pointer transition-colors mt-2">Log Expense</button>
-                      </form>
-                    </div>
-                  )}
 
                   {accountingSubTab === 'extra-hours' && (
                     <div className="grid grid-cols-2 gap-3">
@@ -7921,13 +7856,32 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   
                   {/* Sub-tab navigation */}
                   <div className="flex gap-2 bg-surface p-1 rounded-xl border border-border-subtle">
+
                     <button
-                      onClick={() => setAccountingSubTab('log-hours')}
-                      className={`px-3 py-1.5 rounded-lg text-[11.5px] font-bold transition-all cursor-pointer ${
-                        accountingSubTab === 'log-hours' ? 'bg-[#3B82F6] text-text-primary' : 'text-text-secondary hover:text-text-primary'
+                      onClick={() => setAccountingSubTab('review-queue')}
+                      className={`px-3 py-1.5 rounded-lg text-[11.5px] font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                        accountingSubTab === 'review-queue' ? 'bg-[#10B981] text-white shadow-md' : 'text-text-secondary hover:text-text-primary'
                       }`}
                     >
-                      Log Hours & Expenses
+                      <span>⏱️ Hours & Overtime Oversight</span>
+                      {(timeEntries || []).filter(e => e.status === 'client_pending' || e.hour_type === 'overtime').length > 0 && (
+                        <span className="bg-amber-400 text-slate-950 px-1.5 py-0.5 rounded-full text-[10px] font-black">
+                          {(timeEntries || []).filter(e => e.status === 'client_pending').length}
+                        </span>
+                      )}
+                    </button>
+                    <button
+                      onClick={() => setAccountingSubTab('client-review')}
+                      className={`px-3 py-1.5 rounded-lg text-[11.5px] font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                        accountingSubTab === 'client-review' ? 'bg-[#8B5CF6] text-white shadow-md' : 'text-text-secondary hover:text-text-primary'
+                      }`}
+                    >
+                      <span>🏢 Client Overtime Review</span>
+                      {(timeEntries || []).filter(e => e.status === 'client_pending').length > 0 && (
+                        <span className="bg-purple-300 text-purple-950 px-1.5 py-0.5 rounded-full text-[10px] font-black">
+                          {(timeEntries || []).filter(e => e.status === 'client_pending').length}
+                        </span>
+                      )}
                     </button>
                     <button
                       onClick={() => setAccountingSubTab('invoice-gen')}
@@ -7983,103 +7937,310 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 {/* Scrollable Sub-tab Contents */}
                 <div className="flex-1 overflow-y-auto scrollbar-thin pr-1 flex flex-col gap-3">
                   
-                  {/* SUB-TAB 1: LOG HOURS & EXPENSES */}
-                  {accountingSubTab === 'log-hours' && (
-                    <div className="grid grid-cols-2 gap-3">
-                      <form onSubmit={handleLogHoursSubmit} className="bg-surface-elevated border border-border-subtle p-6 sm:p-8 rounded-2xl flex flex-col gap-3 text-left">
-                        <h4 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider border-b border-border-subtle pb-2 flex items-center gap-2">
-                          <Clock className="w-4.5 h-4.5 text-[#3B82F6]" /> Log Representative Hours & Mileage
-                        </h4>
-                        <div className="flex flex-col gap-1">
-                          <label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Representative</label>
-                          <select value={logHoursRepId} onChange={(e) => setLogHoursRepId(e.target.value)} className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary focus:outline-none focus:border-[#3B82F6]">
-                            {users.filter(isFieldRep).map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
-                          </select>
+                  {/* SUB-TAB: ADMIN HOURS & OVERTIME OVERSIGHT */}
+                  {accountingSubTab === 'review-queue' && (
+                    <div className="bg-surface-elevated border border-border-subtle p-6 rounded-2xl flex flex-col gap-4 text-left">
+                      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 pb-3 border-b border-border-subtle">
+                        <div>
+                          <h4 className="text-[14.5px] font-bold text-text-primary uppercase tracking-wider flex items-center gap-2">
+                            <span>⏱️ Hours & Overtime Oversight</span>
+                          </h4>
+                          <p className="text-[11.5px] text-text-secondary mt-0.5">
+                            Monitor automatically recorded regular hours (authorized via assignment allocation) and track client overtime approval statuses. No Admin approval is required for regular hours within allocation.
+                          </p>
                         </div>
-                        <div className="flex flex-col gap-1">
-                          <label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Client (Supplier)</label>
-                          <select value={logHoursSupplierId} onChange={(e) => setLogHoursSupplierId(e.target.value)} className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary focus:outline-none focus:border-[#3B82F6]">
-                            {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                          </select>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            placeholder="Filter by Rep, Client, Status, Date..."
+                            value={reviewSearchTerm}
+                            onChange={(e) => setReviewSearchTerm(e.target.value)}
+                            className="bg-surface border border-border-subtle rounded-xl px-3 py-1.5 text-xs text-text-primary focus:outline-none focus:border-emerald-500 w-64"
+                          />
                         </div>
-                        <div className="grid grid-cols-2 gap-3">
-                          <div className="flex flex-col gap-1">
-                            <label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Date</label>
-                            <input type="date" value={logHoursDate} onChange={(e) => setLogHoursDate(e.target.value)} className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary" />
-                          </div>
-                          <div className="flex flex-col gap-1">
-                            <label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Hours</label>
-                            <input type="number" step="0.5" placeholder="e.g. 8.0" value={logHoursQty} onChange={(e) => setLogHoursQty(e.target.value)} className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary" />
-                          </div>
-                        </div>
-                        <div className="flex flex-col gap-1">
-                          <label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Mileage (KM)</label>
-                          <input type="number" placeholder="KM travelled" value={logHoursMileage} onChange={(e) => setLogHoursMileage(e.target.value)} className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary" />
-                        </div>
-                        <div className="flex flex-col gap-1">
-                          <label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Notes</label>
-                          <input type="text" placeholder="Shift sorting notes" value={logHoursNotes} onChange={(e) => setLogHoursNotes(e.target.value)} className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary" />
-                        </div>
-                        <div className="bg-[#3B82F6]/10 border border-[#3B82F6]/30 rounded-xl p-3 mt-1 flex justify-between items-center">
-                          <span className="text-[11.5px] font-bold text-[#3B82F6] uppercase tracking-wider">Expected Base Pay</span>
-                          <span className="text-[14px] font-bold text-[#3B82F6]">
-                            {users.find(u => u.id === logHoursRepId)?.pay_currency === 'CAD' ? 'CAD $' : 'USD $'}
-                            {((parseFloat(logHoursQty) || 0) * (getRepSupplierRates(logHoursRepId, logHoursSupplierId)?.pay_rate || 0)).toFixed(2)}
-                          </span>
-                        </div>
-                        <button type="submit" className="bg-[#3B82F6] hover:bg-[#3B82F6]/90 text-text-primary font-bold py-2 rounded-xl text-[13.5px] cursor-pointer transition-colors mt-2">Log Hours</button>
-                      </form>
+                      </div>
 
-                      <form onSubmit={handleLogExpenseSubmit} className="bg-surface-elevated border border-border-subtle p-6 sm:p-8 rounded-2xl flex flex-col gap-3 text-left h-fit">
-                        <h4 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider border-b border-border-subtle pb-2 flex items-center gap-2">
-                          <DollarSign className="w-4.5 h-4.5 text-emerald-600" /> Log Rep Expense Claim
-                        </h4>
-                        <div className="flex flex-col gap-1">
-                          <label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Representative</label>
-                          <select value={logExpRepId} onChange={(e) => setLogExpRepId(e.target.value)} className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary focus:outline-none">
-                            {users.filter(isFieldRep).map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
-                          </select>
-                        </div>
-                        <div className="flex flex-col gap-1">
-                          <label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Client (Supplier)</label>
-                          <select value={logExpSupplierId} onChange={(e) => setLogExpSupplierId(e.target.value)} className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary focus:outline-none">
-                            {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                          </select>
-                        </div>
-                        <div className="grid grid-cols-2 gap-3">
-                          <div className="flex flex-col gap-1">
-                            <label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Date</label>
-                            <input type="date" value={logExpDate} onChange={(e) => setLogExpDate(e.target.value)} className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary" />
+                      {/* Oversight Table */}
+                      {(() => {
+                        const allList = (timeEntries || []).filter(e => {
+                          if (!e) return false;
+                          if (!reviewSearchTerm.trim()) return true;
+                          const term = reviewSearchTerm.toLowerCase();
+                          const rName = (users.find(u => String(u.id) === String(e.rep_id) || u.username === e.rep_id)?.name || e.rep_id || '').toLowerCase();
+                          const sName = resolveSupplierName(e.supplier_id).toLowerCase();
+                          const pName = resolvePlantName(e.plant_id).toLowerCase();
+                          const summary = (e.work_summary || e.notes || '').toLowerCase();
+                          const dt = (e.date || e.work_date || '').toLowerCase();
+                          const st = (e.status || '').toLowerCase();
+                          const ht = (e.hour_type || '').toLowerCase();
+                          return rName.includes(term) || sName.includes(term) || pName.includes(term) || summary.includes(term) || dt.includes(term) || st.includes(term) || ht.includes(term);
+                        });
+
+                        if (allList.length === 0) {
+                          return (
+                            <div className="py-12 text-center text-text-secondary bg-surface/50 rounded-xl border border-dashed border-border-subtle">
+                              <div className="text-3xl mb-2">📋</div>
+                              <div className="text-sm font-semibold text-text-primary">No matching time entries found</div>
+                              <div className="text-xs text-text-secondary mt-1">Field rep hours will appear here as they are logged.</div>
+                            </div>
+                          );
+                        }
+
+                        return (
+                          <div className="overflow-x-auto w-full">
+                            <table className="w-full text-xs text-left border-collapse">
+                              <thead>
+                                <tr className="border-b border-border-subtle text-text-secondary font-bold uppercase text-[10.5px]">
+                                  <th className="py-2.5 px-3">Rep & Date</th>
+                                  <th className="py-2.5 px-3">Client & Plant</th>
+                                  <th className="py-2.5 px-3">Hour Type</th>
+                                  <th className="py-2.5 px-3">Hours</th>
+                                  <th className="py-2.5 px-3">Workflow Status & Source</th>
+                                  <th className="py-2.5 px-3">Client Review Details</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-border-subtle text-text-primary">
+                                {allList.map(entry => {
+                                  const repObj = users.find(u => String(u.id) === String(entry.rep_id) || u.username === entry.rep_id);
+                                  const repName = repObj?.name || entry.rep_id || 'Representative';
+                                  const supName = resolveSupplierName(entry.supplier_id);
+                                  const plantName = resolvePlantName(entry.plant_id);
+                                  const isRegular = entry.hour_type === 'regular' || entry.status === 'recorded';
+
+                                  return (
+                                    <tr key={entry.id} className="hover:bg-surface/60 transition-colors">
+                                      <td className="py-3 px-3">
+                                        <div className="font-bold text-text-primary">{repName}</div>
+                                        <div className="text-[11px] font-mono text-emerald-400 mt-0.5">📅 {entry.date || entry.work_date || 'Today'}</div>
+                                      </td>
+                                      <td className="py-3 px-3">
+                                        <div className="font-semibold text-text-primary">{supName}</div>
+                                        <div className="text-[11px] text-text-secondary">{plantName}</div>
+                                      </td>
+                                      <td className="py-3 px-3">
+                                        <span className={`px-2 py-0.5 rounded font-bold text-[10.5px] uppercase ${
+                                          isRegular ? 'bg-emerald-500/20 text-emerald-300' : 'bg-amber-500/20 text-amber-300'
+                                        }`}>
+                                          {isRegular ? 'Regular' : 'Overtime'}
+                                        </span>
+                                      </td>
+                                      <td className="py-3 px-3 font-mono font-bold text-emerald-400 text-sm">
+                                        {parseFloat(entry.hours || 0).toFixed(1)} hrs
+                                      </td>
+                                      <td className="py-3 px-3">
+                                        {isRegular ? (
+                                          <div className="flex flex-col gap-0.5">
+                                            <span className="px-2 py-0.5 rounded bg-emerald-600/30 text-emerald-300 font-extrabold text-[10.5px] inline-block w-max">
+                                              Recorded Automatically
+                                            </span>
+                                            <span className="text-[10px] text-slate-400">Auth Assignment Allocation</span>
+                                          </div>
+                                        ) : (
+                                          <div className="flex flex-col gap-0.5">
+                                            <span className={`px-2 py-0.5 rounded font-extrabold text-[10.5px] inline-block w-max ${
+                                              entry.status === 'client_approved' || entry.client_review_status === 'approved' ? 'bg-purple-500/30 text-purple-300' :
+                                              entry.status === 'client_returned' || entry.client_review_status === 'returned' ? 'bg-amber-500/30 text-amber-300' :
+                                              entry.status === 'client_rejected' || entry.client_review_status === 'rejected' ? 'bg-rose-500/30 text-rose-300' :
+                                              'bg-amber-400/30 text-amber-200'
+                                            }`}>
+                                              {entry.status === 'client_approved' || entry.client_review_status === 'approved' ? 'Client Approved' :
+                                               entry.status === 'client_returned' || entry.client_review_status === 'returned' ? 'Returned for Correction' :
+                                               entry.status === 'client_rejected' || entry.client_review_status === 'rejected' ? 'Client Rejected' :
+                                               'Client Approval Pending'}
+                                            </span>
+                                            <span className="text-[10px] text-slate-400">Client Approval Required</span>
+                                          </div>
+                                        )}
+                                      </td>
+                                      <td className="py-3 px-3 text-text-secondary text-[11.5px]">
+                                        {entry.client_reviewed_by ? (
+                                          <div>
+                                            <div className="font-semibold text-text-primary">By: {entry.client_reviewed_by}</div>
+                                            {entry.client_review_comment && (
+                                              <div className="text-[10.5px] text-amber-300 italic mt-0.5">"{entry.client_review_comment}"</div>
+                                            )}
+                                          </div>
+                                        ) : (
+                                          <span className="text-slate-500 italic">No client action yet</span>
+                                        )}
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
                           </div>
-                          <div className="flex flex-col gap-1">
-                            <label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Category</label>
-                            <select value={logExpCategory} onChange={(e) => setLogExpCategory(e.target.value)} className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary">
-                              <option value="Fuel">Fuel</option>
-                              <option value="Meals">Meals</option>
-                              <option value="Parking">Parking</option>
-                              <option value="Tolls">Tolls</option>
-                              <option value="Supplies">Supplies</option>
-                            </select>
-                          </div>
-                        </div>
-                        <div className="flex flex-col gap-1">
-                          <label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Amount ($)</label>
-                          <input type="number" step="0.01" placeholder="0.00" value={logExpAmount} onChange={(e) => setLogExpAmount(e.target.value)} className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary" />
-                        </div>
-                        <div className="flex flex-col gap-1">
-                          <label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Notes</label>
-                          <input type="text" placeholder="Purpose of expense" value={logExpNotes} onChange={(e) => setLogExpNotes(e.target.value)} className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary" />
-                        </div>
-                        <button type="submit" className="bg-[#10B981] hover:bg-[#10B981]/90 text-text-primary font-bold py-2 rounded-xl text-[13.5px] cursor-pointer transition-colors mt-2">Log Expense</button>
-                      </form>
+                        );
+                      })()}
                     </div>
                   )}
+
+                  {/* SUB-TAB: CLIENT OVERTIME REVIEW QUEUE */}
+                  {accountingSubTab === 'client-review' && (
+                    <div className="bg-surface-elevated border border-border-subtle p-6 rounded-2xl flex flex-col gap-4 text-left">
+                      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 pb-3 border-b border-border-subtle">
+                        <div>
+                          <h4 className="text-[14.5px] font-bold text-text-primary uppercase tracking-wider flex items-center gap-2">
+                            <span>🏢 Client Overtime Review Queue</span>
+                          </h4>
+                          <p className="text-[11.5px] text-text-secondary mt-0.5">
+                            Review rep overtime submissions exceeding authorized assignment limits. Only client-authorized overtime and regular recorded hours enter accounting.
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <select
+                            value={clientReviewSupplierFilter}
+                            onChange={(e) => setClientReviewSupplierFilter(e.target.value)}
+                            className="bg-surface border border-border-subtle rounded-xl px-3 py-1.5 text-xs text-text-primary focus:outline-none focus:border-purple-500"
+                          >
+                            <option value="all">All Clients</option>
+                            {suppliers.filter(Boolean).map(s => (
+                              <option key={s.id} value={s.id}>{s.name}</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+
+                      {/* Client Overtime Queue Table (STRICT: NO RATES / NO PAYROLL EXPOSED) */}
+                      {(() => {
+                        const otList = (timeEntries || []).filter(e => {
+                          if (!e) return false;
+                          const isOT = e.hour_type === 'overtime' || e.status === 'client_pending' || e.status === 'client_approved' || e.status === 'client_returned' || e.status === 'client_rejected';
+                          if (!isOT) return false;
+
+                          // If user is a Client role user, restrict strictly to their supplier
+                          if (currentUser?.role === 'client' && currentUser?.supplier_id) {
+                            if (e.supplier_id !== currentUser.supplier_id) return false;
+                          } else if (clientReviewSupplierFilter !== 'all') {
+                            if (e.supplier_id !== clientReviewSupplierFilter) return false;
+                          }
+                          return true;
+                        });
+
+                        if (otList.length === 0) {
+                          return (
+                            <div className="py-12 text-center text-text-secondary bg-surface/50 rounded-xl border border-dashed border-border-subtle">
+                              <div className="text-3xl mb-2">🎉</div>
+                              <div className="text-sm font-semibold text-text-primary">No overtime entries requiring review!</div>
+                              <div className="text-xs text-text-secondary mt-1">All field rep hours were within authorized assignment limits or already reviewed.</div>
+                            </div>
+                          );
+                        }
+
+                        return (
+                          <div className="overflow-x-auto w-full">
+                            <table className="w-full text-xs text-left border-collapse">
+                              <thead>
+                                <tr className="border-b border-border-subtle text-text-secondary font-bold uppercase text-[10.5px]">
+                                  <th className="py-2.5 px-3">Field Rep & Work Date</th>
+                                  <th className="py-2.5 px-3">Host Plant & Project</th>
+                                  <th className="py-2.5 px-3">Overtime Hours</th>
+                                  <th className="py-2.5 px-3">Work Summary / Reason</th>
+                                  <th className="py-2.5 px-3">Review Status</th>
+                                  <th className="py-2.5 px-3 text-right">Client Decision</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-border-subtle text-text-primary">
+                                {otList.map(entry => {
+                                  const repObj = users.find(u => String(u.id) === String(entry.rep_id) || u.username === entry.rep_id);
+                                  const repName = repObj?.name || entry.rep_id || 'Representative';
+                                  const supName = resolveSupplierName(entry.supplier_id);
+                                  const plantName = resolvePlantName(entry.plant_id);
+                                  const isPending = entry.status === 'client_pending' || !entry.client_review_status || entry.client_review_status === 'pending';
+
+                                  return (
+                                    <tr key={entry.id} className="hover:bg-surface/60 transition-colors">
+                                      <td className="py-3 px-3">
+                                        <div className="font-bold text-text-primary">{repName}</div>
+                                        <div className="text-[11px] font-mono text-purple-300 mt-0.5">📅 {entry.date || entry.work_date || 'Today'}</div>
+                                        <div className="text-[10px] text-text-secondary">{supName}</div>
+                                      </td>
+                                      <td className="py-3 px-3 font-medium">
+                                        <div className="font-bold text-text-primary text-[12px]">{resolveProjectTitle(entry.project_id)}</div>
+                                        <div className="text-[11px] text-purple-300 font-semibold">{plantName} • {supName}</div>
+                                      </td>
+                                      <td className="py-3 px-3 font-mono font-bold text-amber-300 text-sm">
+                                        {parseFloat(entry.overtime_hours || entry.hours || 0).toFixed(1)} hrs OT
+                                      </td>
+                                      <td className="py-3 px-3 text-text-secondary text-[11.5px] max-w-xs break-words">
+                                        {entry.work_summary || entry.notes || 'Routine Quality Activities Exceeding Allocation Limit'}
+                                      </td>
+                                      <td className="py-3 px-3">
+                                         <span className={`px-2 py-0.5 rounded font-extrabold text-[10.5px] ${
+                                           entry.status === 'client_approved' || entry.client_review_status === 'approved' ? 'bg-emerald-500/20 text-emerald-300' :
+                                           entry.status === 'client_returned' || entry.client_review_status === 'returned' ? 'bg-amber-500/20 text-amber-300' :
+                                           entry.status === 'client_rejected' || entry.client_review_status === 'rejected' ? 'bg-rose-500/20 text-rose-300' :
+                                           'bg-amber-400/20 text-amber-200'
+                                         }`}>
+                                           {entry.status === 'client_approved' || entry.client_review_status === 'approved' ? '✓ Approved' :
+                                            entry.status === 'client_returned' || entry.client_review_status === 'returned' ? '↩ Returned' :
+                                            entry.status === 'client_rejected' || entry.client_review_status === 'rejected' ? '✕ Rejected' :
+                                            '⏳ Pending Review'}
+                                         </span>
+                                       </td>
+                                       <td className="py-3 px-3 text-right">
+                                         <span className="text-[11px] text-slate-300 italic font-medium">
+                                           {entry.status === 'client_approved' || entry.client_review_status === 'approved' ? `✓ Approved by ${entry.client_reviewed_by || 'Client'}` :
+                                            entry.status === 'client_returned' || entry.client_review_status === 'returned' ? `↩ Returned (${entry.client_review_comment || 'No comment'})` :
+                                            entry.status === 'client_rejected' || entry.client_review_status === 'rejected' ? `✕ Rejected by ${entry.client_reviewed_by || 'Client'}` :
+                                            '⏳ Pending Client Review'}
+                                         </span>
+                                       </td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                        );
+                      })()}
+
+                      {/* Modal dialog for returning / rejecting overtime */}
+                      {clientReviewModalState.show && (
+                        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                          <div className="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 text-left shadow-2xl flex flex-col gap-4">
+                            <h3 className="text-base font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                              <span>{clientReviewModalState.action === 'returned' ? '↩ Return Overtime for Correction' : '✕ Reject Overtime'}</span>
+                            </h3>
+                            <p className="text-xs text-slate-300 leading-relaxed">
+                              Please provide a reason or comment for {clientReviewModalState.action === 'returned' ? 'returning this overtime submission to the representative' : 'rejecting this overtime request'}.
+                            </p>
+                            <textarea
+                              rows={3}
+                              value={clientReviewModalState.comment}
+                              onChange={(e) => setClientReviewModalState(prev => ({ ...prev, comment: e.target.value }))}
+                              placeholder="Enter mandatory reason/comment for client review action..."
+                              className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-purple-500"
+                            />
+                            <div className="flex justify-end gap-2 pt-2">
+                              <button
+                                onClick={() => setClientReviewModalState({ show: false, action: null, entry: null, comment: '' })}
+                                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs rounded-xl transition-colors"
+                              >
+                                Cancel
+                              </button>
+                              <button
+                                onClick={handleClientConfirmReviewAction}
+                                className={`px-4 py-2 font-bold text-xs text-white rounded-xl transition-colors ${
+                                  clientReviewModalState.action === 'returned' ? 'bg-amber-600 hover:bg-amber-500' : 'bg-rose-600 hover:bg-rose-500'
+                                }`}
+                              >
+                                Confirm {clientReviewModalState.action === 'returned' ? 'Return' : 'Reject'}
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+
 
                   {/* SUB-TAB 2: INVOICING CONTROL CENTER */}
                   {accountingSubTab === 'invoice-gen' && (() => {
                     const client = suppliers.filter(Boolean).find(s => s.id === selectedInvoiceSupplier) || suppliers.filter(Boolean)[0] || { id: 'unknown', name: 'Unknown Client', invoice_schedule: 'weekly' };
                     
-                    const clientEntries = timeEntries.filter(t => t && t.supplier_id === (client?.id || selectedInvoiceSupplier) && !t.invoiced && (selectedInvoiceCurrency === 'all' || getRepSupplierRates(t.rep_id, t.supplier_id, t.plant_id).currency === selectedInvoiceCurrency));
+                    const clientEntries = timeEntries.filter(t => t && t.supplier_id === (client?.id || selectedInvoiceSupplier) && !t.invoiced && isEntryAccountingEligible(t) && (selectedInvoiceCurrency === 'all' || getRepSupplierRates(t.rep_id, t.supplier_id, t.plant_id).currency === selectedInvoiceCurrency));
                     const clientExpenses = expenseEntries.filter(e => e && e.supplier_id === (client?.id || selectedInvoiceSupplier) && !e.invoiced && e.status === 'approved' && (selectedInvoiceCurrency === 'all' || getExpenseCurrency(e) === selectedInvoiceCurrency));
 
                     const includedEntries = clientEntries.filter(t => !excludedInvoiceEntryIds?.includes(t.id));
@@ -8118,25 +8279,29 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         {/* Approval Workflows alerts for Admin */}
                         <div className="grid grid-cols-2 gap-3">
                           <div className="bg-surface-elevated border border-border-subtle p-3 rounded-2xl">
-                            <h5 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider mb-2 flex items-center gap-1.5"><AlertCircle className="w-4.5 h-4.5 text-amber-600" /> Overtime Approvals Queue</h5>
+                            <h5 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider mb-2 flex items-center gap-1.5"><AlertCircle className="w-4.5 h-4.5 text-amber-600" /> Overtime Monitoring Queue (Client Review Pending)</h5>
                             <div className="flex flex-col gap-2 max-h-[220px] overflow-y-auto">
-                              {extraHoursRequests.filter(r => r && r.status === 'pending_admin').length === 0 ? (
-                                <div className="text-[11.5px] text-slate-550 italic py-2">No pending overtime final approvals.</div>
+                              {timeEntries.filter(t => t && (t.hour_type === 'overtime' || t.overtime_hours > 0) && (t.status === 'client_pending' || !t.client_review_status || t.client_review_status === 'pending')).length === 0 ? (
+                                <div className="text-[11.5px] text-slate-550 italic py-2">No overtime entries currently pending Client review.</div>
                               ) : (
-                                extraHoursRequests.filter(r => r && r.status === 'pending_admin').map(req => (
-                                  <div key={req.id} className="p-2.5 bg-surface rounded-xl border border-border-subtle flex flex-col gap-1.5">
-                                    <div className="flex justify-between items-center text-[11.5px]">
-                                      <span className="font-bold text-text-primary">{users.find(u => u && u.id === req.rep_id)?.name || 'Rep'} @ {plants.find(p => p && p.id === req.plant_id)?.name || req.plant_id}</span>
-                                      <span className="text-amber-600 font-bold">{req.hours || 0} hrs</span>
+                                timeEntries.filter(t => t && (t.hour_type === 'overtime' || t.overtime_hours > 0) && (t.status === 'client_pending' || !t.client_review_status || t.client_review_status === 'pending')).map(entry => {
+                                  const repName = users.find(u => u && (String(u.id) === String(entry.rep_id) || u.username === entry.rep_id))?.name || entry.rep_id || 'Rep';
+                                  const clientName = resolveSupplierName(entry.supplier_id);
+                                  const otHours = parseFloat(entry.overtime_hours || entry.hours || 0).toFixed(1);
+
+                                  return (
+                                    <div key={entry.id} className="p-2.5 bg-surface rounded-xl border border-border-subtle flex flex-col gap-1.5">
+                                      <div className="flex justify-between items-center text-[11.5px]">
+                                        <span className="font-bold text-text-primary">{repName} • {resolveProjectTitle(entry.project_id)}</span>
+                                        <span className="text-amber-400 font-bold">+{otHours} hrs OT</span>
+                                      </div>
+                                      <div className="flex justify-between items-center text-[10.5px] text-text-secondary">
+                                        <span>Client: <strong>{clientName}</strong></span>
+                                        <span className="px-2 py-0.5 bg-amber-500/20 text-amber-300 rounded font-bold uppercase text-[9.5px]">⏳ Pending Client Review</span>
+                                      </div>
                                     </div>
-                                    <p className="text-[11.5px] text-text-secondary">"{req.reason || ''}"</p>
-                                    <div className="flex gap-2 mt-1">
-                                      <input type="text" placeholder="Admin note..." value={adminApprovalComment} onChange={(e) => setAdminApprovalComment(e.target.value)} className="bg-surface-elevated border border-border-subtle text-[11.5px] px-2 py-1 rounded flex-1 text-text-primary" />
-                                      <button onClick={() => handleAdminApproval(req.id, 'approve')} className="px-2 py-1 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-[10.5px] uppercase rounded">Approve</button>
-                                      <button onClick={() => handleAdminApproval(req.id, 'reject')} className="px-2 py-1 bg-rose-500 hover:bg-rose-600 text-text-primary font-bold text-[10.5px] uppercase rounded">Reject</button>
-                                    </div>
-                                  </div>
-                                ))
+                                  );
+                                })
                               )}
                             </div>
                           </div>
@@ -8329,7 +8494,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         </thead>
                         <tbody className="divide-y divide-slate-850 text-text-primary">
                           {users.filter(u => u && (u.role === 'rep' || u.role === 'qre' || u.role === 'lead' || isFieldRep(u))).map(rep => {
-                            const repTime = timeEntries.filter(t => t.rep_id === rep.id || t.rep_id === rep.username || t.rep_name?.toLowerCase() === rep.name?.toLowerCase());
+                            const repTime = timeEntries.filter(t => (t.rep_id === rep.id || t.rep_id === rep.username || t.rep_name?.toLowerCase() === rep.name?.toLowerCase()) && isEntryAccountingEligible(t));
                             const repShifts = shiftReports.filter(s => s.rep_id === rep.id || s.rep_id === rep.username);
                             const repReworks = reworkLogs.filter(r => r.rep_id === rep.id || r.rep_id === rep.username);
                             const repExpenses = expenseEntries.filter(e => (e.rep_id === rep.id || e.rep_id === rep.username) && e.status !== 'rejected');
@@ -10088,34 +10253,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 </div>
               </div>
 
-              {/* 3. Audio Voice Memo & Video Walkthrough Media Grid */}
-              <div className="grid grid-cols-2 gap-3">
-                {/* Voice Memo Audio Player */}
-                <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 flex flex-col gap-2">
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="font-bold text-sky-400 uppercase tracking-wider flex items-center gap-1.5">
-                      <Mic className="w-4 h-4 text-blue-400" /> Inspector Voice Report
-                    </span>
-                    <span className="text-slate-400 font-mono text-[10.5px]">AUDIO MEMO</span>
-                  </div>
-                  <p className="text-[11px] text-slate-400 leading-snug">Voice note memo recorded during inspection audit by representative.</p>
-                  {selectedIncident.audio_url || selectedIncident.hasAudio || selectedIncident.audioNote ? (
-                    <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800 flex items-center gap-3 mt-1">
-                      <div className="w-8 h-8 rounded-full bg-blue-600/20 border border-blue-500/40 flex items-center justify-center text-blue-400 font-bold shrink-0 animate-pulse">
-                        <Mic className="w-4 h-4" />
-                      </div>
-                      <div className="flex-1">
-                        <span className="text-[11px] text-blue-300 font-bold block">Voice Note Memo Attached</span>
-                        <audio controls className="w-full h-8 mt-1 rounded bg-slate-900">
-                          <source src={selectedIncident.audio_url || selectedIncident.audioNote || "https://actions.google.com/sounds/v1/ambiences/office_hubbub.ogg"} type="audio/ogg" />
-                        </audio>
-                      </div>
-                    </div>
-                  ) : (
-                    <span className="text-[11px] text-slate-500 font-mono italic">No audio memo submitted for this incident.</span>
-                  )}
-                </div>
-
+              {/* Video Walkthrough Inspection Media Section */}
+              <div className="grid grid-cols-1 gap-3">
                 {/* Video Walkthrough Inspection Player */}
                 <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 flex flex-col gap-2">
                   <div className="flex justify-between items-center text-xs">
@@ -10265,7 +10404,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
           <div className="bg-surface-elevated border border-border-subtle rounded-3xl w-full max-w-3xl overflow-hidden shadow-2xl flex flex-col max-h-[700px] text-left">
             <div className="bg-surface px-5 py-4 border-b border-border-subtle flex items-center justify-between">
               <div>
-                <h3 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider">Shift Summary Walkthrough Details</h3>
+                <h3 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider">Daily Quality Report Details</h3>
                 <span className="text-[11.5px] text-text-secondary font-mono">Report Date: {selectedShiftReport.date}</span>
               </div>
               <button onClick={() => setSelectedShiftReport(null)} className="text-text-secondary hover:text-text-primary"><X className="w-5 h-5" /></button>
@@ -10956,7 +11095,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 <div>
                   <h5 className="font-bold text-text-primary text-[11.5px] flex items-center gap-1.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                    <span>3. Shift Summaries Log</span>
+                    <span>3. Daily Quality Reports Feed</span>
                   </h5>
                   <p className="text-[11.5px] mt-0.5 text-text-secondary pl-3">
                     Donna can review rep checklist logs card-by-card. Confirms walked assembly lines and operator touch points.
@@ -11351,7 +11490,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                             onChange={(e) => setInlineRepTitle(e.target.value)} 
                             className="stitch-input px-2.5 py-1.5 text-xs text-white"
                           >
-                            <option value="Quality Inspector">Quality Inspector</option>
+                            <option value="Quality Liaison Rep">Quality Liaison Rep</option>
                             <option value="Quality Resident Engineer">Quality Resident Engineer</option>
                             <option value="Lead Senior Inspector">Lead Senior Inspector</option>
                           </select>

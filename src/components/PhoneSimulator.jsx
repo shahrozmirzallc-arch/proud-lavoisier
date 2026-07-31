@@ -3,9 +3,9 @@ import {
   Shield, Activity, Wifi, WifiOff, MapPin, Clock, 
   User, Lock, LogOut, CheckCircle, CheckCircle2, AlertTriangle, Play, Square, X, Calendar,
   Camera, Scan, Plus, ChevronRight, Mail, Send, RotateCcw, Volume2, Video, ArrowLeft, Trash2,
-  Receipt, DollarSign, FileText
+  Receipt, DollarSign, FileText, Wrench
 } from 'lucide-react';
-import { getEntities, addIncident, addEmailLog, addReworkLog, saveEntity, addExpenseEntry, logSystemEvent, supabase, syncWithSupabase, saveExtraHoursRequest } from './SharedDatabase';
+import { getEntities, addIncident, addEmailLog, addReworkLog, saveEntity, addExpenseEntry, logSystemEvent, supabase, syncWithSupabase, saveExtraHoursRequest, isEntryAccountingEligible } from './SharedDatabase';
 import { uploadToCloudinary } from '../services/cloudinaryService';
 import { stageIncidentLocally, getLocalOutbox } from '../services/nativeStorageService';
 import { getRepStatusConfig, sanitizeCustomerDerivativeUrl } from '../services/mediaSecurityService';
@@ -34,26 +34,16 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
     setTimeout(() => setToast(null), 3200);
   };
 
-  // Shift Control
-  const [shiftActive, setShiftActive] = useState(false);
+  // Assignment & Plant Control
   const [selectedPlant, setSelectedPlant] = useState('gm_oshawa');
-  const [shiftStartTime, setShiftStartTime] = useState(null);
-  const [shiftStartRawTime, setShiftStartRawTime] = useState(null);
+  const [selectedAssignmentId, setSelectedAssignmentId] = useState('');
   const [plants, setPlants] = useState([]);
-  
-  // Modals & Prompts
-  const [showEndShiftModal, setShowEndShiftModal] = useState(false);
-  const [modalEndTime, setModalEndTime] = useState('');
-  const [modalElapsedTime, setModalElapsedTime] = useState('');
 
   // Active screen inside the phone: 'login' | 'home' | 'incident' | 'rework' | 'summary' | 'history'
   const [activeScreen, setActiveScreen] = useState('login');
 
   // INCIDENT REPORT STATE
   const [incStep, setIncStep] = useState(1); // steps: 1: Capture, 2: Scan, 3: Describe, 4: Send, 3.5: AI Duplicate Check
-  const [defectLocationX, setDefectLocationX] = useState(null);
-  const [defectLocationY, setDefectLocationY] = useState(null);
-  const [partViewTemplate, setPartViewTemplate] = useState('86286761');
   const [handoverAlert, setHandoverAlert] = useState(null);
   const [duplicateIncident, setDuplicateIncident] = useState(null);
 
@@ -100,9 +90,8 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
   const [isRmaRequired, setIsRmaRequired] = useState('N');
   const [concernClassification, setConcernClassification] = useState('PRR');
   
-  // Audio & Video mock states
+  // Video mock state
   const [hasVideo, setHasVideo] = useState(false);
-  const [hasAudio, setHasAudio] = useState(false);
 
   // Email Preview toggle
   const [showEmailPreview, setShowEmailPreview] = useState(false);
@@ -123,18 +112,35 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
   const [reworkNotes, setReworkNotes] = useState('Reworked loose tail light bulbs.');
   
   // EXPENSE & TIME STATE
-  const [timeExpenseTab, setTimeExpenseTab] = useState('expense'); // 'expense' | 'overtime' | 'manual_shift'
+  const [timeExpenseTab, setTimeExpenseTab] = useState('expense'); // 'expense' | 'overtime'
   const [expenseAmount, setExpenseAmount] = useState('');
   const [expenseCategory, setExpenseCategory] = useState('Fuel');
   const [expenseReceiptPhoto, setExpenseReceiptPhoto] = useState(null);
   const [expenseNotes, setExpenseNotes] = useState('');
 
+  // ROUTINE INSPECTION LOG STATE
+  const [inspPartNumber, setInspPartNumber] = useState('86286761');
+  const [inspPassQty, setInspPassQty] = useState(0);
+  const [inspRejectQty, setInspRejectQty] = useState(0);
+  const [inspHoursSpent, setInspHoursSpent] = useState(1.0);
+  const [inspDefectCode, setInspDefectCode] = useState('Routine Inspection');
+  const [inspNotes, setInspNotes] = useState('');
+
   // Overtime Request Edit State
   const [editingOvertimeId, setEditingOvertimeId] = useState(null);
   const [overtimeHours, setOvertimeHours] = useState('');
   const [overtimeReason, setOvertimeReason] = useState('');
-  const [manualShiftDate, setManualShiftDate] = useState('');
-  const [manualShiftHours, setManualShiftHours] = useState('');
+
+  // ADD TODAY'S HOURS STATE (Donna & Clarence Rep Workflow)
+  const [showAddHoursModal, setShowAddHoursModal] = useState(false);
+  const [addHoursDate, setAddHoursDate] = useState(() => new Date().toISOString().substring(0, 10));
+  const [addHoursValue, setAddHoursValue] = useState('');
+  const [addHoursType, setAddHoursType] = useState('Routine inspection');
+  const [addHoursSummary, setAddHoursSummary] = useState('');
+  const [addHoursLinkedIncident, setAddHoursLinkedIncident] = useState('');
+  const [addHoursLinkedInspection, setAddHoursLinkedInspection] = useState('');
+  const [addHoursPastReason, setAddHoursPastReason] = useState('');
+  const [addHoursToast, setAddHoursToast] = useState(null);
   
   // SHIFT SUMMARY STATE
   const [areasWalked, setAreasWalked] = useState([
@@ -215,6 +221,12 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
     setDailyTasks(Array.from(taskMap.values()));
   }, [dbUpdateTrigger, currentUser, selectedPlant]);
 
+  useEffect(() => {
+    if (!isOffline) {
+      syncStagedTimeEntries();
+    }
+  }, [isOffline]);
+
   const getActiveClientForPlant = () => {
     if (!currentUser) return 'No client assigned';
     const dbProjects = getEntities('projects') || [];
@@ -245,6 +257,558 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
     }
 
     return 'No client assigned';
+  };
+
+  // Helper to resolve active project assignments explicitly permitted for the logged-in rep
+  const getRepAssignments = () => {
+    if (!currentUser) return [];
+    const dbProjects = getEntities('projects') || [];
+    const repIdStr = String(currentUser.id || '');
+    return dbProjects.filter(p => p && (
+      String(p.rep_id) === repIdStr || 
+      p.rep_id === currentUser.id || 
+      (Array.isArray(p.rep_ids) && p.rep_ids.includes(currentUser.id))
+    ));
+  };
+
+  // Explicit allocation rule for entries matching active project assignment
+  const matchesAssignment = (t, activeProj) => {
+    if (!t || !activeProj) return false;
+    if (t.assignment_id) {
+      return String(t.assignment_id) === String(activeProj.id);
+    }
+    if (t.project_id) {
+      return String(t.project_id) === String(activeProj.id);
+    }
+    if (t.supplier_id && t.plant_id && activeProj.supplier_id && activeProj.plant_id) {
+      return String(t.supplier_id) === String(activeProj.supplier_id) && String(t.plant_id) === String(activeProj.plant_id);
+    }
+    return false;
+  };
+
+  // Staged offline queue helpers
+  const getStagedTimeEntries = () => {
+    try {
+      const raw = localStorage.getItem('ids_pulse_staged_time_entries');
+      return raw ? JSON.parse(raw) : [];
+    } catch (e) { return []; }
+  };
+
+  const saveStagedTimeEntriesList = (list) => {
+    try {
+      localStorage.setItem('ids_pulse_staged_time_entries', JSON.stringify(list));
+    } catch (e) {}
+  };
+
+  const saveStagedTimeEntry = (entry) => {
+    const current = getStagedTimeEntries();
+    const exists = current.some(e => e.id === entry.id || (e.idempotency_key && e.idempotency_key === entry.idempotency_key));
+    if (!exists) {
+      entry.retry_count = entry.retry_count || 0;
+      entry.last_error = null;
+      entry.status = entry.status || 'staged_offline';
+      current.push(entry);
+      saveStagedTimeEntriesList(current);
+    }
+  };
+
+  // Requirement 3, 4, 5, 6: Server-side atomic RPC sync, idempotency, independent outbox queue safety & failure retention
+  const syncStagedTimeEntries = async () => {
+    const staged = getStagedTimeEntries();
+    if (!staged || staged.length === 0) return;
+
+    const remainingQueue = [];
+    let syncedCount = 0;
+
+    for (let sub of staged) {
+      const idempotencyKey = sub.idempotency_key || `idemp_${sub.id || Date.now()}`;
+      let rpcSuccess = false;
+      let lastErrMsg = null;
+
+      // 1. Attempt Server-Side Atomic RPC Execution via Supabase if connected
+      if (supabase && typeof supabase.rpc === 'function') {
+        try {
+          const { data, error } = await supabase.rpc('submit_rep_hours_atomic', {
+            p_idempotency_key: idempotencyKey,
+            p_rep_id: String(sub.rep_id),
+            p_supplier_id: String(sub.supplier_id),
+            p_plant_id: String(sub.plant_id),
+            p_project_id: String(sub.project_id || sub.assignment_id),
+            p_work_date: sub.work_date || sub.date,
+            p_hours: parseFloat(sub.reported_hours || sub.hours || 0),
+            p_work_type: sub.work_type || 'Routine inspection',
+            p_work_summary: sub.work_summary || '',
+            p_notes: sub.notes || ''
+          });
+
+          if (!error && data && data.status === 'success') {
+            rpcSuccess = true;
+            syncedCount++;
+            syncWithSupabase();
+          } else {
+            lastErrMsg = error?.message || data?.message || 'Server RPC error';
+          }
+        } catch (e) {
+          lastErrMsg = e?.message || 'RPC execution exception';
+        }
+      }
+
+      // 2. Fallback handling for standalone offline prototype mode vs RPC failure
+      if (rpcSuccess) {
+        // Dequeued upon server confirmation
+        continue;
+      }
+
+      // If connected to RPC but RPC failed: DO NOT DEQUEUE! Retain in outbox, increment retry_count, store last_error
+      if (supabase && typeof supabase.rpc === 'function' && lastErrMsg) {
+        sub.retry_count = (sub.retry_count || 0) + 1;
+        sub.last_error = lastErrMsg;
+        sub.status = 'needs_attention';
+        remainingQueue.push(sub);
+        continue;
+      }
+
+      // Pure standalone local fallback processing (when Supabase client is not configured)
+      const dbTimeEntries = getEntities('timeEntries') || [];
+      const dbProjects = getEntities('projects') || [];
+      const exists = dbTimeEntries.some(e => 
+        (e.idempotency_key === `${idempotencyKey}_reg` || e.idempotency_key === `${idempotencyKey}_ot`) ||
+        (sub.id && e.linked_submission_id === sub.id) ||
+        (e.id === sub.id)
+      );
+
+      if (!exists) {
+        const hrs = parseFloat(sub.reported_hours || sub.hours || 0);
+        if (hrs > 0) {
+          const activeProj = dbProjects.find(p => String(p.id) === String(sub.assignment_id || sub.project_id));
+          const hasAuthLimit = Boolean(activeProj && activeProj.po_hours !== undefined && activeProj.po_hours !== null && activeProj.po_hours !== '' && !isNaN(parseFloat(activeProj.po_hours)));
+          const authorizedHours = hasAuthLimit ? parseFloat(activeProj.po_hours) : null;
+
+          const recordedRegularHours = dbTimeEntries
+            .filter(t => t && String(t.assignment_id) === String(sub.assignment_id || sub.project_id) && (t.hour_type === 'regular' || !t.hour_type) && isEntryAccountingEligible(t))
+            .reduce((sum, t) => sum + (parseFloat(t.hours) || 0), 0);
+
+          const remainingAlloc = authorizedHours !== null ? Math.max(0, authorizedHours - recordedRegularHours) : Infinity;
+          const regularPortion = Math.min(hrs, remainingAlloc > 0 ? remainingAlloc : 0);
+          const overtimePortion = Math.max(0, hrs - regularPortion);
+          const linkedSubmissionId = sub.id || `sub_${Date.now()}_${Math.random().toString(36).substr(2,6)}`;
+
+          if (regularPortion > 0) {
+            const regEntry = {
+              id: `te_${Date.now()}_reg_${Math.random().toString(36).substr(2,6)}`,
+              idempotency_key: `${idempotencyKey}_reg`,
+              linked_submission_id: linkedSubmissionId,
+              rep_id: sub.rep_id,
+              assignment_id: sub.assignment_id || sub.project_id,
+              project_id: sub.project_id || sub.assignment_id,
+              supplier_id: sub.supplier_id,
+              plant_id: sub.plant_id,
+              work_date: sub.work_date || sub.date,
+              date: sub.work_date || sub.date,
+              reported_hours: hrs,
+              regular_hours: regularPortion,
+              overtime_hours: 0,
+              hours: regularPortion,
+              hour_type: 'regular',
+              status: 'recorded',
+              approval_required: false,
+              approval_source: 'authorized_assignment',
+              authorized_hours_snapshot: authorizedHours,
+              remaining_hours_before: remainingAlloc === Infinity ? null : remainingAlloc,
+              remaining_hours_after: remainingAlloc === Infinity ? null : Math.max(0, remainingAlloc - regularPortion),
+              work_type: sub.work_type || 'Routine inspection',
+              work_summary: sub.work_summary || 'Synced regular hours',
+              source: 'rep_reported',
+              submitted_at: sub.staged_at || new Date().toISOString(),
+              synchronized_at: new Date().toISOString(),
+              created_at: new Date().toISOString()
+            };
+            saveEntity('timeEntries', regEntry);
+          }
+
+          if (overtimePortion > 0) {
+            const otEntry = {
+              id: `te_${Date.now()}_ot_${Math.random().toString(36).substr(2,6)}`,
+              idempotency_key: `${idempotencyKey}_ot`,
+              linked_submission_id: linkedSubmissionId,
+              rep_id: sub.rep_id,
+              assignment_id: sub.assignment_id || sub.project_id,
+              project_id: sub.project_id || sub.assignment_id,
+              supplier_id: sub.supplier_id,
+              plant_id: sub.plant_id,
+              work_date: sub.work_date || sub.date,
+              date: sub.work_date || sub.date,
+              reported_hours: hrs,
+              regular_hours: 0,
+              overtime_hours: overtimePortion,
+              hours: overtimePortion,
+              hour_type: 'overtime',
+              status: 'client_pending',
+              client_review_status: 'pending',
+              approval_required: true,
+              approval_source: 'client_approval',
+              authorized_hours_snapshot: authorizedHours,
+              remaining_hours_before: 0,
+              remaining_hours_after: 0,
+              work_type: sub.work_type || 'Routine inspection',
+              work_summary: sub.work_summary || 'Synced overtime hours',
+              source: 'rep_reported',
+              submitted_at: sub.staged_at || new Date().toISOString(),
+              synchronized_at: new Date().toISOString(),
+              created_at: new Date().toISOString()
+            };
+            saveEntity('timeEntries', otEntry);
+          }
+        }
+      }
+      syncedCount++;
+    }
+
+    saveStagedTimeEntriesList(remainingQueue);
+    if (syncedCount > 0) {
+      logSystemEvent('sync', 'staged_hours_synced', `Auto-synced ${syncedCount} staged time submissions.`);
+    }
+  };
+
+  // State for Requirement 11: Pre-submit Split Confirmation Modal
+  const [splitConfirmState, setSplitConfirmState] = useState(null);
+
+  // Requirement 1 & 2: Compute assignment telemetry (Authorized, Recorded Regular, Client Approved OT, Client Pending OT, Remaining Allocation)
+  const getRepAssignmentHourTotals = () => {
+    if (!currentUser) return { activeProject: null, repAssignments: [], hasAuthorizedLimit: false, authorizedHours: null, recordedRegularHours: 0, clientApprovedOvertimeHours: 0, pendingClientOvertimeHours: 0, remainingAllocation: null };
+
+    const dbProjects = getEntities('projects') || [];
+    const dbTimeEntries = getEntities('timeEntries') || [];
+
+    const repAssignments = getRepAssignments();
+    const activeProject = dbProjects.find(p => String(p.id) === String(selectedAssignmentId)) || repAssignments[0] || null;
+
+    if (!activeProject) {
+      return {
+        activeProject: null,
+        repAssignments: [],
+        hasAuthorizedLimit: false,
+        authorizedHours: null,
+        recordedRegularHours: 0,
+        clientApprovedOvertimeHours: 0,
+        pendingClientOvertimeHours: 0,
+        remainingAllocation: null
+      };
+    }
+
+    const hasAuthorizedLimit = Boolean(activeProject.po_hours !== undefined && activeProject.po_hours !== null && activeProject.po_hours !== '' && !isNaN(parseFloat(activeProject.po_hours)));
+    const authorizedHours = hasAuthorizedLimit ? parseFloat(activeProject.po_hours) : null;
+
+    const repIdStr = String(currentUser.id || '');
+    const repEntries = dbTimeEntries.filter(t => t && (String(t.rep_id) === repIdStr || t.rep_id === currentUser.id) && matchesAssignment(t, activeProject));
+
+    const recordedRegularHours = repEntries
+      .filter(t => (t.hour_type === 'regular' || !t.hour_type) && isEntryAccountingEligible(t))
+      .reduce((sum, t) => sum + (parseFloat(t.hours) || 0), 0);
+
+    const clientApprovedOvertimeHours = repEntries
+      .filter(t => t.hour_type === 'overtime' && isEntryAccountingEligible(t))
+      .reduce((sum, t) => sum + (parseFloat(t.hours) || 0), 0);
+
+    const pendingClientOvertimeHours = repEntries
+      .filter(t => t.hour_type === 'overtime' && t.status === 'client_pending')
+      .reduce((sum, t) => sum + (parseFloat(t.hours) || 0), 0);
+
+    const remainingAllocation = authorizedHours !== null ? Math.max(0, authorizedHours - recordedRegularHours) : null;
+
+    return {
+      activeProject,
+      repAssignments,
+      hasAuthorizedLimit,
+      authorizedHours,
+      recordedRegularHours,
+      clientApprovedOvertimeHours,
+      pendingClientOvertimeHours,
+      remainingAllocation
+    };
+  };
+
+  // Core Hour Submission Handler (Requirement 5, 11, 12)
+  const handleAddTodayHoursSubmit = async (forceConfirmed = false) => {
+    if (!currentUser) return;
+
+    const hrs = parseFloat(addHoursValue);
+    if (isNaN(hrs) || hrs <= 0) {
+      alert("Please enter a valid positive number for hours.");
+      return;
+    }
+
+    if (hrs > 24) {
+      alert("A single submission cannot exceed 24 hours.");
+      return;
+    }
+
+    const repAssignments = getRepAssignments();
+    if (repAssignments.length === 0) {
+      alert("No work assigned right now. An authorized project assignment is required before logging hours.");
+      return;
+    }
+
+    if (repAssignments.length > 1 && !selectedAssignmentId) {
+      alert("Multiple active assignments detected. Please explicitly select which assignment you are reporting hours for.");
+      return;
+    }
+
+    const dbProjects = getEntities('projects') || [];
+    const dbSuppliers = getEntities('suppliers') || [];
+
+    const activeProject = dbProjects.find(p => String(p.id) === String(selectedAssignmentId)) || repAssignments[0];
+    if (!activeProject) {
+      alert("No active project assignment selected. Please select a valid project assignment.");
+      return;
+    }
+
+    // Requirement 12: Strict customer/supplier resolution — NO sup_autokabel FALLBACK
+    const activeSupplierId = activeProject.supplier_id || activeProject.client_id || dbSuppliers.find(s => s.plants_served?.includes(selectedPlant))?.id;
+    if (!activeSupplierId) {
+      alert("Incomplete assignment relationship: No valid customer/supplier linked to this assignment. Submission blocked.");
+      return;
+    }
+
+    // Requirement 2: Calculate allocation remaining and split
+    const totals = getRepAssignmentHourTotals();
+    const remainingAlloc = totals.authorizedHours !== null ? (totals.remainingAllocation !== null ? totals.remainingAllocation : 0) : Infinity;
+
+    const regularPortion = Math.min(hrs, remainingAlloc > 0 ? remainingAlloc : 0);
+    const overtimePortion = Math.max(0, hrs - regularPortion);
+
+    // Requirement 11: Pre-submit split confirmation modal
+    if (overtimePortion > 0 && !forceConfirmed) {
+      setSplitConfirmState({
+        hrs,
+        regularPortion,
+        overtimePortion,
+        activeProject,
+        activeSupplierId,
+        remainingAlloc
+      });
+      return;
+    }
+
+    const idempotencyKey = `idemp_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
+    const submissionId = `sub_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
+
+    // If Offline: stage submission to outbox
+    if (isOffline) {
+      const stagedSubmission = {
+        id: submissionId,
+        idempotency_key: idempotencyKey,
+        rep_id: currentUser.id,
+        assignment_id: activeProject.id,
+        project_id: activeProject.id,
+        supplier_id: activeSupplierId,
+        plant_id: activeProject.plant_id || selectedPlant,
+        work_date: addHoursDate,
+        reported_hours: hrs,
+        work_type: addHoursType,
+        work_summary: addHoursSummary || `${addHoursType} performed at plant ${selectedPlant}`,
+        incident_id: addHoursLinkedIncident || null,
+        inspection_id: addHoursLinkedInspection || null,
+        source: 'rep_reported',
+        staged_at: new Date().toISOString(),
+        status: 'staged_offline'
+      };
+      saveStagedTimeEntry(stagedSubmission);
+      setShowAddHoursModal(false);
+      setSplitConfirmState(null);
+      setAddHoursValue('');
+      setAddHoursSummary('');
+      setAddHoursToast("Hours safely saved on this device. They will be submitted automatically when your internet connection returns.");
+      setTimeout(() => setAddHoursToast(null), 5000);
+      return;
+    }
+
+    // Attempt atomic RPC for online submission if Supabase client is configured
+    let rpcDone = false;
+    let rpcErrorMsg = null;
+    const isSupabaseConfigured = Boolean(supabase && typeof supabase.rpc === 'function' && process.env.VITE_SUPABASE_URL !== 'YOUR_SUPABASE_URL');
+
+    if (isSupabaseConfigured) {
+      try {
+        const { data, error } = await supabase.rpc('submit_rep_hours_atomic', {
+          p_idempotency_key: idempotencyKey,
+          p_rep_id: String(currentUser.id),
+          p_supplier_id: String(activeSupplierId),
+          p_plant_id: String(activeProject.plant_id || selectedPlant),
+          p_project_id: String(activeProject.id),
+          p_work_date: addHoursDate,
+          p_hours: hrs,
+          p_work_type: addHoursType,
+          p_work_summary: addHoursSummary || `${addHoursType} performed at plant ${selectedPlant}`,
+          p_notes: ''
+        });
+
+        if (!error && data && data.status === 'success') {
+          rpcDone = true;
+          syncWithSupabase();
+        } else {
+          rpcErrorMsg = error?.message || data?.message || 'Server RPC error';
+        }
+      } catch (e) {
+        rpcErrorMsg = e?.message || 'RPC execution exception';
+      }
+    }
+
+    if (isSupabaseConfigured) {
+      if (rpcDone) {
+        let toastMsg = overtimePortion === 0 
+          ? `Successfully recorded ${regularPortion} regular hrs automatically for ${addHoursDate}!`
+          : regularPortion === 0 
+            ? `All ${overtimePortion} hrs exceed authorized allocation. Submitted for Client Overtime Review.`
+            : `Recorded ${regularPortion} regular hrs automatically. ${overtimePortion} overtime hrs submitted for Client approval.`;
+
+        logSystemEvent('time_entry', 'rep_hours_submitted', `${currentUser.name} reported ${hrs} hrs for date ${addHoursDate} (${addHoursType}) on assignment ${activeProject.id}.`);
+        setShowAddHoursModal(false);
+        setSplitConfirmState(null);
+        setAddHoursValue('');
+        setAddHoursSummary('');
+        setAddHoursToast(toastMsg);
+        setTimeout(() => setAddHoursToast(null), 5000);
+        return;
+      }
+
+      // Rule 8: If Supabase is configured and RPC fails, retain original submission in durable outbox. DO NOT create local timeEntries.
+      const stagedSubmission = {
+        id: submissionId,
+        idempotency_key: idempotencyKey,
+        rep_id: currentUser.id,
+        assignment_id: activeProject.id,
+        project_id: activeProject.id,
+        supplier_id: activeSupplierId,
+        plant_id: activeProject.plant_id || selectedPlant,
+        work_date: addHoursDate,
+        reported_hours: hrs,
+        work_type: addHoursType,
+        work_summary: addHoursSummary || `${addHoursType} performed at plant ${selectedPlant}`,
+        incident_id: addHoursLinkedIncident || null,
+        inspection_id: addHoursLinkedInspection || null,
+        source: 'rep_reported',
+        staged_at: new Date().toISOString(),
+        status: 'staged_offline',
+        last_error: rpcErrorMsg
+      };
+      saveStagedTimeEntry(stagedSubmission);
+      setShowAddHoursModal(false);
+      setSplitConfirmState(null);
+      setAddHoursValue('');
+      setAddHoursSummary('');
+      setAddHoursToast("Saved on this phone — waiting to sync");
+      setTimeout(() => setAddHoursToast(null), 5000);
+      return;
+    }
+
+    // Fallback local mirror save if standalone (when Supabase client is NOT configured)
+    if (!rpcDone) {
+      if (regularPortion > 0) {
+        const regularEntry = {
+          id: `te_${Date.now()}_reg_${Math.random().toString(36).substr(2, 6)}`,
+          idempotency_key: `${idempotencyKey}_reg`,
+          linked_submission_id: submissionId,
+          rep_id: currentUser.id,
+          assignment_id: activeProject.id,
+          project_id: activeProject.id,
+          supplier_id: activeSupplierId,
+          plant_id: activeProject.plant_id || selectedPlant,
+          work_date: addHoursDate,
+          date: addHoursDate,
+          reported_hours: hrs,
+          regular_hours: regularPortion,
+          overtime_hours: 0,
+          hours: regularPortion,
+          hour_type: 'regular',
+          status: 'recorded',
+          approval_required: false,
+          approval_source: 'authorized_assignment',
+          authorized_hours_snapshot: totals.authorizedHours,
+          remaining_hours_before: totals.remainingAllocation,
+          remaining_hours_after: totals.remainingAllocation !== null ? Math.max(0, totals.remainingAllocation - regularPortion) : null,
+          work_type: addHoursType,
+          work_summary: addHoursSummary || `${addHoursType} performed at plant ${selectedPlant}`,
+          incident_id: addHoursLinkedIncident || null,
+          inspection_id: addHoursLinkedInspection || null,
+          source: 'rep_reported',
+          submitted_at: new Date().toISOString(),
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+        saveEntity('timeEntries', regularEntry);
+      }
+
+      if (overtimePortion > 0) {
+        const overtimeEntry = {
+          id: `te_${Date.now()}_ot_${Math.random().toString(36).substr(2, 6)}`,
+          idempotency_key: `${idempotencyKey}_ot`,
+          linked_submission_id: submissionId,
+          rep_id: currentUser.id,
+          assignment_id: activeProject.id,
+          project_id: activeProject.id,
+          supplier_id: activeSupplierId,
+          plant_id: activeProject.plant_id || selectedPlant,
+          work_date: addHoursDate,
+          date: addHoursDate,
+          reported_hours: hrs,
+          regular_hours: 0,
+          overtime_hours: overtimePortion,
+          hours: overtimePortion,
+          hour_type: 'overtime',
+          status: 'client_pending',
+          client_review_status: 'pending',
+          approval_required: true,
+          approval_source: 'client_approval',
+          authorized_hours_snapshot: totals.authorizedHours,
+          remaining_hours_before: 0,
+          remaining_hours_after: 0,
+          work_type: addHoursType,
+          work_summary: addHoursSummary || `${addHoursType} performed at plant ${selectedPlant}`,
+          incident_id: addHoursLinkedIncident || null,
+          inspection_id: addHoursLinkedInspection || null,
+          source: 'rep_reported',
+          submitted_at: new Date().toISOString(),
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+        saveEntity('timeEntries', overtimeEntry);
+      }
+    }
+
+    let toastMsg = '';
+    if (overtimePortion === 0) {
+      toastMsg = `Successfully recorded ${regularPortion} regular hrs automatically for ${addHoursDate}!`;
+    } else if (regularPortion === 0) {
+      toastMsg = `All ${overtimePortion} hrs exceed authorized allocation. Submitted for Client Overtime Review.`;
+    } else {
+      toastMsg = `Recorded ${regularPortion} regular hrs automatically. ${overtimePortion} overtime hrs submitted for Client approval.`;
+    }
+
+    logSystemEvent('time_entry', 'rep_hours_submitted', `${currentUser.name} reported ${hrs} hrs for date ${addHoursDate} (${addHoursType}) on assignment ${activeProject.id}. Regular: ${regularPortion} hrs (recorded), Overtime: ${overtimePortion} hrs (client_pending).`);
+
+    setShowAddHoursModal(false);
+    setSplitConfirmState(null);
+    setAddHoursValue('');
+    setAddHoursSummary('');
+    setAddHoursToast(toastMsg);
+    setTimeout(() => setAddHoursToast(null), 5000);
+  };
+
+  const handleResubmitOvertime = (entry) => {
+    if (!entry) return;
+    const dbEntries = getEntities('timeEntries') || [];
+    const target = dbEntries.find(t => t && t.id === entry.id);
+    if (target) {
+      target.status = 'client_pending';
+      target.client_review_status = 'pending';
+      target.client_review_comment = '';
+      target.updated_at = new Date().toISOString();
+      saveEntity('timeEntries', target);
+      setAddHoursToast("Overtime resubmitted for Client review!");
+      setTimeout(() => setAddHoursToast(null), 4000);
+      logSystemEvent('time_entry', 'rep_overtime_resubmitted', `Rep ${currentUser?.name} resubmitted returned overtime entry ${entry.id} for Client review.`);
+    }
   };
 
   const playBeep = (type = 'success') => {
@@ -291,48 +855,6 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
 
 
   const performAuthLogin = (foundUser) => {
-    const activeShiftRepId = localStorage.getItem('ids_pulse_active_shift_rep_id');
-    
-    if (activeShiftRepId && activeShiftRepId !== foundUser.id) {
-      const dbReports = getEntities('shiftReports');
-      const prevDraftReport = dbReports.find(r => r.rep_id === activeShiftRepId && r.status === 'Draft');
-      if (prevDraftReport) {
-        prevDraftReport.status = 'Locked';
-        prevDraftReport.locked_at = new Date().toISOString();
-        prevDraftReport.locked_by = foundUser.name;
-        saveEntity('shiftReports', prevDraftReport);
-      }
-      
-      const dbUsers = getEntities('users');
-      const prevRep = dbUsers.find(u => u.id === activeShiftRepId);
-      const prevRepName = prevRep ? prevRep.name : 'Clarence Kuiken';
-      
-      setHandoverAlert({
-        show: true,
-        prevRepName: prevRepName,
-        newRepName: foundUser.name
-      });
-      
-      localStorage.removeItem('ids_pulse_active_shift_rep_id');
-      localStorage.removeItem('ids_pulse_active_shift_plant_id');
-      localStorage.removeItem('ids_pulse_active_shift_start_time');
-      setShiftActive(false);
-      setShiftStartTime(null);
-      setShiftStartRawTime(null);
-    } else {
-      const todayDate = new Date().toISOString()?.substring(0, 10);
-      const dbReports = getEntities('shiftReports');
-      const userDraft = dbReports.find(r => r.rep_id === foundUser.id && r.status === 'Draft');
-      if (userDraft) {
-        setShiftActive(true);
-        setShiftStartTime(new Date(userDraft.created_at || userDraft.sent_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
-        setShiftStartRawTime(new Date(userDraft.created_at || userDraft.sent_at));
-        setSelectedPlant(userDraft.plant_id);
-        setAreasWalked(userDraft.areas_walked);
-        setBonusTasks(userDraft.bonus_tasks);
-      }
-    }
-    
     setCurrentUser(foundUser);
     setIsLoggedIn(true);
     setActiveScreen('home');
@@ -415,88 +937,12 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
   const handleLogout = async () => {
     setIsLoggedIn(false);
     setCurrentUser(null);
-    setShiftActive(false);
     setActiveScreen('login');
     try {
       await supabase.auth.signOut();
     } catch (err) {
       console.error("[Logout Error]:", err);
     }
-  };
-
-  const handleStartShift = () => {
-    setShiftActive(true);
-    const now = new Date();
-    setShiftStartRawTime(now);
-    setShiftStartTime(now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
-    
-    localStorage.setItem('ids_pulse_active_shift_rep_id', currentUser.id);
-    localStorage.setItem('ids_pulse_active_shift_plant_id', selectedPlant);
-    localStorage.setItem('ids_pulse_active_shift_start_time', now.toISOString());
-    
-    const initialAreas = [
-      { id: 'wa_1', name: 'Online assembly', status: 'pending', contact: 'T/L and installers', notes: '' },
-      { id: 'wa_2', name: 'Sequence area', status: 'pending', contact: 'Martin', notes: '' },
-      { id: 'wa_3', name: 'Heavy rework', status: 'pending', contact: 'Martin', notes: '' },
-      { id: 'wa_4', name: 'Review Scrap Table', status: 'pending', contact: 'Martin', notes: '' }
-    ];
-    const initialBonus = [
-      { id: 'bt_1', task: 'Matt\'s bin check audit on PN 86291945', status: 'pending', notes: '' }
-    ];
-
-    setAreasWalked(initialAreas);
-    setBonusTasks(initialBonus);
-
-    const todayDate = now.toISOString()?.substring(0, 10);
-    const dbReports = getEntities('shiftReports');
-    const existingDraft = dbReports.find(r => r.rep_id === currentUser.id && r.status === 'Draft');
-    
-    if (!existingDraft) {
-      const draftReport = {
-        id: `sr_draft_${Date.now()}`,
-        rep_id: currentUser.id,
-        plant_id: selectedPlant,
-        date: todayDate,
-        areas_walked: initialAreas,
-        incidents_count: 0,
-        bonus_tasks: initialBonus,
-        status: 'Draft',
-        created_at: now.toISOString()
-      };
-      saveEntity('shiftReports', draftReport);
-      window.dispatchEvent(new Event('ids_pulse_db_update'));
-      const dbProjects = getEntities('projects') || [];
-      const projMatch = dbProjects.find(p => p && p.rep_id === currentUser.id && p.plant_id === selectedPlant);
-      const supplierName = projMatch ? projMatch.client_id : 'unknown';
-      logSystemEvent('shift', 'clock_in', `${currentUser.name} clocked in at plant ${selectedPlant} serving supplier ${supplierName}.`);
-    }
-  };
-
-  const triggerEndShiftFlow = () => {
-    const now = new Date();
-    const endTimeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    setModalEndTime(endTimeString);
-
-    const breakMinutes = 30; // standard 30 min unpaid meal break
-    if (shiftStartRawTime) {
-      const diffMs = now - shiftStartRawTime;
-      const rawHrs = diffMs / (1000 * 60 * 60);
-      const breakHrs = breakMinutes / 60;
-      const netDurationHours = Math.max(0, parseFloat((rawHrs - breakHrs).toFixed(2)));
-      setModalElapsedTime(`${netDurationHours.toFixed(2)} Hours`);
-    } else {
-      setModalElapsedTime('8.00 Hours');
-    }
-    
-    setShowEndShiftModal(true);
-  };
-
-  const confirmEndShift = () => {
-    setShowEndShiftModal(false);
-    setShiftActive(false);
-    setShiftStartTime(null);
-    setShiftStartRawTime(null);
-    setActiveScreen('summary');
   };
 
   // CAPACITOR CAMERA / DEVICE CAMERA & FILE CAPTURE
@@ -679,11 +1125,6 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
       photo10: null
     });
     
-    // Fill coordinates
-    setDefectLocationX(0.29);
-    setDefectLocationY(0.49);
-    setPartViewTemplate('86286761');
-
     // Fill Scan Info (Pre-populates list)
     setScannedPN('');
     setScannedBin('');
@@ -714,7 +1155,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
 
   // SUBMIT INCIDENT AND SEND EMAIL
   const handleSendIncident = () => {
-    // P0-4 Evidence Guard (Up to 10 Photos + Video Walkthrough + Audio Voice Memo)
+    // P0-4 Evidence Guard (Up to 10 Photos + Video Walkthrough)
     const capturedCount = Object.keys(capturedPhotos).filter(k => capturedPhotos[k] || annotatedPhotos[k]).length;
 
     if (capturedCount < 3) {
@@ -724,11 +1165,6 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
 
     if (!hasVideo) {
       showToast("Completeness Error: 15s Video Walkthrough evidence must be attached before sending!", "warning");
-      return;
-    }
-
-    if (!hasAudio) {
-      showToast("Completeness Error: Voice Memo Audio Note must be attached before sending!", "warning");
       return;
     }
 
@@ -799,8 +1235,6 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
           status: 'Open',
           sent_at: new Date().toISOString(),
           parts_list: defaultPartsList,
-          defect_location_x: defectLocationX,
-          defect_location_y: defectLocationY,
           part_view: 'top'
         };
 
@@ -1004,14 +1438,10 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
     setDescription('');
     setDefectType('');
     setCustomDefect('');
-    setHasAudio(false);
     setHasVideo(false);
     setIncidentSentConfirmation(false);
     setSentIncidentId(null);
     setIncStep(1);
-    setDefectLocationX(null);
-    setDefectLocationY(null);
-    setPartViewTemplate('86286761');
     setDuplicateIncident(null);
     setActiveScreen('home');
   };
@@ -1142,57 +1572,6 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
       // Save walkthrough log
       saveEntity('shiftReports', newReport);
 
-      // Compute and record complete work session linkage
-      const startIso = shiftStartRawTime ? shiftStartRawTime.toISOString() : (existingDraft?.created_at || new Date(Date.now() - 8.5 * 3600 * 1000).toISOString());
-      const endIso = new Date().toISOString();
-      const startTimeMs = new Date(startIso).getTime();
-      const endTimeMs = new Date(endIso).getTime();
-      const breakMinutes = 30;
-      const rawHrs = (endTimeMs - startTimeMs) / (1000 * 3600);
-      const netDurationHours = Math.max(0, parseFloat((rawHrs - (breakMinutes / 60)).toFixed(2)));
-
-      const workSessionRecord = {
-        id: `ws_${Date.now()}`,
-        rep_id: currentUser.id,
-        plant_id: selectedPlant,
-        start_time: startIso,
-        end_time: endIso,
-        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
-        break_minutes: breakMinutes,
-        duration_hours: netDurationHours,
-        shift_report_id: newReport.id,
-        incidents_count: repIncidentsCount,
-        created_at: endIso
-      };
-      saveEntity('work_sessions', workSessionRecord);
-
-      // Auto-sync into timeEntries so PO Telemetry, Weekly Timesheets & Invoicing track Rep hours accurately
-      const suppliersList = getEntities('suppliers') || [];
-      const activeSupplierId = suppliersList.find(s => s.plants_served?.includes(selectedPlant))?.id || 'sup_autokabel';
-      const timeEntryRecord = {
-        id: `te_${Date.now()}`,
-        rep_id: currentUser.id,
-        supplier_id: activeSupplierId,
-        plant_id: selectedPlant,
-        date: todayDate,
-        hours: netDurationHours,
-        mileage_km: 0,
-        notes: `Shift Report #${newReport.id} - ${netDurationHours} hrs logged via Mobile App`,
-        status: 'Approved',
-        invoiced: false,
-        created_at: endIso
-      };
-      saveEntity('timeEntries', timeEntryRecord);
-
-      logSystemEvent('shift', 'clock_out', `${currentUser.name} completed shift at plant ${selectedPlant}. Worked ${netDurationHours} net hours.`);
-      
-      // Clean up localStorage active shift indicators
-      localStorage.removeItem('ids_pulse_active_shift_rep_id');
-      localStorage.removeItem('ids_pulse_active_shift_plant_id');
-      localStorage.removeItem('ids_pulse_active_shift_start_time');
-      setShiftActive(false);
-      setShiftStartTime(null);
-      setShiftStartRawTime(null);
 
       // Dispatch email logs for walkthrough audit
       addEmailLog({
@@ -1216,7 +1595,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
       });
 
       setSendingShiftReport(false);
-      showToast("Shift Summary Report submitted successfully!", "success");
+      showToast("Daily Quality Report submitted successfully!", "success");
       setActiveScreen('home');
     }, 1500);
   };
@@ -1327,29 +1706,13 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
         )}
 
         {/* SCREEN 2: HOME */}
-        {activeScreen === 'home' && isLoggedIn && currentUser && (
+        {activeScreen === 'home' && isLoggedIn && currentUser && (() => {
+          const hourTotals = getRepAssignmentHourTotals();
+          return (
           <div className="flex-1 flex flex-col p-3 bg-slate-50 relative overflow-y-auto scrollbar-thin">
-            {handoverAlert && handoverAlert.show && (
-              <div className="absolute inset-0 bg-slate-900/40 flex items-center justify-center p-3 z-50 animate-in fade-in duration-200 backdrop-blur-[2px]">
-                <div className="bg-white border border-red-200 rounded-sm p-5 flex flex-col gap-3 max-w-[320px] text-center shadow-lg">
-                  <div className="w-12 h-12 bg-red-50 border border-red-200 rounded-sm flex items-center justify-center mx-auto text-red-600">
-                    <AlertTriangle className="w-6 h-6" />
-                  </div>
-                  <h3 className="text-[13.5px] font-black text-slate-900 uppercase tracking-wider">Shift Handover Lock</h3>
-                  <p className="text-[12.5px] text-slate-700 leading-relaxed">
-                    <strong>{handoverAlert.prevRepName}</strong> had an active shift running.
-                  </p>
-                  <p className="text-[11.5px] text-slate-600 bg-slate-50 p-2.5 rounded-sm border border-slate-200 leading-relaxed">
-                    The active draft shift summary was automatically <strong>locked</strong>. A new shift session has been initialized for you.
-                  </p>
-                  <button 
-                    type="button"
-                    onClick={() => setHandoverAlert(null)}
-                    className="phone-btn-danger mt-2 py-2"
-                  >
-                    Acknowledge & Continue
-                  </button>
-                </div>
+            {addHoursToast && (
+              <div className="mb-2 bg-emerald-500 text-white p-2.5 rounded-lg text-[12px] font-bold text-center shadow-md animate-in fade-in">
+                {addHoursToast}
               </div>
             )}
             <div>
@@ -1377,254 +1740,376 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                 </div>
               )}
 
-              {/* Shift Actions & Status Panel */}
-              <div className="mt-3 bg-white border border-slate-300 rounded-sm p-3 flex flex-col gap-3 shadow-sm">
+              {/* Rep Profile & Role Header Panel */}
+              <div className="mt-3 bg-white border border-slate-300 rounded-lg p-3 flex flex-col gap-3 shadow-sm">
                 <div className="flex items-center justify-between pb-2 border-b border-slate-200">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-sm bg-blue-50 flex items-center justify-center font-bold text-[14px] text-blue-700 border border-blue-200">
-                      {currentUser.avatar}
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-md bg-blue-100 flex items-center justify-center font-black text-[14px] text-blue-700 border border-blue-200">
+                      {currentUser.avatar || 'QR'}
                     </div>
                     <div>
-                      <p className="text-[12.5px] font-bold text-slate-900 leading-tight">{currentUser.name}</p>
-                      <p className="text-[11px] text-text-secondary font-bold uppercase tracking-wide leading-none mt-0.5">{plants.find(p => p.id === selectedPlant)?.name || 'Select Location'}</p>
+                      <p className="text-[13.5px] font-black text-slate-900 leading-tight">{currentUser.name}</p>
+                      <span className="text-[9.5px] bg-blue-100 text-blue-900 border border-blue-300 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
+                        Quality Liaison Rep
+                      </span>
                     </div>
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className={`px-2 py-1 rounded-sm text-[10px] font-bold tracking-wider uppercase border ${
-                      shiftActive ? 'bg-green-50 text-green-700 border-green-200' : 'bg-slate-100 text-slate-600 border-slate-200'
-                    }`}>
-                      {shiftActive ? 'ON JOB' : 'OFF CLOCK'}
+                  <div className="text-right">
+                    <span className="text-[9.5px] text-slate-500 uppercase font-bold block">Location</span>
+                    <div className="relative inline-block mt-0.5">
+                      <select 
+                        value={selectedPlant}
+                        onChange={(e) => setSelectedPlant(e.target.value)}
+                        className="text-[11.5px] font-black text-slate-900 bg-slate-100 border border-slate-300 rounded px-1.5 py-0.5 focus:outline-none"
+                      >
+                        {plants.map(p => (
+                          <option key={p.id} value={p.id}>{p.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Assigned Work Summary Card */}
+                <div className="bg-slate-50 border border-slate-200 rounded-lg p-2.5 flex flex-col gap-2">
+                  <div className="flex items-center justify-between border-b border-slate-200 pb-1.5">
+                    <span className="text-[10px] font-extrabold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                      <Shield className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                      <span>Assigned Work Details</span>
+                    </span>
+                    <span className="text-[9px] bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold px-2 py-0.5 rounded-full uppercase">
+                      Active Assignment
                     </span>
                   </div>
+
+                  <div className="grid grid-cols-2 gap-2 text-[11.5px]">
+                    <div>
+                      <span className="text-[9.5px] text-slate-500 uppercase font-bold block">Supplier / Client:</span>
+                      <strong className="text-slate-900 font-black">{getActiveClientForPlant()}</strong>
+                    </div>
+                    <div>
+                      <span className="text-[9.5px] text-slate-500 uppercase font-bold block">Host Plant:</span>
+                      <strong className="text-slate-900 font-black">{plants.find(p => p.id === selectedPlant)?.name || 'GM Oshawa'}</strong>
+                    </div>
+                    <div>
+                      <span className="text-[9.5px] text-slate-500 uppercase font-bold block">Project / Program:</span>
+                      <span className="text-slate-800 font-bold">{hourTotals.activeProject?.name || 'Quality Inspection & Sorting'}</span>
+                    </div>
+                    <div>
+                      <span className="text-[9.5px] text-slate-500 uppercase font-bold block">Assigned Parts:</span>
+                      <span className="text-blue-700 font-black">{hourTotals.activeProject?.part_numbers || 'PN-86286761'}</span>
+                    </div>
+                  </div>
+
+                  {hourTotals.repAssignments && hourTotals.repAssignments.length > 1 && (
+                    <div className="flex flex-col gap-1 mt-2 pt-2 border-t border-slate-200">
+                      <label className="text-[9.5px] font-black text-amber-900 uppercase tracking-wide flex items-center justify-between">
+                        <span>Select Active Assignment ({hourTotals.repAssignments.length}):</span>
+                        <span className="text-amber-700 font-bold text-[8.5px]">Required for telemetry</span>
+                      </label>
+                      <select
+                        value={selectedAssignmentId}
+                        onChange={(e) => setSelectedAssignmentId(e.target.value)}
+                        className="text-[11.5px] font-black text-slate-900 bg-amber-50 border border-amber-300 rounded px-2 py-1 focus:outline-none cursor-pointer"
+                      >
+                        <option value="">-- Choose Assignment --</option>
+                        {hourTotals.repAssignments.map(a => (
+                          <option key={a.id} value={a.id}>
+                            {a.name || a.title || `Assignment #${a.id}`} ({a.client_id || a.supplier_id || 'Client'})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                 </div>
 
-                {!shiftActive ? (
-                  <>
-                    <div className="flex flex-col gap-1 mt-1">
-                      <label className="text-[10.5px] font-bold text-slate-700 uppercase tracking-wide">Plant Location</label>
-                      <div className="relative">
-                        <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-slate-600 z-10" />
-                        <select 
-                          value={selectedPlant}
-                          onChange={(e) => setSelectedPlant(e.target.value)}
-                          className="phone-select"
-                          style={{ paddingLeft: '38px' }}
-                        >
-                          {plants.map(p => (
-                            <option key={p.id} value={p.id}>{p.name}</option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
+                {/* Hour Totals Summary Box */}
+                <div className="bg-blue-50/70 border border-blue-200 rounded-lg p-2.5 flex flex-col gap-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10.5px] font-black text-blue-900 uppercase tracking-wide flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5 text-blue-700" />
+                      <span>Assignment Hours Telemetry</span>
+                    </span>
+                    <span className="text-[10.5px] font-black text-blue-800">
+                      {hourTotals.hasAuthorizedLimit ? `${hourTotals.authorizedHours.toFixed(1)} hrs Auth` : 'No hour limit configured'}
+                    </span>
+                  </div>
 
-                    {/* Client / Supplier Represented Box (Prominently placed right below Plant Location) */}
-                    <div className="mt-1 bg-slate-50 border border-blue-200 rounded-lg p-2.5 flex flex-col gap-1.5 shadow-xs">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-[10px] font-extrabold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-                          <Shield className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-                          <span>Client / Supplier Represented</span>
-                        </span>
-                        <span className="text-[9px] bg-blue-100 text-blue-800 border border-blue-300 font-bold px-2 py-0.5 rounded-full uppercase tracking-wider shrink-0">
-                          Assigned Client
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between gap-2 border-t border-slate-200/80 pt-1.5 mt-0.5">
-                        <span className="text-[13.5px] font-black text-slate-900 tracking-tight leading-tight">{getActiveClientForPlant()}</span>
-                        <span className="text-[9px] font-bold text-slate-700 bg-white border border-slate-300 px-2 py-0.5 rounded-full uppercase tracking-wider shrink-0 shadow-2xs">
-                          Admin Managed
-                        </span>
-                      </div>
+                  <div className="grid grid-cols-4 gap-1.5 pt-0.5 text-center">
+                    <div className="bg-white border border-emerald-200 rounded p-1.5">
+                      <span className="text-[8 h-auto] text-[8px] text-emerald-700 font-bold uppercase block leading-tight">Regular (Rec.)</span>
+                      <span className="text-[12px] font-black text-emerald-700">{hourTotals.recordedRegularHours.toFixed(1)} hrs</span>
                     </div>
-                    <button 
-                      onClick={handleStartShift}
-                      className="phone-btn-primary h-12 mt-1"
-                    >
-                      <Play className="w-4 h-4" />
-                      <span className="text-[13.5px]">CLOCK IN (START JOB)</span>
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <div className="flex items-center justify-between mt-1 px-1">
-                      <div className="flex flex-col">
-                        <span className="text-[10.5px] font-bold text-slate-700 uppercase tracking-wider">Started At</span>
-                        <span className="text-[14px] font-black text-slate-900">{shiftStartTime}</span>
-                      </div>
-                      <div className="flex flex-col text-right">
-                        <span className="text-[10.5px] font-bold text-slate-700 uppercase tracking-wider">Incidents</span>
-                        <span className="text-[14px] font-black text-blue-600">
-                          {getEntities('incidents').filter(inc => inc.created_at?.startsWith(new Date().toISOString()?.substring(0, 10))).length} logged
-                        </span>
-                      </div>
+                    <div className="bg-white border border-amber-200 rounded p-1.5">
+                      <span className="text-[8px] text-amber-700 font-bold uppercase block leading-tight">Client OT Pend.</span>
+                      <span className="text-[12px] font-black text-amber-700">{hourTotals.pendingClientOvertimeHours.toFixed(1)} hrs</span>
                     </div>
-                    
-                    <button 
-                      onClick={triggerEndShiftFlow}
-                      className="phone-btn-danger h-12 mt-1"
-                    >
-                      <Square className="w-3.5 h-3.5" />
-                      <span className="text-[13.5px]">CLOCK OUT (END JOB)</span>
-                    </button>
-                  </>
-                )}
-              </div>
-
-              {/* Tasks List */}
-              {shiftActive && (
-                <div className="mt-3 bg-white border border-slate-300 rounded-sm p-3 flex flex-col gap-2 shadow-sm">
-                  <span className="text-[10.5px] font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5 pb-2 border-b border-slate-200">
-                    <CheckCircle className="w-3.5 h-3.5 text-blue-600" />
-                    <span>Today's Assigned Tasks</span>
-                  </span>
-                  
-                  <div className="flex flex-col gap-1.5 max-h-[140px] overflow-y-auto pr-1">
-                    {dailyTasks.length > 0 ? (
-                      dailyTasks.map(t => (
-                        <div 
-                          key={t.id} 
-                          onClick={() => handleToggleTask(t)}
-                          className="bg-slate-50 border border-slate-200 p-2 rounded-sm flex items-center gap-3 cursor-pointer hover:border-slate-300 transition-colors"
-                        >
-                          <input 
-                            type="checkbox" 
-                            checked={t.status === 'completed'}
-                            onChange={() => {}} 
-                            className="rounded-sm border-slate-300 text-blue-600 focus:ring-0 focus:ring-offset-0 w-4.5 h-4.5 cursor-pointer flex-shrink-0"
-                          />
-                          <span className={`text-[11.5px] leading-tight select-none ${t.status === 'completed' ? 'line-through text-text-secondary font-medium' : 'text-slate-900 font-bold'}`}>
-                            {t.task}
-                          </span>
-                        </div>
-                      ))
-                    ) : (
-                      <p className="text-[10.5px] text-text-secondary italic">No tasks assigned for today.</p>
-                    )}
+                    <div className="bg-white border border-blue-200 rounded p-1.5">
+                      <span className="text-[8px] text-blue-700 font-bold uppercase block leading-tight">Rem. Alloc.</span>
+                      <span className="text-[12px] font-black text-blue-700">
+                        {hourTotals.hasAuthorizedLimit ? `${hourTotals.remainingAllocation !== null ? hourTotals.remainingAllocation.toFixed(1) : 0} hrs` : 'N/A'}
+                      </span>
+                    </div>
+                    <div className="bg-white border border-purple-200 rounded p-1.5">
+                      <span className="text-[8px] text-purple-700 font-bold uppercase block leading-tight">Client Appr. OT</span>
+                      <span className="text-[12px] font-black text-purple-700">
+                        {hourTotals.clientApprovedOvertimeHours.toFixed(1)} hrs
+                      </span>
+                    </div>
                   </div>
                 </div>
-              )}
+              </div>
             </div>
 
-            {/* Quick Actions */}
-            <div className="flex flex-col gap-2 mt-auto">
-              <p className="text-[10.5px] text-slate-600 font-bold uppercase tracking-wider pl-1 mt-4">Actions Feed</p>
-              
+            {/* Primary Actions Feed */}
+            <div className="flex flex-col gap-2 mt-3">
+              <p className="text-[10.5px] text-slate-600 font-bold uppercase tracking-wider pl-1">Primary Actions</p>
+
+              {/* PROMINENT ACTION: Add Today's Hours */}
               <button 
-                onClick={() => {
-                  setActiveScreen('incident');
-                  setIncStep(1);
-                }}
-                className="w-full bg-white hover:bg-slate-50 border border-slate-300 rounded-sm p-3 flex items-center gap-3 transition-colors cursor-pointer group shadow-sm"
+                type="button"
+                onClick={() => setShowAddHoursModal(true)}
+                className="w-full bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white rounded-lg p-3 flex items-center justify-between transition-all cursor-pointer shadow-md group"
               >
-                <div className="w-9 h-9 rounded-sm bg-red-50 flex items-center justify-center shrink-0 border border-red-200 group-hover:bg-red-100 transition-colors">
-                  <AlertTriangle className="w-4.5 h-4.5 text-red-600" />
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-lg bg-white/20 flex items-center justify-center shrink-0 border border-white/30">
+                    <Clock className="w-5 h-5 text-white" />
+                  </div>
+                  <div className="text-left">
+                    <span className="text-[14px] font-black block tracking-wide">Add Today's Hours</span>
+                    <span className="text-[10.5px] block text-emerald-100">Record daily working hours & overtime</span>
+                  </div>
                 </div>
-                <div className="text-left flex-1">
-                  <span className="text-[13.5px] font-bold block text-slate-900 group-hover:text-red-700 transition-colors tracking-wide">New Suspect Material</span>
-                  <span className="text-[10.5px] block leading-tight mt-0.5">Log suspect materials on floor</span>
-                </div>
-                <ChevronRight className="w-4.5 h-4.5 text-slate-600 group-hover:text-red-600 transition-colors" />
+                <ChevronRight className="w-5 h-5 text-white group-hover:translate-x-0.5 transition-transform" />
               </button>
 
-              <button 
-                disabled={!shiftActive}
-                onClick={() => setActiveScreen('rework')}
-                className="w-full bg-white hover:bg-slate-50 disabled:opacity-50 disabled:bg-slate-100 border border-slate-300 rounded-sm p-3 flex items-center gap-3 transition-colors cursor-pointer group disabled:cursor-not-allowed shadow-sm"
-              >
-                <div className="w-9 h-9 rounded-sm bg-blue-50 flex items-center justify-center shrink-0 border border-blue-200 group-hover:bg-blue-100 transition-colors">
-                  <Clock className="w-4.5 h-4.5 text-blue-600" />
-                </div>
-                <div className="text-left flex-1">
-                  <span className="text-[13.5px] font-bold block text-slate-900 group-hover:text-blue-700 transition-colors tracking-wide">Log Rework Hours</span>
-                  <span className="text-[10.5px] block leading-tight mt-0.5">Track billable pcs and sorting time</span>
-                </div>
-                <ChevronRight className="w-4.5 h-4.5 text-slate-600 group-hover:text-blue-600 transition-colors" />
-              </button>
-
-              <button 
-                disabled={!shiftActive}
-                onClick={() => setActiveScreen('expenses')}
-                className="w-full bg-white hover:bg-slate-50 disabled:opacity-50 disabled:bg-slate-100 border border-slate-300 rounded-sm p-3 flex items-center gap-3 transition-colors cursor-pointer group disabled:cursor-not-allowed shadow-sm"
-              >
-                <div className="w-9 h-9 rounded-sm bg-green-50 flex items-center justify-center shrink-0 border border-green-200 group-hover:bg-green-100 transition-colors">
-                  <Receipt className="w-4.5 h-4.5 text-green-600" />
-                </div>
-                <div className="text-left flex-1">
-                  <span className="text-[13.5px] font-bold block text-slate-900 group-hover:text-green-700 transition-colors tracking-wide">Log Expenses</span>
-                  <span className="text-[10.5px] block leading-tight mt-0.5">Track fuel, parking, tolls, or meals</span>
-                </div>
-                <ChevronRight className="w-4.5 h-4.5 text-slate-600 group-hover:text-green-600 transition-colors" />
-              </button>
-
-              <div className="grid grid-cols-2 gap-2 mt-1">
+              <div className="grid grid-cols-2 gap-2">
                 <button 
+                  type="button"
+                  onClick={() => setActiveScreen('inspection')}
+                  className="bg-white hover:bg-slate-50 border border-slate-300 rounded-lg p-2.5 flex flex-col gap-1 text-left transition-colors cursor-pointer shadow-xs"
+                >
+                  <div className="w-7 h-7 rounded bg-emerald-50 border border-emerald-200 flex items-center justify-center">
+                    <CheckCircle className="w-3.5 h-3.5 text-emerald-600" />
+                  </div>
+                  <span className="text-[12.5px] font-black text-slate-900 mt-1">Start Routine Inspection</span>
+                  <span className="text-[10px] text-slate-500">Record sorting log</span>
+                </button>
+
+                <button 
+                  type="button"
+                  onClick={() => setActiveScreen('rework')}
+                  className="bg-white hover:bg-slate-50 border border-slate-300 rounded-lg p-2.5 flex flex-col gap-1 text-left transition-colors cursor-pointer shadow-xs"
+                >
+                  <div className="w-7 h-7 rounded bg-blue-50 border border-blue-200 flex items-center justify-center">
+                    <Wrench className="w-3.5 h-3.5 text-blue-600" />
+                  </div>
+                  <span className="text-[12.5px] font-black text-slate-900 mt-1">Log Rework</span>
+                  <span className="text-[10px] text-slate-500">Billable containment rework</span>
+                </button>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <button 
+                  type="button"
+                  onClick={() => {
+                    setActiveScreen('incident');
+                    setIncStep(1);
+                  }}
+                  className="bg-white hover:bg-slate-50 border border-slate-300 rounded-lg p-2.5 flex flex-col gap-1 text-left transition-colors cursor-pointer shadow-xs"
+                >
+                  <div className="w-7 h-7 rounded bg-red-50 border border-red-200 flex items-center justify-center">
+                    <AlertTriangle className="w-3.5 h-3.5 text-red-600" />
+                  </div>
+                  <span className="text-[12.5px] font-black text-slate-900 mt-1">Report Urgent Incident</span>
+                  <span className="text-[10px] text-slate-500">Log suspect material</span>
+                </button>
+
+                <button 
+                  type="button"
+                  onClick={() => {
+                    setActiveScreen('expenses');
+                    setTimeExpenseTab('expense');
+                  }}
+                  className="bg-white hover:bg-slate-50 border border-slate-300 rounded-lg p-2.5 flex flex-col gap-1 text-left transition-colors cursor-pointer shadow-xs"
+                >
+                  <div className="w-7 h-7 rounded bg-amber-50 border border-amber-200 flex items-center justify-center">
+                    <DollarSign className="w-3.5 h-3.5 text-amber-600" />
+                  </div>
+                  <span className="text-[12.5px] font-black text-slate-900 mt-1">Log Expense</span>
+                  <span className="text-[10px] text-slate-500">Claim mileage & expenses</span>
+                </button>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <button 
+                  type="button"
                   onClick={() => setActiveScreen('summary')}
-                  className="w-full h-11 bg-white hover:bg-slate-50 border border-slate-300 rounded-sm px-3 flex items-center justify-between transition-colors group cursor-pointer shadow-sm"
+                  className="bg-white hover:bg-slate-50 border border-slate-300 rounded-lg p-2.5 flex flex-col gap-1 text-left transition-colors cursor-pointer shadow-xs"
                 >
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-blue-600" />
-                    <span className="text-[12px] font-bold text-slate-700 group-hover:text-slate-900 transition-colors tracking-wide">Shift Logs</span>
+                  <div className="w-7 h-7 rounded bg-purple-50 border border-purple-200 flex items-center justify-center">
+                    <Calendar className="w-3.5 h-3.5 text-purple-600" />
                   </div>
-                  <span className="text-[10px] bg-slate-100 border border-slate-200 text-slate-600 px-2 py-0.5 rounded-sm font-bold group-hover:bg-slate-200 transition-colors">1</span>
+                  <span className="text-[12.5px] font-black text-slate-900 mt-1">Daily Quality Report</span>
+                  <span className="text-[10px] text-slate-500">Walkthrough summary</span>
                 </button>
 
                 <button 
+                  type="button"
                   onClick={() => setActiveScreen('history')}
-                  className="w-full h-11 bg-white hover:bg-slate-50 border border-slate-300 rounded-sm px-3 flex items-center justify-between transition-colors group cursor-pointer shadow-sm"
+                  className="bg-white hover:bg-slate-50 border border-slate-300 rounded-lg p-2.5 flex flex-col gap-1 text-left transition-colors cursor-pointer shadow-xs"
                 >
-                  <div className="flex items-center gap-2">
-                    <FileText className="w-4 h-4 text-blue-600" />
-                    <span className="text-[12px] font-bold text-slate-700 group-hover:text-slate-900 transition-colors tracking-wide">Suspects</span>
+                  <div className="w-7 h-7 rounded bg-slate-100 border border-slate-200 flex items-center justify-center">
+                    <FileText className="w-3.5 h-3.5 text-slate-600" />
                   </div>
-                  <span className="text-[10px] bg-slate-100 border border-slate-200 text-slate-600 px-2 py-0.5 rounded-sm font-bold group-hover:bg-slate-200 transition-colors">
-                    {getEntities('incidents')?.filter(inc => inc.rep_id === (currentUser?.id || '1')).length || 0}
-                  </span>
+                  <span className="text-[12.5px] font-black text-slate-900 mt-1">View Activity</span>
+                  <span className="text-[10px] text-slate-500">History & incident logs</span>
                 </button>
               </div>
             </div>
 
-            {/* END SHIFT CONFIRMATION MODAL */}
-            {showEndShiftModal && (
-              <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px] flex items-center justify-center p-3 z-50">
-                <div className="bg-white border border-slate-300 rounded-sm w-full max-w-[300px] overflow-hidden shadow-lg">
-                  <div className="bg-slate-50 p-3 border-b border-slate-200 flex items-center justify-between">
+            {/* ADD TODAY'S HOURS MODAL */}
+            {showAddHoursModal && (
+              <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-[2px] flex items-center justify-center p-3 z-50 animate-in fade-in">
+                <div className="bg-white border border-slate-300 rounded-xl w-full max-w-[340px] overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+                  <div className="bg-gradient-to-r from-emerald-600 to-teal-700 p-3 text-white flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <AlertTriangle className="w-4.5 h-4.5 text-red-600" />
-                      <h3 className="text-[13.5px] font-bold text-slate-900">End Shift Confirmation</h3>
+                      <Clock className="w-4.5 h-4.5 text-white" />
+                      <h3 className="text-[14px] font-black uppercase tracking-wide">Add Today's Hours</h3>
                     </div>
-                    <button onClick={() => setShowEndShiftModal(false)} className="text-text-secondary hover:text-slate-700"><X className="w-4.5 h-4" /></button>
+                    <button onClick={() => setShowAddHoursModal(false)} className="text-white/80 hover:text-white"><X className="w-4.5 h-4.5" /></button>
                   </div>
-                  <div className="p-3 flex flex-col gap-3">
-                    <p className="text-[12.5px] text-slate-700 leading-relaxed">
-                      Are you sure you want to end your shift? Please review your shift hours:
-                    </p>
-                    <div className="bg-slate-50 rounded-sm p-3 border border-slate-200 flex flex-col gap-2">
-                      <div className="flex justify-between items-center text-[11.5px]"><span className="text-slate-600 uppercase font-bold">Rep:</span><span className="text-slate-900 font-bold">{currentUser.name}</span></div>
-                      <div className="flex justify-between items-center text-[11.5px]"><span className="text-slate-600 uppercase font-bold">Plant:</span><span className="text-slate-900 font-bold">{plants.find(p => p.id === selectedPlant)?.name}</span></div>
-                      <div className="flex justify-between items-center text-[11.5px]"><span className="text-slate-600 uppercase font-bold">Start Time:</span><span className="text-slate-900 font-bold">{shiftStartTime}</span></div>
-                      <div className="flex justify-between items-center text-[11.5px]"><span className="text-slate-600 uppercase font-bold">End Time:</span><span className="text-slate-900 font-bold">{modalEndTime}</span></div>
-                      <div className="border-t border-slate-200 pt-1.5 flex justify-between items-center text-[11.5px]"><span className="text-blue-700 uppercase font-bold">Elapsed:</span><span className="text-blue-700 font-bold">{modalElapsedTime}</span></div>
+
+                  <form onSubmit={handleAddTodayHoursSubmit} className="p-3.5 flex flex-col gap-3 overflow-y-auto">
+                    <div>
+                      <label className="text-[10.5px] font-extrabold text-slate-700 uppercase tracking-wider block mb-1">Work Date</label>
+                      <input 
+                        type="date"
+                        value={addHoursDate}
+                        max={new Date().toISOString().substring(0, 10)}
+                        onChange={(e) => setAddHoursDate(e.target.value)}
+                        required
+                        className="phone-input text-xs"
+                      />
                     </div>
-                  </div>
-                  <div className="bg-slate-50 px-4 py-3 border-t border-slate-200 flex gap-2 justify-end">
-                    <button 
-                      onClick={() => setShowEndShiftModal(false)} 
-                      className="h-9 px-3.5 bg-white border border-slate-300 text-slate-700 hover:bg-slate-100 hover:text-slate-900 rounded-sm text-[11.5px] font-bold uppercase tracking-wider transition-all cursor-pointer"
-                    >
-                      No, Cancel
-                    </button>
-                    <button 
-                      onClick={confirmEndShift} 
-                      className="h-9 px-3.5 phone-btn-danger rounded-sm text-[11.5px] transition-all cursor-pointer shadow-none"
-                    >
-                      Yes, End Shift
-                    </button>
-                  </div>
+
+                    <div>
+                      <label className="text-[10.5px] font-extrabold text-slate-700 uppercase tracking-wider block mb-1">Hours Worked</label>
+                      <input 
+                        type="number"
+                        step="0.25"
+                        min="0.25"
+                        max="24"
+                        placeholder="e.g. 0.5, 1, 1.5, 2, 7.75"
+                        value={addHoursValue}
+                        onChange={(e) => setAddHoursValue(e.target.value)}
+                        required
+                        className="phone-input text-sm font-bold"
+                      />
+                      <span className="text-[9.5px] text-slate-500 mt-1 block mb-1">Supports decimals (0.5, 1.5, 3.5, 7.75 hrs)</span>
+                      
+                      {(() => {
+                        const hrs = parseFloat(addHoursValue);
+                        if (!hrs || isNaN(hrs) || hrs <= 0) return null;
+                        const totals = getRepAssignmentHourTotals();
+                        if (totals.authorizedHours === null) {
+                          return (
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px', marginTop: '10px' }}>
+                        <div style={{ padding: '8px 10px', background: 'rgba(16, 185, 129, 0.08)', borderRadius: '8px', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
+                          <div style={{ fontSize: '10px', color: '#059669', fontWeight: '600' }}>Regular (Recorded)</div>
+                          <div style={{ fontSize: '15px', fontWeight: '700', color: '#065f46', marginTop: '2px' }}>
+                            {(totals.regularRecorded || 0).toFixed(1)} hrs
+                          </div>
+                        </div>
+                        <div style={{ padding: '8px 10px', background: 'rgba(59, 130, 246, 0.08)', borderRadius: '8px', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
+                          <div style={{ fontSize: '10px', color: '#2563eb', fontWeight: '600' }}>Rem. Allocation</div>
+                          <div style={{ fontSize: '15px', fontWeight: '700', color: '#1e40af', marginTop: '2px' }}>
+                            {(totals.remainingAllocation || 0).toFixed(1)} hrs
+                          </div>
+                        </div>
+                        <div style={{ padding: '8px 10px', background: 'rgba(245, 158, 11, 0.08)', borderRadius: '8px', border: '1px solid rgba(245, 158, 11, 0.2)' }}>
+                          <div style={{ fontSize: '10px', color: '#d97706', fontWeight: '600' }}>Client OT Pending</div>
+                          <div style={{ fontSize: '15px', fontWeight: '700', color: '#92400e', marginTop: '2px' }}>
+                            {(totals.clientOtPending || 0).toFixed(1)} hrs
+                          </div>
+                        </div>
+                        <div style={{ padding: '8px 10px', background: 'rgba(16, 185, 129, 0.08)', borderRadius: '8px', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
+                          <div style={{ fontSize: '10px', color: '#059669', fontWeight: '600' }}>Client Approved OT</div>
+                          <div style={{ fontSize: '15px', fontWeight: '700', color: '#065f46', marginTop: '2px' }}>
+                            {(totals.clientOtApproved || 0).toFixed(1)} hrs
+                          </div>
+                        </div>
+                      </div>      );
+                        }
+                        const rem = totals.remainingAllocation !== null ? totals.remainingAllocation : 0;
+                        if (hrs > rem) {
+                          const regPortion = Math.max(0, rem);
+                          const otPortion = hrs - regPortion;
+                          return (
+                            <div className="bg-amber-50 border border-amber-300 rounded-lg p-2 text-[10.5px] text-amber-900 font-semibold leading-snug">
+                              ⚠️ {regPortion > 0 ? `${regPortion.toFixed(1)} hours are within your assignment. ` : ''}The additional {otPortion.toFixed(1)} hours require Client approval.
+                            </div>
+                          );
+                        }
+                        return (
+                          <div className="bg-emerald-50 border border-emerald-300 rounded-lg p-2 text-[10.5px] text-emerald-900 font-semibold leading-snug">
+                            ✓ All {hrs.toFixed(1)} hours are within your authorized allocation and will be recorded automatically.
+                          </div>
+                        );
+                      })()}
+                    </div>
+
+                    <div>
+                      <label className="text-[10.5px] font-extrabold text-slate-700 uppercase tracking-wider block mb-1">Work Type</label>
+                      <select 
+                        value={addHoursType}
+                        onChange={(e) => setAddHoursType(e.target.value)}
+                        className="phone-select text-xs"
+                      >
+                        <option value="Routine inspection">Routine inspection</option>
+                        <option value="Incident investigation">Incident investigation</option>
+                        <option value="Containment or rework support">Containment or rework support</option>
+                        <option value="Customer/supplier communication">Customer/supplier communication</option>
+                        <option value="Documentation/reporting">Documentation/reporting</option>
+                        <option value="Other">Other</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="text-[10.5px] font-extrabold text-slate-700 uppercase tracking-wider block mb-1">Short Work Summary</label>
+                      <textarea 
+                        rows={2}
+                        value={addHoursSummary}
+                        onChange={(e) => setAddHoursSummary(e.target.value)}
+                        placeholder="Summary of quality work performed..."
+                        className="phone-input text-xs"
+                      ></textarea>
+                    </div>
+
+                    <div className="flex gap-2 pt-2 border-t border-slate-200">
+                      <button 
+                        type="button"
+                        onClick={() => setShowAddHoursModal(false)}
+                        className="flex-1 h-10 border border-slate-300 text-slate-700 font-bold text-xs rounded-lg hover:bg-slate-100"
+                      >
+                        Cancel
+                      </button>
+                      <button 
+                        type="submit"
+                        className="flex-1 h-10 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg shadow-md"
+                      >
+                        Submit Hours
+                      </button>
+                    </div>
+                  </form>
                 </div>
               </div>
             )}
 
+
           </div>
-        )}
+          );
+        })()}
 
         {/* SCREEN 3: NEW INCIDENT FLOW (STEPWISE SCROLL VIEW) */}
         {activeScreen === 'incident' && isLoggedIn && currentUser && (
@@ -1778,118 +2263,16 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                     </div>
                   )}
 
-                  {/* Defect Location Heatmap Placement SVG Selector */}
-                  {capturedPhotos.closeup && (
-                    <div className="flex flex-col gap-2 bg-slate-50 p-3 rounded-sm border border-slate-200">
-                      <div className="flex justify-between items-center">
-                        <span className="text-[11.5px] text-blue-700 font-bold uppercase tracking-wider">Suspect Material Placement</span>
-                        <span className="text-[10.5px] text-slate-600">Tap part below</span>
-                      </div>
-                      
-                      <div className="flex gap-1.5 bg-white p-1 rounded-sm border border-slate-300">
-                        <button 
-                          type="button" 
-                          onClick={() => setPartViewTemplate('86286761')}
-                          className={`flex-1 py-1 rounded-sm text-[10.5px] font-bold transition-all cursor-pointer text-center ${
-                            partViewTemplate === '86286761' ? 'bg-blue-600 text-white border border-blue-700' : 'text-text-secondary hover:text-slate-900 bg-slate-50'
-                          }`}
-                        >
-                          Tail Light
-                        </button>
-                        <button 
-                          type="button" 
-                          onClick={() => setPartViewTemplate('86291945')}
-                          className={`flex-1 py-1 rounded-sm text-[10.5px] font-bold transition-all cursor-pointer text-center ${
-                            partViewTemplate === '86291945' ? 'bg-blue-600 text-white border border-blue-700' : 'text-text-secondary hover:text-slate-900 bg-slate-50'
-                          }`}
-                        >
-                          Headlight Casing
-                        </button>
-                      </div>
-
-                      <div className="relative bg-white rounded-sm p-2 border border-slate-300 flex items-center justify-center overflow-hidden h-36 cursor-crosshair">
-                        <svg 
-                          viewBox="0 0 100 100" 
-                          className="w-full h-full max-h-32 object-contain"
-                          onClick={(e) => {
-                            const rect = e.currentTarget.getBoundingClientRect();
-                            const x = (e.clientX - rect.left) / rect.width;
-                            const y = (e.clientY - rect.top) / rect.height;
-                            setDefectLocationX(parseFloat(x.toFixed(2)));
-                            setDefectLocationY(parseFloat(y.toFixed(2)));
-                            playBeep('success');
-                          }}
-                        >
-                          {partViewTemplate === '86286761' ? (
-                            <g>
-                              <rect x="5" y="25" width="90" height="50" rx="4" fill="#F1F5F9" stroke="#94A3B8" strokeWidth="2" />
-                              <rect x="10" y="30" width="35" height="40" rx="2" fill="#FEE2E2" opacity="0.8" stroke="#EF4444" strokeWidth="1" />
-                              <rect x="55" y="30" width="35" height="40" rx="2" fill="#FEE2E2" opacity="0.8" stroke="#EF4444" strokeWidth="1" />
-                              <circle cx="27.5" cy="50" r="10" fill="#EF4444" opacity="0.6" />
-                              <circle cx="72.5" cy="50" r="10" fill="#EF4444" opacity="0.6" />
-                              <line x1="50" y1="25" x2="50" y2="75" stroke="#94A3B8" strokeDasharray="3 3" />
-                              <text x="50" y="20" fill="#475569" fontSize="6" textAnchor="middle" fontWeight="bold">Tail Light Assembly (86286761)</text>
-                            </g>
-                          ) : (
-                            <g>
-                              <path d="M10,50 C10,25 40,20 90,40 C90,40 70,75 30,70 C15,68 10,60 10,50 Z" fill="#F1F5F9" stroke="#94A3B8" strokeWidth="2" />
-                              <circle cx="45" cy="48" r="14" fill="#E0F2FE" opacity="0.8" stroke="#38BDF8" strokeWidth="1" />
-                              <circle cx="75" cy="42" r="8" fill="#E0F2FE" opacity="0.8" stroke="#38BDF8" strokeWidth="1" />
-                              <path d="M12,48 C20,35 45,35 45,48" stroke="#94A3B8" strokeWidth="1.5" fill="none" />
-                              <text x="50" y="16" fill="#475569" fontSize="6" textAnchor="middle" fontWeight="bold">Headlight Casing (86291945)</text>
-                            </g>
-                          )}
-                          
-                          {defectLocationX !== null && defectLocationY !== null && (
-                            <g>
-                              <circle 
-                                cx={defectLocationX * 100} 
-                                cy={defectLocationY * 100} 
-                                r="4" 
-                                fill="#DC2626" 
-                                className="animate-ping" 
-                                style={{ transformOrigin: `${defectLocationX * 100}px ${defectLocationY * 100}px` }} 
-                              />
-                              <circle 
-                                cx={defectLocationX * 100} 
-                                cy={defectLocationY * 100} 
-                                r="3.5" 
-                                fill="#B91C1C" 
-                                stroke="#FFFFFF" 
-                                strokeWidth="0.8" 
-                              />
-                            </g>
-                          )}
-                        </svg>
-                        {defectLocationX !== null && defectLocationY !== null && (
-                          <div className="absolute bottom-1 right-2 bg-white/90 border border-slate-300 text-[12.5px] text-slate-700 font-mono px-1 py-1 rounded-sm shadow-sm font-bold">
-                            X: {defectLocationX} | Y: {defectLocationY}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Audio & Video Mock Attachments */}
+                  {/* Video Mock Attachment */}
                   <div className="flex gap-2">
                     <button 
                       onClick={() => setHasVideo(!hasVideo)}
-                      className={`flex-1 h-11 border rounded-sm flex items-center justify-center gap-1.5 text-[13.5px] font-bold transition-all cursor-pointer ${
+                      className={`w-full h-11 border rounded-sm flex items-center justify-center gap-1.5 text-[13.5px] font-bold transition-all cursor-pointer ${
                         hasVideo ? 'bg-green-50 border-green-300 text-green-700 shadow-sm' : 'bg-white border-slate-300 text-slate-600 hover:text-slate-900 shadow-sm hover:bg-slate-50'
                       }`}
                     >
                       <Video className="w-4.5 h-4" />
                       <span>{hasVideo ? 'Video Linked' : 'Add 15s Video'}</span>
-                    </button>
-                    
-                    <button 
-                      onClick={() => setHasAudio(!hasAudio)}
-                      className={`flex-1 h-11 border rounded-sm flex items-center justify-center gap-1.5 text-[13.5px] font-bold transition-all cursor-pointer ${
-                        hasAudio ? 'bg-green-50 border-green-300 text-green-700 shadow-sm' : 'bg-white border-slate-300 text-slate-600 hover:text-slate-900 shadow-sm hover:bg-slate-50'
-                      }`}
-                    >
-                      <Volume2 className="w-4.5 h-4" />
-                      <span>{hasAudio ? 'Audio Note Linked' : 'Add Audio Memo'}</span>
                     </button>
                   </div>
 
@@ -2690,7 +3073,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
           <div className="flex-1 flex flex-col bg-slate-50 overflow-hidden">
             <div className="flex items-center justify-between p-3 border-b border-slate-200 bg-white">
               <button onClick={() => setActiveScreen('home')} className="text-text-secondary hover:text-slate-900 flex items-center gap-1 text-[13.5px]"><ArrowLeft className="w-4.5 h-4" /><span>Home</span></button>
-              <h2 className="text-[13.5px] font-bold text-slate-900 uppercase tracking-wider">Shift Summary Log</h2>
+              <h2 className="text-[13.5px] font-bold text-slate-900 uppercase tracking-wider">Daily Quality Report</h2>
               <div className="w-10"></div>
             </div>
 
@@ -2767,9 +3150,117 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                 className="phone-btn-primary mt-4"
               >
                 <Send className="w-3.5 h-3.5" />
-                <span>{sendingShiftReport ? 'Compiling report...' : 'Submit End-Of-Shift Log'}</span>
+                <span>{sendingShiftReport ? 'Compiling report...' : 'Submit Daily Quality Report'}</span>
               </button>
             </div>
+          </div>
+        )}
+
+        {/* SCREEN: ROUTINE QUALITY INSPECTION LOG FORM */}
+        {activeScreen === 'inspection' && isLoggedIn && currentUser && (
+          <div className="flex-1 flex flex-col bg-slate-50 overflow-hidden">
+            <div className="flex items-center justify-between p-3 border-b border-slate-200 bg-white">
+              <button onClick={() => setActiveScreen('home')} className="text-text-secondary hover:text-slate-900 flex items-center gap-1 text-[13.5px]"><ArrowLeft className="w-4.5 h-4" /><span>Home</span></button>
+              <h2 className="text-[13.5px] font-bold text-slate-900 uppercase tracking-wider">Routine Quality Inspection</h2>
+              <div className="w-10"></div>
+            </div>
+
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              const passPcs = parseInt(inspPassQty) || 0;
+              const rejectPcs = parseInt(inspRejectQty) || 0;
+              const totalPcs = passPcs + rejectPcs;
+
+              if (totalPcs <= 0) {
+                alert("Please enter at least 1 inspected part quantity.");
+                return;
+              }
+
+              addReworkLog({
+                rep_id: currentUser.id,
+                part_number: inspPartNumber,
+                inspected_pcs: totalPcs,
+                reworked_pcs: passPcs,
+                defects_pcs: rejectPcs,
+                hours_spent: parseFloat(inspHoursSpent) || 1.0,
+                defect_code: inspDefectCode || 'Routine Inspection',
+                notes: inspNotes || 'Routine floor quality inspection recorded.',
+                created_at: new Date().toISOString()
+              });
+
+              showToast(`Logged inspection for ${totalPcs} pcs (${passPcs} passed, ${rejectPcs} rejected)!`, "success");
+              setInspPassQty(0);
+              setInspRejectQty(0);
+              setInspNotes('');
+              setActiveScreen('home');
+            }} className="flex-1 overflow-y-auto p-3 flex flex-col gap-3 text-left">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10.5px] font-bold text-text-secondary uppercase">Part Number Inspected</label>
+                <select 
+                  value={inspPartNumber}
+                  onChange={(e) => setInspPartNumber(e.target.value)}
+                  className="phone-select"
+                >
+                  <option value="86286761">PN 86286761 (Tail Light Assembly)</option>
+                  <option value="86291945">PN 86291945 (Headlight Bin)</option>
+                  <option value="86300412">PN 86300412 (Harness Bracket)</option>
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10.5px] font-bold text-emerald-700 uppercase">Passed Pcs</label>
+                  <input 
+                    type="number" 
+                    min="0"
+                    value={inspPassQty}
+                    onChange={(e) => setInspPassQty(Math.max(0, parseInt(e.target.value) || 0))}
+                    className="phone-input font-bold text-emerald-800"
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10.5px] font-bold text-rose-700 uppercase">Rejected Pcs</label>
+                  <input 
+                    type="number" 
+                    min="0"
+                    value={inspRejectQty}
+                    onChange={(e) => setInspRejectQty(Math.max(0, parseInt(e.target.value) || 0))}
+                    className="phone-input font-bold text-rose-800"
+                  />
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10.5px] font-bold text-text-secondary uppercase">Defect Category / Code</label>
+                <select 
+                  value={inspDefectCode}
+                  onChange={(e) => setInspDefectCode(e.target.value)}
+                  className="phone-select"
+                >
+                  <option value="Routine Inspection">Routine Inspection - Pass</option>
+                  <option value="Surface Scratch">Surface Scratch / Dent</option>
+                  <option value="Terminal Pin Bend">Terminal Pin Deformation</option>
+                  <option value="Dimensional Out of Spec">Dimensional Out of Spec</option>
+                  <option value="Missing Seal">Missing Gasket / Seal</option>
+                </select>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10.5px] font-bold text-text-secondary uppercase">Inspection Notes / Summary</label>
+                <textarea 
+                  value={inspNotes}
+                  onChange={(e) => setInspNotes(e.target.value)}
+                  rows={3}
+                  placeholder="Details of batch inspection on production line..."
+                  className="phone-textarea"
+                />
+              </div>
+
+              <button type="submit" className="phone-btn-primary mt-2">
+                <CheckCircle className="w-4.5 h-4" />
+                <span>Save Routine Inspection Log</span>
+              </button>
+            </form>
           </div>
         )}
 
@@ -2875,7 +3366,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
             <div className="flex flex-col border-b border-slate-200 bg-white pt-4">
               <div className="flex items-center justify-between px-4 pb-2">
                 <button onClick={() => setActiveScreen('home')} className="text-text-secondary hover:text-slate-900 flex items-center gap-1 text-[13.5px]"><ArrowLeft className="w-4.5 h-4" /><span>Home</span></button>
-                <h2 className="text-[13.5px] font-bold text-slate-900 uppercase tracking-wider">Time & Expense</h2>
+                <h2 className="text-[13.5px] font-bold text-slate-900 uppercase tracking-wider">Log Field Expense</h2>
                 <div className="w-10"></div>
               </div>
               <div className="flex w-full px-2 mt-2 border-t border-slate-200">
@@ -2890,12 +3381,6 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                   className={`flex-1 py-3 text-[11.5px] font-bold uppercase transition-colors ${timeExpenseTab === 'overtime' ? 'text-blue-700 border-b-2 border-blue-700' : 'text-text-secondary hover:text-slate-700'}`}
                 >
                   Overtime
-                </button>
-                  <button 
-                  onClick={() => setTimeExpenseTab('manual')}
-                  className={`flex-1 py-3 text-[11.5px] font-bold uppercase transition-colors ${timeExpenseTab === 'manual' ? 'text-blue-700 border-b-2 border-blue-700' : 'text-text-secondary hover:text-slate-700'}`}
-                >
-                  Manual Time
                 </button>
               </div>
             </div>
@@ -2986,152 +3471,109 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
               </div>
 
               <button 
-                type="submit"
+                type="button"
+                onClick={handleExpenseSubmit}
                 className="stitch-btn py-3 mt-4 flex items-center justify-center gap-2 w-full font-bold text-[13.5px]"
               >
                 <CheckCircle className="w-4.5 h-4" />
-                <span>Submit Expense to Customer</span>
+                <span>Submit Expense</span>
               </button>
             </form>
           )}
 
           {timeExpenseTab === 'overtime' && (
             <div className="flex flex-col gap-4">
-              <form onSubmit={(e) => {
-                e.preventDefault();
-                if (!overtimeHours) return showToast("Please enter overtime hours.", "warning");
+              <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl shadow-sm">
+                <p className="text-[11.5px] text-amber-900 leading-relaxed font-semibold">
+                  Overtime is automatically detected and portioned when daily hours submitted against an assigned project exceed the authorized PO allocation. Overtime entries require Client Manager approval.
+                </p>
+              </div>
 
-                const dbReqs = getEntities('extraHoursRequests') || [];
-                const repId = currentUser?.id || 'rep_clarence';
+              <button 
+                type="button" 
+                onClick={() => {
+                  setShowAddHoursModal(true);
+                  setAddHoursValue('');
+                  setAddHoursSummary('');
+                }}
+                className="stitch-btn py-3 flex items-center justify-center gap-2 w-full font-bold text-[13.5px] cursor-pointer"
+              >
+                <Clock className="w-4.5 h-4" />
+                <span>Log Daily Project Hours</span>
+              </button>
 
-                // Check if open request is already pending (only if not editing an existing request)
-                if (!editingOvertimeId) {
-                  const openPending = dbReqs.find(r => r.rep_id === repId && (r.status === 'pending_customer' || r.status === 'pending_admin'));
-                  if (openPending) {
-                    showToast("An open overtime request is already pending approval!", "warning");
-                    return;
-                  }
-                }
-
-                const otId = editingOvertimeId || `ehr_${Date.now()}`;
-                const existingObj = dbReqs.find(r => r.id === otId);
-
-                const otPayload = {
-                  id: otId,
-                  rep_id: repId,
-                  userName: currentUser?.name || 'Clarence Kuiken',
-                  supplier_id: 'test_company',
-                  plant_id: selectedPlant || 'test_sample',
-                  hours: parseFloat(overtimeHours),
-                  reason: overtimeReason,
-                  status: 'pending_customer',
-                  created_at: existingObj?.created_at || new Date().toISOString(),
-                  history: [
-                    ...(existingObj?.history || []),
-                    {
-                      status: 'pending_customer',
-                      user: currentUser?.name || 'Field Rep',
-                      timestamp: new Date().toISOString(),
-                      comment: overtimeReason
-                    }
-                  ]
-                };
-
-                saveEntity('extraHoursRequests', otPayload);
-                setEditingOvertimeId(null);
-                setOvertimeHours('');
-                setOvertimeReason('');
-                showToast(editingOvertimeId ? "Revised overtime request re-submitted!" : "Overtime requested! Pending customer approval.", "success");
-                window.dispatchEvent(new Event('ids_pulse_db_update'));
-              }} className="flex flex-col gap-3">
-                <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl shadow-sm">
-                  <p className="text-[11.5px] text-amber-300 leading-relaxed font-semibold">
-                    Overtime requests must be pre-approved by the assigned customer before they are processed by the payroll admin.
-                  </p>
-                </div>
-                <div className="flex flex-col gap-1.5 text-left">
-                  <label className="text-[10.5px] font-bold text-text-secondary uppercase">Requested Extra Hours</label>
-                  <input 
-                    type="number" step="0.5" min="0.5" placeholder="e.g. 15.0"
-                    value={overtimeHours} onChange={(e) => setOvertimeHours(e.target.value)}
-                    className="phone-input h-11" required
-                  />
-                </div>
-                <div className="flex flex-col gap-1.5 text-left">
-                  <label className="text-[10.5px] font-bold text-text-secondary uppercase">Reason for Overtime</label>
-                  <textarea 
-                    value={overtimeReason} onChange={(e) => setOvertimeReason(e.target.value)}
-                    placeholder="Customer requested extra sorting due to edge burrs..."
-                    rows={3} className="phone-textarea" required
-                  />
-                </div>
-                <button type="submit" className="stitch-btn py-3 mt-1 flex items-center justify-center gap-2 w-full font-bold text-[13.5px]">
-                  <Clock className="w-4.5 h-4" />
-                  <span>Submit Request for Approval</span>
-                </button>
-              </form>
-
-              {/* Overtime Request Status & Re-Submission Section for Rep */}
-              <div className="flex flex-col gap-2 pt-3 border-t border-slate-800 text-left">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">My Overtime Request Tracking</span>
+              {/* Overtime Request Status & Tracking Section for Rep */}
+              <div className="flex flex-col gap-2 pt-3 border-t border-slate-200 text-left">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-700">My Overtime Entries Tracking</span>
                 
                 {(() => {
-                  const reqs = getEntities('extraHoursRequests') || [];
-                  const myReqs = reqs.filter(r => r.rep_id === (currentUser?.id || 'rep_clarence') || r.supplier_id === 'test_company');
+                  const dbTime = getEntities('timeEntries') || [];
+                  const myOtEntries = dbTime.filter(t => (String(t.rep_id) === String(currentUser?.id) || t.rep_id === currentUser?.username) && (t.hour_type === 'overtime' || t.overtime_hours > 0));
 
-                  if (myReqs.length === 0) {
-                    return <div className="text-[11px] text-slate-550 italic">No recent overtime requests logged.</div>;
+                  if (myOtEntries.length === 0) {
+                    return (
+                      <div className="text-[11.5px] text-slate-500 italic py-4 text-center bg-white rounded-xl border border-dashed border-slate-200">
+                        No overtime entries logged yet. All reported hours have been within authorized project allocations.
+                      </div>
+                    );
                   }
 
-                  return myReqs.map(req => {
-                    const isRejected = req.status === 'rejected' || req.status === 'rejected_by_customer';
-                    const isApproved = req.status === 'approved' || req.status === 'approved_customer';
+                  return myOtEntries.map(entry => {
+                    const status = (entry.status || '').toLowerCase();
+                    const clientReviewStatus = (entry.client_review_status || '').toLowerCase();
+                    const isApproved = status === 'client_approved' || clientReviewStatus === 'approved';
+                    const isReturned = status === 'client_returned' || clientReviewStatus === 'returned';
+                    const isRejected = status === 'client_rejected' || clientReviewStatus === 'rejected';
 
                     return (
-                      <div key={req.id} className="p-3 bg-slate-900 border border-slate-800 rounded-xl flex flex-col gap-2">
+                      <div key={entry.id} className="p-3 bg-white border border-slate-200 rounded-xl flex flex-col gap-2 shadow-sm">
                         <div className="flex justify-between items-center text-xs">
-                          <span className="font-mono text-sky-400 font-bold">{req.created_at || '2026-07-26'}</span>
-                          <span className="font-extrabold text-amber-400">+{req.hours || 30.0} Hours</span>
+                          <span className="font-mono text-purple-700 font-bold">📅 {entry.work_date || entry.date || 'Today'}</span>
+                          <span className="font-extrabold text-amber-700">{parseFloat(entry.overtime_hours || entry.hours || 0).toFixed(1)} hrs OT</span>
                         </div>
                         
                         <div className="flex items-center justify-between">
-                          <span className="text-[11px] text-slate-300 font-semibold">{req.reason || 'Job 77667 sorting expanded'}</span>
+                          <span className="text-[11.5px] text-slate-800 font-semibold">{entry.work_summary || entry.work_type || 'Routine Inspection'}</span>
                           
                           {isApproved && (
-                            <span className="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded-full font-bold uppercase">
-                              Approved
+                            <span className="text-[10px] bg-emerald-100 text-emerald-800 border border-emerald-300 px-2 py-0.5 rounded-full font-bold uppercase">
+                              ✓ Client Approved
+                            </span>
+                          )}
+
+                          {isReturned && (
+                            <span className="text-[10px] bg-amber-100 text-amber-800 border border-amber-300 px-2 py-0.5 rounded-full font-bold uppercase">
+                              ↩ Returned for Correction
                             </span>
                           )}
 
                           {isRejected && (
-                            <span className="text-[10px] bg-rose-500/20 text-rose-300 border border-rose-500/40 px-2 py-0.5 rounded-full font-bold uppercase">
-                              Rejected
+                            <span className="text-[10px] bg-rose-100 text-rose-800 border border-rose-300 px-2 py-0.5 rounded-full font-bold uppercase">
+                              ✕ Client Rejected
                             </span>
                           )}
 
-                          {!isApproved && !isRejected && (
-                            <span className="text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2 py-0.5 rounded-full font-bold uppercase">
-                              Pending
+                          {!isApproved && !isReturned && !isRejected && (
+                            <span className="text-[10px] bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full font-bold uppercase">
+                              ⏳ Pending Client Review
                             </span>
                           )}
                         </div>
 
-                        {isRejected && (
-                          <div className="mt-1 p-2 bg-rose-950/40 border border-rose-900/60 rounded-lg flex flex-col gap-1.5">
-                            <span className="text-[10px] font-bold text-rose-400 uppercase">Customer Rejection Note:</span>
-                            <p className="text-[11px] text-rose-200">{req.customer_comment || req.notes || "Budget cap exceeded. Please lower to +15 hours or clarify defect scope."}</p>
-                            <button 
-                              onClick={() => {
-                                setEditingOvertimeId(req.id);
-                                setOvertimeHours(String(req.hours || '15.0'));
-                                setOvertimeReason(`[RE-SUBMITTED] Revised per customer feedback: ${req.customer_comment || ''}`);
-                                showToast("Overtime form pre-filled for revision!", "info");
-                              }}
-                              className="mt-1 py-1.5 px-3 bg-sky-600 hover:bg-sky-500 text-white font-bold text-[11px] rounded-md transition-colors cursor-pointer text-center"
-                            >
-                              Re-Submit Revised Request
-                            </button>
+                        {entry.client_review_comment && (
+                          <div className="mt-1 p-2 bg-slate-50 border border-slate-200 rounded-lg flex flex-col gap-1">
+                            <span className="text-[10px] font-bold text-slate-700 uppercase">Client Feedback:</span>
+                            <p className="text-[11px] text-slate-800 italic">"{entry.client_review_comment}"</p>
                           </div>
+                        )}
+
+                        {isReturned && (
+                          <button
+                            onClick={() => handleResubmitOvertime(entry)}
+                            className="mt-1 w-full py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-[11px] uppercase rounded-lg shadow-sm transition-colors flex items-center justify-center gap-1 cursor-pointer"
+                          >
+                            <span>↩ Resubmit Overtime for Client Review</span>
+                          </button>
                         )}
                       </div>
                     );
@@ -3139,47 +3581,6 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                 })()}
               </div>
             </div>
-          )}
-
-          {timeExpenseTab === 'manual' && (
-            <form onSubmit={(e) => {
-              e.preventDefault();
-              addExpenseEntry({
-                rep_id: currentUser.id,
-                date: manualShiftDate,
-                category: 'Manual Time Entry',
-                amount: parseFloat(manualShiftHours),
-                notes: 'Manual entry for missed clock-in',
-                status: 'pending_customer'
-              });
-              showToast("Manual job time submitted! Pending customer approval.", "success");
-              setManualShiftDate(''); setManualShiftHours(''); setActiveScreen('home');
-            }} className="flex flex-col gap-3">
-              <div className="p-3 bg-slate-50 border border-slate-200 rounded-sm mb-2 shadow-sm">
-                <p className="text-[11.5px] text-slate-600 leading-relaxed font-semibold">
-                  Only use Manual Time if you forgot to Clock In at the start of your job. This requires customer approval.
-                </p>
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[10.5px] font-bold text-text-secondary uppercase">Job Date</label>
-                <input 
-                  type="date" value={manualShiftDate} onChange={(e) => setManualShiftDate(e.target.value)}
-                  className="phone-input h-11" required
-                />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[10.5px] font-bold text-text-secondary uppercase">Total Job Hours</label>
-                <input 
-                  type="number" step="0.5" min="0.5" placeholder="8.0"
-                  value={manualShiftHours} onChange={(e) => setManualShiftHours(e.target.value)}
-                  className="phone-input h-11" required
-                />
-              </div>
-              <button type="submit" className="phone-btn-primary mt-4">
-                <CheckCircle className="w-4.5 h-4.5" />
-                <span>Submit Manual Timesheet</span>
-              </button>
-            </form>
           )}
           </div>
         </div>
@@ -3274,8 +3675,47 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
               </div>
 
               <p className="text-[12px] text-slate-600 leading-relaxed font-medium">
-                Your report and evidence are safely saved on this phone. You can close the app. As soon as an internet connection is available, IDS Pulse will securely send all report data and media automatically.
+                Your entry is securely cached on this device. Sync will resume automatically once a stable internet connection is restored.
               </p>
+
+              {/* Hours Telemetry Bar */}
+              {(() => {
+                const dbEntries = getEntities('timeEntries') || [];
+                const repEntries = dbEntries.filter(t => t && (String(t.rep_id) === String(currentUser?.id) || t.rep_id === currentUser?.username));
+                const recordedRegular = repEntries.filter(t => t.hour_type === 'regular' || t.status === 'recorded').reduce((sum, t) => sum + (parseFloat(t.hours) || 0), 0);
+                const pendingOvertime = repEntries.filter(t => (t.hour_type === 'overtime' || t.overtime_hours > 0) && (t.status === 'client_pending' || t.client_review_status === 'pending')).reduce((sum, t) => sum + (parseFloat(t.overtime_hours || t.hours) || 0), 0);
+                const approvedOvertime = repEntries.filter(t => (t.hour_type === 'overtime' || t.overtime_hours > 0) && (t.status === 'client_approved' || t.client_review_status === 'approved')).reduce((sum, t) => sum + (parseFloat(t.overtime_hours || t.hours) || 0), 0);
+                const activeProj = (getEntities('projects') || []).find(p => String(p.id) === String(selectedAssignmentId));
+                const authHours = activeProj && activeProj.po_hours ? parseFloat(activeProj.po_hours) : null;
+                const remainingAlloc = authHours !== null ? Math.max(0, authHours - recordedRegular) : '∞';
+                const repHourStats = { 
+                  recordedRegular: recordedRegular.toFixed(1), 
+                  pendingOvertime: pendingOvertime.toFixed(1), 
+                  approvedOvertime: approvedOvertime.toFixed(1), 
+                  remainingAlloc: typeof remainingAlloc === 'number' ? remainingAlloc.toFixed(1) : remainingAlloc 
+                };
+
+                return (
+                  <div className="grid grid-cols-4 gap-2 mb-2 bg-slate-800/80 p-3 rounded-xl border border-slate-700/60 text-center">
+                    <div>
+                      <div className="text-[8px] text-slate-400 uppercase font-semibold leading-tight">Regular (Recorded)</div>
+                      <div className="text-[13px] font-bold text-emerald-400">{repHourStats.recordedRegular}h</div>
+                    </div>
+                    <div>
+                      <div className="text-[8px] text-slate-400 uppercase font-semibold leading-tight">Client OT Pending</div>
+                      <div className="text-[13px] font-bold text-amber-400">{repHourStats.pendingOvertime}h</div>
+                    </div>
+                    <div>
+                      <div className="text-[8px] text-slate-400 uppercase font-semibold leading-tight">Rem. Allocation</div>
+                      <div className="text-[13px] font-bold text-cyan-400">{repHourStats.remainingAlloc}h</div>
+                    </div>
+                    <div>
+                      <div className="text-[8px] text-slate-400 uppercase font-semibold leading-tight">Client Approved OT</div>
+                      <div className="text-[13px] font-bold text-indigo-400">{repHourStats.approvedOvertime}h</div>
+                    </div>
+                  </div>
+                );
+              })()}
 
               <div className="bg-slate-50 border border-slate-200 p-2.5 rounded-xl flex items-center justify-between text-[11.5px]">
                 <span className="text-slate-500 font-semibold">Tracking Ref:</span>

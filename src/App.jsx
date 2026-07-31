@@ -4,7 +4,7 @@ import WebDashboard from './components/WebDashboard';
 import { initializeDB, syncWithSupabase, supabase } from './components/SharedDatabase';
 import LoginScreen from './components/LoginScreen';
 import { SpinnerGap } from '@phosphor-icons/react';
-import { Shield, Activity, Monitor, Smartphone, RefreshCw, Laptop, Milestone, Lock, Key, Sun, Moon, User } from 'lucide-react';
+import { Shield, Activity, Monitor, Smartphone, RefreshCw, Laptop, Milestone, Lock, Key, Sun, Moon, User, AlertTriangle } from 'lucide-react';
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -402,13 +402,13 @@ function App() {
           setCurrentUserRepId(matchedUser.id);
           setLayoutMode('phone-only');
         } else if (normRole === 'customer') {
-          const targetCustId = matchedUser.supplier_id || matchedUser.customer_id || matchedUser.id || 'autokabel';
+          const targetCustId = matchedUser.supplier_id || matchedUser.customer_id || matchedUser.id;
           setCurrentUserCustomerId(targetCustId);
           setLayoutMode('dashboard-only');
         } else {
           setLayoutMode('dashboard-only');
         }
-        syncWithSupabase(true, normRole, normRole === 'rep' ? matchedUser.id : '', normRole === 'customer' ? (matchedUser.supplier_id || matchedUser.customer_id || matchedUser.id || 'autokabel') : '');
+        syncWithSupabase(true, normRole, normRole === 'rep' ? matchedUser.id : '', normRole === 'customer' ? (matchedUser.supplier_id || matchedUser.customer_id || matchedUser.id) : '');
         return true;
       }
 
@@ -438,6 +438,12 @@ function App() {
 
   return (
     <div className="min-h-screen text-text-primary flex flex-col font-sans bg-bg transition-colors duration-300">
+      {import.meta.env.VITE_DEMO_MODE === 'true' && (
+        <div className="bg-amber-500 text-slate-950 font-bold text-center py-1.5 px-4 text-xs uppercase tracking-wider flex items-center justify-center gap-2 sticky top-0 z-50 shadow-md">
+          <AlertTriangle className="w-4 h-4 shrink-0 text-slate-950" />
+          <span>DEMO MODE — Simulated Data (Not Connected to Production Database)</span>
+        </div>
+      )}
       
       {/* Desktop Navigation Header */}
       {!isMobileDevice && (

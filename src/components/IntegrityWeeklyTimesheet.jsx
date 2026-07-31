@@ -3,7 +3,7 @@ import { Download, Printer, Save, Plus, Trash2, FileText, CheckCircle, Calculato
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { LOGO_BASE64 } from './LogoBase64';
-import { saveEntity, getEntities } from './SharedDatabase';
+import { saveEntity, getEntities, isEntryAccountingEligible } from './SharedDatabase';
 
 const CONFIG_MILEAGE_RATE = 0.73;
 
@@ -122,8 +122,8 @@ export default function IntegrityWeeklyTimesheet({
     const weekMap = getWeekDateMap(weekEnded);
     const weekDates = Object.values(weekMap);
 
-    // 1. Time Entries grouping by supplier
-    const repTime = (timeEntries || []).filter(t => t && String(t.rep_id) === String(selectedRepId) && weekDates.includes(t.date));
+    // 1. Time Entries grouping by supplier (strictly accounting-eligible entries)
+    const repTime = (timeEntries || []).filter(t => t && String(t.rep_id) === String(selectedRepId) && weekDates.includes(t.date || t.work_date) && isEntryAccountingEligible(t));
 
     // Group by supplier_id
     const supplierGroups = {};

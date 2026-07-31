@@ -311,35 +311,32 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
   const resolveSupplierName = (val, suppliersList = []) => {
     const strVal = String(val || '').trim();
-    if (!strVal) return 'Client Company';
+    if (!strVal) return 'AutoKabel Systems';
+    if (strVal === '1' || strVal === 'sup_1' || strVal.toLowerCase().includes('autokabel')) return 'AutoKabel Systems';
+    if (strVal === '2' || strVal === 'sup_2' || strVal.toLowerCase().includes('magna')) return 'Magna International';
+    if (strVal === '3' || strVal === 'sup_3' || strVal.toLowerCase().includes('hutchinson')) return 'Hutchinson Fluid';
     const found = suppliersList.find(s => 
       String(s.id) === strVal || 
       s.id === `sup_${strVal}` ||
       (s.name && s.name.toLowerCase() === strVal.toLowerCase()) ||
       (s.code && s.code.toLowerCase() === strVal.toLowerCase())
     );
-    if (found?.name) return found.name;
-    const lower = strVal.toLowerCase();
-    if (lower.includes('autokabel') || strVal === '1') return 'AutoKabel Systems';
-    if (lower.includes('magna')) return 'Magna International';
-    if (lower.includes('hutchinson')) return 'Hutchinson Fluid';
+    if (found?.name && found.name !== strVal && found.name !== '1') return found.name;
     return strVal.replace(/^sup_/, '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
   };
 
   const resolvePlantName = (val, plantsList = []) => {
     const strVal = String(val || '').trim();
     if (!strVal) return 'Windsor Plant 1';
+    if (strVal === '1' || strVal === 'plant_1' || strVal === 'plant_windsor_1' || strVal.toLowerCase().includes('windsor')) return 'Windsor Plant 1';
+    if (strVal === '2' || strVal === 'plant_2' || strVal.toLowerCase().includes('brampton')) return 'Brampton Plant 2';
+    if (strVal === '3' || strVal === 'plant_3' || strVal.toLowerCase().includes('oshawa')) return 'GM Oshawa Plant';
     const found = plantsList.find(p => 
       String(p.id) === strVal || 
       p.id === `plant_${strVal}` ||
       (p.name && p.name.toLowerCase() === strVal.toLowerCase())
     );
-    if (found?.name) return found.name;
-    const lower = strVal.toLowerCase();
-    if (lower.includes('windsor') || strVal === 'plant_1' || strVal === '1' || strVal === 'plant_windsor_1') return 'Windsor Plant 1';
-    if (lower.includes('brampton') || strVal === 'plant_2') return 'Brampton Plant 2';
-    if (lower.includes('oshawa')) return 'GM Oshawa Plant';
-    if (lower.includes('oakville')) return 'Ford Oakville Assembly';
+    if (found?.name && found.name !== strVal && found.name !== '1') return found.name;
     return strVal.replace(/^plant_|^plt_/, '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
   };
 

@@ -309,6 +309,38 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   const [weeklyGridDate, setWeeklyGridDate] = useState('2026-07-09');
   const [weeklyGridSaveMessage, setWeeklyGridSaveMessage] = useState(false);
 
+  const resolveSupplierName = (val, suppliersList = []) => {
+    if (!val) return 'Client Company';
+    const found = suppliersList.find(s => 
+      s.id === val || 
+      s.id === `sup_${val}` ||
+      (s.name && s.name.toLowerCase() === val.toLowerCase()) ||
+      (s.code && s.code.toLowerCase() === val.toLowerCase())
+    );
+    if (found?.name) return found.name;
+    const lower = val.toLowerCase();
+    if (lower.includes('autokabel') || val === '1') return 'AutoKabel Systems';
+    if (lower.includes('magna')) return 'Magna International';
+    if (lower.includes('hutchinson')) return 'Hutchinson Fluid';
+    return val.replace(/^sup_/, '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  };
+
+  const resolvePlantName = (val, plantsList = []) => {
+    if (!val) return 'Windsor Plant 1';
+    const found = plantsList.find(p => 
+      p.id === val || 
+      p.id === `plant_${val}` ||
+      (p.name && p.name.toLowerCase() === val.toLowerCase())
+    );
+    if (found?.name) return found.name;
+    const lower = val.toLowerCase();
+    if (lower.includes('windsor') || val === 'plant_1' || val === '1' || val === 'plant_windsor_1') return 'Windsor Plant 1';
+    if (lower.includes('brampton') || val === 'plant_2') return 'Brampton Plant 2';
+    if (lower.includes('oshawa')) return 'GM Oshawa Plant';
+    if (lower.includes('oakville')) return 'Ford Oakville Assembly';
+    return val.replace(/^plant_|^plt_/, '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  };
+
   const dynamicRepCards = useMemo(() => {
     let scopedProjects = projects || [];
 
@@ -344,22 +376,12 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
           u.username === p.rep_id ||
           (u.name && u.name.toLowerCase() === (p.rep_id || '').toLowerCase())
         ) || {};
-        
-        const supplierObj = (suppliers || []).find(s => 
-          s.id === p.supplier_id || 
-          s.name?.toLowerCase() === (p.supplier_id || '').toLowerCase()
-        ) || {};
-
-        const plantObj = (plants || []).find(pl => 
-          pl.id === p.plant_id || 
-          pl.name?.toLowerCase() === (p.plant_id || '').toLowerCase()
-        ) || {};
 
         let repName = repObj.name || (p.rep_id ? p.rep_id.replace(/^rep_/, '').replace(/_/g, ' ') : 'Clarence Kuiken');
         repName = repName.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
 
-        const supplierName = supplierObj.name || (p.supplier_id ? p.supplier_id.replace(/^sup_/, '').replace(/_/g, ' ') : 'Client Company');
-        const plantLocation = plantObj.name || plantObj.city || (p.plant_id ? p.plant_id.replace(/^plt_/, '').replace(/_/g, ' ') : 'Windsor Plant 1');
+        const supplierName = resolveSupplierName(p.supplier_id || p.supplier_name, suppliers);
+        const plantLocation = resolvePlantName(p.plant_id || p.plant_name, plants);
 
         const colors = ['bg-blue-600', 'bg-cyan-600', 'bg-indigo-600', 'bg-purple-600', 'bg-emerald-600'];
         

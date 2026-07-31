@@ -310,35 +310,37 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   const [weeklyGridSaveMessage, setWeeklyGridSaveMessage] = useState(false);
 
   const resolveSupplierName = (val, suppliersList = []) => {
-    if (!val) return 'Client Company';
+    const strVal = String(val || '').trim();
+    if (!strVal) return 'Client Company';
     const found = suppliersList.find(s => 
-      s.id === val || 
-      s.id === `sup_${val}` ||
-      (s.name && s.name.toLowerCase() === val.toLowerCase()) ||
-      (s.code && s.code.toLowerCase() === val.toLowerCase())
+      String(s.id) === strVal || 
+      s.id === `sup_${strVal}` ||
+      (s.name && s.name.toLowerCase() === strVal.toLowerCase()) ||
+      (s.code && s.code.toLowerCase() === strVal.toLowerCase())
     );
     if (found?.name) return found.name;
-    const lower = val.toLowerCase();
-    if (lower.includes('autokabel') || val === '1') return 'AutoKabel Systems';
+    const lower = strVal.toLowerCase();
+    if (lower.includes('autokabel') || strVal === '1') return 'AutoKabel Systems';
     if (lower.includes('magna')) return 'Magna International';
     if (lower.includes('hutchinson')) return 'Hutchinson Fluid';
-    return val.replace(/^sup_/, '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    return strVal.replace(/^sup_/, '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
   };
 
   const resolvePlantName = (val, plantsList = []) => {
-    if (!val) return 'Windsor Plant 1';
+    const strVal = String(val || '').trim();
+    if (!strVal) return 'Windsor Plant 1';
     const found = plantsList.find(p => 
-      p.id === val || 
-      p.id === `plant_${val}` ||
-      (p.name && p.name.toLowerCase() === val.toLowerCase())
+      String(p.id) === strVal || 
+      p.id === `plant_${strVal}` ||
+      (p.name && p.name.toLowerCase() === strVal.toLowerCase())
     );
     if (found?.name) return found.name;
-    const lower = val.toLowerCase();
-    if (lower.includes('windsor') || val === 'plant_1' || val === '1' || val === 'plant_windsor_1') return 'Windsor Plant 1';
-    if (lower.includes('brampton') || val === 'plant_2') return 'Brampton Plant 2';
+    const lower = strVal.toLowerCase();
+    if (lower.includes('windsor') || strVal === 'plant_1' || strVal === '1' || strVal === 'plant_windsor_1') return 'Windsor Plant 1';
+    if (lower.includes('brampton') || strVal === 'plant_2') return 'Brampton Plant 2';
     if (lower.includes('oshawa')) return 'GM Oshawa Plant';
     if (lower.includes('oakville')) return 'Ford Oakville Assembly';
-    return val.replace(/^plant_|^plt_/, '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    return strVal.replace(/^plant_|^plt_/, '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
   };
 
   const dynamicRepCards = useMemo(() => {

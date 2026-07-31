@@ -1166,6 +1166,24 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
       };
       saveEntity('work_sessions', workSessionRecord);
 
+      // Auto-sync into timeEntries so PO Telemetry, Weekly Timesheets & Invoicing track Rep hours accurately
+      const suppliersList = getEntities('suppliers') || [];
+      const activeSupplierId = suppliersList.find(s => s.plants_served?.includes(selectedPlant))?.id || 'sup_autokabel';
+      const timeEntryRecord = {
+        id: `te_${Date.now()}`,
+        rep_id: currentUser.id,
+        supplier_id: activeSupplierId,
+        plant_id: selectedPlant,
+        date: todayDate,
+        hours: netDurationHours,
+        mileage_km: 0,
+        notes: `Shift Report #${newReport.id} - ${netDurationHours} hrs logged via Mobile App`,
+        status: 'Approved',
+        invoiced: false,
+        created_at: endIso
+      };
+      saveEntity('timeEntries', timeEntryRecord);
+
       logSystemEvent('shift', 'clock_out', `${currentUser.name} completed shift at plant ${selectedPlant}. Worked ${netDurationHours} net hours.`);
       
       // Clean up localStorage active shift indicators

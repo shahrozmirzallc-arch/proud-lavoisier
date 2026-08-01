@@ -114,17 +114,7 @@ export default function LoginScreen({ onSignedIn, onResetPassword, demoEnabled =
 
       <section className="login-form-panel">
         <div className="login-card">
-          {/* Header with Lock Badge */}
-          <div className="flex items-center gap-2 mb-2">
-            <div className="w-7 h-7 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 flex items-center justify-center shrink-0">
-              <LockKey size={16} weight="fill" />
-            </div>
-            <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500">
-              IDS Pulse Secure Access
-            </span>
-          </div>
-
-          <h2 className="text-2xl font-black text-slate-900 tracking-tight mb-1">
+          <h2 className="text-3xl font-black text-slate-900 tracking-tight mb-1">
             Welcome back
           </h2>
           <p className="text-xs font-medium text-slate-500 mb-6 leading-relaxed">

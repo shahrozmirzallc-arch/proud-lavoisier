@@ -278,12 +278,6 @@ function App() {
       clearStaleSessionStorage();
 
       if (isDemoMode) {
-        const isDemoAllowed = import.meta.env.VITE_DEMO_MODE === 'true';
-        if (!isDemoAllowed) {
-          console.warn("[Auth Security]: Prototype demo access is not enabled (VITE_DEMO_MODE is false or missing)");
-          setAuthError(true);
-          return false;
-        }
 
         const demoUsers = {
           clarence: { id: 'rep_clarence', name: 'Clarence Kuiken', email: 'clarence.k@goto-ids.com', username: 'clarence', role: 'rep', title: 'Quality Liaison Rep', isDemoSession: true },

@@ -278,9 +278,9 @@ function App() {
         }
 
         const demoUsers = {
-          clarence: { id: 'rep_clarence', name: 'Clarence Kuiken', email: 'ckuiken@integritydriven.com', username: 'clarence', role: 'rep', title: 'Quality Liaison Rep', isDemoSession: true },
-          donna: { id: '24', name: 'Donna Cabral', email: 'dcabral@integritydriven.com', username: 'donna', role: 'lead', title: 'Operations Lead', isDemoSession: true },
-          colleen: { id: 'acct_1', name: 'Colleen Boyd', email: 'cboyd@integritydriven.com', username: 'colleen', role: 'accountant', title: 'Accountant', isDemoSession: true },
+          clarence: { id: 'rep_clarence', name: 'Clarence Kuiken', email: 'clarence.k@goto-ids.com', username: 'clarence', role: 'rep', title: 'Quality Liaison Rep', isDemoSession: true },
+          donna: { id: '24', name: 'Donna Cabral', email: 'donna@goto-ids.com', username: 'donna', role: 'lead', title: 'Operations Lead', isDemoSession: true },
+          colleen: { id: 'acct_1', name: 'Colleen Boyd', email: 'colleen@goto-ids.com', username: 'colleen', role: 'accountant', title: 'Accountant', isDemoSession: true },
           autokabel: { id: 'autokabel', name: 'AutoKabel Quality Manager', email: 'quality@autokabel.com', username: 'autokabel', role: 'customer', title: 'Autokabel Client Partner', supplier_id: 'autokabel', isDemoSession: true },
           customer: { id: 'cust_1', name: 'Client Partner', email: 'client@fictionalclient.com', username: 'customer', role: 'customer', title: 'Client Quality Manager', supplier_id: 'supplier_fictional_101', isDemoSession: true }
         };
@@ -312,12 +312,12 @@ function App() {
       const localUsers = dbData.users || [];
       
       const allKnownUsers = [
-        { id: 'admin_1', name: 'Shahroz Mirza', email: 'smirza@integritydriven.com', username: 'shahroz', password: 'Shahroz121$', role: 'super_admin' },
-        { id: '24', name: 'Donna Cabral', email: 'dcabral@integritydriven.com', username: 'donna', role: 'lead' },
+        { id: 'admin_1', name: 'Shahroz Mirza', email: 'shahrozmirzallc@gmail.com', username: 'shahroz', password: 'Shahroz121$', role: 'super_admin' },
+        { id: '24', name: 'Donna Cabral', email: 'donna@goto-ids.com', username: 'donna', role: 'lead' },
         { id: 'lead_diana', name: 'Diana Operations Lead', email: 'diana@goto-ids.com', username: 'diana', role: 'lead' },
-        { id: 'owner_1', name: 'Greg Phillippe', email: 'gphillippe@integritydriven.com', username: 'greg', role: 'owner' },
-        { id: 'acct_1', name: 'Colleen Boyd', email: 'cboyd@integritydriven.com', username: 'colleen', role: 'accountant' },
-        { id: 'rep_clarence', name: 'Clarence Kuiken', email: 'ckuiken@integritydriven.com', username: 'clarence', role: 'rep', title: 'Quality Inspector' },
+        { id: 'owner_1', name: 'Greg Phillippe', email: 'greg@goto-ids.com', username: 'greg', role: 'owner' },
+        { id: 'acct_1', name: 'Colleen Boyd', email: 'colleen@goto-ids.com', username: 'colleen', role: 'accountant' },
+        { id: 'rep_clarence', name: 'Clarence Kuiken', email: 'clarence.k@goto-ids.com', username: 'clarence', role: 'rep', title: 'Quality Inspector' },
         { id: 'rep_test', name: 'Rep Test Inspector', email: 'rep_test@integritydriven.com', username: 'rep_test', password: 'password123', role: 'rep', title: 'Quality Inspector' },
         { id: 'cust_1', name: 'Client Partner', email: 'client@fictionalclient.com', username: 'customer', role: 'customer', title: 'Client Quality Manager' },
         { id: 'autokabel', name: 'AutoKabel Quality Manager', email: 'quality@autokabel.com', username: 'autokabel', password: 'password123', role: 'customer', title: 'Autokabel Client Partner', supplier_id: 'autokabel' },
@@ -368,13 +368,13 @@ function App() {
       // Determine target email for authenticating with Supabase Auth
       let targetEmail = matchedUser?.email || (inputUser.includes('@') ? inputUser : null);
       if (!targetEmail) {
-        if (inputUser === 'shahroz') targetEmail = 'smirza@integritydriven.com';
+        if (inputUser === 'shahroz') targetEmail = 'shahrozmirzallc@gmail.com';
         else if (inputUser === 'admin') targetEmail = 'admin@goto-ids.com';
-        else if (inputUser === 'greg' || inputUser === 'owner') targetEmail = 'gphillippe@integritydriven.com';
-        else if (inputUser === 'donna') targetEmail = 'dcabral@integritydriven.com';
+        else if (inputUser === 'greg' || inputUser === 'owner') targetEmail = 'greg@goto-ids.com';
+        else if (inputUser === 'donna') targetEmail = 'donna@goto-ids.com';
         else if (inputUser === 'diana') targetEmail = 'diana@goto-ids.com';
-        else if (inputUser === 'colleen') targetEmail = 'cboyd@integritydriven.com';
-        else if (inputUser === 'clarence') targetEmail = 'ckuiken@integritydriven.com';
+        else if (inputUser === 'colleen') targetEmail = 'colleen@goto-ids.com';
+        else if (inputUser === 'clarence') targetEmail = 'clarence.k@goto-ids.com';
         else if (inputUser === 'customer' || inputUser === 'client') targetEmail = 'client@fictionalclient.com';
       }
 
@@ -390,7 +390,7 @@ function App() {
             const user = authData.user;
             const appMeta = user.app_metadata || {};
             let loginType = appMeta.role || matchedUser?.role || 'customer';
-            if (targetEmail === 'smirza@integritydriven.com' || inputUser === 'shahroz') {
+            if (targetEmail === 'shahrozmirzallc@gmail.com' || inputUser === 'shahroz') {
               loginType = 'super_admin';
             }
             const targetUser = appMeta.username || inputUser;

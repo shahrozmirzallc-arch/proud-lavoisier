@@ -3,7 +3,7 @@ import {
   Shield, Activity, Wifi, WifiOff, MapPin, Clock, 
   User, Lock, LogOut, CheckCircle, CheckCircle2, AlertTriangle, Play, Square, X, Calendar,
   Camera, Scan, Plus, ChevronRight, Mail, Send, RotateCcw, Volume2, Video, ArrowLeft, Trash2,
-  Receipt, DollarSign, FileText, Wrench
+  Receipt, DollarSign, FileText, Wrench, QrCode
 } from 'lucide-react';
 import { getEntities, addIncident, addEmailLog, addReworkLog, saveEntity, addExpenseEntry, logSystemEvent, supabase, syncWithSupabase, saveExtraHoursRequest, isEntryAccountingEligible } from './SharedDatabase';
 import { uploadToCloudinary } from '../services/cloudinaryService';
@@ -105,11 +105,16 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
   const [showMediaHelpPanel, setShowMediaHelpPanel] = useState(false);
   const [approvedCellularAssets, setApprovedCellularAssets] = useState([]);
 
-  // REWORK LOG STATE
+  // REWORK LOG STATE & UNLIMITED BARCODE SCANNER
   const [reworkPN, setReworkPN] = useState('86286761');
+  const [reworkPNMode, setReworkPNMode] = useState('dropdown'); // 'dropdown' | 'manual'
+  const [reworkCustomPN, setReworkCustomPN] = useState('');
   const [reworkQty, setReworkQty] = useState(10);
   const [reworkHours, setReworkHours] = useState(1.5);
   const [reworkNotes, setReworkNotes] = useState('Reworked loose tail light bulbs.');
+  const [reworkScannedBarcodes, setReworkScannedBarcodes] = useState([]);
+  const [isReworkScannerOpen, setIsReworkScannerOpen] = useState(false);
+  const [reworkScanInput, setReworkScanInput] = useState('');
   
   // EXPENSE & TIME STATE
   const [timeExpenseTab, setTimeExpenseTab] = useState('expense'); // 'expense' | 'overtime'
@@ -1459,8 +1464,22 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
   // SUBMIT REWORK LOG
   const handleReworkSubmit = (e) => {
     e.preventDefault();
+    const finalPartNo = reworkPNMode === 'manual' 
+      ? (reworkCustomPN.trim() || 'CUSTOM_PART') 
+      : reworkPN;
+
+    if (!finalPartNo) {
+      alert("Please select or enter a valid part number.");
+      return;
+    }
+
+    if (reworkQty <= 0) {
+      alert("Please enter a valid rework quantity greater than 0.");
+      return;
+    }
+
     const partsList = getEntities('parts') || [];
-    const part = partsList.find(p => p.part_number === reworkPN) || { id: 'unknown', part_number: reworkPN, supplier_id: 'magna' };
+    const part = partsList.find(p => p.part_number === finalPartNo) || { id: finalPartNo, part_number: finalPartNo, supplier_id: 'magna' };
     const suppliersList = getEntities('suppliers') || [];
     const plantSupplier = suppliersList.find(s => s.plants_served && Array.isArray(s.plants_served) && s.plants_served.includes(selectedPlant))?.id;
     const resolvedReworkSupplierId = (part.supplier_id && part.supplier_id !== 'magna' && part.supplier_id !== 'unknown')
@@ -1471,18 +1490,24 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
       rep_id: currentUser.id,
       plant_id: selectedPlant,
       supplier_id: resolvedReworkSupplierId,
-      part_id: part.id || part.part_number,
+      part_id: finalPartNo,
+      part_number: finalPartNo,
       qty: reworkQty,
       time_spent_minutes: reworkHours * 60,
+      scanned_barcodes: reworkScannedBarcodes,
       notes: reworkNotes
     });
-    logSystemEvent('rework', 'create', `${currentUser.name} logged rework of ${reworkQty} pieces of Part #${reworkPN}.`);
 
-    showToast("Rework logged successfully!", "success");
+    logSystemEvent('rework', 'create', `${currentUser.name} logged rework of ${reworkQty} pcs of Part #${finalPartNo} (${reworkScannedBarcodes.length} scanned tags).`);
+
+    showToast(`Logged rework of ${reworkQty} pcs for Part #${finalPartNo}!`, "success");
     setReworkPN('86286761');
+    setReworkPNMode('dropdown');
+    setReworkCustomPN('');
     setReworkQty(10);
     setReworkHours(1.5);
-    setReworkNotes('Reworked loose tail light bulbs.');
+    setReworkNotes('');
+    setReworkScannedBarcodes([]);
     setActiveScreen('home');
   };
 
@@ -3274,89 +3299,313 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
             </div>
 
             <form onSubmit={handleReworkSubmit} className="flex-1 overflow-y-auto p-3 flex flex-col gap-3 text-left">
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[10.5px] font-bold text-text-secondary uppercase">Part Number Reworked</label>
-                <select 
-                  value={reworkPN}
-                  onChange={(e) => setReworkPN(e.target.value)}
-                  className="phone-select"
-                >
-                  <option value="86286761">PN 86286761 (Tail Light)</option>
-                  <option value="86291945">PN 86291945 (Headlight Bin)</option>
-                </select>
+              
+              {/* SECTION 1: PART NUMBER IDENTIFICATION & BARCODE SCANNER */}
+              <div className="bg-white rounded-xl p-3 border border-slate-200 shadow-xs flex flex-col gap-2.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-[11px] font-black text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                    <Wrench className="w-3.5 h-3.5 text-blue-600" />
+                    <span>Part Number Reworked</span>
+                  </label>
+
+                  {/* Mode Segmented Toggle: Dropdown vs Manual */}
+                  <div className="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-[10px] font-bold">
+                    <button
+                      type="button"
+                      onClick={() => setReworkPNMode('dropdown')}
+                      className={`px-2 py-0.5 rounded-md transition-all cursor-pointer ${reworkPNMode === 'dropdown' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}
+                    >
+                      Dropdown
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setReworkPNMode('manual')}
+                      className={`px-2 py-0.5 rounded-md transition-all cursor-pointer ${reworkPNMode === 'manual' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}
+                    >
+                      Custom Input
+                    </button>
+                  </div>
+                </div>
+
+                {reworkPNMode === 'dropdown' ? (
+                  <select 
+                    value={reworkPN}
+                    onChange={(e) => setReworkPN(e.target.value)}
+                    className="phone-select text-[12.5px] font-bold"
+                  >
+                    <option value="86286761">PN 86286761 (Tail Light Assembly)</option>
+                    <option value="86291945">PN 86291945 (Headlight Bin)</option>
+                    <option value="86300412">PN 86300412 (Harness Bracket)</option>
+                  </select>
+                ) : (
+                  <input 
+                    type="text"
+                    value={reworkCustomPN}
+                    onChange={(e) => setReworkCustomPN(e.target.value)}
+                    placeholder="Type custom part number or serial e.g. PN-99042..."
+                    className="phone-input text-[12.5px] font-bold"
+                  />
+                )}
+
+                {/* QR / BARCODE SCANNER ACTION BUTTON */}
+                <div className="pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setIsReworkScannerOpen(true)}
+                    className="w-full py-2 px-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg text-[11.5px] font-bold flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer active:scale-[0.99]"
+                  >
+                    <QrCode className="w-4 h-4 text-amber-300 animate-pulse" />
+                    <span>Scan Part Barcode / QR Tag</span>
+                    {reworkScannedBarcodes.length > 0 && (
+                      <span className="ml-1 bg-amber-400 text-slate-950 px-1.5 py-0.5 rounded-full text-[10px] font-black">
+                        {reworkScannedBarcodes.length}
+                      </span>
+                    )}
+                  </button>
+                </div>
+
+                {/* UNLIMITED SCANNED BARCODES LIST */}
+                {reworkScannedBarcodes.length > 0 && (
+                  <div className="mt-1 bg-slate-50 border border-slate-200 rounded-lg p-2 flex flex-col gap-1.5">
+                    <div className="flex items-center justify-between text-[10px] font-bold text-slate-600">
+                      <span className="uppercase tracking-wider">Scanned Barcodes / QR List ({reworkScannedBarcodes.length})</span>
+                      <button 
+                        type="button" 
+                        onClick={() => setReworkScannedBarcodes([])}
+                        className="text-rose-600 hover:underline cursor-pointer"
+                      >
+                        Clear All
+                      </button>
+                    </div>
+                    <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto">
+                      {reworkScannedBarcodes.map((code, idx) => (
+                        <div key={idx} className="bg-white border border-slate-300 rounded px-2 py-0.5 text-[10.5px] font-mono flex items-center gap-1.5 text-slate-800 shadow-2xs">
+                          <span>{code}</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const updated = reworkScannedBarcodes.filter((_, i) => i !== idx);
+                              setReworkScannedBarcodes(updated);
+                              if (updated.length > 0) setReworkQty(updated.length);
+                            }}
+                            className="text-slate-400 hover:text-rose-600 font-bold cursor-pointer"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[10.5px] font-bold text-text-secondary uppercase">Rework Qty (Pieces)</label>
+              {/* SECTION 2: REWORK QTY (PIECES) */}
+              <div className="bg-white rounded-xl p-3 border border-slate-200 shadow-xs flex flex-col gap-2">
+                <label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Rework Qty (Pieces)</label>
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
                     onClick={() => setReworkQty(Math.max(0, reworkQty - 1))}
-                    className="w-11 h-11 bg-rose-50 hover:bg-rose-100 active:bg-rose-200 border border-rose-200 rounded-sm flex items-center justify-center text-rose-600 font-extrabold text-[14.5px] select-none cursor-pointer transition-colors flex-shrink-0 shadow-sm"
+                    className="w-11 h-11 bg-rose-50 hover:bg-rose-100 active:bg-rose-200 border border-rose-200 rounded-lg flex items-center justify-center text-rose-600 font-extrabold text-[16px] select-none cursor-pointer transition-colors flex-shrink-0 shadow-xs"
                   >
                     -
                   </button>
                   <input 
                     type="number" 
+                    min="0"
                     value={reworkQty}
                     onChange={(e) => setReworkQty(Math.max(0, parseInt(e.target.value) || 0))}
-                    className="phone-input text-center flex-1 h-11 font-bold"
+                    className="phone-input text-center flex-1 h-11 text-base font-black text-slate-900"
                   />
                   <button
                     type="button"
                     onClick={() => setReworkQty(reworkQty + 1)}
-                    className="w-11 h-11 bg-emerald-50 hover:bg-emerald-100 active:bg-emerald-200 border border-emerald-200 rounded-sm flex items-center justify-center text-emerald-700 font-extrabold text-[14.5px] select-none cursor-pointer transition-colors flex-shrink-0 shadow-sm"
+                    className="w-11 h-11 bg-emerald-50 hover:bg-emerald-100 active:bg-emerald-200 border border-emerald-200 rounded-lg flex items-center justify-center text-emerald-700 font-extrabold text-[16px] select-none cursor-pointer transition-colors flex-shrink-0 shadow-xs"
                   >
                     +
                   </button>
                 </div>
+                {/* Quick Presets */}
+                <div className="flex items-center gap-1.5 pt-1 text-[10px]">
+                  <span className="text-slate-400 font-bold">Quick:</span>
+                  {[5, 10, 25, 50].map((num) => (
+                    <button
+                      key={num}
+                      type="button"
+                      onClick={() => setReworkQty(prev => prev + num)}
+                      className="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded text-slate-700 font-bold transition-colors cursor-pointer"
+                    >
+                      +{num}
+                    </button>
+                  ))}
+                </div>
               </div>
 
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[10.5px] font-bold text-text-secondary uppercase">Time Spent (Hours)</label>
+              {/* SECTION 3: TIME SPENT (HOURS) */}
+              <div className="bg-white rounded-xl p-3 border border-slate-200 shadow-xs flex flex-col gap-2">
+                <label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Time Spent (Hours)</label>
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={() => setReworkHours(Math.max(0, reworkHours - 0.5))}
-                    className="w-11 h-11 bg-rose-50 hover:bg-rose-100 active:bg-rose-200 border border-rose-200 rounded-sm flex items-center justify-center text-rose-600 font-extrabold text-[14.5px] select-none cursor-pointer transition-colors flex-shrink-0 shadow-sm"
+                    onClick={() => setReworkHours(Math.max(0, parseFloat((reworkHours - 0.5).toFixed(1))))}
+                    className="w-11 h-11 bg-rose-50 hover:bg-rose-100 active:bg-rose-200 border border-rose-200 rounded-lg flex items-center justify-center text-rose-600 font-extrabold text-[16px] select-none cursor-pointer transition-colors flex-shrink-0 shadow-xs"
                   >
                     -
                   </button>
                   <input 
                     type="number" 
                     step="0.5"
+                    min="0"
                     value={reworkHours}
                     onChange={(e) => setReworkHours(Math.max(0, parseFloat(e.target.value) || 0))}
-                    className="phone-input text-center flex-1 h-11 font-bold"
+                    className="phone-input text-center flex-1 h-11 text-base font-black text-slate-900"
                   />
                   <button
                     type="button"
-                    onClick={() => setReworkHours(reworkHours + 0.5)}
-                    className="w-11 h-11 bg-emerald-50 hover:bg-emerald-100 active:bg-emerald-200 border border-emerald-200 rounded-sm flex items-center justify-center text-emerald-700 font-extrabold text-[14.5px] select-none cursor-pointer transition-colors flex-shrink-0 shadow-sm"
+                    onClick={() => setReworkHours(parseFloat((reworkHours + 0.5).toFixed(1)))}
+                    className="w-11 h-11 bg-emerald-50 hover:bg-emerald-100 active:bg-emerald-200 border border-emerald-200 rounded-lg flex items-center justify-center text-emerald-700 font-extrabold text-[16px] select-none cursor-pointer transition-colors flex-shrink-0 shadow-xs"
                   >
                     +
                   </button>
                 </div>
+                {/* Quick Hours Presets */}
+                <div className="flex items-center gap-1.5 pt-1 text-[10px]">
+                  <span className="text-slate-400 font-bold">Quick:</span>
+                  {[0.5, 1.0, 1.5, 2.0, 4.0].map((h) => (
+                    <button
+                      key={h}
+                      type="button"
+                      onClick={() => setReworkHours(h)}
+                      className={`px-2 py-0.5 rounded font-bold transition-colors cursor-pointer ${reworkHours === h ? 'bg-blue-600 text-white' : 'bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700'}`}
+                    >
+                      {h}h
+                    </button>
+                  ))}
+                </div>
               </div>
 
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[10.5px] font-bold text-text-secondary uppercase">Rework Description / Remarks</label>
+              {/* SECTION 4: REWORK DESCRIPTION / REMARKS */}
+              <div className="bg-white rounded-xl p-3 border border-slate-200 shadow-xs flex flex-col gap-2">
+                <label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Rework Description / Remarks</label>
                 <textarea 
                   value={reworkNotes}
                   onChange={(e) => setReworkNotes(e.target.value)}
                   rows={3}
-                  className="phone-textarea"
+                  placeholder="Details of containment rework, de-burring, or bulb replacement..."
+                  className="phone-textarea text-[12px]"
                 />
+                {/* Preset Tag Chips */}
+                <div className="flex flex-wrap gap-1 pt-1">
+                  {[
+                    "De-burred sharp edges",
+                    "Re-aligned bent pins",
+                    "Repaired rubber seal",
+                    "Replaced defective bulb"
+                  ].map((preset) => (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() => setReworkNotes(prev => prev ? `${prev} ${preset}.` : `${preset}.`)}
+                      className="px-2 py-0.5 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-800 rounded text-[9.5px] font-semibold transition-colors cursor-pointer"
+                    >
+                      + {preset}
+                    </button>
+                  ))}
+                </div>
               </div>
 
+              {/* ACTION BUTTON */}
               <button 
                 type="submit"
-                className="phone-btn-primary mt-4"
+                className="phone-btn-primary mt-2 py-3 bg-blue-600 hover:bg-blue-700 text-white font-black text-[13.5px] rounded-xl flex items-center justify-center gap-2 shadow-md cursor-pointer"
               >
                 <CheckCircle className="w-4.5 h-4" />
-                <span>Save Rework Record</span>
+                <span>SAVE REWORK RECORD</span>
               </button>
             </form>
+
+            {/* SCANNER MODAL FOR REWORK */}
+            {isReworkScannerOpen && (
+              <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex flex-col justify-between p-4">
+                <div className="flex items-center justify-between text-white border-b border-slate-800 pb-3">
+                  <div className="flex items-center gap-2">
+                    <QrCode className="w-5 h-5 text-amber-400" />
+                    <div>
+                      <h3 className="text-sm font-black uppercase">Part Barcode / QR Scanner</h3>
+                      <p className="text-[10px] text-slate-400">Scan unlimited barcodes to build rework batch list</p>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => setIsReworkScannerOpen(false)}
+                    className="p-1 text-slate-400 hover:text-white cursor-pointer"
+                  >
+                    <X className="w-6 h-6" />
+                  </button>
+                </div>
+
+                {/* Viewfinder simulation */}
+                <div className="relative my-auto mx-auto w-64 h-64 border-2 border-dashed border-amber-400 rounded-2xl flex flex-col items-center justify-center p-4 text-center bg-slate-900/60 shadow-2xl">
+                  <div className="w-full h-0.5 bg-amber-400 shadow-[0_0_12px_#f59e0b] animate-pulse my-auto"></div>
+                  <p className="text-xs text-amber-200 font-mono mt-2">Point camera at barcode / QR label</p>
+                </div>
+
+                {/* Scanner controls & instant simulated scan options */}
+                <div className="bg-slate-900 border border-slate-800 rounded-2xl p-3 flex flex-col gap-2">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Instant Scan Options (Unlimited):</span>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {["PN-86286761", "PN-86291945", "PN-86300412"].map((code) => (
+                      <button
+                        key={code}
+                        type="button"
+                        onClick={() => {
+                          const tag = `${code}-${Date.now().toString().slice(-4)}`;
+                          const updated = [...reworkScannedBarcodes, tag];
+                          setReworkScannedBarcodes(updated);
+                          setReworkQty(updated.length);
+                          if (reworkPNMode === 'dropdown') setReworkPN(code.replace('PN-', ''));
+                          showToast(`Scanned ${tag}!`, "success");
+                        }}
+                        className="py-1.5 px-2 bg-slate-800 hover:bg-slate-700 text-amber-300 rounded text-[10.5px] font-mono border border-slate-700 text-center cursor-pointer"
+                      >
+                        + {code}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="flex items-center gap-2 pt-1 border-t border-slate-800 mt-1">
+                    <input
+                      type="text"
+                      value={reworkScanInput}
+                      onChange={(e) => setReworkScanInput(e.target.value)}
+                      placeholder="Type custom barcode string..."
+                      className="phone-input bg-slate-950 text-white border-slate-800 text-xs flex-1"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!reworkScanInput.trim()) return;
+                        const updated = [...reworkScannedBarcodes, reworkScanInput.trim()];
+                        setReworkScannedBarcodes(updated);
+                        setReworkQty(updated.length);
+                        setReworkScanInput('');
+                        showToast("Custom barcode added!", "success");
+                      }}
+                      className="px-3 py-2 bg-blue-600 text-white rounded text-xs font-bold cursor-pointer"
+                    >
+                      Add
+                    </button>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsReworkScannerOpen(false)}
+                    className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold text-xs mt-1 cursor-pointer"
+                  >
+                    Done Scanning ({reworkScannedBarcodes.length} Items)
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

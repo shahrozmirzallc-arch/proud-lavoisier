@@ -4,7 +4,7 @@ import WebDashboard from './components/WebDashboard';
 import { initializeDB, syncWithSupabase, supabase } from './components/SharedDatabase';
 import LoginScreen from './components/LoginScreen';
 import { SpinnerGap, LockKey, CheckCircle, WarningCircle } from '@phosphor-icons/react';
-import { Shield, Monitor, Smartphone, Laptop, Lock, Sun, Moon, AlertTriangle } from 'lucide-react';
+import { Shield, Monitor, Smartphone, Laptop, Lock, AlertTriangle } from 'lucide-react';
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -621,59 +621,6 @@ function App() {
 
             {/* View Mode Controls */}
             <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end flex-wrap">
-              {/* Dynamic Theme Switcher */}
-              <div className="flex items-center gap-1.5 bg-surface-elevated p-1.5 rounded-lg border border-border-subtle shadow-xs">
-                <span className="text-[8px] text-text-secondary font-black uppercase px-1">Theme:</span>
-                <button 
-                  type="button"
-                  onClick={() => setTheme('royal-blue')}
-                  className={`w-3.5 h-3.5 rounded-full bg-blue-600 border ${theme === 'royal-blue' ? 'border-white scale-110 shadow-md shadow-blue-500/50' : 'border-border-subtle'} transition-all cursor-pointer`}
-                  title="Royal Blue & Amber"
-                />
-                <button 
-                  type="button"
-                  onClick={() => setTheme('neon-violet')}
-                  className={`w-3.5 h-3.5 rounded-full bg-violet-600 border ${theme === 'neon-violet' ? 'border-white scale-110 shadow-md shadow-violet-500/50' : 'border-border-subtle'} transition-all cursor-pointer`}
-                  title="Neon Violet & Turquoise"
-                />
-                <button 
-                  type="button"
-                  onClick={() => setTheme('emerald-green')}
-                  className={`w-3.5 h-3.5 rounded-full bg-emerald-600 border ${theme === 'emerald-green' ? 'border-white scale-110 shadow-md shadow-emerald-500/50' : 'border-border-subtle'} transition-all cursor-pointer`}
-                  title="Emerald & Slate"
-                />
-                <button 
-                  type="button"
-                  onClick={() => setTheme('ruby-red')}
-                  className={`w-3.5 h-3.5 rounded-full bg-rose-600 border ${theme === 'ruby-red' ? 'border-white scale-110 shadow-md shadow-rose-500/50' : 'border-border-subtle'} transition-all cursor-pointer`}
-                  title="Charcoal & Ruby"
-                />
-              </div>
-
-              {/* Day / Night Toggle Button */}
-              <button 
-                type="button"
-                onClick={() => setDayNight(prev => prev === 'day' ? 'night' : 'day')}
-                title={dayNight === 'day' ? "Switch to Light Mode" : "Switch to Dark Mode"}
-                className={`px-3 py-1.5 rounded-xl font-bold flex items-center gap-2 transition-all cursor-pointer border text-xs shadow-xs ${
-                  dayNight === 'day' 
-                    ? 'bg-amber-500/10 border-amber-500/30 text-amber-500 hover:bg-amber-500/20' 
-                    : 'bg-indigo-500/10 border-indigo-500/30 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-500/20'
-                }`}
-              >
-                {dayNight === 'day' ? (
-                  <>
-                    <Sun className="w-4 h-4 text-amber-500" />
-                    <span>Switch to Light Mode</span>
-                  </>
-                ) : (
-                  <>
-                    <Moon className="w-4 h-4 text-indigo-500" />
-                    <span>Switch to Dark Mode</span>
-                  </>
-                )}
-              </button>
-
               {/* Contextual Options */}
               <div className="flex items-center gap-3">
                 {/* Segmented Layout Selector (Admin/Staff Roles Only) */}

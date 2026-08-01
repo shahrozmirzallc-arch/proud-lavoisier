@@ -199,7 +199,11 @@ function App() {
   useEffect(() => {
     const initAuth = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const sessionPromise = supabase.auth.getSession();
+        const timeoutPromise = new Promise((resolve) => setTimeout(() => resolve({ data: { session: null } }), 2500));
+        const res = await Promise.race([sessionPromise, timeoutPromise]);
+        const session = res?.data?.session;
+
         if (session && session.user) {
           const appMeta = session.user.app_metadata || {};
           const role = appMeta.role || 'customer';
@@ -208,7 +212,6 @@ function App() {
           const custId = appMeta.customer_id || targetUser;
 
           setIsUnlocked(true);
-          setAuthError(false);
           setUserRole(role);
           setCurrentUser({
             id: role === 'rep' ? repId : custId,

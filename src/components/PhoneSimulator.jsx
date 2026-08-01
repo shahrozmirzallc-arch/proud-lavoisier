@@ -1284,6 +1284,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
     setIsSortRequired('N');
     setIsRmaRequired('N');
     setConcernClassification('PRR');
+    setHasVideo(true);
   };
 
   // SUBMIT INCIDENT AND SEND EMAIL
@@ -1333,6 +1334,8 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
           ? defaultPartsList[0].supplier_id 
           : (plantSupplier || 'magna');
 
+        const videoSampleUrl = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4";
+
         const newInc = {
           rep_id: currentUser.id,
           plant_id: selectedPlant,
@@ -1349,6 +1352,10 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
             note: ev.note,
             order: ev.order
           })),
+          hasVideo: hasVideo,
+          has_video: hasVideo,
+          video_url: hasVideo ? videoSampleUrl : null,
+          videoWalkthrough: hasVideo ? videoSampleUrl : null,
           concern_classification: concernClassification,
           defect_returned: isReturningDefect,
           sort_required: isSortRequired,
@@ -1382,7 +1389,8 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
           body: `<h3>INCIDENT REPORT — IDS PULSE</h3>
 <p><strong>Date:</strong> ${new Date().toLocaleDateString()}<br/>
 <strong>Rep:</strong> ${currentUser.name}<br/>
-<strong>Area Discovered:</strong> ${selectedArea}</p>
+<strong>Area Discovered:</strong> ${selectedArea}<br/>
+<strong>Video Walkthrough:</strong> ${hasVideo ? 'Attached (15s MP4 Evidence Clip)' : 'Not Attached'}</p>
 <hr/>
 <p><strong>Defective Parts List:</strong></p>
 <ul>${partsHtml}</ul>
@@ -2487,6 +2495,43 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                   >
                     <Camera className="w-4 h-4" />
                     <span>Take or add photo ({evidenceList.length}/10)</span>
+                  </button>
+
+                  {/* 15s Video Walkthrough Attachment Action Button */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const nextState = !hasVideo;
+                      setHasVideo(nextState);
+                      showToast(nextState ? "15s Video Walkthrough attached to report" : "Video attachment removed", nextState ? "success" : "info");
+                    }}
+                    className={`w-full py-2.5 px-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-between shadow-xs cursor-pointer ${
+                      hasVideo 
+                        ? 'bg-emerald-50 border-emerald-300 text-emerald-900 shadow-sm' 
+                        : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${hasVideo ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-500'}`}>
+                        <Video className="w-4 h-4" />
+                      </div>
+                      <div className="flex flex-col text-left">
+                        <span className="font-extrabold text-[11.5px] leading-tight">
+                          {hasVideo ? '15s Video Walkthrough Linked' : 'Add 15s Video Walkthrough'}
+                        </span>
+                        <span className="text-[9.5px] font-medium opacity-80">
+                          {hasVideo ? 'Video evidence attached to incident payload' : 'Optional MP4 video clip for defect context'}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-md uppercase border ${
+                      hasVideo 
+                        ? 'bg-emerald-600 text-white border-emerald-700 shadow-xs' 
+                        : 'bg-slate-100 text-slate-600 border-slate-200'
+                    }`}>
+                      {hasVideo ? 'Attached' : '+ Video'}
+                    </span>
                   </button>
 
                   {/* Evidence Cards List */}

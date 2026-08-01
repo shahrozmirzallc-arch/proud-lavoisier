@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   Shield, Activity, Wifi, WifiOff, MapPin, Clock, 
   User, Lock, LogOut, CheckCircle, CheckCircle2, AlertTriangle, Play, Square, X, Calendar,
-  Camera, Scan, Plus, ChevronRight, Mail, Send, RotateCcw, Volume2, Video, ArrowLeft, Trash2,
+  Camera, Scan, Plus, ChevronRight, Mail, Send, RotateCcw, Volume2, Video, ArrowLeft, Trash2, Edit3,
   Receipt, DollarSign, FileText, Wrench, QrCode, Home, Briefcase, Menu
 } from 'lucide-react';
 import { getEntities, addIncident, addEmailLog, addReworkLog, saveEntity, addExpenseEntry, logSystemEvent, supabase, syncWithSupabase, saveExtraHoursRequest, isEntryAccountingEligible } from './SharedDatabase';
@@ -73,6 +73,26 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
     photo10: null
   });
   const [drawingTarget, setDrawingTarget] = useState('closeup'); // 'wide' | 'medium' | 'closeup'
+
+  // Flexible Evidence Photo State (Donna & Clarence Rep Process)
+  const [evidenceList, setEvidenceList] = useState([
+    {
+      id: 'ev_init_1',
+      url: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=600&q=80',
+      note: 'Scrap Tag & Part Number on Scrap Table',
+      order: 1,
+      label: 'Photo 1',
+      isAnnotated: false,
+      annotatedUrl: null,
+      strokes: []
+    }
+  ]);
+  const [annotateTargetId, setAnnotateTargetId] = useState(null);
+  const [showAddPhotoModal, setShowAddPhotoModal] = useState(false);
+  const [deleteConfirmTarget, setDeleteConfirmTarget] = useState(null);
+  const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
+  const [strokeColor, setStrokeColor] = useState('#EF4444'); // Red default
+  const [activeStrokes, setActiveStrokes] = useState([]);
   const [scannedPartsList, setScannedPartsList] = useState([]);
   const [scanningType, setScanningType] = useState(null); // 'barcode' | 'qr' | null
   const [scannedPN, setScannedPN] = useState('');
@@ -1056,6 +1076,99 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
     }
   };
 
+  // FLEXIBLE EVIDENCE HELPERS (Donna & Clarence Working Process)
+  const addPhotoToEvidenceList = (photoUrl) => {
+    if (evidenceList.length >= 10) {
+      showToast("Maximum 10 photos per report limit reached.", "warning");
+      return;
+    }
+    const newId = `ev_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+    const newCount = evidenceList.length + 1;
+    const newItem = {
+      id: newId,
+      url: photoUrl,
+      note: '',
+      order: newCount,
+      label: `Photo ${newCount}`,
+      isAnnotated: false,
+      annotatedUrl: null,
+      strokes: []
+    };
+    setEvidenceList(prev => [...prev, newItem]);
+    showToast(`Photo ${newCount} added`, "success");
+  };
+
+  const handleFileSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      addPhotoToEvidenceList(event.target.result);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
+
+  const reorderEvidenceItem = (id, direction) => {
+    setEvidenceList(prev => {
+      const idx = prev.findIndex(item => item.id === id);
+      if (idx === -1) return prev;
+      const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
+      if (targetIdx < 0 || targetIdx >= prev.length) return prev;
+      const newArr = [...prev];
+      const [moved] = newArr.splice(idx, 1);
+      newArr.splice(targetIdx, 0, moved);
+      return newArr.map((item, i) => ({ ...item, order: i + 1, label: `Photo ${i + 1}` }));
+    });
+  };
+
+  const updateEvidenceItemNote = (id, text) => {
+    setEvidenceList(prev => prev.map(item => item.id === id ? { ...item, note: text } : item));
+  };
+
+  const removeEvidenceItem = (id) => {
+    if (evidenceList.length <= 1) {
+      showToast("Minimum 1 evidence photo required by default.", "warning");
+      return;
+    }
+    setEvidenceList(prev => {
+      const filtered = prev.filter(item => item.id !== id);
+      return filtered.map((item, i) => ({ ...item, order: i + 1, label: `Photo ${i + 1}` }));
+    });
+    setDeleteConfirmTarget(null);
+    showToast("Photo removed", "info");
+  };
+
+  const openAnnotationModal = (item) => {
+    setAnnotateTargetId(item.id);
+    setActiveStrokes(item.strokes || []);
+  };
+
+  const saveAnnotationForTargetItem = (dataUrl) => {
+    setEvidenceList(prev => prev.map(item => {
+      if (item.id === annotateTargetId) {
+        return {
+          ...item,
+          isAnnotated: true,
+          annotatedUrl: dataUrl,
+          strokes: activeStrokes
+        };
+      }
+      return item;
+    }));
+    setAnnotateTargetId(null);
+    showToast("Annotation saved to photo", "success");
+  };
+
+  const undoAnnotationStroke = () => {
+    setActiveStrokes(prev => prev.slice(0, -1));
+  };
+
+  const resetAnnotationStrokes = () => {
+    setActiveStrokes([]);
+    setResetConfirmOpen(false);
+  };
+
   useEffect(() => {
     if (showDrawingCanvas && canvasRef.current) {
       const canvas = canvasRef.current;
@@ -1111,31 +1224,39 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
 
   // AUTO-FILL CLARENCE DEMO INCIDENT
   const autofillClarenceDemo = () => {
-    // Fill photos (10 photos total)
-    setCapturedPhotos({
-      wide: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=800&q=80',
-      medium: 'https://images.unsplash.com/photo-1542282088-fe8426682b8f?auto=format&fit=crop&w=800&q=80',
-      closeup: 'https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?auto=format&fit=crop&w=800&q=80',
-      photo4: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80',
-      photo5: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=800&q=80',
-      photo6: 'https://images.unsplash.com/photo-1581092335397-9583fe92d232?auto=format&fit=crop&w=800&q=80',
-      photo7: 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=800&q=80',
-      photo8: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=800&q=80',
-      photo9: 'https://images.unsplash.com/photo-1581092580497-e0d23cbdf1dc?auto=format&fit=crop&w=800&q=80',
-      photo10: 'https://images.unsplash.com/photo-1581092162384-8987c1d64718?auto=format&fit=crop&w=800&q=80'
-    });
-    setAnnotatedPhotos({
-      wide: null,
-      medium: null,
-      closeup: 'https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?auto=format&fit=crop&w=800&q=80',
-      photo4: null,
-      photo5: null,
-      photo6: null,
-      photo7: null,
-      photo8: null,
-      photo9: null,
-      photo10: null
-    });
+    // Fill Evidence Photos
+    setEvidenceList([
+      {
+        id: 'ev_demo_1',
+        url: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=600&q=80',
+        note: 'Scrap Tag & Part Number on Scrap Table',
+        order: 1,
+        label: 'Photo 1',
+        isAnnotated: true,
+        annotatedUrl: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=600&q=80',
+        strokes: []
+      },
+      {
+        id: 'ev_demo_2',
+        url: 'https://images.unsplash.com/photo-1542282088-fe8426682b8f?auto=format&fit=crop&w=600&q=80',
+        note: 'Loose bulb housing assembly crack detail',
+        order: 2,
+        label: 'Photo 2',
+        isAnnotated: false,
+        annotatedUrl: null,
+        strokes: []
+      },
+      {
+        id: 'ev_demo_3',
+        url: 'https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?auto=format&fit=crop&w=600&q=80',
+        note: 'Container tag batch number B-86286761',
+        order: 3,
+        label: 'Photo 3',
+        isAnnotated: false,
+        annotatedUrl: null,
+        strokes: []
+      }
+    ]);
     
     // Fill Scan Info (Pre-populates list)
     setScannedPN('');
@@ -1167,16 +1288,9 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
 
   // SUBMIT INCIDENT AND SEND EMAIL
   const handleSendIncident = () => {
-    // P0-4 Evidence Guard (Up to 10 Photos + Video Walkthrough)
-    const capturedCount = Object.keys(capturedPhotos).filter(k => capturedPhotos[k] || annotatedPhotos[k]).length;
-
-    if (capturedCount < 3) {
-      showToast("Completeness Error: At least 3 evidence photos are required before sending!", "warning");
-      return;
-    }
-
-    if (!hasVideo) {
-      showToast("Completeness Error: 15s Video Walkthrough evidence must be attached before sending!", "warning");
+    // Flexible Evidence Guard (Donna & Clarence Rep Process: Minimum 1 photo required by default)
+    if (!evidenceList || evidenceList.length === 0) {
+      showToast("Completeness Error: At least 1 evidence photo is required before sending!", "warning");
       return;
     }
 
@@ -1228,18 +1342,13 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
           description: description || `Incident in ${selectedArea}`,
           action_taken: actionTaken,
           supplier_contact: supplierContact,
-          photos: [
-            { id: 'ph_w', url: annotatedPhotos.wide || capturedPhotos.wide, type: 'Wide' },
-            { id: 'ph_m', url: annotatedPhotos.medium || capturedPhotos.medium, type: 'Medium' },
-            { id: 'ph_c', url: annotatedPhotos.closeup || capturedPhotos.closeup, type: 'Closeup' },
-            { id: 'ph_4', url: annotatedPhotos.photo4 || capturedPhotos.photo4, type: 'Angle B' },
-            { id: 'ph_5', url: annotatedPhotos.photo5 || capturedPhotos.photo5, type: 'Serial #' },
-            { id: 'ph_6', url: annotatedPhotos.photo6 || capturedPhotos.photo6, type: 'Container Tag' },
-            { id: 'ph_7', url: annotatedPhotos.photo7 || capturedPhotos.photo7, type: 'Batch Tag' },
-            { id: 'ph_8', url: annotatedPhotos.photo8 || capturedPhotos.photo8, type: 'Assembly Area' },
-            { id: 'ph_9', url: annotatedPhotos.photo9 || capturedPhotos.photo9, type: 'Good Part Comp' },
-            { id: 'ph_10', url: annotatedPhotos.photo10 || capturedPhotos.photo10, type: 'Hold Tag' }
-          ].filter(p => !!p.url),
+          photos: evidenceList.map(ev => ({
+            id: ev.id,
+            url: ev.annotatedUrl || ev.url,
+            type: ev.label,
+            note: ev.note,
+            order: ev.order
+          })),
           concern_classification: concernClassification,
           defect_returned: isReturningDefect,
           sort_required: isSortRequired,
@@ -2334,127 +2443,145 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
             {/* Scrollable Form Content */}
             <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-3 text-left">
               
-              {/* STEP 1: CAPTURE (PHOTO FIRST, FIELDS SECOND) */}
+              {/* STEP 1: CAPTURE (FLEXIBLE EVIDENCE - DONNA & CLARENCE WORKING PROCESS) */}
               {incStep === 1 && (
                 <div className="flex flex-col gap-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-[11.5px] text-blue-700 font-bold uppercase tracking-wider">Step 1: Visual Proof (10 Slots)</span>
-                    <span className="text-[10.5px] text-slate-600">Up to 10 photos supported</span>
-                  </div>
-
-                  <div className="grid grid-cols-5 gap-1.5">
-                    {[
-                      { key: 'wide', label: 'Wide', sub: 'Box Tag' },
-                      { key: 'medium', label: 'Medium', sub: 'Part' },
-                      { key: 'closeup', label: 'Close-Up', sub: 'Defect' },
-                      { key: 'photo4', label: 'Photo 4', sub: 'Angle B' },
-                      { key: 'photo5', label: 'Photo 5', sub: 'Serial #' },
-                      { key: 'photo6', label: 'Photo 6', sub: 'Container' },
-                      { key: 'photo7', label: 'Photo 7', sub: 'Batch' },
-                      { key: 'photo8', label: 'Photo 8', sub: 'Assembly' },
-                      { key: 'photo9', label: 'Photo 9', sub: 'Compare' },
-                      { key: 'photo10', label: 'Photo 10', sub: 'Hold Tag' }
-                    ].map((slot) => {
-                      const isCaptured = !!(annotatedPhotos[slot.key] || capturedPhotos[slot.key]);
-                      const photoSrc = annotatedPhotos[slot.key] || capturedPhotos[slot.key];
-                      const isAnnotated = !!annotatedPhotos[slot.key];
-
-                      return (
-                        <div 
-                          key={slot.key}
-                          onClick={() => {
-                            if (!capturedPhotos[slot.key]) {
-                              captureMockPhoto(slot.key);
-                            } else {
-                              setDrawingTarget(slot.key);
-                              setShowDrawingCanvas(true);
-                            }
-                          }}
-                          className={`aspect-square bg-white border rounded-sm flex flex-col items-center justify-center text-center cursor-pointer p-0.5 relative overflow-hidden group transition-colors ${
-                            isCaptured ? 'border-green-400' : 'border-slate-300 hover:border-blue-500'
-                          }`}
-                        >
-                          {isCaptured ? (
-                            <>
-                              <img src={photoSrc} className="w-full h-full object-cover" alt={slot.label} />
-                              {isAnnotated ? (
-                                <span className="absolute bottom-0.5 right-0.5 bg-red-600 text-[9px] text-white px-0.5 py-0.2 rounded-xs font-bold leading-none">Marked</span>
-                              ) : (
-                                <span className="absolute bottom-0.5 right-0.5 bg-white/90 text-[9px] text-green-700 border border-green-200 px-0.5 py-0.2 rounded-xs shadow-xs font-bold leading-none">{slot.label}</span>
-                              )}
-                              {isAnnotated && (
-                                <span className="absolute top-0.5 left-0.5 bg-white/90 rounded-xs p-0.5 border border-slate-200"><RotateCcw className="w-2 h-2 text-slate-700" /></span>
-                              )}
-                            </>
-                          ) : (
-                            <>
-                              <Camera className="w-4 h-4 text-slate-500 mb-0.5" />
-                              <span className="text-[10px] font-bold text-slate-700 leading-tight">{slot.label}</span>
-                              <span className="text-[9px] text-slate-400 leading-tight">{slot.sub}</span>
-                            </>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  {/* Annotation Actions Row */}
-                  {Object.values(capturedPhotos).some(Boolean) && (
-                    <div className="flex flex-col gap-1 w-full bg-slate-50 p-2 rounded-sm border border-slate-200">
-                      <span className="text-[11px] text-slate-700 font-bold uppercase tracking-wider pl-0.5 block mb-1">Annotate Defect Photo</span>
-                      <div className="grid grid-cols-5 gap-1">
-                        {[
-                          { key: 'wide', label: 'Wide' },
-                          { key: 'medium', label: 'Med' },
-                          { key: 'closeup', label: 'Close' },
-                          { key: 'photo4', label: 'P4' },
-                          { key: 'photo5', label: 'P5' },
-                          { key: 'photo6', label: 'P6' },
-                          { key: 'photo7', label: 'P7' },
-                          { key: 'photo8', label: 'P8' },
-                          { key: 'photo9', label: 'P9' },
-                          { key: 'photo10', label: 'P10' }
-                        ].map(slot => (
-                          <button
-                            key={slot.key}
-                            type="button"
-                            disabled={!capturedPhotos[slot.key]}
-                            onClick={() => {
-                              setDrawingTarget(slot.key);
-                              setShowDrawingCanvas(true);
-                            }}
-                            className={`py-1 rounded-sm text-[9.5px] font-bold border transition-colors ${
-                              capturedPhotos[slot.key] 
-                                ? drawingTarget === slot.key
-                                  ? 'bg-blue-600 border-blue-700 text-white cursor-pointer shadow-xs'
-                                  : 'bg-white border-slate-300 text-blue-700 hover:bg-slate-50 cursor-pointer shadow-xs' 
-                                : 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed opacity-50'
-                            }`}
-                          >
-                            ✏️ {slot.label}
-                          </button>
-                        ))}
-                      </div>
+                  <div className="flex justify-between items-center bg-slate-100/70 p-2 rounded-lg border border-slate-200">
+                    <div>
+                      <span className="text-[11.5px] text-[#008F72] font-extrabold uppercase tracking-wider block">Step 1: Visual Proof</span>
+                      <span className="text-[10px] text-slate-500 font-medium">Flexible evidence • Scrap Tag & Part detail</span>
                     </div>
-                  )}
+                    <span className="text-[11px] font-mono font-bold bg-[#008F72]/10 text-[#008F72] border border-[#008F72]/30 px-2 py-0.5 rounded-full">
+                      {evidenceList.length} / 10 Photos
+                    </span>
+                  </div>
 
-                  {/* Video Mock Attachment */}
-                  <div className="flex gap-2">
-                    <button 
-                      onClick={() => setHasVideo(!hasVideo)}
-                      className={`w-full h-11 border rounded-sm flex items-center justify-center gap-1.5 text-[13.5px] font-bold transition-all cursor-pointer ${
-                        hasVideo ? 'bg-green-50 border-green-300 text-green-700 shadow-sm' : 'bg-white border-slate-300 text-slate-600 hover:text-slate-900 shadow-sm hover:bg-slate-50'
-                      }`}
-                    >
-                      <Video className="w-4.5 h-4" />
-                      <span>{hasVideo ? 'Video Linked' : 'Add 15s Video'}</span>
-                    </button>
+                  {/* Operational Process Banner */}
+                  <div className="bg-amber-50/90 border border-amber-200/80 p-2.5 rounded-xl text-[11px] text-amber-900 leading-snug flex items-start gap-2 shadow-xs">
+                    <span className="text-base leading-none">💡</span>
+                    <div>
+                      <strong>Donna & Clarence Process:</strong> Minimum 1 visual proof photo required (e.g. Scrap Tag or defect). Up to 10 photos allowed. Photo notes and marking annotations are optional.
+                    </div>
+                  </div>
+
+                  {/* Hidden File Input for Native File Pick */}
+                  <input
+                    id="evidence_file_input"
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleFileSelect}
+                  />
+
+                  {/* Primary Add Photo Button */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (evidenceList.length >= 10) {
+                        showToast("Maximum 10 photos per report limit reached.", "warning");
+                        return;
+                      }
+                      setShowAddPhotoModal(true);
+                    }}
+                    className="w-full py-3 bg-[#008F72] hover:bg-[#00765F] text-white font-extrabold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer border border-emerald-600/30"
+                  >
+                    <Camera className="w-4 h-4" />
+                    <span>Take or add photo ({evidenceList.length}/10)</span>
+                  </button>
+
+                  {/* Evidence Cards List */}
+                  <div className="flex flex-col gap-2.5 mt-1">
+                    {evidenceList.map((item, index) => (
+                      <div key={item.id} className="bg-white border border-slate-200 rounded-xl p-3 shadow-xs flex flex-col gap-2 relative">
+                        {/* Header: Photo Label, Reorder & Delete Controls */}
+                        <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-xs font-black text-slate-800">Photo {index + 1} of {evidenceList.length}</span>
+                            {item.isAnnotated && (
+                              <span className="bg-red-100 text-red-700 border border-red-200 text-[9.5px] font-bold px-1.5 py-0.2 rounded-md">
+                                Marked
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-1">
+                            {/* Move Up */}
+                            <button
+                              type="button"
+                              disabled={index === 0}
+                              onClick={() => reorderEvidenceItem(item.id, 'up')}
+                              className={`p-1 rounded-md border text-[10px] font-bold transition-colors ${
+                                index === 0 ? 'bg-slate-50 text-slate-300 border-slate-200 cursor-not-allowed' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200 cursor-pointer'
+                              }`}
+                              title="Move photo up"
+                            >
+                              ▲
+                            </button>
+
+                            {/* Move Down */}
+                            <button
+                              type="button"
+                              disabled={index === evidenceList.length - 1}
+                              onClick={() => reorderEvidenceItem(item.id, 'down')}
+                              className={`p-1 rounded-md border text-[10px] font-bold transition-colors ${
+                                index === evidenceList.length - 1 ? 'bg-slate-50 text-slate-300 border-slate-200 cursor-not-allowed' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200 cursor-pointer'
+                              }`}
+                              title="Move photo down"
+                            >
+                              ▼
+                            </button>
+
+                            {/* Delete */}
+                            <button
+                              type="button"
+                              onClick={() => setDeleteConfirmTarget(item.id)}
+                              className="p-1 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-md text-[10px] font-bold cursor-pointer transition-colors"
+                              title="Delete photo"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Body: Thumbnail + Controls + Optional Note */}
+                        <div className="flex gap-3">
+                          {/* Thumbnail Preview */}
+                          <div className="w-24 h-24 rounded-lg bg-slate-100 border border-slate-200 overflow-hidden shrink-0 relative group">
+                            <img
+                              src={item.annotatedUrl || item.url}
+                              alt={item.label}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+
+                          {/* Action Controls & Description */}
+                          <div className="flex-1 flex flex-col gap-2">
+                            <button
+                              type="button"
+                              onClick={() => openAnnotationModal(item)}
+                              className="py-1.5 px-2.5 bg-slate-900 hover:bg-slate-800 text-white text-[11px] font-bold rounded-lg transition-colors flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
+                            >
+                              <Edit3 className="w-3.5 h-3.5 text-amber-400" />
+                              <span>{item.isAnnotated ? 'Edit marking' : 'Mark photo'}</span>
+                            </button>
+
+                            <textarea
+                              rows={2}
+                              value={item.note || ''}
+                              onChange={(e) => updateEvidenceItemNote(item.id, e.target.value)}
+                              placeholder="Optional description / notes (e.g. Scrap Tag #, crack detail)..."
+                              className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-[11px] text-slate-800 placeholder-slate-400 focus:bg-white focus:border-[#008F72] focus:ring-1 focus:ring-[#008F72] transition-all resize-none"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
 
                   <button 
-                    disabled={Object.values(capturedPhotos).filter(Boolean).length < 3}
+                    disabled={evidenceList.length < 1}
                     onClick={() => setIncStep(2)}
-                    className="phone-btn-primary mt-4"
+                    className="phone-btn-primary mt-3"
                   >
                     <span>Proceed to Scan Part Label</span>
                     <ChevronRight className="w-4.5 h-4" />
@@ -3033,47 +3160,337 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
           </div>
         )}
 
-        {/* SCREEN 3.5: PHOTO ANNOTATION OVERLAY CANVAS */}
-        {showDrawingCanvas && capturedPhotos[drawingTarget] && (
-          <div className="absolute inset-0 bg-surface-elevated/60 backdrop-blur-sm z-50 flex flex-col justify-between p-3">
-            <div className="flex items-center justify-between border-b border-slate-200 pb-2 bg-white rounded-t-sm px-4 pt-4 shadow-sm">
-              <span className="text-[13.5px] font-bold text-slate-900 uppercase tracking-wider">
-                Annotate {drawingTarget === 'wide' ? 'Wide Shot' : drawingTarget === 'medium' ? 'Medium View' : 'Close-Up'}
-              </span>
-              <button 
-                onClick={() => setShowDrawingCanvas(false)}
-                className="text-text-secondary hover:text-red-600 transition-colors"
+        {/* PHOTO ANNOTATION WORKSPACE OVERLAY (DONNA & CLARENCE WORKING PROCESS) */}
+        {annotateTargetId && (() => {
+          const targetItem = evidenceList.find(i => i.id === annotateTargetId);
+          if (!targetItem) return null;
+
+          return (
+            <div className="absolute inset-0 bg-slate-950/90 backdrop-blur-md z-50 flex flex-col justify-between p-3 animate-in fade-in duration-200 text-left">
+              {/* Header */}
+              <div className="flex items-center justify-between border-b border-slate-800 pb-2.5 px-1">
+                <div>
+                  <span className="text-[13px] font-extrabold text-white uppercase tracking-wider block">
+                    Mark Photo {targetItem.order}
+                  </span>
+                  <span className="text-[10px] text-slate-400 font-medium">Draw defect circle or arrow</span>
+                </div>
+                <button 
+                  type="button"
+                  onClick={() => setAnnotateTargetId(null)}
+                  className="p-1 text-slate-400 hover:text-white rounded-lg transition-colors cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Canvas Area */}
+              <div className="flex-1 flex flex-col items-center justify-center my-2 relative">
+                <div className="relative w-[310px] h-[310px] rounded-xl overflow-hidden border-2 border-slate-700 shadow-2xl bg-black">
+                  <img
+                    src={targetItem.url}
+                    alt="Target for annotation"
+                    className="absolute inset-0 w-full h-full object-cover pointer-events-none select-none"
+                  />
+                  
+                  {/* SVG Vector Drawing Surface */}
+                  <svg
+                    className="absolute inset-0 w-full h-full cursor-crosshair touch-none"
+                    onMouseDown={(e) => {
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      const x = e.clientX - rect.left;
+                      const y = e.clientY - rect.top;
+                      setIsDrawing(true);
+                      setActiveStrokes(prev => [...prev, { color: strokeColor, points: [{ x, y }] }]);
+                    }}
+                    onMouseMove={(e) => {
+                      if (!isDrawing) return;
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      const x = e.clientX - rect.left;
+                      const y = e.clientY - rect.top;
+                      setActiveStrokes(prev => {
+                        if (prev.length === 0) return prev;
+                        const lastIndex = prev.length - 1;
+                        const lastStroke = prev[lastIndex];
+                        const updatedStroke = {
+                          ...lastStroke,
+                          points: [...lastStroke.points, { x, y }]
+                        };
+                        const copy = [...prev];
+                        copy[lastIndex] = updatedStroke;
+                        return copy;
+                      });
+                    }}
+                    onMouseUp={() => setIsDrawing(false)}
+                    onMouseLeave={() => setIsDrawing(false)}
+                    onTouchStart={(e) => {
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      const touch = e.touches[0];
+                      if (!touch) return;
+                      const x = touch.clientX - rect.left;
+                      const y = touch.clientY - rect.top;
+                      setIsDrawing(true);
+                      setActiveStrokes(prev => [...prev, { color: strokeColor, points: [{ x, y }] }]);
+                    }}
+                    onTouchMove={(e) => {
+                      if (!isDrawing) return;
+                      const touch = e.touches[0];
+                      if (!touch) return;
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      const x = touch.clientX - rect.left;
+                      const y = touch.clientY - rect.top;
+                      setActiveStrokes(prev => {
+                        if (prev.length === 0) return prev;
+                        const lastIndex = prev.length - 1;
+                        const lastStroke = prev[lastIndex];
+                        const updatedStroke = {
+                          ...lastStroke,
+                          points: [...lastStroke.points, { x, y }]
+                        };
+                        const copy = [...prev];
+                        copy[lastIndex] = updatedStroke;
+                        return copy;
+                      });
+                    }}
+                    onTouchEnd={() => setIsDrawing(false)}
+                  >
+                    {activeStrokes.map((stroke, sIdx) => {
+                      if (!stroke.points || stroke.points.length === 0) return null;
+                      const d = stroke.points.reduce((acc, pt, pIdx) => {
+                        return pIdx === 0 ? `M ${pt.x} ${pt.y}` : `${acc} L ${pt.x} ${pt.y}`;
+                      }, '');
+                      return (
+                        <path
+                          key={sIdx}
+                          d={d}
+                          stroke={stroke.color}
+                          strokeWidth="3.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          fill="none"
+                        />
+                      );
+                    })}
+                  </svg>
+                </div>
+              </div>
+
+              {/* Color Selector Bar (4 Confirmed Colors) */}
+              <div className="bg-slate-900 border border-slate-800 p-2.5 rounded-xl flex items-center justify-between shadow-lg">
+                <span className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider">Color:</span>
+                <div className="flex items-center gap-3">
+                  {[
+                    { color: '#EF4444', label: 'Red' },
+                    { color: '#F59E0B', label: 'Yellow' },
+                    { color: '#000000', label: 'Black' },
+                    { color: '#3B82F6', label: 'Blue' }
+                  ].map(c => (
+                    <button
+                      key={c.color}
+                      type="button"
+                      onClick={() => setStrokeColor(c.color)}
+                      className={`w-7 h-7 rounded-full border-2 transition-transform cursor-pointer flex items-center justify-center ${
+                        strokeColor === c.color ? 'scale-125 border-white ring-2 ring-white/50' : 'border-transparent hover:scale-110 opacity-80'
+                      }`}
+                      style={{ backgroundColor: c.color === '#000000' ? '#18181B' : c.color }}
+                      title={c.label}
+                    >
+                      {strokeColor === c.color && <span className="w-2 h-2 rounded-full bg-white shadow-xs"></span>}
+                    </button>
+                  ))}
+                </div>
+                
+                {/* Stroke Action Tools */}
+                <div className="flex items-center gap-1.5 border-l border-slate-800 pl-3">
+                  <button
+                    type="button"
+                    disabled={activeStrokes.length === 0}
+                    onClick={undoAnnotationStroke}
+                    className={`px-2 py-1 rounded-md text-[10px] font-bold border transition-colors ${
+                      activeStrokes.length > 0 ? 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700 cursor-pointer' : 'bg-slate-900 text-slate-600 border-slate-800 cursor-not-allowed'
+                    }`}
+                  >
+                    Undo
+                  </button>
+                  <button
+                    type="button"
+                    disabled={activeStrokes.length === 0}
+                    onClick={() => setResetConfirmOpen(true)}
+                    className={`px-2 py-1 rounded-md text-[10px] font-bold border transition-colors ${
+                      activeStrokes.length > 0 ? 'bg-slate-800 hover:bg-slate-700 text-rose-300 border-slate-700 cursor-pointer' : 'bg-slate-900 text-slate-600 border-slate-800 cursor-not-allowed'
+                    }`}
+                  >
+                    Reset
+                  </button>
+                </div>
+              </div>
+
+              {/* Bottom Action Controls */}
+              <div className="grid grid-cols-2 gap-2 mt-2">
+                <button
+                  type="button"
+                  onClick={() => setAnnotateTargetId(null)}
+                  className="py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-xl transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    // Export SVG to Canvas Data URL
+                    const canvas = document.createElement('canvas');
+                    canvas.width = 600;
+                    canvas.height = 600;
+                    const ctx = canvas.getContext('2d');
+                    const img = new Image();
+                    img.crossOrigin = 'anonymous';
+                    img.src = targetItem.url;
+                    img.onload = () => {
+                      ctx.drawImage(img, 0, 0, 600, 600);
+                      // Draw strokes scaled 600/310
+                      const scale = 600 / 310;
+                      activeStrokes.forEach(stroke => {
+                        if (!stroke.points || stroke.points.length === 0) return;
+                        ctx.strokeStyle = stroke.color;
+                        ctx.lineWidth = 3.5 * scale;
+                        ctx.lineCap = 'round';
+                        ctx.lineJoin = 'round';
+                        ctx.beginPath();
+                        stroke.points.forEach((pt, pIdx) => {
+                          if (pIdx === 0) ctx.moveTo(pt.x * scale, pt.y * scale);
+                          else ctx.lineTo(pt.x * scale, pt.y * scale);
+                        });
+                        ctx.stroke();
+                      });
+                      const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+                      saveAnnotationForTargetItem(dataUrl);
+                    };
+                  }}
+                  className="py-2.5 bg-[#008F72] hover:bg-[#00765F] text-white text-xs font-extrabold rounded-xl shadow-md transition-colors cursor-pointer border border-emerald-600/30"
+                >
+                  Save Marking
+                </button>
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* RESET ANNOTATION CONFIRMATION MODAL */}
+        {resetConfirmOpen && (
+          <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-2xl flex flex-col gap-3 text-left w-full max-w-[290px]">
+              <div className="flex items-center gap-2.5 text-rose-600">
+                <AlertTriangle className="w-5 h-5" />
+                <h4 className="text-sm font-extrabold text-slate-900">Reset All Markings?</h4>
+              </div>
+              <p className="text-xs text-slate-600 leading-relaxed font-medium">
+                This will clear all vector drawings on this photo. You can redraw anytime.
+              </p>
+              <div className="grid grid-cols-2 gap-2 mt-1">
+                <button
+                  type="button"
+                  onClick={() => setResetConfirmOpen(false)}
+                  className="py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-colors cursor-pointer"
+                >
+                  Keep Markings
+                </button>
+                <button
+                  type="button"
+                  onClick={resetAnnotationStrokes}
+                  className="py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl transition-colors cursor-pointer shadow-sm"
+                >
+                  Clear All
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ADD PHOTO OPTIONS MODAL (CAMERA VS LIBRARY) */}
+        {showAddPhotoModal && (
+          <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-end justify-center p-3 animate-in fade-in duration-150">
+            <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-2xl flex flex-col gap-2.5 text-left w-full max-w-[340px] animate-in slide-in-from-bottom duration-200">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                <span className="text-xs font-extrabold text-slate-900 uppercase tracking-wider">Add Visual Proof Photo</span>
+                <button 
+                  type="button" 
+                  onClick={() => setShowAddPhotoModal(false)}
+                  className="text-slate-400 hover:text-slate-600 cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setShowAddPhotoModal(false);
+                  const samplePhotos = [
+                    'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=600&q=80',
+                    'https://images.unsplash.com/photo-1542282088-fe8426682b8f?auto=format&fit=crop&w=600&q=80',
+                    'https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?auto=format&fit=crop&w=600&q=80',
+                    'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=600&q=80',
+                    'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=600&q=80'
+                  ];
+                  const pick = samplePhotos[evidenceList.length % samplePhotos.length];
+                  addPhotoToEvidenceList(pick);
+                }}
+                className="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs rounded-xl shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
-                <X className="w-5 h-5" />
+                <Camera className="w-4 h-4 text-emerald-400" />
+                <span>Take Camera Photo (Live View)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setShowAddPhotoModal(false);
+                  document.getElementById('evidence_file_input')?.click();
+                }}
+                className="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-800 font-extrabold text-xs rounded-xl border border-slate-200 transition-all flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <FileText className="w-4 h-4 text-blue-600" />
+                <span>Pick from Device Photo Library</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowAddPhotoModal(false)}
+                className="w-full py-2 text-slate-500 hover:text-slate-700 font-bold text-xs text-center cursor-pointer mt-1"
+              >
+                Cancel
               </button>
             </div>
+          </div>
+        )}
 
-            <div className="flex-1 flex items-center justify-center bg-slate-50 border-x border-slate-200 overflow-hidden relative shadow-sm">
-              <canvas 
-                ref={canvasRef}
-                width={300}
-                height={300}
-                onMouseDown={startDrawing}
-                onMouseMove={draw}
-                onMouseUp={stopDrawing}
-                onMouseLeave={stopDrawing}
-                className="border border-slate-300 bg-white shadow-sm cursor-crosshair"
-              />
-            </div>
-
-            <div className="flex gap-2 bg-white rounded-b-sm border-t border-slate-200 p-3 shadow-sm">
-              <button 
-                onClick={clearCanvas}
-                className="phone-btn-secondary flex-1"
-              >
-                Reset Canvas
-              </button>
-              <button 
-                onClick={saveCanvasAnnotation}
-                className="phone-btn-primary flex-1"
-              >
-                Apply Drawing
-              </button>
+        {/* DELETE EVIDENCE PHOTO CONFIRMATION MODAL */}
+        {deleteConfirmTarget && (
+          <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-2xl flex flex-col gap-3 text-left w-full max-w-[290px]">
+              <div className="flex items-center gap-2.5 text-rose-600">
+                <Trash2 className="w-5 h-5" />
+                <h4 className="text-sm font-extrabold text-slate-900">Delete Evidence Photo?</h4>
+              </div>
+              <p className="text-xs text-slate-600 leading-relaxed font-medium">
+                Are you sure you want to remove this photo from your report draft?
+              </p>
+              <div className="grid grid-cols-2 gap-2 mt-1">
+                <button
+                  type="button"
+                  onClick={() => setDeleteConfirmTarget(null)}
+                  className="py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => removeEvidenceItem(deleteConfirmTarget)}
+                  className="py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl transition-colors cursor-pointer shadow-sm"
+                >
+                  Delete Photo
+                </button>
+              </div>
             </div>
           </div>
         )}

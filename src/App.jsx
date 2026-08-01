@@ -257,12 +257,51 @@ function App() {
     };
   }, []);
 
-  const handleSignedIn = async ({ username, password }) => {
-    const inputUser = username.trim().toLowerCase().replace(/\s+/g, '');
-    const rawPw = password.trim();
+  const handleSignedIn = async ({ username, password = '', isDemoMode = false }) => {
+    const inputUser = (username || '').trim().toLowerCase().replace(/\s+/g, '');
+    const rawPw = (password || '').trim();
 
     try {
       clearStaleSessionStorage();
+
+      if (isDemoMode) {
+        const isDemoAllowed = import.meta.env.VITE_DEMO_MODE === 'true';
+        if (!isDemoAllowed) {
+          console.warn("[Auth Security]: Prototype demo access is not enabled (VITE_DEMO_MODE is false or missing)");
+          setAuthError(true);
+          return false;
+        }
+
+        const demoUsers = {
+          clarence: { id: 'rep_clarence', name: 'Clarence Kuiken', email: 'ckuiken@integritydriven.com', username: 'clarence', role: 'rep', title: 'Quality Liaison Rep', isDemoSession: true },
+          donna: { id: '24', name: 'Donna Cabral', email: 'dcabral@integritydriven.com', username: 'donna', role: 'lead', title: 'Operations Lead', isDemoSession: true },
+          colleen: { id: 'acct_1', name: 'Colleen Boyd', email: 'cboyd@integritydriven.com', username: 'colleen', role: 'accountant', title: 'Accountant', isDemoSession: true },
+          autokabel: { id: 'autokabel', name: 'AutoKabel Quality Manager', email: 'quality@autokabel.com', username: 'autokabel', role: 'customer', title: 'Autokabel Client Partner', supplier_id: 'autokabel', isDemoSession: true },
+          customer: { id: 'cust_1', name: 'Client Partner', email: 'client@fictionalclient.com', username: 'customer', role: 'customer', title: 'Client Quality Manager', supplier_id: 'supplier_fictional_101', isDemoSession: true }
+        };
+
+        const demoUser = demoUsers[inputUser];
+        if (!demoUser) {
+          console.warn("[Auth Security]: Unknown demo username rejected:", inputUser);
+          setAuthError(true);
+          return false;
+        }
+
+        setIsUnlocked(true);
+        setAuthError(false);
+        setUserRole(demoUser.role);
+        setCurrentUser(demoUser);
+        if (demoUser.role === 'rep') {
+          setCurrentUserRepId(demoUser.id);
+          setLayoutMode('phone-only');
+        } else if (demoUser.role === 'customer') {
+          setCurrentUserCustomerId(demoUser.supplier_id || demoUser.id);
+          setLayoutMode('dashboard-only');
+        } else {
+          setLayoutMode('dashboard-only');
+        }
+        return true;
+      }
 
       const dbData = JSON.parse(localStorage.getItem('ids_pulse_db') || '{}');
       const localUsers = dbData.users || [];
@@ -432,8 +471,32 @@ function App() {
     );
   }
 
+  const handleResetPassword = async (userOrEmail) => {
+    try {
+      let emailToReset = userOrEmail;
+      if (!emailToReset.includes('@')) {
+        const usernameMap = {
+          shahroz: 'shahrozmirzallc@gmail.com',
+          donna: 'donna@goto-ids.com',
+          clarence: 'clarence.k@goto-ids.com',
+          colleen: 'colleen@goto-ids.com',
+          greg: 'greg@goto-ids.com'
+        };
+        emailToReset = usernameMap[userOrEmail.toLowerCase()] || `${userOrEmail}@goto-ids.com`;
+      }
+      const { error } = await supabase.auth.resetPasswordForEmail(emailToReset, {
+        redirectTo: `${window.location.origin}`
+      });
+      if (error) throw error;
+      return { success: true, message: `Password reset email sent to ${emailToReset}` };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  };
+
   if (!isUnlocked) {
-    return <LoginScreen onSignedIn={handleSignedIn} />;
+    const demoEnabled = import.meta.env.VITE_DEMO_MODE === 'true';
+    return <LoginScreen onSignedIn={handleSignedIn} onResetPassword={handleResetPassword} demoEnabled={demoEnabled} />;
   }
 
   return (

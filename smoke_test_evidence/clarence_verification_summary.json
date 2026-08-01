@@ -1,0 +1,22 @@
+{
+  "verification": {
+    "hasClarence": true,
+    "hasQualityRep": true,
+    "hasAssignment": true,
+    "hasAddHours": true,
+    "hasDemoIndicator": true,
+    "allNavVisible": true,
+    "navSpans": [
+      "Online",
+      "Add Today's Hours",
+      "Start",
+      "Home",
+      "Work",
+      "Alert",
+      "Reports",
+      "More"
+    ]
+  },
+  "networkErrors": [],
+  "pass": true
+}

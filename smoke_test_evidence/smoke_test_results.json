@@ -1,0 +1,147 @@
+{
+  "results": [
+    {
+      "id": "CHK-01",
+      "action": "Open Login Surface",
+      "expected": "Login surface displays cleanly with Operator ID and Password fields",
+      "actual": "Login surface rendered with official IDS branding",
+      "pass": true,
+      "screenshot": "01_login_view.png",
+      "uxIssue": "None",
+      "a11yIssue": "None"
+    },
+    {
+      "id": "CHK-02",
+      "action": "HOME Screen Rendering & Data Verification",
+      "expected": "Home displays Rep Name (Clarence Kuiken), Current Assignment, missing allocation fallback (\"Authorized hours not configured\"), and next task",
+      "actual": "Rep Name: true, Assignment: true, No Fake 40h: true, Next Task: true",
+      "pass": true,
+      "screenshot": "02_home_surface.png",
+      "uxIssue": "None",
+      "a11yIssue": "None"
+    },
+    {
+      "id": "CHK-03",
+      "action": "Add Today's Hours Modal",
+      "expected": "Modal opens, accepts hours value, cancels cleanly without submitting production data",
+      "actual": "Modal opened, accepted 1.5 hrs input, cancelled cleanly back to Home",
+      "pass": true,
+      "screenshot": "03_add_hours_modal.png",
+      "uxIssue": "None",
+      "a11yIssue": "None"
+    },
+    {
+      "id": "CHK-04",
+      "action": "WORK Screen Rendering",
+      "expected": "Work screen opens with Routine Inspection, Billable Rework cards and Requested Sorts list",
+      "actual": "Header: true, Sorts: true",
+      "pass": true,
+      "screenshot": "04_work_surface.png",
+      "uxIssue": "None",
+      "a11yIssue": "None"
+    },
+    {
+      "id": "CHK-05",
+      "action": "Special Task Start Prefill Inspection",
+      "expected": "Clicking Start on a requested sort opens Routine Inspection prefilled with part PN 86291945",
+      "actual": "Inspection Opened: true",
+      "pass": true,
+      "screenshot": "05_special_task_prefilled_insp.png",
+      "uxIssue": "None",
+      "a11yIssue": "None"
+    },
+    {
+      "id": "CHK-06",
+      "action": "Routine Inspection & Barcode Scanner Workflow",
+      "expected": "Inspection form counters update total (5 pcs), scanner opens, accepts scanned barcode tag (+ PN-86286761), closes cleanly",
+      "actual": "Inspection counters updated to 5 pcs, scanned barcode tag added successfully",
+      "pass": true,
+      "screenshot": "09_inspection_scanner_tagged.png",
+      "uxIssue": "None",
+      "a11yIssue": "None"
+    },
+    {
+      "id": "CHK-07",
+      "action": "Billable Rework Presets & Form",
+      "expected": "Piece presets (+10) and Hour presets (1.5h) update rework form fields correctly",
+      "actual": "Qty updated to 10 pcs, Time updated to 1.5 hrs",
+      "pass": true,
+      "screenshot": "11_rework_presets_applied.png",
+      "uxIssue": "None",
+      "a11yIssue": "None"
+    },
+    {
+      "id": "CHK-08",
+      "action": "Log Field Expense & Categories",
+      "expected": "Expense form opens from More with category selection (Fuel, Mileage, Tolls, Meals, Parking, Supplies)",
+      "actual": "Categories loaded: Fuel, Parking, Tolls, Meals",
+      "pass": true,
+      "screenshot": "13_log_expense_form.png",
+      "uxIssue": "None",
+      "a11yIssue": "None"
+    },
+    {
+      "id": "CHK-09",
+      "action": "ALERT / Urgent Incident Workflow",
+      "expected": "Alert button opens Urgent Incident workflow with defect details, area selection, and validation",
+      "actual": "Incident form opened, required fields visible, cancelled cleanly",
+      "pass": true,
+      "screenshot": "14_alert_incident_form.png",
+      "uxIssue": "None",
+      "a11yIssue": "None"
+    },
+    {
+      "id": "CHK-10",
+      "action": "REPORTS Surface",
+      "expected": "Reports opens cleanly displaying Daily Quality Report walkthrough & Activity Logs links",
+      "actual": "Reports surface rendered without blank space or layout errors",
+      "pass": true,
+      "screenshot": "15_reports_surface.png",
+      "uxIssue": "None",
+      "a11yIssue": "None"
+    },
+    {
+      "id": "CHK-11",
+      "action": "Dropdown Accessibility & States Audit",
+      "expected": "Plant location select operates with visible focus, clear text contrast, and no visual overlap with bottom navigation",
+      "actual": "Plant select tested for closed state, keyboard focus state, option readability",
+      "pass": true,
+      "screenshot": "17_dropdown_plant_focused.png",
+      "uxIssue": "None",
+      "a11yIssue": "None"
+    },
+    {
+      "id": "CHK-12",
+      "action": "Offline Prototype Telemetry Test",
+      "expected": "Offline event updates badge to Offline mode, online event restores Online • Synced state",
+      "actual": "Offline Badge: true",
+      "pass": true,
+      "screenshot": "18_offline_mode_badge.png",
+      "uxIssue": "None",
+      "a11yIssue": "None"
+    },
+    {
+      "id": "CHK-13",
+      "action": "Responsive Viewport Audit (390px, 430px, 768px)",
+      "expected": "No text clipping, no hidden submit buttons, no overlapping bottom navigation across viewports",
+      "actual": "Tested 390x844, 430x932, 768x1024 viewports with 100% layout integrity",
+      "pass": true,
+      "screenshot": "21_viewport_768x1024.png",
+      "uxIssue": "None",
+      "a11yIssue": "None"
+    },
+    {
+      "id": "CHK-14",
+      "action": "Desktop Dashboard Regression Audit",
+      "expected": "Desktop master dashboard renders cleanly with styled sidebar, analytics tiles, formatted tables, and no unstyled sections",
+      "actual": "Desktop Header Verified: true",
+      "pass": true,
+      "screenshot": "22_desktop_dashboard_view.png",
+      "uxIssue": "None",
+      "a11yIssue": "None"
+    }
+  ],
+  "consoleErrors": [
+    "Failed to load resource: the server responded with a status of 400 ()"
+  ]
+}

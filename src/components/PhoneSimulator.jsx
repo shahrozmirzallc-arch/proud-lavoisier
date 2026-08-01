@@ -3,7 +3,7 @@ import {
   Shield, Activity, Wifi, WifiOff, MapPin, Clock, 
   User, Lock, LogOut, CheckCircle, CheckCircle2, AlertTriangle, Play, Square, X, Calendar,
   Camera, Scan, Plus, ChevronRight, Mail, Send, RotateCcw, Volume2, Video, ArrowLeft, Trash2,
-  Receipt, DollarSign, FileText, Wrench, QrCode
+  Receipt, DollarSign, FileText, Wrench, QrCode, Home, Briefcase, Menu
 } from 'lucide-react';
 import { getEntities, addIncident, addEmailLog, addReworkLog, saveEntity, addExpenseEntry, logSystemEvent, supabase, syncWithSupabase, saveExtraHoursRequest, isEntryAccountingEligible } from './SharedDatabase';
 import { uploadToCloudinary } from '../services/cloudinaryService';
@@ -1269,7 +1269,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
           incident_id: savedIncident.id,
           to_emails: part.supplier_id === 'magna' ? 'martin.s@magna.com, shahroz.m@magna.com' : 'sjenkins@hutchinson.ca',
           cc_emails: 'donna.c@integritydriven.com, greg.p@integritydriven.com',
-          subject: `[INCIDENT] PN ${partSubject} | ${selectedArea} | ${plants.find(p => p.id === selectedPlant)?.name || 'GM Oshawa'} | ${new Date().toLocaleDateString()}`,
+          subject: `[INCIDENT] PN ${partSubject} | ${selectedArea} | ${plants.find(p => p.id === selectedPlant)?.name || 'Record unavailable'} | ${new Date().toLocaleDateString()}`,
           body: `<h3>INCIDENT REPORT — IDS PULSE</h3>
 <p><strong>Date:</strong> ${new Date().toLocaleDateString()}<br/>
 <strong>Rep:</strong> ${currentUser.name}<br/>
@@ -1610,11 +1610,11 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
         incident_id: '',
         to_emails: 'donna.c@integritydriven.com',
         cc_emails: 'greg.p@integritydriven.com',
-        subject: `[SHIFT SUMMARY] Rep: ${currentUser.name} | ${plants.find(p => p.id === selectedPlant)?.name || 'GM Oshawa'} | ${new Date().toLocaleDateString()}`,
+        subject: `[SHIFT SUMMARY] Rep: ${currentUser.name} | ${plants.find(p => p.id === selectedPlant)?.name || 'Record unavailable'} | ${new Date().toLocaleDateString()}`,
         body: `<h3>SHIFT WALKTHROUGH LOG — IDS PULSE</h3>
 <p><strong>Date:</strong> ${new Date().toLocaleDateString()}<br/>
 <strong>Field Representative:</strong> ${currentUser.name}<br/>
-<strong>Assigned Assembly Plant:</strong> ${plants.find(p => p.id === selectedPlant)?.name || 'GM Oshawa'}</p>
+<strong>Assigned Assembly Plant:</strong> ${plants.find(p => p.id === selectedPlant)?.name || 'Record unavailable'}</p>
 <hr/>
 <p><strong>Inspected Factory Areas:</strong></p>
 <ul>
@@ -1737,478 +1737,556 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
           </div>
         )}
 
-        {/* SCREEN 2: HOME */}
+        {/* SCREEN 2A: REFACTORED HOME */}
         {activeScreen === 'home' && isLoggedIn && currentUser && (() => {
           const hourTotals = getRepAssignmentHourTotals();
-          return (
-          <div className="flex-1 flex flex-col p-3 bg-slate-50 relative overflow-y-auto scrollbar-thin">
-            {addHoursToast && (
-              <div className="mb-2 bg-emerald-500 text-white p-2.5 rounded-lg text-[12px] font-bold text-center shadow-md animate-in fade-in">
-                {addHoursToast}
-              </div>
-            )}
-            <div>
-              <div className="flex items-center justify-between pb-3 border-b border-slate-300">
-                <div className="flex items-center gap-2">
-                  <img src="/logo.png" alt="IDS Logo" className="h-7 w-auto object-contain flex-shrink-0 filter brightness-0" />
-                  <div>
-                    <h2 className="text-[13.5px] font-black text-slate-900 leading-none tracking-tight">IDS Pulse</h2>
-                    <span className="text-[10.5px] text-slate-600 font-bold uppercase tracking-wide">Ontario, Canada</span>
-                  </div>
-                </div>
-                <button 
-                  onClick={handleLogout}
-                  className="p-1.5 text-text-secondary hover:text-red-600 rounded-sm hover:bg-slate-200 transition-colors cursor-pointer border border-transparent hover:border-red-200"
-                >
-                  <LogOut className="w-4 h-4" />
-                </button>
-              </div>
+          
+          // Item 4: Determine next actionable task (excluding completed, preferring overdue -> due today -> nearest future)
+          const getNextActionableTask = () => {
+            if (!bonusTasks || bonusTasks.length === 0) return null;
+            const actionable = bonusTasks.filter(t => t.status !== 'completed');
+            if (actionable.length === 0) return null;
+            const todayStr = new Date().toISOString().substring(0, 10);
+            const overdue = actionable.filter(t => t.dueDate && t.dueDate < todayStr);
+            if (overdue.length > 0) return overdue[0];
+            const dueToday = actionable.filter(t => t.dueDate === todayStr);
+            if (dueToday.length > 0) return dueToday[0];
+            const sorted = [...actionable].sort((a, b) => {
+              if (!a.dueDate) return 1;
+              if (!b.dueDate) return -1;
+              return a.dueDate.localeCompare(b.dueDate);
+            });
+            return sorted[0];
+          };
+          const nextTask = getNextActionableTask();
 
-              {/* OFFLINE INDICATOR */}
-              {isOffline && (
-                <div className="mt-2 bg-red-50 border border-red-200 rounded-sm p-2 flex items-center justify-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                  <span className="text-[11px] font-bold text-red-700 uppercase tracking-wider">Offline - Auto Sync Pending</span>
+          // Item 3: No fake hours fallback
+          const authHours = hourTotals.hasAuthorizedLimit ? hourTotals.authorizedHours : null;
+          const recHours = hourTotals.recordedRegularHours || 0;
+          const percent = (authHours && authHours > 0) ? Math.min(100, Math.round((recHours / authHours) * 100)) : 0;
+
+          // Item 3: No hardcoded plant fallback
+          const plantObj = plants.find(p => p.id === selectedPlant || p.name === selectedPlant);
+          const displayPlant = plantObj ? plantObj.name : 'Record unavailable';
+
+          const activeClientName = getActiveClientForPlant();
+          const displayClient = (activeClientName && activeClientName !== 'No client assigned') ? activeClientName : 'Record unavailable';
+
+          return (
+            <div className="flex-1 min-h-0 flex flex-col p-3 bg-[#F5F8FC] relative overflow-y-auto scrollbar-thin text-left gap-3">
+              {addHoursToast && (
+                <div className="bg-[#008F72] text-white p-2.5 rounded-lg text-xs font-bold text-center shadow-sm animate-in fade-in">
+                  {addHoursToast}
                 </div>
               )}
 
-              {/* Rep Profile & Role Header Panel */}
-              <div className="mt-3 bg-white border border-slate-300 rounded-xl p-3 flex flex-col gap-2.5 shadow-sm">
-                <div className="flex items-start justify-between gap-2 pb-2 border-b border-slate-200">
-                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                    <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center font-black text-[14px] text-blue-700 border border-blue-200 shrink-0 shadow-2xs">
-                      {currentUser.avatar || 'QR'}
-                    </div>
-                    <div className="flex flex-col min-w-0 text-left">
-                      <p className="text-[14px] font-black text-slate-900 leading-tight truncate">{currentUser.name}</p>
-                      <div className="mt-0.5">
-                        <span className="inline-block text-[9px] bg-blue-50 text-blue-800 border border-blue-200 px-2 py-0.5 rounded-md font-bold uppercase tracking-wider whitespace-nowrap">
-                          Quality Liaison Rep
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="text-right shrink-0">
-                    <span className="text-[9px] text-slate-500 uppercase font-black block tracking-wider">Location</span>
-                    <div className="relative inline-block mt-0.5">
-                      <select 
-                        value={selectedPlant}
-                        onChange={(e) => setSelectedPlant(e.target.value)}
-                        className="text-[11px] font-bold text-slate-900 bg-slate-100 border border-slate-300 rounded-md px-2 py-1 focus:outline-none cursor-pointer max-w-[130px] truncate"
-                      >
-                        {plants.map(p => (
-                          <option key={p.id} value={p.id}>{p.name}</option>
-                        ))}
-                      </select>
-                    </div>
+              {/* BRAND HEADER & SYNC INDICATOR */}
+              <div className="flex items-center justify-between pb-2 border-b border-[#CBD8E8]">
+                <div className="flex items-center gap-2">
+                  <img src="/logo.png" alt="IDS Logo" className="h-6 w-auto object-contain flex-shrink-0" />
+                  <div>
+                    <h2 className="text-sm font-extrabold text-[#10284A] leading-none">IDS Pulse</h2>
+                    <span className="text-[10px] text-[#5B6F89] font-medium">Ontario, Canada</span>
                   </div>
                 </div>
 
-                {/* Assigned Work Summary Card */}
-                <div className="bg-slate-50 border border-slate-200 rounded-lg p-2.5 flex flex-col gap-2">
-                  <div className="flex items-center justify-between border-b border-slate-200 pb-1.5 gap-2">
-                    <span className="text-[10px] font-extrabold text-slate-700 uppercase tracking-wider flex items-center gap-1.5 whitespace-nowrap">
-                      <Shield className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-                      <span>Assigned Work Details</span>
-                    </span>
-                    <span className="text-[8.5px] bg-emerald-100 text-emerald-800 border border-emerald-300 font-extrabold px-2 py-0.5 rounded-md uppercase whitespace-nowrap shrink-0">
-                      Active Assignment
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2 text-[11.5px] text-left">
-                    <div>
-                      <span className="text-[9.5px] text-slate-500 uppercase font-bold block">Supplier / Client:</span>
-                      <strong className="text-slate-900 font-black truncate block">{getActiveClientForPlant()}</strong>
-                    </div>
-                    <div>
-                      <span className="text-[9.5px] text-slate-500 uppercase font-bold block">Host Plant:</span>
-                      <strong className="text-slate-900 font-black truncate block">{plants.find(p => p.id === selectedPlant)?.name || 'GM Oshawa'}</strong>
-                    </div>
-                    <div>
-                      <span className="text-[9.5px] text-slate-500 uppercase font-bold block">Project / Program:</span>
-                      <span className="text-slate-800 font-bold truncate block">{hourTotals.activeProject?.name || 'Quality Inspection & Sorting'}</span>
-                    </div>
-                    <div>
-                      <span className="text-[9.5px] text-slate-500 uppercase font-bold block">Assigned Parts:</span>
-                      <span className="text-blue-700 font-black truncate block">{hourTotals.activeProject?.part_numbers || 'PN-86286761'}</span>
-                    </div>
-                  </div>
-
-                  {hourTotals.repAssignments && hourTotals.repAssignments.length > 1 && (
-                    <div className="flex flex-col gap-1 mt-2 pt-2 border-t border-slate-200">
-                      <label className="text-[9.5px] font-black text-amber-900 uppercase tracking-wide flex items-center justify-between">
-                        <span>Select Active Assignment ({hourTotals.repAssignments.length}):</span>
-                        <span className="text-amber-700 font-bold text-[8.5px]">Required for telemetry</span>
-                      </label>
-                      <select
-                        value={selectedAssignmentId}
-                        onChange={(e) => setSelectedAssignmentId(e.target.value)}
-                        className="text-[11.5px] font-black text-slate-900 bg-amber-50 border border-amber-300 rounded px-2 py-1 focus:outline-none cursor-pointer"
-                      >
-                        <option value="">-- Choose Assignment --</option>
-                        {hourTotals.repAssignments.map(a => (
-                          <option key={a.id} value={a.id}>
-                            {a.name || a.title || `Assignment #${a.id}`} ({a.client_id || a.supplier_id || 'Client'})
-                          </option>
-                        ))}
-                      </select>
+                <div className="flex items-center gap-2">
+                  {currentUser?.isDemoSession && (
+                    <div className="px-2 py-0.5 rounded text-[9px] font-bold bg-[#EAF2FF] text-[#1256B8] border border-[#CBD8E8] whitespace-nowrap">
+                      Prototype demo session
                     </div>
                   )}
-                </div>
-
-                {/* Hour Totals Summary Box */}
-                <div className="bg-blue-50/70 border border-blue-200 rounded-lg p-2.5 flex flex-col gap-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10.5px] font-black text-blue-900 uppercase tracking-wide flex items-center gap-1.5">
-                      <Clock className="w-3.5 h-3.5 text-blue-700" />
-                      <span>Assignment Hours Telemetry</span>
-                    </span>
-                    <span className="text-[10.5px] font-black text-blue-800">
-                      {hourTotals.hasAuthorizedLimit ? `${hourTotals.authorizedHours.toFixed(1)} hrs Auth` : 'No hour limit configured'}
-                    </span>
+                  <div className={`px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1.5 ${
+                    isOffline ? 'bg-[#FDECEF] text-[#B42336] border border-[#CBD8E8]' : 'bg-[#DDF8EE] text-[#00765F]'
+                  }`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${isOffline ? 'bg-[#D92D3F]' : 'bg-[#008F72]'}`}></span>
+                    <span>{isOffline ? 'Offline' : 'Online • Synced'}</span>
                   </div>
+                  <button 
+                    onClick={() => setActiveScreen('more')}
+                    className="p-1.5 text-[#5B6F89] hover:text-[#008F72] rounded-md transition-colors cursor-pointer"
+                    title="Menu"
+                  >
+                    <Menu className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
 
-                  <div className="grid grid-cols-4 gap-1.5 pt-0.5 text-center">
-                    <div className="bg-white border border-emerald-200 rounded p-1.5">
-                      <span className="text-[8 h-auto] text-[8px] text-emerald-700 font-bold uppercase block leading-tight">Regular (Rec.)</span>
-                      <span className="text-[12px] font-black text-emerald-700">{hourTotals.recordedRegularHours.toFixed(1)} hrs</span>
-                    </div>
-                    <div className="bg-white border border-amber-200 rounded p-1.5">
-                      <span className="text-[8px] text-amber-700 font-bold uppercase block leading-tight">Client OT Pend.</span>
-                      <span className="text-[12px] font-black text-amber-700">{hourTotals.pendingClientOvertimeHours.toFixed(1)} hrs</span>
-                    </div>
-                    <div className="bg-white border border-blue-200 rounded p-1.5">
-                      <span className="text-[8px] text-blue-700 font-bold uppercase block leading-tight">Rem. Alloc.</span>
-                      <span className="text-[12px] font-black text-blue-700">
-                        {hourTotals.hasAuthorizedLimit ? `${hourTotals.remainingAllocation !== null ? hourTotals.remainingAllocation.toFixed(1) : 0} hrs` : 'N/A'}
-                      </span>
-                    </div>
-                    <div className="bg-white border border-purple-200 rounded p-1.5">
-                      <span className="text-[8px] text-purple-700 font-bold uppercase block leading-tight">Client Appr. OT</span>
-                      <span className="text-[12px] font-black text-purple-700">
-                        {hourTotals.clientApprovedOvertimeHours.toFixed(1)} hrs
-                      </span>
-                    </div>
+              {/* REP PROFILE & LOCATION */}
+              <div className="bg-white border border-[#CBD8E8] rounded-xl p-3 flex items-center justify-between gap-2 shadow-2xs">
+                <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                  <div className="w-9 h-9 rounded-lg bg-[#EAF2FF] flex items-center justify-center font-bold text-xs text-[#1256B8] border border-[#CBD8E8] shrink-0">
+                    {currentUser.avatar || 'QR'}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold text-[#10284A] truncate">Welcome back, {currentUser.name}</p>
+                    <span className="inline-block text-[10px] text-[#5B6F89] font-semibold whitespace-nowrap">
+                      Quality Liaison Rep
+                    </span>
                   </div>
                 </div>
 
-                {/* TODAY'S SPECIAL TASKS & SORT AUDITS CARD */}
-                {bonusTasks && bonusTasks.length > 0 && (
-                  <div className="bg-blue-50/80 border border-blue-200 rounded-lg p-2.5 flex flex-col gap-2 shadow-xs mt-1 text-left">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10.5px] font-black text-blue-950 uppercase tracking-wide flex items-center gap-1.5">
-                        <FileText className="w-3.5 h-3.5 text-blue-700" />
-                        <span>Today's Special Tasks & Audits ({bonusTasks.length})</span>
-                      </span>
-                      <span className="text-[8.5px] bg-blue-200 text-blue-900 px-1.5 py-0.5 rounded font-black uppercase tracking-wider">
-                        Assigned Task
-                      </span>
-                    </div>
+                <div className="shrink-0 text-right">
+                  <span className="text-[9px] text-[#5B6F89] uppercase font-bold block">Location</span>
+                  <select 
+                    value={selectedPlant}
+                    onChange={(e) => setSelectedPlant(e.target.value)}
+                    className="text-xs font-semibold text-[#10284A] bg-[#EFF3F8] border border-[#CBD8E8] rounded-md px-1.5 py-0.5 cursor-pointer max-w-[120px] truncate"
+                  >
+                    {plants.map(p => (
+                      <option key={p.id} value={p.id}>{p.name}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
 
-                    <div className="flex flex-col gap-1.5">
-                      {bonusTasks.map((task) => (
-                        <div key={task.id} className="bg-white border border-blue-200 rounded-md p-2 flex items-center justify-between shadow-2xs">
-                          <div className="flex flex-col text-left pr-2">
-                            <span className="text-[11px] font-extrabold text-slate-900 leading-tight">{task.task}</span>
-                            <span className="text-[9px] text-blue-800 font-bold mt-0.5 flex items-center gap-1">
-                              <span>Manager Request</span>
-                              <span>•</span>
-                              <span className="font-mono text-blue-700">PN 86291945</span>
-                            </span>
-                          </div>
+              {/* CURRENT ASSIGNMENT CARD */}
+              <div className="bg-white border border-[#CBD8E8] rounded-xl p-3 flex flex-col gap-2 shadow-2xs">
+                <div className="flex items-center justify-between border-b border-[#CBD8E8] pb-1.5">
+                  <span className="text-xs font-bold text-[#10284A] flex items-center gap-1.5">
+                    <Shield className="w-3.5 h-3.5 text-[#1769E0]" />
+                    <span>Current Assignment</span>
+                  </span>
+                  <span className="text-[10px] bg-[#DDF8EE] text-[#00765F] font-bold px-2 py-0.5 rounded-md uppercase">
+                    Active
+                  </span>
+                </div>
 
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (task.status === 'completed') {
-                                showToast("This audit task is already completed!", "info");
-                                return;
-                              }
-                              setInspPartNumber('86291945');
-                              setInspPNMode('dropdown');
-                              setInspNotes(`Performing ${task.task}...`);
-                              setActiveScreen('inspection');
-                              showToast(`Pre-filled inspection for ${task.task}!`, "info");
-                            }}
-                            className={`px-2.5 py-1 rounded text-[10px] font-black transition-all cursor-pointer shadow-2xs flex items-center gap-1 shrink-0 ${
-                              task.status === 'completed' 
-                                ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' 
-                                : 'bg-blue-600 hover:bg-blue-700 text-white'
-                            }`}
-                          >
-                            {task.status === 'completed' ? (
-                              <>
-                                <CheckCircle className="w-3 h-3 text-emerald-700" />
-                                <span>Completed</span>
-                              </>
-                            ) : (
-                              <>
-                                <Wrench className="w-3 h-3 text-white" />
-                                <span>Start Audit</span>
-                              </>
-                            )}
-                          </button>
-                        </div>
-                      ))}
-                    </div>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div>
+                    <span className="text-[10px] text-[#5B6F89] block">Supplier / Client</span>
+                    <strong className="text-[#10284A] font-bold truncate block">{displayClient}</strong>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-[#5B6F89] block">Host Plant</span>
+                    <strong className="text-[#10284A] font-bold truncate block">{displayPlant}</strong>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-[#5B6F89] block">Project / Program</span>
+                    <span className="text-[#10284A] font-semibold truncate block">{hourTotals.activeProject?.name || 'Quality Inspection & Sorting'}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-[#5B6F89] block">Assigned Parts</span>
+                    <span className="text-[#1256B8] font-bold truncate block">{hourTotals.activeProject?.part_numbers || 'PN-86286761'}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* PROJECT HOURS PROGRESS COMPONENT */}
+              <div className="bg-white border border-[#CBD8E8] rounded-xl p-3 flex flex-col gap-2 shadow-2xs">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-[#10284A] flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5 text-[#008F72]" />
+                    <span>Project Hours</span>
+                  </span>
+                  <span className="text-xs font-bold text-[#10284A]">
+                    {authHours !== null 
+                      ? `${recHours.toFixed(1)} of ${authHours} authorized hours recorded`
+                      : `Authorized hours not configured (${recHours.toFixed(1)} hrs logged)`}
+                  </span>
+                </div>
+
+                {authHours !== null && authHours > 0 ? (
+                  <div className="w-full bg-[#EFF3F8] h-2.5 rounded-full overflow-hidden border border-[#CBD8E8]">
+                    <div 
+                      className="bg-[#008F72] h-full rounded-full transition-all duration-300"
+                      style={{ width: `${percent}%` }}
+                    ></div>
+                  </div>
+                ) : (
+                  <div className="text-[10.5px] text-[#5B6F89] italic bg-[#EFF3F8] p-1.5 rounded-md border border-[#CBD8E8]">
+                    Authorized hours limit not configured for this program.
+                  </div>
+                )}
+
+                {/* Relevant secondary status rows ONLY if > 0 */}
+                {hourTotals.pendingClientOvertimeHours > 0 && (
+                  <div className="text-[11px] text-[#C66A00] bg-[#FFF4D6] px-2 py-1 rounded-md font-medium flex items-center gap-1">
+                    <span>{hourTotals.pendingClientOvertimeHours.toFixed(1)} overtime hours waiting for Client</span>
                   </div>
                 )}
               </div>
-            </div>
 
-            {/* Primary Actions Feed */}
-            <div className="flex flex-col gap-2 mt-3">
-              <p className="text-[10.5px] text-slate-600 font-bold uppercase tracking-wider pl-1">Primary Actions</p>
-
-              {/* PROMINENT ACTION: Add Today's Hours */}
+              {/* PROMINENT EMERALD ACTION: Add Today's Hours */}
               <button 
                 type="button"
                 onClick={() => setShowAddHoursModal(true)}
-                className="w-full bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white rounded-lg p-3 flex items-center justify-between transition-all cursor-pointer shadow-md group"
+                className="w-full h-12 bg-[#008F72] hover:bg-[#00765F] text-white rounded-xl font-bold text-sm flex items-center justify-between px-4 transition-all cursor-pointer shadow-sm"
               >
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-lg bg-white/20 flex items-center justify-center shrink-0 border border-white/30">
-                    <Clock className="w-5 h-5 text-white" />
-                  </div>
-                  <div className="text-left">
-                    <span className="text-[14px] font-black block tracking-wide">Add Today's Hours</span>
-                    <span className="text-[10.5px] block text-emerald-100">Record daily working hours & overtime</span>
-                  </div>
+                <div className="flex items-center gap-2.5">
+                  <Clock className="w-5 h-5 text-white" />
+                  <span>Add Today's Hours</span>
                 </div>
-                <ChevronRight className="w-5 h-5 text-white group-hover:translate-x-0.5 transition-transform" />
+                <ChevronRight className="w-5 h-5 text-white" />
               </button>
 
-              <div className="grid grid-cols-2 gap-2">
-                <button 
-                  type="button"
-                  onClick={() => setActiveScreen('inspection')}
-                  className="bg-white hover:bg-slate-50 border border-slate-300 rounded-lg p-2.5 flex flex-col gap-1 text-left transition-colors cursor-pointer shadow-xs"
-                >
-                  <div className="w-7 h-7 rounded bg-emerald-50 border border-emerald-200 flex items-center justify-center">
-                    <CheckCircle className="w-3.5 h-3.5 text-emerald-600" />
-                  </div>
-                  <span className="text-[12.5px] font-black text-slate-900 mt-1">Start Routine Inspection</span>
-                  <span className="text-[10px] text-slate-500">Record sorting log</span>
-                </button>
-
-                <button 
-                  type="button"
-                  onClick={() => setActiveScreen('rework')}
-                  className="bg-white hover:bg-slate-50 border border-slate-300 rounded-lg p-2.5 flex flex-col gap-1 text-left transition-colors cursor-pointer shadow-xs"
-                >
-                  <div className="w-7 h-7 rounded bg-blue-50 border border-blue-200 flex items-center justify-center">
-                    <Wrench className="w-3.5 h-3.5 text-blue-600" />
-                  </div>
-                  <span className="text-[12.5px] font-black text-slate-900 mt-1">Log Rework</span>
-                  <span className="text-[10px] text-slate-500">Billable containment rework</span>
-                </button>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <button 
-                  type="button"
-                  onClick={() => {
-                    setActiveScreen('incident');
-                    setIncStep(1);
-                  }}
-                  className="bg-white hover:bg-slate-50 border border-slate-300 rounded-lg p-2.5 flex flex-col gap-1 text-left transition-colors cursor-pointer shadow-xs"
-                >
-                  <div className="w-7 h-7 rounded bg-red-50 border border-red-200 flex items-center justify-center">
-                    <AlertTriangle className="w-3.5 h-3.5 text-red-600" />
-                  </div>
-                  <span className="text-[12.5px] font-black text-slate-900 mt-1">Report Urgent Incident</span>
-                  <span className="text-[10px] text-slate-500">Log suspect material</span>
-                </button>
-
-                <button 
-                  type="button"
-                  onClick={() => {
-                    setActiveScreen('expenses');
-                    setTimeExpenseTab('expense');
-                  }}
-                  className="bg-white hover:bg-slate-50 border border-slate-300 rounded-lg p-2.5 flex flex-col gap-1 text-left transition-colors cursor-pointer shadow-xs"
-                >
-                  <div className="w-7 h-7 rounded bg-amber-50 border border-amber-200 flex items-center justify-center">
-                    <DollarSign className="w-3.5 h-3.5 text-amber-600" />
-                  </div>
-                  <span className="text-[12.5px] font-black text-slate-900 mt-1">Log Expense</span>
-                  <span className="text-[10px] text-slate-500">Claim mileage & expenses</span>
-                </button>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <button 
-                  type="button"
-                  onClick={() => setActiveScreen('summary')}
-                  className="bg-white hover:bg-slate-50 border border-slate-300 rounded-lg p-2.5 flex flex-col gap-1 text-left transition-colors cursor-pointer shadow-xs"
-                >
-                  <div className="w-7 h-7 rounded bg-purple-50 border border-purple-200 flex items-center justify-center">
-                    <Calendar className="w-3.5 h-3.5 text-purple-600" />
-                  </div>
-                  <span className="text-[12.5px] font-black text-slate-900 mt-1">Daily Quality Report</span>
-                  <span className="text-[10px] text-slate-500">Walkthrough summary</span>
-                </button>
-
-                <button 
-                  type="button"
-                  onClick={() => setActiveScreen('history')}
-                  className="bg-white hover:bg-slate-50 border border-slate-300 rounded-lg p-2.5 flex flex-col gap-1 text-left transition-colors cursor-pointer shadow-xs"
-                >
-                  <div className="w-7 h-7 rounded bg-slate-100 border border-slate-200 flex items-center justify-center">
-                    <FileText className="w-3.5 h-3.5 text-slate-600" />
-                  </div>
-                  <span className="text-[12.5px] font-black text-slate-900 mt-1">View Activity</span>
-                  <span className="text-[10px] text-slate-500">History & incident logs</span>
-                </button>
-              </div>
-            </div>
-
-            {/* ADD TODAY'S HOURS MODAL */}
-            {showAddHoursModal && (
-              <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-[2px] flex items-center justify-center p-3 z-50 animate-in fade-in">
-                <div className="bg-white border border-slate-300 rounded-xl w-full max-w-[340px] overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
-                  <div className="bg-gradient-to-r from-emerald-600 to-teal-700 p-3 text-white flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Clock className="w-4.5 h-4.5 text-white" />
-                      <h3 className="text-[14px] font-black uppercase tracking-wide">Add Today's Hours</h3>
-                    </div>
-                    <button onClick={() => setShowAddHoursModal(false)} className="text-white/80 hover:text-white"><X className="w-4.5 h-4.5" /></button>
-                  </div>
-
-                  <form onSubmit={handleAddTodayHoursSubmit} className="p-3.5 flex flex-col gap-3 overflow-y-auto">
-                    <div>
-                      <label className="text-[10.5px] font-extrabold text-slate-700 uppercase tracking-wider block mb-1">Work Date</label>
-                      <input 
-                        type="date"
-                        value={addHoursDate}
-                        max={new Date().toISOString().substring(0, 10)}
-                        onChange={(e) => setAddHoursDate(e.target.value)}
-                        required
-                        className="phone-input text-xs"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="text-[10.5px] font-extrabold text-slate-700 uppercase tracking-wider block mb-1">Hours Worked</label>
-                      <input 
-                        type="number"
-                        step="0.25"
-                        min="0.25"
-                        max="24"
-                        placeholder="e.g. 0.5, 1, 1.5, 2, 7.75"
-                        value={addHoursValue}
-                        onChange={(e) => setAddHoursValue(e.target.value)}
-                        required
-                        className="phone-input text-sm font-bold"
-                      />
-                      <span className="text-[9.5px] text-slate-500 mt-1 block mb-1">Supports decimals (0.5, 1.5, 3.5, 7.75 hrs)</span>
-                      
-                      {(() => {
-                        const hrs = parseFloat(addHoursValue);
-                        if (!hrs || isNaN(hrs) || hrs <= 0) return null;
-                        const totals = getRepAssignmentHourTotals();
-                        if (totals.authorizedHours === null) {
-                          return (
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px', marginTop: '10px' }}>
-                        <div style={{ padding: '8px 10px', background: 'rgba(16, 185, 129, 0.08)', borderRadius: '8px', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
-                          <div style={{ fontSize: '10px', color: '#059669', fontWeight: '600' }}>Regular (Recorded)</div>
-                          <div style={{ fontSize: '15px', fontWeight: '700', color: '#065f46', marginTop: '2px' }}>
-                            {(totals.regularRecorded || 0).toFixed(1)} hrs
-                          </div>
-                        </div>
-                        <div style={{ padding: '8px 10px', background: 'rgba(59, 130, 246, 0.08)', borderRadius: '8px', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
-                          <div style={{ fontSize: '10px', color: '#2563eb', fontWeight: '600' }}>Rem. Allocation</div>
-                          <div style={{ fontSize: '15px', fontWeight: '700', color: '#1e40af', marginTop: '2px' }}>
-                            {(totals.remainingAllocation || 0).toFixed(1)} hrs
-                          </div>
-                        </div>
-                        <div style={{ padding: '8px 10px', background: 'rgba(245, 158, 11, 0.08)', borderRadius: '8px', border: '1px solid rgba(245, 158, 11, 0.2)' }}>
-                          <div style={{ fontSize: '10px', color: '#d97706', fontWeight: '600' }}>Client OT Pending</div>
-                          <div style={{ fontSize: '15px', fontWeight: '700', color: '#92400e', marginTop: '2px' }}>
-                            {(totals.clientOtPending || 0).toFixed(1)} hrs
-                          </div>
-                        </div>
-                        <div style={{ padding: '8px 10px', background: 'rgba(16, 185, 129, 0.08)', borderRadius: '8px', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
-                          <div style={{ fontSize: '10px', color: '#059669', fontWeight: '600' }}>Client Approved OT</div>
-                          <div style={{ fontSize: '15px', fontWeight: '700', color: '#065f46', marginTop: '2px' }}>
-                            {(totals.clientOtApproved || 0).toFixed(1)} hrs
-                          </div>
-                        </div>
-                      </div>      );
-                        }
-                        const rem = totals.remainingAllocation !== null ? totals.remainingAllocation : 0;
-                        if (hrs > rem) {
-                          const regPortion = Math.max(0, rem);
-                          const otPortion = hrs - regPortion;
-                          return (
-                            <div className="bg-amber-50 border border-amber-300 rounded-lg p-2 text-[10.5px] text-amber-900 font-semibold leading-snug">
-                              ⚠️ {regPortion > 0 ? `${regPortion.toFixed(1)} hours are within your assignment. ` : ''}The additional {otPortion.toFixed(1)} hours require Client approval.
-                            </div>
-                          );
-                        }
-                        return (
-                          <div className="bg-emerald-50 border border-emerald-300 rounded-lg p-2 text-[10.5px] text-emerald-900 font-semibold leading-snug">
-                            ✓ All {hrs.toFixed(1)} hours are within your authorized allocation and will be recorded automatically.
-                          </div>
-                        );
-                      })()}
-                    </div>
-
-                    <div>
-                      <label className="text-[10.5px] font-extrabold text-slate-700 uppercase tracking-wider block mb-1">Work Type</label>
-                      <select 
-                        value={addHoursType}
-                        onChange={(e) => setAddHoursType(e.target.value)}
-                        className="phone-select text-xs"
-                      >
-                        <option value="Routine inspection">Routine inspection</option>
-                        <option value="Incident investigation">Incident investigation</option>
-                        <option value="Containment or rework support">Containment or rework support</option>
-                        <option value="Customer/supplier communication">Customer/supplier communication</option>
-                        <option value="Documentation/reporting">Documentation/reporting</option>
-                        <option value="Other">Other</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="text-[10.5px] font-extrabold text-slate-700 uppercase tracking-wider block mb-1">Short Work Summary</label>
-                      <textarea 
-                        rows={2}
-                        value={addHoursSummary}
-                        onChange={(e) => setAddHoursSummary(e.target.value)}
-                        placeholder="Summary of quality work performed..."
-                        className="phone-input text-xs"
-                      ></textarea>
-                    </div>
-
-                    <div className="flex gap-2 pt-2 border-t border-slate-200">
-                      <button 
-                        type="button"
-                        onClick={() => setShowAddHoursModal(false)}
-                        className="flex-1 h-10 border border-slate-300 text-slate-700 font-bold text-xs rounded-lg hover:bg-slate-100"
-                      >
-                        Cancel
-                      </button>
-                      <button 
-                        type="submit"
-                        className="flex-1 h-10 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg shadow-md"
-                      >
-                        Submit Hours
-                      </button>
-                    </div>
-                  </form>
+              {/* NEXT ASSIGNED TASK CARD */}
+              <div className="bg-white border border-[#CBD8E8] rounded-xl p-3 flex flex-col gap-2 shadow-2xs">
+                <div className="flex items-center justify-between border-b border-[#CBD8E8] pb-1.5">
+                  <span className="text-xs font-bold text-[#10284A] flex items-center gap-1.5">
+                    <FileText className="w-3.5 h-3.5 text-[#1769E0]" />
+                    <span>Next Assigned Task</span>
+                  </span>
+                  {nextTask && (
+                    <span className="text-[10.5px] text-[#C66A00] font-bold">
+                      {nextTask.dueDate ? `Due ${nextTask.dueDate}` : 'Due today'}
+                    </span>
+                  )}
                 </div>
+
+                {nextTask ? (
+                  <div className="flex items-center justify-between gap-2">
+                    <div>
+                      <h4 className="text-xs font-bold text-[#10284A]">{nextTask.task}</h4>
+                      <p className="text-[11px] text-[#1256B8] font-mono font-medium mt-0.5">PN-{nextTask.partNumber || '86291945'}</p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setInspPartNumber(nextTask.partNumber || '86291945');
+                        setInspPNMode('dropdown');
+                        setInspNotes(`Performing ${nextTask.task}...`);
+                        setActiveScreen('inspection');
+                        showToast(`Pre-filled inspection for ${nextTask.task}!`, "info");
+                      }}
+                      className="px-3 py-1.5 bg-[#008F72] hover:bg-[#00765F] text-white rounded-lg text-xs font-bold transition-all cursor-pointer shadow-2xs flex items-center gap-1 shrink-0"
+                    >
+                      <Wrench className="w-3.5 h-3.5 text-white" />
+                      <span>Start</span>
+                    </button>
+                  </div>
+                ) : (
+                  <p className="text-xs text-[#5B6F89] italic py-1">No assigned tasks right now.</p>
+                )}
+
+                {bonusTasks && bonusTasks.length > 1 && (
+                  <button 
+                    onClick={() => setActiveScreen('work')}
+                    className="text-[11px] text-[#1769E0] font-bold text-center mt-1 hover:underline cursor-pointer"
+                  >
+                    View all {bonusTasks.length} assigned tasks →
+                  </button>
+                )}
               </div>
-            )}
+
+              {/* ADD TODAY'S HOURS MODAL */}
+              {showAddHoursModal && (
+                <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-[2px] flex items-center justify-center p-3 z-50 animate-in fade-in">
+                  <div className="bg-white border border-slate-300 rounded-xl w-full max-w-[340px] overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+                    <div className="bg-[#008F72] p-3 text-white flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Clock className="w-4.5 h-4.5 text-white" />
+                        <h3 className="text-[14px] font-black uppercase tracking-wide">Add Today's Hours</h3>
+                      </div>
+                      <button onClick={() => setShowAddHoursModal(false)} className="text-white/80 hover:text-white"><X className="w-4.5 h-4.5" /></button>
+                    </div>
+
+                    <form onSubmit={handleAddTodayHoursSubmit} className="p-3.5 flex flex-col gap-3 overflow-y-auto">
+                      <div>
+                        <label className="text-[10.5px] font-extrabold text-slate-700 uppercase tracking-wider block mb-1">Work Date</label>
+                        <input 
+                          type="date"
+                          value={addHoursDate}
+                          max={new Date().toISOString().substring(0, 10)}
+                          onChange={(e) => setAddHoursDate(e.target.value)}
+                          required
+                          className="phone-input text-xs"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-[10.5px] font-extrabold text-slate-700 uppercase tracking-wider block mb-1">Hours Worked</label>
+                        <input 
+                          type="number"
+                          step="0.25"
+                          min="0.25"
+                          max="24"
+                          placeholder="e.g. 0.5, 1, 1.5, 2, 7.75"
+                          value={addHoursValue}
+                          onChange={(e) => setAddHoursValue(e.target.value)}
+                          required
+                          className="phone-input text-sm font-bold"
+                        />
+                        <span className="text-[9.5px] text-slate-500 mt-1 block mb-1">Supports decimals (0.5, 1.5, 3.5, 7.75 hrs)</span>
+                      </div>
+
+                      <div>
+                        <label className="text-[10.5px] font-extrabold text-slate-700 uppercase tracking-wider block mb-1">Work Type</label>
+                        <select 
+                          value={addHoursType}
+                          onChange={(e) => setAddHoursType(e.target.value)}
+                          className="phone-select text-xs"
+                        >
+                          <option value="Routine inspection">Routine inspection</option>
+                          <option value="Incident investigation">Incident investigation</option>
+                          <option value="Containment or rework support">Containment or rework support</option>
+                          <option value="Customer/supplier communication">Customer/supplier communication</option>
+                          <option value="Documentation/reporting">Documentation/reporting</option>
+                          <option value="Other">Other</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="text-[10.5px] font-extrabold text-slate-700 uppercase tracking-wider block mb-1">Short Work Summary</label>
+                        <textarea 
+                          rows={2}
+                          value={addHoursSummary}
+                          onChange={(e) => setAddHoursSummary(e.target.value)}
+                          placeholder="Summary of quality work performed..."
+                          className="phone-input text-xs"
+                        ></textarea>
+                      </div>
+
+                      <div className="flex gap-2 pt-2 border-t border-slate-200">
+                        <button 
+                          type="button"
+                          onClick={() => setShowAddHoursModal(false)}
+                          className="flex-1 h-10 border border-slate-300 text-slate-700 font-bold text-xs rounded-lg hover:bg-slate-100"
+                        >
+                          Cancel
+                        </button>
+                        <button 
+                          type="submit"
+                          className="flex-1 h-10 bg-[#008F72] hover:bg-[#00765F] text-white font-bold text-xs rounded-lg shadow-md"
+                        >
+                          Submit Hours
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              )}
 
 
           </div>
           );
         })()}
 
-        {/* SCREEN 3: NEW INCIDENT FLOW (STEPWISE SCROLL VIEW) */}
+        {/* SCREEN 2B: WORK DESTINATION */}
+        {activeScreen === 'work' && isLoggedIn && currentUser && (
+          <div className="flex-1 min-h-0 flex flex-col p-3 bg-[#F5F8FC] overflow-y-auto gap-3 text-left">
+            <div className="flex items-center justify-between pb-2 border-b border-[#CBD8E8]">
+              <div className="flex items-center gap-2">
+                <Briefcase className="w-5 h-5 text-[#008F72]" />
+                <h2 className="text-sm font-extrabold text-[#10284A]">Assigned Work & Actions</h2>
+              </div>
+              <button 
+                onClick={() => setActiveScreen('home')}
+                className="text-xs text-[#1769E0] font-bold hover:underline cursor-pointer"
+              >
+                ← Back Home
+              </button>
+            </div>
+
+            {/* QUICK WORK ACTIONS */}
+            <div className="grid grid-cols-2 gap-2">
+              <button 
+                type="button"
+                onClick={() => setActiveScreen('inspection')}
+                className="bg-white border border-[#CBD8E8] hover:border-[#008F72] rounded-xl p-3 flex flex-col gap-1.5 transition-all text-left shadow-2xs cursor-pointer"
+              >
+                <div className="w-8 h-8 rounded-lg bg-[#DDF8EE] flex items-center justify-center">
+                  <CheckCircle className="w-4 h-4 text-[#008F72]" />
+                </div>
+                <span className="text-xs font-bold text-[#10284A]">Routine Inspection</span>
+                <span className="text-[10px] text-[#5B6F89]">Record sorting log</span>
+              </button>
+
+              <button 
+                type="button"
+                onClick={() => setActiveScreen('rework')}
+                className="bg-white border border-[#CBD8E8] hover:border-[#1769E0] rounded-xl p-3 flex flex-col gap-1.5 transition-all text-left shadow-2xs cursor-pointer"
+              >
+                <div className="w-8 h-8 rounded-lg bg-[#EAF2FF] flex items-center justify-center">
+                  <Wrench className="w-4 h-4 text-[#1769E0]" />
+                </div>
+                <span className="text-xs font-bold text-[#10284A]">Log Billable Rework</span>
+                <span className="text-[10px] text-[#5B6F89]">Containment rework</span>
+              </button>
+            </div>
+
+            {/* REQUESTED SORTS AND AUDITS */}
+            <div className="bg-white border border-[#CBD8E8] rounded-xl p-3 flex flex-col gap-2 shadow-2xs">
+              <span className="text-xs font-bold text-[#10284A] border-b border-[#CBD8E8] pb-1.5 block">
+                Requested Sorts and Audits ({bonusTasks ? bonusTasks.length : 0})
+              </span>
+
+              <div className="flex flex-col gap-2">
+                {bonusTasks && bonusTasks.map((t, idx) => (
+                  <div key={idx} className="p-2.5 bg-[#EFF3F8] rounded-lg border border-[#CBD8E8] flex items-center justify-between gap-2">
+                    <div>
+                      <h4 className="text-xs font-bold text-[#10284A]">{t.task}</h4>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className="text-[10px] text-[#1256B8] font-mono font-bold">PN-{t.partNumber || '86291945'}</span>
+                        <span className="text-[10px] text-[#5B6F89]">{t.dueDate ? `Due ${t.dueDate}` : 'Active'}</span>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setInspPartNumber(t.partNumber || '86291945');
+                        setInspPNMode('dropdown');
+                        setInspNotes(`Performing ${t.task}...`);
+                        setActiveScreen('inspection');
+                        showToast(`Pre-filled inspection for ${t.task}!`, "info");
+                      }}
+                      className="px-2.5 py-1 bg-[#008F72] hover:bg-[#00765F] text-white rounded-md text-[11px] font-bold cursor-pointer transition-colors"
+                    >
+                      Start
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* SCREEN 2C: REPORTS DESTINATION */}
+        {activeScreen === 'reports' && isLoggedIn && currentUser && (
+          <div className="flex-1 min-h-0 flex flex-col p-3 bg-[#F5F8FC] overflow-y-auto gap-3 text-left">
+            <div className="flex items-center justify-between pb-2 border-b border-[#CBD8E8]">
+              <div className="flex items-center gap-2">
+                <FileText className="w-5 h-5 text-[#008F72]" />
+                <h2 className="text-sm font-extrabold text-[#10284A]">Quality Reports & Logs</h2>
+              </div>
+              <button 
+                onClick={() => setActiveScreen('home')}
+                className="text-xs text-[#1769E0] font-bold hover:underline cursor-pointer"
+              >
+                ← Back Home
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <button 
+                type="button"
+                onClick={() => setActiveScreen('summary')}
+                className="bg-white border border-[#CBD8E8] hover:border-[#008F72] rounded-xl p-3 flex flex-col gap-1.5 transition-all text-left shadow-2xs cursor-pointer"
+              >
+                <div className="w-8 h-8 rounded-lg bg-[#DDF8EE] flex items-center justify-center">
+                  <Calendar className="w-4 h-4 text-[#008F72]" />
+                </div>
+                <span className="text-xs font-bold text-[#10284A]">Daily Quality Report</span>
+                <span className="text-[10px] text-[#5B6F89]">Summary walkthrough</span>
+              </button>
+
+              <button 
+                type="button"
+                onClick={() => setActiveScreen('history')}
+                className="bg-white border border-[#CBD8E8] hover:border-[#1769E0] rounded-xl p-3 flex flex-col gap-1.5 transition-all text-left shadow-2xs cursor-pointer"
+              >
+                <div className="w-8 h-8 rounded-lg bg-[#EAF2FF] flex items-center justify-center">
+                  <FileText className="w-4 h-4 text-[#1769E0]" />
+                </div>
+                <span className="text-xs font-bold text-[#10284A]">Activity & Incident Logs</span>
+                <span className="text-[10px] text-[#5B6F89]">View audit history</span>
+              </button>
+            </div>
+
+            <div className="bg-white border border-[#CBD8E8] rounded-xl p-3 flex flex-col gap-2 shadow-2xs">
+              <span className="text-xs font-bold text-[#10284A] border-b border-[#CBD8E8] pb-1.5 block">
+                Saved Drafts & Incident Reports
+              </span>
+              <p className="text-xs text-[#5B6F89] italic py-2">All submitted reports are automatically synced and available in Activity History.</p>
+            </div>
+          </div>
+        )}
+
+        {/* SCREEN 2D: MORE DESTINATION */}
+        {activeScreen === 'more' && isLoggedIn && currentUser && (
+          <div className="flex-1 min-h-0 flex flex-col p-3 bg-[#F5F8FC] overflow-y-auto gap-3 text-left">
+            <div className="flex items-center justify-between pb-2 border-b border-[#CBD8E8]">
+              <div className="flex items-center gap-2">
+                <Menu className="w-5 h-5 text-[#008F72]" />
+                <h2 className="text-sm font-extrabold text-[#10284A]">Operations & Settings</h2>
+              </div>
+              <button 
+                onClick={() => setActiveScreen('home')}
+                className="text-xs text-[#1769E0] font-bold hover:underline cursor-pointer"
+              >
+                ← Back Home
+              </button>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <button 
+                type="button"
+                onClick={() => {
+                  setActiveScreen('expenses');
+                  setTimeExpenseTab('expense');
+                }}
+                className="bg-white border border-[#CBD8E8] rounded-xl p-3 flex items-center justify-between hover:bg-[#EFF3F8] transition-colors cursor-pointer"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-[#FFF4D6] flex items-center justify-center">
+                    <DollarSign className="w-4 h-4 text-[#C66A00]" />
+                  </div>
+                  <div>
+                    <span className="text-xs font-bold text-[#10284A] block">Log Field Expense</span>
+                    <span className="text-[10px] text-[#5B6F89]">Claim mileage & out-of-pocket expenses</span>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-[#5B6F89]" />
+              </button>
+
+              <button 
+                type="button"
+                onClick={() => setActiveScreen('history')}
+                className="bg-white border border-[#CBD8E8] rounded-xl p-3 flex items-center justify-between hover:bg-[#EFF3F8] transition-colors cursor-pointer"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-[#EAF2FF] flex items-center justify-center">
+                    <FileText className="w-4 h-4 text-[#1769E0]" />
+                  </div>
+                  <div>
+                    <span className="text-xs font-bold text-[#10284A] block">Activity History</span>
+                    <span className="text-[10px] text-[#5B6F89]">Review logged shifts & reports</span>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-[#5B6F89]" />
+              </button>
+
+              <div className="bg-white border border-[#CBD8E8] rounded-xl p-3 flex flex-col gap-2">
+                <span className="text-xs font-bold text-[#10284A] flex items-center gap-1.5">
+                  <Shield className="w-4 h-4 text-[#008F72]" />
+                  <span>Offline & Sync Telemetry</span>
+                </span>
+                <p className="text-[11px] text-[#5B6F89]">
+                  {isOffline ? 'System working in Offline Mode. Records saved locally.' : 'System connected to Database. 0 pending offline sync records.'}
+                </p>
+              </div>
+
+              <button 
+                type="button"
+                onClick={handleLogout}
+                className="w-full h-11 bg-[#FDECEF] border border-[#D92D3F] text-[#B42336] rounded-xl font-bold text-xs flex items-center justify-center gap-2 mt-2 hover:bg-[#FCE3E7] transition-colors cursor-pointer"
+              >
+                <LogOut className="w-4 h-4" />
+                <span>Sign Out ({currentUser.name})</span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* SCREEN 2E: SAFE RECOVERABLE FALLBACK FOR UNKNOWN ACTIVE SCREEN */}
+        {isLoggedIn && currentUser && !['home', 'work', 'reports', 'more', 'incident', 'inspection', 'rework', 'expenses', 'summary', 'history'].includes(activeScreen) && (
+          <div className="flex-1 flex flex-col items-center justify-center p-6 bg-[#F5F8FC] text-center gap-3">
+            <AlertTriangle className="w-10 h-10 text-[#D92D3F]" />
+            <div>
+              <h3 className="text-sm font-extrabold text-[#10284A]">This section could not be opened.</h3>
+              <p className="text-xs text-[#5B6F89] mt-1">The requested screen target standard path is unavailable.</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setActiveScreen('home')}
+              className="px-5 py-2 bg-[#008F72] hover:bg-[#00765F] text-white rounded-xl font-bold text-xs shadow-md cursor-pointer transition-colors mt-2"
+            >
+              Return to Home
+            </button>
+          </div>
+        )}
         {activeScreen === 'incident' && isLoggedIn && currentUser && (
           <div className="flex-1 flex flex-col bg-slate-50 overflow-hidden">
             {/* Header */}
@@ -4054,10 +4132,12 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                   onChange={(e) => setExpenseCategory(e.target.value)}
                   className="phone-select"
                 >
+                  <option value="Mileage">Mileage</option>
                   <option value="Fuel">Fuel</option>
-                  <option value="Parking">Parking</option>
                   <option value="Tolls">Tolls</option>
                   <option value="Meals">Meals</option>
+                  <option value="Parking">Parking</option>
+                  <option value="Supplies">Supplies</option>
                 </select>
               </div>
 
@@ -4416,6 +4496,67 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
             <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
             <span className="flex-1">{toast.message}</span>
             <button onClick={() => setToast(null)} className="text-slate-400 hover:text-white cursor-pointer"><X className="w-3.5 h-3.5" /></button>
+          </div>
+        )}
+
+        {/* FIXED BOTTOM NAVIGATION BAR (Phase 11) */}
+        {isLoggedIn && (
+          <div className="bg-white border-t border-[#CBD8E8] h-14 shrink-0 grid grid-cols-5 items-center px-1 z-30 shadow-md text-[#10284A]">
+            <button
+              type="button"
+              onClick={() => setActiveScreen('home')}
+              className={`flex flex-col items-center justify-center py-1 transition-colors cursor-pointer ${
+                activeScreen === 'home' ? 'text-[#008F72] font-bold' : 'text-[#5B6F89] hover:text-[#10284A]'
+              }`}
+            >
+              <Home className="w-5 h-5" />
+              <span className="text-[10px] tracking-tight mt-0.5">Home</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveScreen('work')}
+              className={`flex flex-col items-center justify-center py-1 transition-colors cursor-pointer ${
+                activeScreen === 'work' ? 'text-[#008F72] font-bold' : 'text-[#5B6F89] hover:text-[#10284A]'
+              }`}
+            >
+              <Briefcase className="w-5 h-5" />
+              <span className="text-[10px] tracking-tight mt-0.5">Work</span>
+            </button>
+
+            {/* ALERT - Prominent Central Red Action */}
+            <button
+              type="button"
+              onClick={() => setActiveScreen('incident')}
+              className="flex flex-col items-center justify-center -mt-4 cursor-pointer"
+            >
+              <div className="w-11 h-11 rounded-full bg-[#D92D3F] hover:bg-[#B42336] text-white flex items-center justify-center shadow-lg transition-transform hover:scale-105 border-2 border-white">
+                <AlertTriangle className="w-6 h-6 text-white" />
+              </div>
+              <span className="text-[10px] font-extrabold text-[#D92D3F] tracking-tight mt-0.5">Alert</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveScreen('reports')}
+              className={`flex flex-col items-center justify-center py-1 transition-colors cursor-pointer ${
+                activeScreen === 'reports' ? 'text-[#008F72] font-bold' : 'text-[#5B6F89] hover:text-[#10284A]'
+              }`}
+            >
+              <FileText className="w-5 h-5" />
+              <span className="text-[10px] tracking-tight mt-0.5">Reports</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveScreen('more')}
+              className={`flex flex-col items-center justify-center py-1 transition-colors cursor-pointer ${
+                activeScreen === 'more' || activeScreen === 'expenses' || activeScreen === 'history' ? 'text-[#008F72] font-bold' : 'text-[#5B6F89] hover:text-[#10284A]'
+              }`}
+            >
+              <Menu className="w-5 h-5" />
+              <span className="text-[10px] tracking-tight mt-0.5">More</span>
+            </button>
           </div>
         )}
       </div>

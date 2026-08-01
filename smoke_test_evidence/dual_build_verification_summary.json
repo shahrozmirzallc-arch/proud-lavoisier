@@ -1,0 +1,34 @@
+{
+  "modeA": {
+    "pass": true,
+    "initialModeA": {
+      "hasQuickHeader": true,
+      "hasClarenceBtn": true,
+      "hasDonnaBtn": true,
+      "hasColleenBtn": true,
+      "hasAutoKabelBtn": true,
+      "hasClientPartnerBtn": true
+    },
+    "loggedModeA": {
+      "hasClarenceName": true,
+      "hasQualityRep": true,
+      "hasDemoIndicator": true
+    },
+    "authRequestsA": 0,
+    "password123RequestsA": 0
+  },
+  "modeB": {
+    "pass": true,
+    "initialModeB": {
+      "hasQuickHeader": false,
+      "hasClarenceBtn": false,
+      "hasDonnaBtn": false,
+      "hasColleenBtn": false,
+      "hasAutoKabelBtn": false,
+      "hasClientPartnerBtn": false,
+      "hasLoginForm": true
+    },
+    "directDemoCallRejectedB": true,
+    "unknownDemoCallRejectedB": true
+  }
+}

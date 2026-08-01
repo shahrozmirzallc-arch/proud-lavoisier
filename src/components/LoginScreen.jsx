@@ -33,12 +33,14 @@ export function Logo({ light = false }) {
   );
 }
 
-export default function LoginScreen({ onSignedIn }) {
+export default function LoginScreen({ onSignedIn, onResetPassword, demoEnabled = false }) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [resetSuccess, setResetSuccess] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [resetting, setResetting] = useState(false);
 
   const candidateSha = import.meta.env.VITE_COMMIT_SHA || 'e7bf82c1cc0b6e49f3b5e38372331950281e6108';
 
@@ -139,7 +141,40 @@ export default function LoginScreen({ onSignedIn }) {
             </label>
 
             <label className="login-field" htmlFor="login-password">
-              <span>Password</span>
+              <div className="flex justify-between items-center w-full">
+                <span>Password</span>
+                <button
+                  type="button"
+                  disabled={resetting || submitting}
+                  onClick={async () => {
+                    setError('');
+                    setResetSuccess('');
+                    const trimmedUser = username.trim();
+                    if (!trimmedUser) {
+                      setError('Please enter your username or email above first.');
+                      return;
+                    }
+                    setResetting(true);
+                    try {
+                      if (onResetPassword) {
+                        const res = await onResetPassword(trimmedUser);
+                        if (res.success) {
+                          setResetSuccess(res.message);
+                        } else {
+                          setError(res.error || 'Failed to send password reset email.');
+                        }
+                      }
+                    } catch {
+                      setError('Error sending password reset request.');
+                    } finally {
+                      setResetting(false);
+                    }
+                  }}
+                  className="text-xs font-semibold text-emerald-400 hover:text-emerald-300 transition-colors underline cursor-pointer disabled:opacity-50"
+                >
+                  {resetting ? 'Sending link…' : 'Reset My Password'}
+                </button>
+              </div>
               <div>
                 <input
                   id="login-password"
@@ -162,6 +197,13 @@ export default function LoginScreen({ onSignedIn }) {
                 </button>
               </div>
             </label>
+
+            {resetSuccess && (
+              <div className="p-3 mb-3 rounded-lg bg-emerald-950/80 border border-emerald-500/50 text-emerald-200 text-xs font-medium flex items-center gap-2" role="status">
+                <CheckCircle weight="fill" className="text-emerald-400 text-base shrink-0" />
+                <span>{resetSuccess}</span>
+              </div>
+            )}
 
             {error && (
               <div className="login-error" role="alert">
@@ -189,124 +231,126 @@ export default function LoginScreen({ onSignedIn }) {
             </button>
           </form>
 
-          {/* Quick 1-Click Login Shortcuts */}
-          <div className="mt-4 pt-4 border-t border-slate-700/60">
-            <span className="text-[10px] uppercase tracking-wider font-extrabold text-slate-400 block mb-2 text-center">
-              Quick 1-Click Test Sign-Ins:
-            </span>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                disabled={submitting}
-                onClick={async () => {
-                  setError('');
-                  setUsername('clarence');
-                  setPassword('password123');
-                  setSubmitting(true);
-                  try {
-                    const res = await onSignedIn({ username: 'clarence', password: 'password123' });
-                    if (!res) setError('Could not sign in as Rep.');
-                  } catch {
-                    setError('Authentication error occurred.');
-                  } finally {
-                    setSubmitting(false);
-                  }
-                }}
-                className="px-2.5 py-2 rounded-lg bg-indigo-950/70 hover:bg-indigo-900 border border-indigo-500/30 text-indigo-200 text-xs font-bold transition-all text-left flex flex-col cursor-pointer disabled:opacity-50"
-              >
-                <span className="text-[11px] font-extrabold text-indigo-300">Clarence Kuiken</span>
-                <span className="text-[9px] text-indigo-400 font-mono">Rep • Quality Inspector</span>
-              </button>
-              <button
-                type="button"
-                disabled={submitting}
-                onClick={async () => {
-                  setError('');
-                  setUsername('donna');
-                  setPassword('password123');
-                  setSubmitting(true);
-                  try {
-                    const res = await onSignedIn({ username: 'donna', password: 'password123' });
-                    if (!res) setError('Could not sign in as Admin.');
-                  } catch {
-                    setError('Authentication error occurred.');
-                  } finally {
-                    setSubmitting(false);
-                  }
-                }}
-                className="px-2.5 py-2 rounded-lg bg-sky-950/70 hover:bg-sky-900 border border-sky-500/30 text-sky-200 text-xs font-bold transition-all text-left flex flex-col cursor-pointer disabled:opacity-50"
-              >
-                <span className="text-[11px] font-extrabold text-sky-300">Donna Cabral</span>
-                <span className="text-[9px] text-sky-400 font-mono">Admin • Operations Lead</span>
-              </button>
-              <button
-                type="button"
-                disabled={submitting}
-                onClick={async () => {
-                  setError('');
-                  setUsername('colleen');
-                  setPassword('password123');
-                  setSubmitting(true);
-                  try {
-                    const res = await onSignedIn({ username: 'colleen', password: 'password123' });
-                    if (!res) setError('Could not sign in as Accountant.');
-                  } catch {
-                    setError('Authentication error occurred.');
-                  } finally {
-                    setSubmitting(false);
-                  }
-                }}
-                className="px-2.5 py-2 rounded-lg bg-amber-950/70 hover:bg-amber-900 border border-amber-500/30 text-amber-200 text-xs font-bold transition-all text-left flex flex-col cursor-pointer disabled:opacity-50"
-              >
-                <span className="text-[11px] font-extrabold text-amber-300">Colleen Boyd</span>
-                <span className="text-[9px] text-amber-400 font-mono">Accountant • Controller</span>
-              </button>
-              <button
-                type="button"
-                disabled={submitting}
-                onClick={async () => {
-                  setError('');
-                  setUsername('autokabel');
-                  setPassword('password123');
-                  setSubmitting(true);
-                  try {
-                    const res = await onSignedIn({ username: 'autokabel', password: 'password123' });
-                    if (!res) setError('Could not sign in as AutoKabel Client.');
-                  } catch {
-                    setError('Authentication error occurred.');
-                  } finally {
-                    setSubmitting(false);
-                  }
-                }}
-                className="px-2.5 py-2 rounded-lg bg-cyan-950/70 hover:bg-cyan-900 border border-cyan-500/30 text-cyan-200 text-xs font-bold transition-all text-left flex flex-col cursor-pointer disabled:opacity-50"
-              >
-                <span className="text-[11px] font-extrabold text-cyan-300">AutoKabel Client</span>
-                <span className="text-[9px] text-cyan-400 font-mono">AutoKabel • Quality Portal</span>
-              </button>
-              <button
-                type="button"
-                disabled={submitting}
-                onClick={async () => {
-                  setError('');
-                  setUsername('customer');
-                  setPassword('password123');
-                  setSubmitting(true);
-                  try {
-                    const res = await onSignedIn({ username: 'customer', password: 'password123' });
-                    if (!res) setError('Could not sign in as Client.');
-                  } catch {
-                    setError('Authentication error occurred.');
-                  } finally {
-                    setSubmitting(false);
-                  }
-                }}
-                className="px-2.5 py-2 rounded-lg bg-emerald-950/70 hover:bg-emerald-900 border border-emerald-500/30 text-emerald-200 text-xs font-bold transition-all text-left flex flex-col cursor-pointer disabled:opacity-50"
-              >
-                <span className="text-[11px] font-extrabold text-emerald-300">Client Partner</span>
-                <span className="text-[9px] text-emerald-400 font-mono">Client • Quality Portal</span>
-              </button>
+          {/* Quick 1-Click Login Shortcuts (Shown ONLY when VITE_DEMO_MODE is true) */}
+          {demoEnabled && (
+            <div className="mt-4 pt-4 border-t border-slate-700/60">
+              <span className="text-[10px] uppercase tracking-wider font-extrabold text-slate-400 block mb-2 text-center">
+                Quick 1-Click Test Sign-Ins:
+              </span>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  disabled={submitting}
+                  onClick={async () => {
+                    setError('');
+                    setUsername('clarence');
+                    setPassword('');
+                    setSubmitting(true);
+                    try {
+                      const res = await onSignedIn({ username: 'clarence', isDemoMode: true });
+                      if (!res) setError('Could not sign in as Rep.');
+                    } catch {
+                      setError('Authentication error occurred.');
+                    } finally {
+                      setSubmitting(false);
+                    }
+                  }}
+                  className="px-2.5 py-2 rounded-lg bg-indigo-950/70 hover:bg-indigo-900 border border-indigo-500/30 text-indigo-200 text-xs font-bold transition-all text-left flex flex-col cursor-pointer disabled:opacity-50"
+                >
+                  <span className="text-[11px] font-extrabold text-indigo-300">Clarence Kuiken</span>
+                  <span className="text-[9px] text-indigo-400 font-mono">Rep • Quality Inspector</span>
+                </button>
+                <button
+                  type="button"
+                  disabled={submitting}
+                  onClick={async () => {
+                    setError('');
+                    setUsername('donna');
+                    setPassword('');
+                    setSubmitting(true);
+                    try {
+                      const res = await onSignedIn({ username: 'donna', isDemoMode: true });
+                      if (!res) setError('Could not sign in as Admin.');
+                    } catch {
+                      setError('Authentication error occurred.');
+                    } finally {
+                      setSubmitting(false);
+                    }
+                  }}
+                  className="px-2.5 py-2 rounded-lg bg-sky-950/70 hover:bg-sky-900 border border-sky-500/30 text-sky-200 text-xs font-bold transition-all text-left flex flex-col cursor-pointer disabled:opacity-50"
+                >
+                  <span className="text-[11px] font-extrabold text-sky-300">Donna Cabral</span>
+                  <span className="text-[9px] text-sky-400 font-mono">Admin • Operations Lead</span>
+                </button>
+                <button
+                  type="button"
+                  disabled={submitting}
+                  onClick={async () => {
+                    setError('');
+                    setUsername('colleen');
+                    setPassword('');
+                    setSubmitting(true);
+                    try {
+                      const res = await onSignedIn({ username: 'colleen', isDemoMode: true });
+                      if (!res) setError('Could not sign in as Accountant.');
+                    } catch {
+                      setError('Authentication error occurred.');
+                    } finally {
+                      setSubmitting(false);
+                    }
+                  }}
+                  className="px-2.5 py-2 rounded-lg bg-amber-950/70 hover:bg-amber-900 border border-amber-500/30 text-amber-200 text-xs font-bold transition-all text-left flex flex-col cursor-pointer disabled:opacity-50"
+                >
+                  <span className="text-[11px] font-extrabold text-amber-300">Colleen Boyd</span>
+                  <span className="text-[9px] text-amber-400 font-mono">Accountant • Controller</span>
+                </button>
+                <button
+                  type="button"
+                  disabled={submitting}
+                  onClick={async () => {
+                    setError('');
+                    setUsername('autokabel');
+                    setPassword('');
+                    setSubmitting(true);
+                    try {
+                      const res = await onSignedIn({ username: 'autokabel', isDemoMode: true });
+                      if (!res) setError('Could not sign in as AutoKabel Client.');
+                    } catch {
+                      setError('Authentication error occurred.');
+                    } finally {
+                      setSubmitting(false);
+                    }
+                  }}
+                  className="px-2.5 py-2 rounded-lg bg-cyan-950/70 hover:bg-cyan-900 border border-cyan-500/30 text-cyan-200 text-xs font-bold transition-all text-left flex flex-col cursor-pointer disabled:opacity-50"
+                >
+                  <span className="text-[11px] font-extrabold text-cyan-300">AutoKabel Client</span>
+                  <span className="text-[9px] text-cyan-400 font-mono">AutoKabel • Quality Portal</span>
+                </button>
+                <button
+                  type="button"
+                  disabled={submitting}
+                  onClick={async () => {
+                    setError('');
+                    setUsername('customer');
+                    setPassword('');
+                    setSubmitting(true);
+                    try {
+                      const res = await onSignedIn({ username: 'customer', isDemoMode: true });
+                      if (!res) setError('Could not sign in as Client.');
+                    } catch {
+                      setError('Authentication error occurred.');
+                    } finally {
+                      setSubmitting(false);
+                    }
+                  }}
+                  className="px-2.5 py-2 rounded-lg bg-emerald-950/70 hover:bg-emerald-900 border border-emerald-500/30 text-emerald-200 text-xs font-bold transition-all text-left flex flex-col cursor-pointer disabled:opacity-50"
+                >
+                  <span className="text-[11px] font-extrabold text-emerald-300">Client Partner</span>
+                  <span className="text-[9px] text-emerald-400 font-mono">Client • Quality Portal</span>
+                </button>
+              </div>
             </div>
-          </div>
+          )}
 
           <small className="login-support mt-3">
             Need access help? Contact your IDS Pulse administrator.

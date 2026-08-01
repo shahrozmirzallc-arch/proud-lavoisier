@@ -1,0 +1,18 @@
+{
+  "modeA": {
+    "pass": true,
+    "stateA": {
+      "hasClarence": true,
+      "hasDemoBadge": true,
+      "repPortalOpen": true
+    }
+  },
+  "modeB": {
+    "pass": false,
+    "stateB": {
+      "hasQuickButtons": true,
+      "hasLoginForm": true,
+      "bodyText": "IDS PULSE\nINTEGRITY DRIVEN SOLUTIONS INC.\nProtected industrial pilot\nEvery quality decision, clearly traced.\n\nReview incidents, approvals, time, expenses and billing from one calm, task-first workspace.\n\nRole-scoped workspaces\nEach preview shows only the modules relevant to that job.\nVisible action receipts\nSaved, queued and synced states are never hidden.\nTraceable sources\nReports identify the exact device records used.\nIDS PULSE\nINTEGRITY DRIVEN SOLUTIONS INC.\nIDS Pulse secure access\nWelcome back\n\nSign in with your authorized credentials to access your workspace.\n\nUsername\nPassword\nSign in to IDS Pulse\nQUICK 1-CLICK TEST SIGN-INS:\nClarence Kuiken\nRep • Quality Inspector\nDonna Cabral\nAdmin • Operations Lead\nColleen Boyd\nAccountant • Controller\nAutoKabel Client\nAutoKabel • Quality Portal\nClient Partner\nClient • Quality Portal\nNeed access help? Contact your IDS Pulse administrator.\nCandidate Build SHA: c8547eab7c158597b56f61ff2fdc7ae3c89ee79f"
+    }
+  }
+}

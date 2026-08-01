@@ -1,0 +1,169 @@
+{
+  "results": [
+    {
+      "id": "DESK-LOGIN-1366x768",
+      "action": "Desktop Login Layout Audit (1366x768)",
+      "expected": "Username label above input, password input below username field, submit button properly spaced below password, no merged text",
+      "actual": "LabelAboveInput: true, PassBelowUser: true, SubmitBelowPass: true",
+      "pass": true,
+      "screenshot": "desktop_login_1366x768.png",
+      "uxIssue": "None",
+      "a11yIssue": "None",
+      "assertionDetails": "{\"valid\":true,\"labelAboveInput\":true,\"passBelowUser\":true,\"submitBelowPass\":true,\"noTextMerge\":true,\"uLabelTop\":308,\"uInputTop\":334.5}"
+    },
+    {
+      "id": "DESK-LOGIN-1280x720",
+      "action": "Desktop Login Layout Audit (1280x720)",
+      "expected": "Username label above input, password input below username field, submit button properly spaced below password, no merged text",
+      "actual": "LabelAboveInput: true, PassBelowUser: true, SubmitBelowPass: true",
+      "pass": true,
+      "screenshot": "desktop_login_1280x720.png",
+      "uxIssue": "None",
+      "a11yIssue": "None",
+      "assertionDetails": "{\"valid\":true,\"labelAboveInput\":true,\"passBelowUser\":true,\"submitBelowPass\":true,\"noTextMerge\":true,\"uLabelTop\":308,\"uInputTop\":334.5}"
+    },
+    {
+      "id": "DESK-LOGIN-1920x1080",
+      "action": "Desktop Login Layout Audit (1920x1080)",
+      "expected": "Username label above input, password input below username field, submit button properly spaced below password, no merged text",
+      "actual": "LabelAboveInput: true, PassBelowUser: true, SubmitBelowPass: true",
+      "pass": true,
+      "screenshot": "desktop_login_1920x1080.png",
+      "uxIssue": "None",
+      "a11yIssue": "None",
+      "assertionDetails": "{\"valid\":true,\"labelAboveInput\":true,\"passBelowUser\":true,\"submitBelowPass\":true,\"noTextMerge\":true,\"uLabelTop\":404.515625,\"uInputTop\":431.015625}"
+    },
+    {
+      "id": "DESK-LOGIN-ZOOM",
+      "action": "Desktop Login 200% Browser Zoom Test",
+      "expected": "Login card remains centered and fully usable at 200% scale factor",
+      "actual": "Layout expanded responsively without horizontal text clipping",
+      "pass": true,
+      "screenshot": "desktop_login_200_zoom.png",
+      "uxIssue": "None",
+      "a11yIssue": "None",
+      "assertionDetails": ""
+    },
+    {
+      "id": "REP-HOME-01",
+      "action": "Rep Home Screen DOM State Assertions",
+      "expected": "Renders Rep Name (Clarence Kuiken), Current Assignment, missing allocation fallback, and next actionable task",
+      "actual": "RepName: true, Assignment: true, NoFake40: true, NextTask: true",
+      "pass": true,
+      "screenshot": "rep_home_surface.png",
+      "uxIssue": "None",
+      "a11yIssue": "None",
+      "assertionDetails": ""
+    },
+    {
+      "id": "REP-HOURS-SUBMIT",
+      "action": "Add Today's Hours Synthetic Submission",
+      "expected": "Submits 1.5 hours and updates regular logged hours status cleanly",
+      "actual": "Submit Triggered: true, Confirmation Visible: false",
+      "pass": false,
+      "screenshot": "rep_add_hours_submitted.png",
+      "uxIssue": "None",
+      "a11yIssue": "None",
+      "assertionDetails": ""
+    },
+    {
+      "id": "REP-INSP-COUNTERS",
+      "action": "Routine Inspection Counter Assertions",
+      "expected": "Total batch inspected recalculates dynamically from Passed (5) and Rejected (1) inputs",
+      "actual": "Total Text Evaluated: \"\"",
+      "pass": false,
+      "screenshot": "rep_inspection_counters_6pcs.png",
+      "uxIssue": "None",
+      "a11yIssue": "None",
+      "assertionDetails": ""
+    },
+    {
+      "id": "REP-EXPENSE-CATS",
+      "action": "Log Field Expense Categories Restored Audit",
+      "expected": "Expense dropdown contains all 6 required categories: Mileage, Fuel, Tolls, Meals, Parking, Supplies",
+      "actual": "Loaded Categories (0): ",
+      "pass": false,
+      "screenshot": "rep_expense_form_restored.png",
+      "uxIssue": "None",
+      "a11yIssue": "None",
+      "assertionDetails": "Missing: Mileage, Fuel, Tolls, Meals, Parking, Supplies"
+    },
+    {
+      "id": "RESP-OVERFLOW-390x844",
+      "action": "Programmatic Layout & Overflow Audit (390x844)",
+      "expected": "document.documentElement.scrollWidth <= document.documentElement.clientWidth and zero horizontal layout overflow",
+      "actual": "NoHorizontalOverflow: false, TouchTargetsOk: true",
+      "pass": false,
+      "screenshot": "viewport_390x844.png",
+      "uxIssue": "None",
+      "a11yIssue": "None",
+      "assertionDetails": ""
+    },
+    {
+      "id": "RESP-OVERFLOW-430x932",
+      "action": "Programmatic Layout & Overflow Audit (430x932)",
+      "expected": "document.documentElement.scrollWidth <= document.documentElement.clientWidth and zero horizontal layout overflow",
+      "actual": "NoHorizontalOverflow: false, TouchTargetsOk: true",
+      "pass": false,
+      "screenshot": "viewport_430x932.png",
+      "uxIssue": "None",
+      "a11yIssue": "None",
+      "assertionDetails": ""
+    },
+    {
+      "id": "RESP-OVERFLOW-768x1024",
+      "action": "Programmatic Layout & Overflow Audit (768x1024)",
+      "expected": "document.documentElement.scrollWidth <= document.documentElement.clientWidth and zero horizontal layout overflow",
+      "actual": "NoHorizontalOverflow: true, TouchTargetsOk: true",
+      "pass": true,
+      "screenshot": "viewport_768x1024.png",
+      "uxIssue": "None",
+      "a11yIssue": "None",
+      "assertionDetails": ""
+    },
+    {
+      "id": "RESP-OVERFLOW-1280x720",
+      "action": "Programmatic Layout & Overflow Audit (1280x720)",
+      "expected": "document.documentElement.scrollWidth <= document.documentElement.clientWidth and zero horizontal layout overflow",
+      "actual": "NoHorizontalOverflow: true, TouchTargetsOk: true",
+      "pass": true,
+      "screenshot": "viewport_1280x720.png",
+      "uxIssue": "None",
+      "a11yIssue": "None",
+      "assertionDetails": ""
+    },
+    {
+      "id": "RESP-OVERFLOW-1366x768",
+      "action": "Programmatic Layout & Overflow Audit (1366x768)",
+      "expected": "document.documentElement.scrollWidth <= document.documentElement.clientWidth and zero horizontal layout overflow",
+      "actual": "NoHorizontalOverflow: true, TouchTargetsOk: true",
+      "pass": true,
+      "screenshot": "viewport_1366x768.png",
+      "uxIssue": "None",
+      "a11yIssue": "None",
+      "assertionDetails": ""
+    },
+    {
+      "id": "RESP-OVERFLOW-1920x1080",
+      "action": "Programmatic Layout & Overflow Audit (1920x1080)",
+      "expected": "document.documentElement.scrollWidth <= document.documentElement.clientWidth and zero horizontal layout overflow",
+      "actual": "NoHorizontalOverflow: true, TouchTargetsOk: true",
+      "pass": true,
+      "screenshot": "viewport_1920x1080.png",
+      "uxIssue": "None",
+      "a11yIssue": "None",
+      "assertionDetails": ""
+    }
+  ],
+  "consoleErrors": [
+    "Failed to load resource: the server responded with a status of 400 ()"
+  ],
+  "networkErrors": [
+    {
+      "url": "https://wuqqrcowznrmmuokfxlk.supabase.co/auth/v1/token?grant_type=password",
+      "method": "POST",
+      "status": 400,
+      "body": "{\"code\":\"invalid_credentials\",\"message\":\"Invalid login credentials\"}"
+    }
+  ]
+}

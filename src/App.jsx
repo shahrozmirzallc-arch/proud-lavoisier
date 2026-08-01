@@ -139,6 +139,13 @@ function App() {
   const [authError, setAuthError] = useState(false);
   const [authChecking, setAuthChecking] = useState(true);
 
+  // Password Recovery State
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [updatingPw, setUpdatingPw] = useState(false);
+  const [pwUpdateMsg, setPwUpdateMsg] = useState('');
+  const [pwUpdateErr, setPwUpdateErr] = useState('');
+
   useEffect(() => {
     document.body.classList.remove('theme-royal-blue', 'theme-neon-violet', 'theme-emerald-green', 'theme-ruby-red');
     document.body.classList.add(`theme-${theme}`);
@@ -499,12 +506,6 @@ function App() {
       return { success: false, error: err.message };
     }
   };
-
-  const [isResettingPassword, setIsResettingPassword] = useState(false);
-  const [newPassword, setNewPassword] = useState('');
-  const [updatingPw, setUpdatingPw] = useState(false);
-  const [pwUpdateMsg, setPwUpdateMsg] = useState('');
-  const [pwUpdateErr, setPwUpdateErr] = useState('');
 
   if (isResettingPassword) {
     return (

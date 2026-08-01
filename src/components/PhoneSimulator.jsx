@@ -180,7 +180,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
     if (propUser) {
       setCurrentUser(propUser);
       setIsLoggedIn(true);
-      setActiveScreen('home');
+      setActiveScreen(prev => (prev === 'login' ? 'home' : prev));
     }
   }, [dbUpdateTrigger, propUser]);
 

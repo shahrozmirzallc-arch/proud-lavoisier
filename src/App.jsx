@@ -4,7 +4,7 @@ import WebDashboard from './components/WebDashboard';
 import { initializeDB, syncWithSupabase, supabase } from './components/SharedDatabase';
 import LoginScreen from './components/LoginScreen';
 import { SpinnerGap, LockKey, CheckCircle, WarningCircle } from '@phosphor-icons/react';
-import { Shield, Activity, Monitor, Smartphone, RefreshCw, Laptop, Milestone, Lock, Key, Sun, Moon, User, AlertTriangle } from 'lucide-react';
+import { Shield, Monitor, Smartphone, Laptop, Lock, Sun, Moon, AlertTriangle } from 'lucide-react';
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -136,8 +136,6 @@ function App() {
   const [userRole, setUserRole] = useState('');
   const [currentUserRepId, setCurrentUserRepId] = useState('');
   const [currentUserCustomerId, setCurrentUserCustomerId] = useState('');
-  const [systemUsername, setSystemUsername] = useState('');
-  const [systemPassword, setSystemPassword] = useState('');
   const [authError, setAuthError] = useState(false);
   const [authChecking, setAuthChecking] = useState(true);
 

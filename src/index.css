@@ -431,6 +431,28 @@ input[type="number"] {
   font-weight: 750;
   color: var(--ids-navy-900);
 }
+.login-field-header {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  width: 100% !important;
+}
+.login-reset-link {
+  font-size: 12.5px !important;
+  font-weight: 700 !important;
+  color: #008f72 !important;
+  text-decoration: underline !important;
+  background: transparent !important;
+  border: none !important;
+  cursor: pointer !important;
+  white-space: nowrap !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  box-shadow: none !important;
+}
+.login-reset-link:hover {
+  color: #006651 !important;
+}
 .login-field input {
   height: 50px;
   width: 100%;
@@ -448,14 +470,17 @@ input[type="number"] {
   outline: 3px solid rgba(0, 143, 114, 0.25);
   outline-offset: 2px;
 }
-.login-field > div {
+.login-field > div,
+.login-input-wrap {
   position: relative;
   width: 100%;
 }
-.login-field > div input {
+.login-field > div input,
+.login-input-wrap input {
   padding-right: 50px;
 }
-.login-field > div button {
+.login-field > div button,
+.login-input-wrap button {
   position: absolute;
   right: 4px;
   top: 4px;
@@ -469,10 +494,12 @@ input[type="number"] {
   border-radius: 7px;
   cursor: pointer;
 }
-.login-field > div button:hover {
+.login-field > div button:hover,
+.login-input-wrap button:hover {
   background: #eef5fc;
 }
-.login-field > div button svg {
+.login-field > div button svg,
+.login-input-wrap button svg {
   width: 21px;
   height: 21px;
 }

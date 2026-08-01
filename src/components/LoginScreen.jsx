@@ -141,7 +141,7 @@ export default function LoginScreen({ onSignedIn, onResetPassword, demoEnabled =
             </label>
 
             <label className="login-field" htmlFor="login-password">
-              <div className="flex justify-between items-center w-full">
+              <span className="login-field-header">
                 <span>Password</span>
                 <button
                   type="button"
@@ -170,12 +170,12 @@ export default function LoginScreen({ onSignedIn, onResetPassword, demoEnabled =
                       setResetting(false);
                     }
                   }}
-                  className="text-xs font-semibold text-emerald-400 hover:text-emerald-300 transition-colors underline cursor-pointer disabled:opacity-50"
+                  className="login-reset-link"
                 >
                   {resetting ? 'Sending link…' : 'Reset My Password'}
                 </button>
-              </div>
-              <div>
+              </span>
+              <div className="login-input-wrap">
                 <input
                   id="login-password"
                   name="password"

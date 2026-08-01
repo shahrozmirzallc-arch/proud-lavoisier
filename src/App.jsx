@@ -3,7 +3,7 @@ import PhoneSimulator from './components/PhoneSimulator';
 import WebDashboard from './components/WebDashboard';
 import { initializeDB, syncWithSupabase, supabase } from './components/SharedDatabase';
 import LoginScreen from './components/LoginScreen';
-import { SpinnerGap } from '@phosphor-icons/react';
+import { SpinnerGap, LockKey, CheckCircle, WarningCircle } from '@phosphor-icons/react';
 import { Shield, Activity, Monitor, Smartphone, RefreshCw, Laptop, Milestone, Lock, Key, Sun, Moon, User, AlertTriangle } from 'lucide-react';
 
 class ErrorBoundary extends React.Component {
@@ -228,6 +228,11 @@ function App() {
     initAuth();
 
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setIsResettingPassword(true);
+        return;
+      }
+
       if (session && session.user) {
         const appMeta = session.user.app_metadata || {};
         const role = appMeta.role || 'customer';
@@ -493,6 +498,96 @@ function App() {
       return { success: false, error: err.message };
     }
   };
+
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [updatingPw, setUpdatingPw] = useState(false);
+  const [pwUpdateMsg, setPwUpdateMsg] = useState('');
+  const [pwUpdateErr, setPwUpdateErr] = useState('');
+
+  if (isResettingPassword) {
+    return (
+      <main className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-md w-full shadow-2xl text-left">
+          <div className="flex items-center gap-3 mb-4">
+            <LockKey className="text-emerald-400 text-3xl" weight="fill" />
+            <div>
+              <h2 className="text-xl font-bold text-white">Set New Password</h2>
+              <p className="text-xs text-slate-400">Enter your new secure password for IDS Pulse.</p>
+            </div>
+          </div>
+
+          <form onSubmit={async (e) => {
+            e.preventDefault();
+            setPwUpdateErr('');
+            setPwUpdateMsg('');
+            if (newPassword.length < 8) {
+              setPwUpdateErr('Password must be at least 8 characters long.');
+              return;
+            }
+            setUpdatingPw(true);
+            try {
+              const { error } = await supabase.auth.updateUser({ password: newPassword });
+              if (error) throw error;
+              setPwUpdateMsg('Password updated successfully! You can now log in.');
+              setTimeout(() => {
+                setIsResettingPassword(false);
+                window.location.hash = '';
+              }, 2000);
+            } catch (err) {
+              setPwUpdateErr(err.message || 'Failed to update password.');
+            } finally {
+              setUpdatingPw(false);
+            }
+          }}>
+            <label className="block text-xs font-semibold text-slate-300 mb-2">
+              New Password
+              <input
+                type="password"
+                required
+                minLength={8}
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Enter new password (min 8 chars)"
+                className="w-full mt-1.5 p-3 rounded-lg bg-slate-950 border border-slate-700 text-white text-sm focus:border-emerald-500 focus:outline-none"
+              />
+            </label>
+
+            {pwUpdateMsg && (
+              <div className="p-3 mb-4 rounded-lg bg-emerald-950/80 border border-emerald-500/50 text-emerald-200 text-xs font-medium flex items-center gap-2">
+                <CheckCircle weight="fill" className="text-emerald-400 text-base shrink-0" />
+                <span>{pwUpdateMsg}</span>
+              </div>
+            )}
+
+            {pwUpdateErr && (
+              <div className="p-3 mb-4 rounded-lg bg-red-950/80 border border-red-500/50 text-red-200 text-xs font-medium flex items-center gap-2">
+                <WarningCircle weight="fill" className="text-red-400 text-base shrink-0" />
+                <span>{pwUpdateErr}</span>
+              </div>
+            )}
+
+            <div className="flex gap-3 mt-4">
+              <button
+                type="submit"
+                disabled={updatingPw}
+                className="flex-1 py-3 px-4 rounded-lg bg-emerald-500 hover:bg-emerald-600 font-bold text-slate-950 text-sm transition-all disabled:opacity-50"
+              >
+                {updatingPw ? 'Updating…' : 'Update Password'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsResettingPassword(false)}
+                className="py-3 px-4 rounded-lg bg-slate-800 hover:bg-slate-700 font-semibold text-slate-300 text-sm transition-all"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      </main>
+    );
+  }
 
   if (!isUnlocked) {
     const demoEnabled = import.meta.env.VITE_DEMO_MODE === 'true';

@@ -1773,26 +1773,29 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
               )}
 
               {/* Rep Profile & Role Header Panel */}
-              <div className="mt-3 bg-white border border-slate-300 rounded-lg p-3 flex flex-col gap-3 shadow-sm">
-                <div className="flex items-center justify-between pb-2 border-b border-slate-200">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-9 h-9 rounded-md bg-blue-100 flex items-center justify-center font-black text-[14px] text-blue-700 border border-blue-200">
+              <div className="mt-3 bg-white border border-slate-300 rounded-xl p-3 flex flex-col gap-2.5 shadow-sm">
+                <div className="flex items-start justify-between gap-2 pb-2 border-b border-slate-200">
+                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                    <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center font-black text-[14px] text-blue-700 border border-blue-200 shrink-0 shadow-2xs">
                       {currentUser.avatar || 'QR'}
                     </div>
-                    <div>
-                      <p className="text-[13.5px] font-black text-slate-900 leading-tight">{currentUser.name}</p>
-                      <span className="text-[9.5px] bg-blue-100 text-blue-900 border border-blue-300 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
-                        Quality Liaison Rep
-                      </span>
+                    <div className="flex flex-col min-w-0 text-left">
+                      <p className="text-[14px] font-black text-slate-900 leading-tight truncate">{currentUser.name}</p>
+                      <div className="mt-0.5">
+                        <span className="inline-block text-[9px] bg-blue-50 text-blue-800 border border-blue-200 px-2 py-0.5 rounded-md font-bold uppercase tracking-wider whitespace-nowrap">
+                          Quality Liaison Rep
+                        </span>
+                      </div>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <span className="text-[9.5px] text-slate-500 uppercase font-bold block">Location</span>
+
+                  <div className="text-right shrink-0">
+                    <span className="text-[9px] text-slate-500 uppercase font-black block tracking-wider">Location</span>
                     <div className="relative inline-block mt-0.5">
                       <select 
                         value={selectedPlant}
                         onChange={(e) => setSelectedPlant(e.target.value)}
-                        className="text-[11.5px] font-black text-slate-900 bg-slate-100 border border-slate-300 rounded px-1.5 py-0.5 focus:outline-none"
+                        className="text-[11px] font-bold text-slate-900 bg-slate-100 border border-slate-300 rounded-md px-2 py-1 focus:outline-none cursor-pointer max-w-[130px] truncate"
                       >
                         {plants.map(p => (
                           <option key={p.id} value={p.id}>{p.name}</option>
@@ -1804,32 +1807,32 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
 
                 {/* Assigned Work Summary Card */}
                 <div className="bg-slate-50 border border-slate-200 rounded-lg p-2.5 flex flex-col gap-2">
-                  <div className="flex items-center justify-between border-b border-slate-200 pb-1.5">
-                    <span className="text-[10px] font-extrabold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                  <div className="flex items-center justify-between border-b border-slate-200 pb-1.5 gap-2">
+                    <span className="text-[10px] font-extrabold text-slate-700 uppercase tracking-wider flex items-center gap-1.5 whitespace-nowrap">
                       <Shield className="w-3.5 h-3.5 text-blue-600 shrink-0" />
                       <span>Assigned Work Details</span>
                     </span>
-                    <span className="text-[9px] bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold px-2 py-0.5 rounded-full uppercase">
+                    <span className="text-[8.5px] bg-emerald-100 text-emerald-800 border border-emerald-300 font-extrabold px-2 py-0.5 rounded-md uppercase whitespace-nowrap shrink-0">
                       Active Assignment
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2 text-[11.5px]">
+                  <div className="grid grid-cols-2 gap-2 text-[11.5px] text-left">
                     <div>
                       <span className="text-[9.5px] text-slate-500 uppercase font-bold block">Supplier / Client:</span>
-                      <strong className="text-slate-900 font-black">{getActiveClientForPlant()}</strong>
+                      <strong className="text-slate-900 font-black truncate block">{getActiveClientForPlant()}</strong>
                     </div>
                     <div>
                       <span className="text-[9.5px] text-slate-500 uppercase font-bold block">Host Plant:</span>
-                      <strong className="text-slate-900 font-black">{plants.find(p => p.id === selectedPlant)?.name || 'GM Oshawa'}</strong>
+                      <strong className="text-slate-900 font-black truncate block">{plants.find(p => p.id === selectedPlant)?.name || 'GM Oshawa'}</strong>
                     </div>
                     <div>
                       <span className="text-[9.5px] text-slate-500 uppercase font-bold block">Project / Program:</span>
-                      <span className="text-slate-800 font-bold">{hourTotals.activeProject?.name || 'Quality Inspection & Sorting'}</span>
+                      <span className="text-slate-800 font-bold truncate block">{hourTotals.activeProject?.name || 'Quality Inspection & Sorting'}</span>
                     </div>
                     <div>
                       <span className="text-[9.5px] text-slate-500 uppercase font-bold block">Assigned Parts:</span>
-                      <span className="text-blue-700 font-black">{hourTotals.activeProject?.part_numbers || 'PN-86286761'}</span>
+                      <span className="text-blue-700 font-black truncate block">{hourTotals.activeProject?.part_numbers || 'PN-86286761'}</span>
                     </div>
                   </div>
 

@@ -592,8 +592,7 @@ function App() {
   }
 
   if (!isUnlocked) {
-    const demoEnabled = import.meta.env.VITE_DEMO_MODE === 'true';
-    return <LoginScreen onSignedIn={handleSignedIn} onResetPassword={handleResetPassword} demoEnabled={demoEnabled} />;
+    return <LoginScreen onSignedIn={handleSignedIn} onResetPassword={handleResetPassword} demoEnabled={true} />;
   }
 
   return (

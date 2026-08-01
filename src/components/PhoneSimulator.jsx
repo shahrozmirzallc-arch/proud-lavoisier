@@ -123,13 +123,20 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
   const [expenseReceiptPhoto, setExpenseReceiptPhoto] = useState(null);
   const [expenseNotes, setExpenseNotes] = useState('');
 
-  // ROUTINE INSPECTION LOG STATE
+  // ROUTINE INSPECTION LOG STATE & UNLIMITED BARCODE SCANNER
   const [inspPartNumber, setInspPartNumber] = useState('86286761');
+  const [inspPNMode, setInspPNMode] = useState('dropdown'); // 'dropdown' | 'manual'
+  const [inspCustomPN, setInspCustomPN] = useState('');
   const [inspPassQty, setInspPassQty] = useState(0);
   const [inspRejectQty, setInspRejectQty] = useState(0);
   const [inspHoursSpent, setInspHoursSpent] = useState(1.0);
   const [inspDefectCode, setInspDefectCode] = useState('Routine Inspection');
+  const [inspDefectMode, setInspDefectMode] = useState('preset'); // 'preset' | 'custom'
+  const [inspCustomDefectCode, setInspCustomDefectCode] = useState('');
   const [inspNotes, setInspNotes] = useState('');
+  const [inspScannedBarcodes, setInspScannedBarcodes] = useState([]);
+  const [isInspScannerOpen, setIsInspScannerOpen] = useState(false);
+  const [inspScanInput, setInspScanInput] = useState('');
 
   // Overtime Request Edit State
   const [editingOvertimeId, setEditingOvertimeId] = useState(null);
@@ -3192,100 +3199,438 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
 
             <form onSubmit={(e) => {
               e.preventDefault();
+              const finalPN = inspPNMode === 'manual' ? (inspCustomPN.trim() || 'CUSTOM_PART') : inspPartNumber;
+              const finalDefect = inspDefectMode === 'custom' ? (inspCustomDefectCode.trim() || 'Custom Inspection Defect') : inspDefectCode;
               const passPcs = parseInt(inspPassQty) || 0;
               const rejectPcs = parseInt(inspRejectQty) || 0;
               const totalPcs = passPcs + rejectPcs;
 
               if (totalPcs <= 0) {
-                alert("Please enter at least 1 inspected part quantity.");
+                alert("Please enter at least 1 inspected part quantity (Passed or Rejected).");
                 return;
               }
 
               addReworkLog({
                 rep_id: currentUser.id,
-                part_number: inspPartNumber,
+                part_number: finalPN,
                 inspected_pcs: totalPcs,
                 reworked_pcs: passPcs,
                 defects_pcs: rejectPcs,
                 hours_spent: parseFloat(inspHoursSpent) || 1.0,
-                defect_code: inspDefectCode || 'Routine Inspection',
+                defect_code: finalDefect,
+                scanned_barcodes: inspScannedBarcodes,
                 notes: inspNotes || 'Routine floor quality inspection recorded.',
                 created_at: new Date().toISOString()
               });
+
+              logSystemEvent('inspection', 'create', `${currentUser.name} logged routine inspection of ${totalPcs} pcs for Part #${finalPN}.`);
 
               showToast(`Logged inspection for ${totalPcs} pcs (${passPcs} passed, ${rejectPcs} rejected)!`, "success");
               setInspPassQty(0);
               setInspRejectQty(0);
               setInspNotes('');
+              setInspCustomPN('');
+              setInspCustomDefectCode('');
+              setInspScannedBarcodes([]);
               setActiveScreen('home');
             }} className="flex-1 overflow-y-auto p-3 flex flex-col gap-3 text-left">
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[10.5px] font-bold text-text-secondary uppercase">Part Number Inspected</label>
-                <select 
-                  value={inspPartNumber}
-                  onChange={(e) => setInspPartNumber(e.target.value)}
-                  className="phone-select"
-                >
-                  <option value="86286761">PN 86286761 (Tail Light Assembly)</option>
-                  <option value="86291945">PN 86291945 (Headlight Bin)</option>
-                  <option value="86300412">PN 86300412 (Harness Bracket)</option>
-                </select>
+              
+              {/* SECTION 1: PART NUMBER INSPECTED (Dropdown + Manual Input + Unlimited Scanner) */}
+              <div className="bg-white rounded-xl p-3 border border-slate-200 shadow-xs flex flex-col gap-2.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-[11px] font-black text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                    <Shield className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>Part Number Inspected</span>
+                  </label>
+
+                  {/* Mode Segmented Toggle */}
+                  <div className="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-[10px] font-bold">
+                    <button
+                      type="button"
+                      onClick={() => setInspPNMode('dropdown')}
+                      className={`px-2 py-0.5 rounded-md transition-all cursor-pointer ${inspPNMode === 'dropdown' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}
+                    >
+                      Dropdown
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setInspPNMode('manual')}
+                      className={`px-2 py-0.5 rounded-md transition-all cursor-pointer ${inspPNMode === 'manual' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}
+                    >
+                      Custom Input
+                    </button>
+                  </div>
+                </div>
+
+                {inspPNMode === 'dropdown' ? (
+                  <select 
+                    value={inspPartNumber}
+                    onChange={(e) => setInspPartNumber(e.target.value)}
+                    className="phone-select text-[12.5px] font-bold"
+                  >
+                    <option value="86286761">PN 86286761 (Tail Light Assembly)</option>
+                    <option value="86291945">PN 86291945 (Headlight Bin)</option>
+                    <option value="86300412">PN 86300412 (Harness Bracket)</option>
+                  </select>
+                ) : (
+                  <input 
+                    type="text"
+                    value={inspCustomPN}
+                    onChange={(e) => setInspCustomPN(e.target.value)}
+                    placeholder="Type custom part number or serial e.g. PN-99042..."
+                    className="phone-input text-[12.5px] font-bold"
+                  />
+                )}
+
+                {/* QR / BARCODE SCANNER ACTION BUTTON */}
+                <div className="pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setIsInspScannerOpen(true)}
+                    className="w-full py-2 px-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-lg text-[11.5px] font-bold flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer active:scale-[0.99]"
+                  >
+                    <QrCode className="w-4 h-4 text-amber-300 animate-pulse" />
+                    <span>Scan Inspected Part Barcode / QR Tag</span>
+                    {inspScannedBarcodes.length > 0 && (
+                      <span className="ml-1 bg-amber-400 text-slate-950 px-1.5 py-0.5 rounded-full text-[10px] font-black">
+                        {inspScannedBarcodes.length}
+                      </span>
+                    )}
+                  </button>
+                </div>
+
+                {/* UNLIMITED SCANNED BARCODES LIST */}
+                {inspScannedBarcodes.length > 0 && (
+                  <div className="mt-1 bg-slate-50 border border-slate-200 rounded-lg p-2 flex flex-col gap-1.5">
+                    <div className="flex items-center justify-between text-[10px] font-bold text-slate-600">
+                      <span className="uppercase tracking-wider">Scanned Inspection Tags ({inspScannedBarcodes.length})</span>
+                      <button 
+                        type="button" 
+                        onClick={() => setInspScannedBarcodes([])}
+                        className="text-rose-600 hover:underline cursor-pointer"
+                      >
+                        Clear All
+                      </button>
+                    </div>
+                    <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto">
+                      {inspScannedBarcodes.map((code, idx) => (
+                        <div key={idx} className="bg-white border border-slate-300 rounded px-2 py-0.5 text-[10.5px] font-mono flex items-center gap-1.5 text-slate-800 shadow-2xs">
+                          <span>{code}</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const updated = inspScannedBarcodes.filter((_, i) => i !== idx);
+                              setInspScannedBarcodes(updated);
+                              setInspPassQty(updated.length);
+                            }}
+                            className="text-slate-400 hover:text-rose-600 font-bold cursor-pointer"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
-              <div className="grid grid-cols-2 gap-2">
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-[10.5px] font-bold text-emerald-700 uppercase">Passed Pcs</label>
+              {/* SECTION 2: PASSED & REJECTED QUANTITIES */}
+              <div className="bg-white rounded-xl p-3 border border-slate-200 shadow-xs flex flex-col gap-3">
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="flex flex-col gap-1.5 bg-emerald-50/60 border border-emerald-200/80 p-2 rounded-xl">
+                    <label className="text-[10.5px] font-black text-emerald-800 uppercase tracking-wider">Passed Pcs</label>
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => setInspPassQty(Math.max(0, inspPassQty - 1))}
+                        className="w-8 h-8 bg-white border border-emerald-300 rounded flex items-center justify-center text-emerald-700 font-extrabold text-sm shadow-2xs cursor-pointer"
+                      >
+                        -
+                      </button>
+                      <input 
+                        type="number" 
+                        min="0"
+                        value={inspPassQty}
+                        onChange={(e) => setInspPassQty(Math.max(0, parseInt(e.target.value) || 0))}
+                        className="phone-input text-center flex-1 h-8 font-black text-emerald-900 bg-white"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setInspPassQty(inspPassQty + 1)}
+                        className="w-8 h-8 bg-emerald-600 text-white rounded flex items-center justify-center font-extrabold text-sm shadow-2xs cursor-pointer"
+                      >
+                        +
+                      </button>
+                    </div>
+                    <div className="flex gap-1 pt-0.5 justify-center text-[9.5px]">
+                      {[5, 10, 25].map(n => (
+                        <button
+                          key={n}
+                          type="button"
+                          onClick={() => setInspPassQty(prev => prev + n)}
+                          className="px-1.5 py-0.5 bg-white border border-emerald-300 text-emerald-800 font-bold rounded cursor-pointer"
+                        >
+                          +{n}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-1.5 bg-rose-50/60 border border-rose-200/80 p-2 rounded-xl">
+                    <label className="text-[10.5px] font-black text-rose-800 uppercase tracking-wider">Rejected Pcs</label>
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => setInspRejectQty(Math.max(0, inspRejectQty - 1))}
+                        className="w-8 h-8 bg-white border border-rose-300 rounded flex items-center justify-center text-rose-700 font-extrabold text-sm shadow-2xs cursor-pointer"
+                      >
+                        -
+                      </button>
+                      <input 
+                        type="number" 
+                        min="0"
+                        value={inspRejectQty}
+                        onChange={(e) => setInspRejectQty(Math.max(0, parseInt(e.target.value) || 0))}
+                        className="phone-input text-center flex-1 h-8 font-black text-rose-900 bg-white"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setInspRejectQty(inspRejectQty + 1)}
+                        className="w-8 h-8 bg-rose-600 text-white rounded flex items-center justify-center font-extrabold text-sm shadow-2xs cursor-pointer"
+                      >
+                        +
+                      </button>
+                    </div>
+                    <div className="flex gap-1 pt-0.5 justify-center text-[9.5px]">
+                      {[1, 5, 10].map(n => (
+                        <button
+                          key={n}
+                          type="button"
+                          onClick={() => setInspRejectQty(prev => prev + n)}
+                          className="px-1.5 py-0.5 bg-white border border-rose-300 text-rose-800 font-bold rounded cursor-pointer"
+                        >
+                          +{n}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-slate-100 rounded-lg p-2 flex items-center justify-between text-[11px] font-bold text-slate-700">
+                  <span>TOTAL BATCH INSPECTED:</span>
+                  <span className="text-slate-900 font-black text-xs">{(parseInt(inspPassQty)||0) + (parseInt(inspRejectQty)||0)} PCS</span>
+                </div>
+              </div>
+
+              {/* SECTION 3: DEFECT CATEGORY / CODE (Dropdown + Custom Input) */}
+              <div className="bg-white rounded-xl p-3 border border-slate-200 shadow-xs flex flex-col gap-2.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Defect Category / Code</label>
+                  <div className="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-[10px] font-bold">
+                    <button
+                      type="button"
+                      onClick={() => setInspDefectMode('preset')}
+                      className={`px-2 py-0.5 rounded-md transition-all cursor-pointer ${inspDefectMode === 'preset' ? 'bg-slate-800 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}
+                    >
+                      Preset Code
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setInspDefectMode('custom')}
+                      className={`px-2 py-0.5 rounded-md transition-all cursor-pointer ${inspDefectMode === 'custom' ? 'bg-slate-800 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}
+                    >
+                      Custom Code
+                    </button>
+                  </div>
+                </div>
+
+                {inspDefectMode === 'preset' ? (
+                  <select 
+                    value={inspDefectCode}
+                    onChange={(e) => setInspDefectCode(e.target.value)}
+                    className="phone-select text-[12px] font-bold"
+                  >
+                    <option value="Routine Inspection">Routine Inspection - Pass (OK)</option>
+                    <option value="Surface Scratch">Surface Scratch / Dent</option>
+                    <option value="Terminal Pin Bend">Terminal Pin Deformation</option>
+                    <option value="Dimensional Out of Spec">Dimensional Out of Spec</option>
+                    <option value="Missing Seal">Missing Gasket / Seal</option>
+                    <option value="Coating Mismatch">Color / Paint Mismatch</option>
+                  </select>
+                ) : (
+                  <input
+                    type="text"
+                    value={inspCustomDefectCode}
+                    onChange={(e) => setInspCustomDefectCode(e.target.value)}
+                    placeholder="Enter custom defect category or code..."
+                    className="phone-input text-[12px] font-bold"
+                  />
+                )}
+              </div>
+
+              {/* SECTION 4: TIME SPENT (HOURS) */}
+              <div className="bg-white rounded-xl p-3 border border-slate-200 shadow-xs flex flex-col gap-2">
+                <label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Time Spent (Hours)</label>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setInspHoursSpent(Math.max(0, parseFloat((inspHoursSpent - 0.5).toFixed(1))))}
+                    className="w-11 h-11 bg-rose-50 hover:bg-rose-100 active:bg-rose-200 border border-rose-200 rounded-lg flex items-center justify-center text-rose-600 font-extrabold text-[16px] select-none cursor-pointer flex-shrink-0 shadow-xs"
+                  >
+                    -
+                  </button>
                   <input 
                     type="number" 
+                    step="0.5"
                     min="0"
-                    value={inspPassQty}
-                    onChange={(e) => setInspPassQty(Math.max(0, parseInt(e.target.value) || 0))}
-                    className="phone-input font-bold text-emerald-800"
+                    value={inspHoursSpent}
+                    onChange={(e) => setInspHoursSpent(Math.max(0, parseFloat(e.target.value) || 0))}
+                    className="phone-input text-center flex-1 h-11 text-base font-black text-slate-900"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setInspHoursSpent(parseFloat((inspHoursSpent + 0.5).toFixed(1)))}
+                    className="w-11 h-11 bg-emerald-50 hover:bg-emerald-100 active:bg-emerald-200 border border-emerald-200 rounded-lg flex items-center justify-center text-emerald-700 font-extrabold text-[16px] select-none cursor-pointer flex-shrink-0 shadow-xs"
+                  >
+                    +
+                  </button>
                 </div>
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-[10.5px] font-bold text-rose-700 uppercase">Rejected Pcs</label>
-                  <input 
-                    type="number" 
-                    min="0"
-                    value={inspRejectQty}
-                    onChange={(e) => setInspRejectQty(Math.max(0, parseInt(e.target.value) || 0))}
-                    className="phone-input font-bold text-rose-800"
-                  />
+                <div className="flex items-center gap-1.5 pt-1 text-[10px]">
+                  <span className="text-slate-400 font-bold">Quick:</span>
+                  {[0.5, 1.0, 1.5, 2.0, 4.0].map((h) => (
+                    <button
+                      key={h}
+                      type="button"
+                      onClick={() => setInspHoursSpent(h)}
+                      className={`px-2 py-0.5 rounded font-bold transition-colors cursor-pointer ${inspHoursSpent === h ? 'bg-emerald-600 text-white' : 'bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700'}`}
+                    >
+                      {h}h
+                    </button>
+                  ))}
                 </div>
               </div>
 
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[10.5px] font-bold text-text-secondary uppercase">Defect Category / Code</label>
-                <select 
-                  value={inspDefectCode}
-                  onChange={(e) => setInspDefectCode(e.target.value)}
-                  className="phone-select"
-                >
-                  <option value="Routine Inspection">Routine Inspection - Pass</option>
-                  <option value="Surface Scratch">Surface Scratch / Dent</option>
-                  <option value="Terminal Pin Bend">Terminal Pin Deformation</option>
-                  <option value="Dimensional Out of Spec">Dimensional Out of Spec</option>
-                  <option value="Missing Seal">Missing Gasket / Seal</option>
-                </select>
-              </div>
-
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[10.5px] font-bold text-text-secondary uppercase">Inspection Notes / Summary</label>
+              {/* SECTION 5: INSPECTION NOTES / SUMMARY */}
+              <div className="bg-white rounded-xl p-3 border border-slate-200 shadow-xs flex flex-col gap-2">
+                <label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Inspection Notes / Summary</label>
                 <textarea 
                   value={inspNotes}
                   onChange={(e) => setInspNotes(e.target.value)}
                   rows={3}
                   placeholder="Details of batch inspection on production line..."
-                  className="phone-textarea"
+                  className="phone-textarea text-[12px]"
                 />
+                <div className="flex flex-wrap gap-1 pt-1">
+                  {[
+                    "Passed batch inspection",
+                    "Minor surface scuff on housing",
+                    "Re-checked 50 pcs batch",
+                    "Quarantined rejected bin"
+                  ].map((preset) => (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() => setInspNotes(prev => prev ? `${prev} ${preset}.` : `${preset}.`)}
+                      className="px-2 py-0.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 rounded text-[9.5px] font-semibold transition-colors cursor-pointer"
+                    >
+                      + {preset}
+                    </button>
+                  ))}
+                </div>
               </div>
 
-              <button type="submit" className="phone-btn-primary mt-2">
+              {/* ACTION BUTTON */}
+              <button 
+                type="submit" 
+                className="phone-btn-primary mt-2 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-[13.5px] rounded-xl flex items-center justify-center gap-2 shadow-md cursor-pointer"
+              >
                 <CheckCircle className="w-4.5 h-4" />
-                <span>Save Routine Inspection Log</span>
+                <span>SAVE ROUTINE INSPECTION LOG</span>
               </button>
             </form>
+
+            {/* SCANNER MODAL FOR ROUTINE INSPECTION */}
+            {isInspScannerOpen && (
+              <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex flex-col justify-between p-4">
+                <div className="flex items-center justify-between text-white border-b border-slate-800 pb-3">
+                  <div className="flex items-center gap-2">
+                    <QrCode className="w-5 h-5 text-emerald-400" />
+                    <div>
+                      <h3 className="text-sm font-black uppercase">Inspection Barcode / QR Scanner</h3>
+                      <p className="text-[10px] text-slate-400">Scan unlimited barcodes for floor quality inspection</p>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => setIsInspScannerOpen(false)}
+                    className="p-1 text-slate-400 hover:text-white cursor-pointer"
+                  >
+                    <X className="w-6 h-6" />
+                  </button>
+                </div>
+
+                {/* Viewfinder simulation */}
+                <div className="relative my-auto mx-auto w-64 h-64 border-2 border-dashed border-emerald-400 rounded-2xl flex flex-col items-center justify-center p-4 text-center bg-slate-900/60 shadow-2xl">
+                  <div className="w-full h-0.5 bg-emerald-400 shadow-[0_0_12px_#10b981] animate-pulse my-auto"></div>
+                  <p className="text-xs text-emerald-200 font-mono mt-2">Point camera at part barcode / QR label</p>
+                </div>
+
+                {/* Scanner controls & instant simulated scan options */}
+                <div className="bg-slate-900 border border-slate-800 rounded-2xl p-3 flex flex-col gap-2">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Instant Scan Options (Unlimited):</span>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {["PN-86286761", "PN-86291945", "PN-86300412"].map((code) => (
+                      <button
+                        key={code}
+                        type="button"
+                        onClick={() => {
+                          const tag = `${code}-${Date.now().toString().slice(-4)}`;
+                          const updated = [...inspScannedBarcodes, tag];
+                          setInspScannedBarcodes(updated);
+                          setInspPassQty(updated.length);
+                          if (inspPNMode === 'dropdown') setInspPartNumber(code.replace('PN-', ''));
+                          showToast(`Scanned ${tag}!`, "success");
+                        }}
+                        className="py-1.5 px-2 bg-slate-800 hover:bg-slate-700 text-emerald-300 rounded text-[10.5px] font-mono border border-slate-700 text-center cursor-pointer"
+                      >
+                        + {code}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="flex items-center gap-2 pt-1 border-t border-slate-800 mt-1">
+                    <input
+                      type="text"
+                      value={inspScanInput}
+                      onChange={(e) => setInspScanInput(e.target.value)}
+                      placeholder="Type custom barcode string..."
+                      className="phone-input bg-slate-950 text-white border-slate-800 text-xs flex-1"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!inspScanInput.trim()) return;
+                        const updated = [...inspScannedBarcodes, inspScanInput.trim()];
+                        setInspScannedBarcodes(updated);
+                        setInspPassQty(updated.length);
+                        setInspScanInput('');
+                        showToast("Custom barcode added!", "success");
+                      }}
+                      className="px-3 py-2 bg-emerald-600 text-white rounded text-xs font-bold cursor-pointer"
+                    >
+                      Add
+                    </button>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsInspScannerOpen(false)}
+                    className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold text-xs mt-1 cursor-pointer"
+                  >
+                    Done Scanning ({inspScannedBarcodes.length} Items)
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

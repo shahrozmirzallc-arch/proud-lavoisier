@@ -12,14 +12,14 @@ import {
 
 import { LOGO_BASE64 } from './LogoBase64';
 
-export function Logo({ light = false }) {
+export function Logo({ light = true }) {
   return (
     <div className="brand flex items-center gap-3">
       <img 
         src={LOGO_BASE64} 
         alt="IDS Pulse Logo" 
-        className="h-22 w-auto object-contain flex-shrink-0" 
-        style={{ filter: light ? 'none' : 'brightness(0) invert(1)' }}
+        className="h-14 w-auto object-contain flex-shrink-0" 
+        style={{ filter: 'none' }}
       />
     </div>
   );
@@ -71,8 +71,7 @@ export default function LoginScreen({ onSignedIn, onResetPassword, demoEnabled =
   return (
     <main className="login-shell">
       <section className="login-brand-panel">
-        <div className="login-brand-content">
-          <Logo />
+        <div className="login-brand-content justify-center">
           <div className="login-brand-copy">
             <span>Protected industrial pilot</span>
             <h1>Every quality decision, clearly traced.</h1>
@@ -106,6 +105,9 @@ export default function LoginScreen({ onSignedIn, onResetPassword, demoEnabled =
 
       <section className="login-form-panel">
         <div className="login-card">
+          <div className="mb-4 flex items-center">
+            <Logo light={true} />
+          </div>
           <h2 className="text-3xl font-black text-slate-900 tracking-tight mb-1">
             Welcome back
           </h2>

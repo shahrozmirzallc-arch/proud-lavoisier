@@ -18,7 +18,7 @@ export function Logo({ light = true }) {
       <img 
         src={LOGO_BASE64} 
         alt="IDS Pulse Logo" 
-        className="h-36 sm:h-40 md:h-44 w-auto max-w-full object-contain flex-shrink-0" 
+        className="h-24 sm:h-28 w-auto max-w-[85%] object-contain flex-shrink-0" 
         style={{ filter: 'none' }}
       />
     </div>
@@ -105,14 +105,14 @@ export default function LoginScreen({ onSignedIn, onResetPassword, demoEnabled =
       </section>
 
       <section className="login-form-panel">
-        <div className="login-card !pt-6">
-          <div className="mb-3 flex items-center justify-center">
+        <div className="login-card !pt-4 sm:!pt-5 !pb-6">
+          <div className="mb-2 flex items-center justify-center">
             <Logo light={true} />
           </div>
-          <h2 className="text-3xl font-black text-slate-900 tracking-tight mb-1">
+          <h2 className="text-2.5xl font-black text-slate-900 tracking-tight !mt-1 !mb-0.5">
             Welcome back
           </h2>
-          <p className="text-xs font-medium text-slate-500 mb-6 leading-relaxed">
+          <p className="text-xs font-medium text-slate-500 !mb-4 leading-relaxed">
             Sign in with your authorized credentials to access your workspace.
           </p>
 

@@ -14,11 +14,11 @@ import { LOGO_BASE64 } from './LogoBase64';
 
 export function Logo({ light = true }) {
   return (
-    <div className="brand flex items-center gap-3">
+    <div className="brand flex items-center justify-center w-full">
       <img 
         src={LOGO_BASE64} 
         alt="IDS Pulse Logo" 
-        className="h-14 w-auto object-contain flex-shrink-0" 
+        className="h-36 sm:h-40 md:h-44 w-auto max-w-full object-contain flex-shrink-0" 
         style={{ filter: 'none' }}
       />
     </div>
@@ -71,8 +71,14 @@ export default function LoginScreen({ onSignedIn, onResetPassword, demoEnabled =
   return (
     <main className="login-shell">
       <section className="login-brand-panel">
-        <div className="login-brand-content justify-center">
-          <div className="login-brand-copy">
+        <div className="login-brand-content flex flex-col justify-between py-2">
+          {/* Top Enterprise Header filling top red space */}
+          <div className="flex items-center gap-2.5 text-xs font-black uppercase tracking-wider text-sky-200 bg-sky-950/70 border border-sky-400/40 px-4 py-2.5 rounded-2xl w-fit shadow-md mb-6">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_10px_#34d399]"></span>
+            <span>Integrity Driven Solutions Inc. • Enterprise Quality Platform</span>
+          </div>
+
+          <div className="login-brand-copy my-auto">
             <span>Protected industrial pilot</span>
             <h1>Every quality decision, clearly traced.</h1>
             <p>Review incidents, approvals, time, expenses and billing from one calm, task-first workspace.</p>
@@ -105,7 +111,7 @@ export default function LoginScreen({ onSignedIn, onResetPassword, demoEnabled =
 
       <section className="login-form-panel">
         <div className="login-card">
-          <div className="mb-4 flex items-center">
+          <div className="mb-6 flex items-center justify-center">
             <Logo light={true} />
           </div>
           <h2 className="text-3xl font-black text-slate-900 tracking-tight mb-1">

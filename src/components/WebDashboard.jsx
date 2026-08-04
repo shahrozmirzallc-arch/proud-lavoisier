@@ -5035,7 +5035,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
       {/* Metrics Cards row */}
       {!forceRoadmapOnly && (
-        <div className="grid grid-cols-4 gap-3 mt-5 flex-shrink-0">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 mt-5 flex-shrink-0">
           <div className="border border-rose-500/30 hover:border-rose-400/60 rounded-2xl p-3.5 flex flex-col justify-between h-28 transition-all group">
             <div>
               <span className="text-[10.5px] font-extrabold text-rose-500 uppercase tracking-wider block">Active Defect Containments</span>
@@ -7784,7 +7784,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   </button>
                 </div>
               </div>
-              <div className="flex-1 overflow-y-auto scrollbar-thin pr-1 grid grid-cols-2 gap-3">
+              <div className="flex-1 overflow-y-auto scrollbar-thin pr-1 grid grid-cols-1 md:grid-cols-2 gap-3">
                 {suppliers.map(sup => {
                   const resolvedContacts = (() => {
                     const list = [];
@@ -8612,7 +8612,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         </div>
 
                         {/* Consolidated Totals */}
-                        <div className="grid grid-cols-4 gap-3 bg-surface-elevated border border-border-subtle p-3 rounded-2xl">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 bg-surface-elevated border border-border-subtle p-3 rounded-2xl">
                           <div className="flex flex-col"><span className="text-[10.5px] text-text-secondary font-bold uppercase">Hours Billing</span><span className="text-[14.5px] font-bold text-text-primary mt-0.5">{includedEntries.reduce((acc, curr) => acc + (curr.hours || 0), 0)} hrs</span><span className="text-[11.5px] text-text-secondary mt-1">Sub: {hoursSubDisplay}</span></div>
                           <div className="flex flex-col"><span className="text-[10.5px] text-text-secondary font-bold uppercase">Mileage</span><span className="text-[14.5px] font-bold text-text-primary mt-0.5">{includedEntries.reduce((acc, curr) => acc + (curr.mileage_km || 0), 0)} km</span><span className="text-[11.5px] text-text-secondary mt-1">Sub: {mileageSubDisplay}</span></div>
                           <div className="flex flex-col"><span className="text-[10.5px] text-text-secondary font-bold uppercase">Expenses</span><span className="text-[14.5px] font-bold text-emerald-450 mt-0.5">{expenseSubDisplay}</span><span className="text-[11.5px] text-text-secondary mt-1">Reimbursable claims</span></div>
@@ -9547,7 +9547,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
               <div className="flex-1 overflow-y-auto scrollbar-thin pr-1 flex flex-col gap-3">
                 {/* Statistics Cards Header */}
-                <div className="grid grid-cols-4 gap-3 flex-shrink-0">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 flex-shrink-0">
                   <div className="bg-surface-elevated border border-border-subtle p-3 rounded-2xl text-left">
                     <span className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Total Active Reps</span>
                     <span className="text-xl font-extrabold text-text-primary mt-1 block leading-none">{users.filter(u => u.role === 'rep').length}</span>
@@ -10405,7 +10405,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
             <div className="flex-1 overflow-y-auto pr-1.5 flex flex-col gap-5 min-h-0 scrollbar-thin">
               
               {/* 1. Audit Key Metrics Banner */}
-              <div className="grid grid-cols-4 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 <div className="bg-slate-900/90 border border-slate-800 p-3.5 rounded-2xl flex flex-col gap-1">
                   <span className="text-[10.5px] text-slate-400 font-bold uppercase tracking-wider">Audited Quantity</span>
                   <span className="text-xl font-black text-sky-400">

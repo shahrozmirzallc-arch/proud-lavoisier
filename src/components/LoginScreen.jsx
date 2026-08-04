@@ -18,7 +18,7 @@ export function Logo({ light = true }) {
       <img 
         src={LOGO_BASE64} 
         alt="IDS Pulse Logo" 
-        className="h-24 sm:h-28 w-auto max-w-[85%] object-contain flex-shrink-0" 
+        className="h-36 sm:h-40 md:h-44 w-auto max-w-full object-contain flex-shrink-0" 
         style={{ filter: 'none' }}
       />
     </div>

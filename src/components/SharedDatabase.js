@@ -7,7 +7,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 const STORAGE_KEY = 'ids_pulse_db';
 const DB_VERSION_KEY = 'ids_pulse_db_version';
-const CURRENT_DB_VERSION = 'v3.2.0_unique_rep_deployments';
+const CURRENT_DB_VERSION = 'v3.3.0_gca_audit_reports';
 
 const EMPTY_SCHEMA = {
   users: [],
@@ -108,7 +108,8 @@ export function initializeDB() {
   ];
   const brandNewParts = [
     { id: 'part_7t4z7000', part_number: '7T4Z-7000-A', part_name: 'E-Motor Stator Core Assembly', project_id: 'proj_oakville_900', supplier_id: 'sup_magna', status: 'active' },
-    { id: 'part_68493012', part_number: '68493012-AB', part_name: 'High Voltage Inter-Cell Busbar Connector', project_id: 'proj_windsor_500', supplier_id: 'sup_stellantis', status: 'active' }
+    { id: 'part_68493012', part_number: '68493012-AB', part_name: 'High Voltage Inter-Cell Busbar Connector', project_id: 'proj_windsor_500', supplier_id: 'sup_stellantis', status: 'active' },
+    { id: 'part_86394644', part_number: '86394644', part_name: 'LH HD Up-Level Light Assembly', project_id: 'proj_oakville_900', supplier_id: 'sup_magna', status: 'active' }
   ];
   const brandNewAssignments = [
     { id: 'asgn_magna_clarence', organization_id: 'org_ids_pulse', project_id: 'proj_oakville_900', rep_id: 'rep_clarence', billing_customer_id: 'sup_magna', supplier_id: 'sup_magna', plant_id: 'plant_oakville', authorized_regular_hours: 10.0, status: 'active', effective_from: '2026-01-01T00:00:00Z' },
@@ -121,6 +122,7 @@ export function initializeDB() {
   const brandNewContacts = [
     { id: 'c_magna_1', name: 'Robert Sterling', email: 'robert.sterling@magna.com', role: 'Primary Quality Director', organization_id: 'sup_magna', supplier_id: 'sup_magna', client_id: 'sup_magna', status: 'active' },
     { id: 'c_magna_2', name: 'Elena Rostova', email: 'elena.rostova@magna.com', role: 'Lead Engineering & Overtime Approver', organization_id: 'sup_magna', supplier_id: 'sup_magna', client_id: 'sup_magna', status: 'active' },
+    { id: 'c_magna_3', name: 'Aaron Repar', email: 'aaron.repar@magna.com', role: 'Magna Part Handoff Receiver', organization_id: 'sup_magna', supplier_id: 'sup_magna', client_id: 'sup_magna', status: 'active' },
     { id: 'c_stellantis_1', name: 'Mark Vance', email: 'mark.vance@stellantis.com', role: 'Primary Quality Manager', organization_id: 'sup_stellantis', supplier_id: 'sup_stellantis', client_id: 'sup_stellantis', status: 'active' },
     { id: 'c_stellantis_2', name: 'Sandra Bullock', email: 'sandra.bullock@stellantis.com', role: 'Overtime Approver & Engineering Lead', organization_id: 'sup_stellantis', supplier_id: 'sup_stellantis', client_id: 'sup_stellantis', status: 'active' },
     { id: 'c_stellantis_3', name: 'David Miller', email: 'david.miller@stellantis.com', role: 'Plant Operations Supervisor', organization_id: 'sup_stellantis', supplier_id: 'sup_stellantis', client_id: 'sup_stellantis', status: 'active' }
@@ -128,6 +130,40 @@ export function initializeDB() {
   const brandNewCustomerUsers = [
     { id: 'user_cust_magna_robert', name: 'Robert Sterling (Primary Quality Director)', email: 'robert.sterling@magna.com', username: 'magna_client', password: 'password123', role: 'customer', supplier_id: 'sup_magna', customer_id: 'sup_magna', title: 'Magna Primary Quality Director' },
     { id: 'user_cust_stellantis_mark', name: 'Mark Vance (Primary Quality Mgr)', email: 'mark.vance@stellantis.com', username: 'stellantis_client', password: 'password123', role: 'customer', supplier_id: 'sup_stellantis', customer_id: 'sup_stellantis', title: 'Stellantis Primary Quality Manager' }
+  ];
+
+  const brandNewIncidents = [
+    {
+      id: 'INC-GCA-2026-001',
+      title: '20 pt GCA call for LH HD up lvl light Pn 86394644',
+      incident_category: '20 pt GCA Call',
+      category: '20 pt GCA Call',
+      part_id: '86394644',
+      part_number: '86394644',
+      parts_list: [
+        { part_number: '86394644', description: 'LH HD Up-Level Light Assembly', qty: 1, bin: 'GCA-Audit-RedX' }
+      ],
+      rma_number: 'CK062026',
+      supplier_id: 'sup_magna',
+      client_id: 'sup_magna',
+      plant_id: 'plant_oakville',
+      rep_id: 'rep_clarence',
+      rep_name: 'Clarence Kuiken',
+      date: '2026-06-20',
+      created_at: '2026-06-20T15:39:22Z',
+      status: 'Released',
+      area: 'GM SAC / Red X Line (GCA Audit)',
+      severity: 'Critical',
+      action_taken: 'Issued RMA CK062026; handed suspect part to Aaron Repar for return to Magna facility. Conducted ABA swap test and water/bump test; Terry Jennings noted water in harness & flashover at pin 12 cavity.',
+      description: '20 pt GCA Audit Call for LH HD up level light PN 86394644.\nPassed EOL and Care line, driven over bump track, delivered to GCA for audit where in-op failure was found by GCA Auditor Chad. Light lit up briefly and went out. Truck driven to Red X for thorough investigation instead of scrap table.\nABA swap test conducted with control light (bump track & water test passed). Suspect light re-installed (bump track & water test passed - unrepeatable in-plant failure).\nElectrical Engineer Terry Jennings identified water in harness cavity with flashover at Pin 12.\nRMA CK062026 issued by Clarence Kuiken to authorize part transport; suspect part handed to Aaron Repar for Magna engineering tear-down review.',
+      contacts: [
+        { name: 'Matt Dillon', email: 'Matt.Dillon@magna.com', role: 'Magna Quality' },
+        { name: 'Aaron Repar', email: 'aaron.repar@magna.com', role: 'Magna Part Handoff Receiver' },
+        { name: 'Terry Jennings', email: 'terry.jennings@gm.com', role: 'Electrical Engineer' },
+        { name: 'Donna Cabral', email: 'donnacabral2@gmail.com', role: 'IDS Lead' },
+        { name: 'Greg Phillippe', email: 'greg.phillippe@goto-ids.com', role: 'IDS Executive' }
+      ]
+    }
   ];
 
   brandNewSuppliers.forEach(s => {
@@ -154,6 +190,10 @@ export function initializeDB() {
   });
   brandNewCustomerUsers.forEach(u => {
     if (!data.users.some(x => x.id === u.id || x.username === u.username)) { data.users.push(u); updated = true; }
+  });
+  if (!data.incidents) data.incidents = [];
+  brandNewIncidents.forEach(inc => {
+    if (!data.incidents.some(x => x.id === inc.id)) { data.incidents.push(inc); updated = true; }
   });
 
   // Ensure customer accounts exist for all suppliers so client portal logins work out of the box

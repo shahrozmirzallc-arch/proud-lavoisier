@@ -2996,32 +2996,46 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
         const fields = [
           { label: "Incident ID:", val: inc.id || 'N/A' },
-          { label: "Logged By (Rep):", val: users.find(u => u.id === inc.rep_id)?.name || 'Clarence Kuiken' },
+          { label: "Audit Category:", val: inc.incident_category || inc.category || 'Quality Containment Hold' },
+          { label: "RMA Tracking No:", val: inc.rma_number || 'N/A' },
+          { label: "Logged By (Rep):", val: users.find(u => u.id === inc.rep_id)?.name || inc.rep_name || 'Clarence Kuiken' },
           { label: "Report Date:", val: formattedDate || 'N/A' },
           { label: "Affected Part Number:", val: partSubject || 'N/A' },
-          { label: "Area Discovered:", val: inc.area || 'N/A' },
+          { label: "Area / Plant Line:", val: inc.area || 'N/A' },
           { label: "Immediate Action:", val: inc.action_taken || 'N/A' },
           { label: "Supplier QM Contact:", val: inc.supplier_contact || 'N/A' },
           { label: "Review Status Level:", val: inc.status || 'N/A' },
           { label: "Classification Reasoning:", val: conf.reason || 'N/A' }
         ];
         
+        let y = 46;
+        const boxStartY = 39;
+
+        // Calculate metadata box height dynamically
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9.5);
+        let calculatedHeight = 10;
+        fields.forEach((f) => {
+          const displayVal = (f.val === undefined || f.val === null || f.val === 'undefined') ? 'N/A' : String(f.val);
+          const splitVal = doc.splitTextToSize(displayVal, 115);
+          calculatedHeight += Math.max(7.5, splitVal.length * 4.2);
+        });
+
         // Metadata Box background
         doc.setFillColor(248, 250, 252);
-        doc.rect(20, 39, 170, 100, "F");
+        doc.rect(20, boxStartY, 170, calculatedHeight, "F");
         doc.setDrawColor(226, 232, 240);
         doc.setLineWidth(0.5);
-        doc.rect(20, 39, 170, 100, "D");
+        doc.rect(20, boxStartY, 170, calculatedHeight, "D");
 
-        let y = 46;
         fields.forEach((f) => {
           doc.setFont("helvetica", "bold");
-          doc.setFontSize(9.5);
+          doc.setFontSize(9);
           doc.setTextColor(71, 85, 105);
           doc.text(f.label, 25, y);
           
           doc.setFont("helvetica", "normal");
-          doc.setFontSize(9.5);
+          doc.setFontSize(9);
           if (f.label === "Classification Reasoning:") {
             doc.setTextColor(conf.colorRGB[0], conf.colorRGB[1], conf.colorRGB[2]);
             doc.setFont("helvetica", "bold");
@@ -3032,11 +3046,11 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
           const splitVal = doc.splitTextToSize(displayVal, 115);
           doc.text(splitVal, 72, y);
           
-          y += Math.max(8.5, splitVal.length * 4.5);
+          y += Math.max(7.5, splitVal.length * 4.2);
         });
         
+        y = boxStartY + calculatedHeight + 6;
         if (inc.parts_list && inc.parts_list.length > 0) {
-          y = 148;
           doc.setFont("helvetica", "bold");
           doc.setFontSize(11);
           doc.setTextColor(30, 58, 95);
@@ -3055,8 +3069,6 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
             doc.text(`- ${p.description || 'N/A'} (Qty: ${p.qty || 1}${binText})`, 60, y);
             y += 8;
           });
-        } else {
-          y = 148;
         }
         
         y += 2;

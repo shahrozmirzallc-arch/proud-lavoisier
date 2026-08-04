@@ -588,20 +588,20 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
         const totalReworkQty = matchedReworkLogs.reduce((acc, curr) => acc + (Number(curr.qty) || 0), 0);
 
         let dynamicStatus = 'ON-SITE / CLOCKED IN';
-        let dynamicStatusColor = 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500/40';
-        let dynamicDotColor = 'bg-emerald-400 animate-pulse';
+        let dynamicStatusColor = 'bg-emerald-100 text-emerald-950 border-emerald-400 font-black shadow-xs';
+        let dynamicDotColor = 'bg-emerald-600 animate-pulse';
         let dynamicInspected = 'Active Inspecting';
 
         if (latestSubmittedReport && (latestSubmittedReport.status === 'Sent' || latestSubmittedReport.status === 'published' || latestSubmittedReport.status === 'approved' || latestSubmittedReport.status === 'completed')) {
           dynamicStatus = 'REPORT SUBMITTED';
-          dynamicStatusColor = 'bg-blue-500/20 text-blue-700 dark:text-blue-300 border-blue-500/40';
-          dynamicDotColor = 'bg-blue-500';
+          dynamicStatusColor = 'bg-blue-100 text-blue-950 border-blue-400 font-black shadow-xs';
+          dynamicDotColor = 'bg-blue-600';
           const pcsCount = Number(latestSubmittedReport.total_inspected_pcs || latestSubmittedReport.parts_inspected || latestSubmittedReport.inspected || totalReworkQty || 0);
           dynamicInspected = `${pcsCount} Pcs (Report Sent)`;
         } else if (latestSubmittedReport && latestSubmittedReport.status === 'Draft') {
           dynamicStatus = 'DRAFT REPORT / INSPECTING';
-          dynamicStatusColor = 'bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/40';
-          dynamicDotColor = 'bg-amber-400 animate-pulse';
+          dynamicStatusColor = 'bg-amber-100 text-amber-950 border-amber-400 font-black shadow-xs';
+          dynamicDotColor = 'bg-amber-600 animate-pulse';
           const pcsCount = Number(latestSubmittedReport.total_inspected_pcs || latestSubmittedReport.parts_inspected || totalReworkQty || 0);
           dynamicInspected = pcsCount > 0 ? `${pcsCount} Pcs (Draft)` : 'Active Inspecting';
         } else if (totalReworkQty > 0) {

@@ -72,18 +72,13 @@ export default function LoginScreen({ onSignedIn, onResetPassword, demoEnabled =
     <main className="login-shell">
       <section className="login-brand-panel">
         <div className="login-brand-content flex flex-col justify-between py-2">
-          {/* Top Enterprise Header filling top red space */}
-          <div className="flex items-center gap-2.5 text-xs font-black uppercase tracking-wider text-sky-200 bg-sky-950/70 border border-sky-400/40 px-4 py-2.5 rounded-2xl w-fit shadow-md mb-6">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_10px_#34d399]"></span>
-            <span>Integrity Driven Solutions Inc. • Enterprise Quality Platform</span>
-          </div>
-
-          <div className="login-brand-copy my-auto">
+          {/* Main Headline shifted up to the top */}
+          <div className="login-brand-copy !mt-0 !mb-auto pt-2">
             <span>Protected industrial pilot</span>
             <h1>Every quality decision, clearly traced.</h1>
             <p>Review incidents, approvals, time, expenses and billing from one calm, task-first workspace.</p>
           </div>
-          <div className="login-trust-list">
+          <div className="login-trust-list mt-8">
             <div>
               <CheckCircle weight="fill" />
               <span>
@@ -110,8 +105,8 @@ export default function LoginScreen({ onSignedIn, onResetPassword, demoEnabled =
       </section>
 
       <section className="login-form-panel">
-        <div className="login-card">
-          <div className="mb-6 flex items-center justify-center">
+        <div className="login-card !pt-6">
+          <div className="mb-3 flex items-center justify-center">
             <Logo light={true} />
           </div>
           <h2 className="text-3xl font-black text-slate-900 tracking-tight mb-1">

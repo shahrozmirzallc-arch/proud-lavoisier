@@ -5681,16 +5681,26 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                   <div key={area.id} data-area-id={area.id} data-area-name={formatAreaName(area.name)} className="bg-white border border-slate-300 rounded-sm p-3 flex flex-col gap-2 shadow-sm daily-quality-area-card">
                     <div className="flex justify-between items-center">
                       <span className="text-[13.5px] font-bold text-slate-900 area-card-title">{formatAreaName(area.name)}</span>
-                      <div className="phone-toggle-group w-32">
+                      <div className="phone-toggle-group w-36 flex items-center bg-slate-100 p-0.5 rounded-md border border-slate-200">
                         <button 
+                          type="button"
                           onClick={() => toggleAreaStatus(area.id, 'no_issues')} 
-                          className={`phone-toggle-btn ${area.status === 'no_issues' ? 'active-emerald' : ''}`}
+                          className={`phone-toggle-btn flex-1 py-1 text-[11.5px] font-bold rounded-sm transition-all cursor-pointer ${
+                            area.status === 'no_issues' 
+                              ? 'active-emerald active-yes bg-emerald-600 text-white font-black shadow-sm' 
+                              : 'bg-transparent text-slate-600 hover:text-slate-900'
+                          }`}
                         >
                           All Good
                         </button>
                         <button 
+                          type="button"
                           onClick={() => toggleAreaStatus(area.id, 'issues')} 
-                          className={`phone-toggle-btn ${area.status === 'issues' ? 'active-rose' : ''}`}
+                          className={`phone-toggle-btn flex-1 py-1 text-[11.5px] font-bold rounded-sm transition-all cursor-pointer ${
+                            area.status === 'issues' 
+                              ? 'active-rose active-no active-defect bg-red-600 text-white font-black shadow-sm' 
+                              : 'bg-transparent text-slate-600 hover:text-slate-900'
+                          }`}
                         >
                           Defect
                         </button>

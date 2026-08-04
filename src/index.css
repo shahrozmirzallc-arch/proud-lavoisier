@@ -272,24 +272,18 @@ input[type="number"] {
   border: none;
   transition: all 0.15s ease;
 }
-.phone-toggle-btn.active-blue, .phone-toggle-btn.active-emerald, .phone-toggle-btn.active-navy {
-  background: var(--ids-emerald-600);
-  color: #ffffff;
-  font-weight: 800;
-}
-
-.phone-toggle-btn.active-yes {
+.phone-toggle-btn.active-blue, .phone-toggle-btn.active-emerald, .phone-toggle-btn.active-navy, .phone-toggle-btn.active-yes, .phone-toggle-btn.active-no_issues {
   background: var(--ids-emerald-600) !important;
   color: #ffffff !important;
   font-weight: 800 !important;
-  box-shadow: 0 1px 3px rgba(0, 143, 114, 0.25) !important;
+  box-shadow: 0 1px 3px rgba(0, 143, 114, 0.3) !important;
 }
 
-.phone-toggle-btn.active-no {
+.phone-toggle-btn.active-red, .phone-toggle-btn.active-rose, .phone-toggle-btn.active-no, .phone-toggle-btn.active-issues, .phone-toggle-btn.active-defect {
   background: var(--ids-red-600) !important;
   color: #ffffff !important;
   font-weight: 800 !important;
-  box-shadow: 0 1px 3px rgba(217, 45, 63, 0.25) !important;
+  box-shadow: 0 1px 3px rgba(217, 45, 63, 0.3) !important;
 }
 
 /* Restored Login Component Classes */

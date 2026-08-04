@@ -7785,50 +7785,100 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 </div>
               </div>
               <div className="flex-1 overflow-y-auto scrollbar-thin pr-1 grid grid-cols-2 gap-3">
-                {suppliers.map(sup => (
-                  <div key={sup.id} className="bg-surface-elevated border border-border-subtle rounded-2xl p-4 flex flex-col gap-3 h-fit text-left">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h4 className="text-sm font-extrabold text-text-primary">{sup.name}</h4>
-                        <span className="text-[11.5px] text-text-secondary font-semibold">Active Supplier Partner</span>
-                      </div>
-                      <span className="px-2 py-1 bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10.5px] font-extrabold rounded-full">ACTIVE CONTRACT</span>
-                    </div>
-                    
-                    <div className="border-t border-border-subtle pt-2.5 flex flex-col gap-2 text-[13.5px] text-text-secondary">
-                      <div className="flex items-center justify-between">
-                        <span className="font-extrabold text-text-primary text-[11.5px] uppercase tracking-wider">QM Contacts / Client Reps:</span>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setAddContactSupplier(sup);
-                            setNewContactName('');
-                            setNewContactEmail('');
-                            setNewContactRole('Customer Quality Manager');
-                            setNewContactPhone('');
-                          }}
-                          className="inline-flex items-center gap-1 text-[11px] font-black text-blue-700 hover:text-blue-800 bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-lg transition-all cursor-pointer shadow-xs"
-                        >
-                          <Plus className="w-3 h-3" />
-                          <span>Add Client Rep</span>
-                        </button>
-                      </div>
-                      {((sup.contacts && sup.contacts.length > 0) ? sup.contacts : (sup.contact_name ? [{ name: sup.contact_name, email: sup.contact_email, role: 'Quality Contact' }] : [])).map((c, i) => (
-                        <div key={i} className="bg-surface p-2.5 rounded-xl border border-border-subtle flex justify-between items-center text-[11.5px]">
-                          <div>
-                            <p className="font-extrabold text-text-primary">{typeof c === 'object' ? c.name : c}</p>
-                            <p className="text-text-secondary text-[10.5px] font-semibold">{typeof c === 'object' ? (c.role || c.title || 'Customer Quality Manager') : 'Customer Quality Manager'}</p>
-                          </div>
-                          {(typeof c === 'object' ? c.email : sup.contact_email) && (
-                            <a href={`mailto:${typeof c === 'object' ? c.email : sup.contact_email}`} className="text-[#3B82F6] hover:underline font-mono font-bold">
-                              {typeof c === 'object' ? c.email : sup.contact_email}
-                            </a>
-                          )}
+                {suppliers.map(sup => {
+                  const resolvedContacts = (() => {
+                    const list = [];
+                    const addedKeys = new Set();
+                    const addContact = (name, email, role) => {
+                      if (!name) return;
+                      const key = `${name.toLowerCase()}_${(email || '').toLowerCase()}`;
+                      if (addedKeys.has(key)) return;
+                      addedKeys.add(key);
+                      list.push({ name, email: email || '', role: role || 'Customer Quality Manager' });
+                    };
+
+                    if (Array.isArray(sup.contacts)) {
+                      sup.contacts.forEach(c => {
+                        if (typeof c === 'object' && c) {
+                          addContact(c.name, c.email, c.role || c.title);
+                        } else if (typeof c === 'string') {
+                          addContact(c, sup.contact_email || sup.email, 'Quality Contact');
+                        }
+                      });
+                    }
+
+                    const primaryName = sup.contact_person || sup.contact_name;
+                    if (primaryName) {
+                      addContact(primaryName, sup.contact_email || sup.email, sup.contact_title || 'Primary Quality Contact');
+                    }
+
+                    const allUsers = (users && users.length > 0 ? users : getEntities('users')) || [];
+                    allUsers.forEach(u => {
+                      if (!u) return;
+                      const isCustomerRole = u.role === 'customer' || u.role === 'client' || !!u.customer_id;
+                      const matchesSupplier = u.supplier_id === sup.id || u.customer_id === sup.id || 
+                        (u.company_name && sup.name && u.company_name.toLowerCase() === sup.name.toLowerCase());
+                      
+                      if (isCustomerRole && matchesSupplier) {
+                        addContact(u.name, u.email, u.title || 'Client Quality Contact');
+                      }
+                    });
+
+                    return list;
+                  })();
+
+                  return (
+                    <div key={sup.id} className="bg-surface-elevated border border-border-subtle rounded-2xl p-4 flex flex-col gap-3 h-fit text-left shadow-sm">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h4 className="text-sm font-extrabold text-text-primary">{sup.name}</h4>
+                          <span className="text-[11.5px] text-text-secondary font-semibold">Active Supplier Partner</span>
                         </div>
-                      ))}
+                        <span className="px-2 py-1 bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10.5px] font-extrabold rounded-full">ACTIVE CONTRACT</span>
+                      </div>
+                      
+                      <div className="border-t border-border-subtle pt-2.5 flex flex-col gap-2 text-[13.5px] text-text-secondary">
+                        <div className="flex items-center justify-between">
+                          <span className="font-extrabold text-text-primary text-[11.5px] uppercase tracking-wider">QM Contacts / Client Reps:</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setAddContactSupplier(sup);
+                              setNewContactName('');
+                              setNewContactEmail('');
+                              setNewContactRole('Customer Quality Manager');
+                              setNewContactPhone('');
+                            }}
+                            className="inline-flex items-center gap-1 text-[11px] font-black text-blue-700 hover:text-blue-800 bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-lg transition-all cursor-pointer shadow-xs"
+                          >
+                            <Plus className="w-3 h-3" />
+                            <span>Add Client Rep</span>
+                          </button>
+                        </div>
+
+                        {resolvedContacts.length === 0 ? (
+                          <div className="text-[11px] text-slate-500 italic p-2 rounded-lg bg-slate-50 border border-slate-200">
+                            No contacts logged yet. Click "+ Add Client Rep" to add a Quality Contact.
+                          </div>
+                        ) : (
+                          resolvedContacts.map((c, i) => (
+                            <div key={i} className="bg-surface p-2.5 rounded-xl border border-border-subtle flex justify-between items-center text-[11.5px] shadow-xs">
+                              <div>
+                                <p className="font-extrabold text-text-primary">{c.name}</p>
+                                <p className="text-text-secondary text-[10.5px] font-semibold">{c.role}</p>
+                              </div>
+                              {c.email && (
+                                <a href={`mailto:${c.email}`} className="text-[#3B82F6] hover:underline font-mono font-bold">
+                                  {c.email}
+                                </a>
+                              )}
+                            </div>
+                          ))
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}

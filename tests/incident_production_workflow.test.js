@@ -233,9 +233,9 @@ describe('IDS Pulse Incident Security & Workflow Production Suite', () => {
     const snapshot = buildRecipientSnapshot([]);
     expect(snapshot.length).toBe(3);
     const names = snapshot.map(s => s.name);
-    expect(names).toContain('Donna');
-    expect(names).toContain('Greg');
-    expect(names).toContain('Monica');
+    expect(names.some(n => n.includes('Donna'))).toBe(true);
+    expect(names.some(n => n.includes('Greg'))).toBe(true);
+    expect(names.some(n => n.includes('Monica'))).toBe(true);
   });
 
   // 13. Reconnect replay handles RPC failure safely

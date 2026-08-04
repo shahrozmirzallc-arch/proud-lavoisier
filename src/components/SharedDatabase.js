@@ -45,6 +45,10 @@ const ESSENTIAL_SUPPLIERS = [];
 
 // Initialize database in localStorage with automatic version cache invalidation
 export function initializeDB() {
+  if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
+    return JSON.parse(JSON.stringify(EMPTY_SCHEMA));
+  }
+
   const storedVersion = localStorage.getItem(DB_VERSION_KEY);
   if (storedVersion !== CURRENT_DB_VERSION) {
     console.log(`[IDS PULSE] Updating DB Schema version from ${storedVersion} to ${CURRENT_DB_VERSION}...`);
@@ -578,8 +582,10 @@ export function getDB() {
 
 // Save database
 export function saveDB(data) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-  window.dispatchEvent(new Event('ids_pulse_db_update'));
+  if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    window.dispatchEvent(new Event('ids_pulse_db_update'));
+  }
 }
 
 // Get entities helper
@@ -587,9 +593,9 @@ export function getEntities(type) {
   const db = getDB();
   let entities = db[type] || [];
 
-  const role = sessionStorage.getItem('ids_pulse_role') || 'admin';
-  const customerId = sessionStorage.getItem('ids_pulse_customer_id') || '';
-  const repId = sessionStorage.getItem('ids_pulse_rep_id') || '';
+  const role = (typeof window !== 'undefined' && typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('ids_pulse_role') : null) || 'admin';
+  const customerId = (typeof window !== 'undefined' && typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('ids_pulse_customer_id') : null) || '';
+  const repId = (typeof window !== 'undefined' && typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('ids_pulse_rep_id') : null) || '';
 
   const isAdmin = ['admin', 'owner', 'super_admin', 'accountant', 'lead', 'shahroz'].includes(role?.toLowerCase());
 

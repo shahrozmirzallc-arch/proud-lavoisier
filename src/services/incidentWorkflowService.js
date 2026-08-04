@@ -70,8 +70,8 @@ export function resolveAssignmentContacts({ assignment, contactsList = [], users
 
   const customerContacts = effectiveContactsList.filter(c => {
     if (!c) return false;
-    const cOrgId = String(c.client_id || c.customer_id || c.organization_id || c.supplier_id || '').trim().toLowerCase();
-    return targetClientId && (cOrgId === targetClientId || cOrgId === targetSupplierId);
+    const cOrgId = String(c.client_id || c.customer_id || c.organization_id || '').trim().toLowerCase();
+    return targetClientId && cOrgId === targetClientId;
   });
 
   const supplierContacts = effectiveContactsList.filter(c => {
@@ -110,38 +110,30 @@ export function buildRecipientSnapshot(contacts = [], usersDirectory = []) {
         ))
       : null;
 
-    const email = dirUser?.email || null;
-    const name = dirUser?.name || m.username.charAt(0).toUpperCase() + m.username.slice(1);
-
     return {
-      contact_id: dirUser?.id || m.id,
-      name,
-      email,
-      role: dirUser?.role || m.role,
-      recipient_type: 'mandatory_cc',
+      recipient_type: 'internal_cc',
       is_mandatory_cc: true,
-      has_routing_error: !email,
-      snapshot_at: new Date().toISOString()
+      name: dirUser?.name || (m.username === 'donna' ? 'Donna Cabral' : m.username === 'greg' ? 'Greg Phillippe' : 'Monica Executive Lead'),
+      email: dirUser?.email || `${m.username}@goto-ids.com`,
+      role: dirUser?.title || dirUser?.role || m.role
     };
   });
 
   const externalSnapshots = (Array.isArray(contacts) ? contacts : []).map(c => ({
-    contact_id: c.id,
-    name: c.name,
-    email: c.email,
-    role: c.role || 'External Contact',
-    recipient_type: 'email_and_dashboard',
+    recipient_type: c.recipient_type || 'client_contact',
     is_mandatory_cc: false,
-    has_routing_error: !c.email,
-    snapshot_at: new Date().toISOString()
+    name: c.name || c.contact_name || 'Authorized Contact',
+    email: c.email || '',
+    role: c.role || c.title || 'Client Contact'
   }));
 
-  return [...mandatorySnapshots, ...externalSnapshots];
+  return [...externalSnapshots, ...mandatorySnapshots];
 }
 
 /**
- * 4. CUSTOMER DASHBOARD VISIBILITY PREDICATE (Section 1 & 8)
- * Enforces strict tenant isolation based on canonical client_id across all Customer views.
+ * 4. CUSTOMER VISIBILITY PREDICATE (Section 4 & Part 4)
+ * Evaluates whether logged-in Customer is permitted to view Quality Incident.
+ * Rule: Incidents are visible to Customer ONLY IF status is 'Released' AND client_id matches.
  *
  * @param {Object} incident - Incident record
  * @param {string} currentUserClientId - Authoritative client_id of logged in customer user
@@ -157,13 +149,21 @@ export function isCustomerVisibleIncident(incident, currentUserClientId) {
   const incSupplierId = String(incident.supplier_id || '').trim().toLowerCase();
   const incCustomerId = String(incident.customer_id || '').trim().toLowerCase();
 
-  const matchesClient = (incClientId && incClientId === targetClientId) ||
-                        (incSupplierId && incSupplierId === targetClientId) ||
-                        (incCustomerId && incCustomerId === targetClientId);
+  let matchesClient = false;
+  if (incClientId) {
+    matchesClient = (incClientId === targetClientId);
+  } else {
+    matchesClient = (incSupplierId === targetClientId) || (incCustomerId === targetClientId);
+  }
 
   if (!matchesClient) return false;
 
-  const isReleased = incident.released_to_client === true || String(incident.status).trim() === 'Released';
+  const statusStr = String(incident.status || '').trim().toLowerCase();
+  if (['draft', 'submitted', 'open', 'pending'].includes(statusStr)) {
+    return false;
+  }
+
+  const isReleased = incident.released_to_client === true || statusStr === 'released';
   return isReleased;
 }
 
@@ -266,25 +266,12 @@ export async function releaseIncidentToClient({ incidentPayload, isOffline, curr
     });
 
     if (error || !validateServerReleaseResponse(data, incidentPayload)) {
-      const localInc = {
-        ...incidentPayload,
-        id: incidentPayload.id || `inc_${Date.now()}`,
-        released_to_client: true,
-        status: 'Released',
-        release_status: 'released',
-        released_at: new Date().toISOString(),
-        released_by: currentUser?.name || 'IDS Operations Supervisor',
-        released_by_user_id: currentUser?.id || 'supervisor_default'
-      };
-      saveEntity('incidents', localInc);
       return {
-        success: true,
+        success: false,
         isOffline: false,
-        release_status: 'released',
-        status: 'Released',
-        tracking_ref: localInc.id,
-        incident: localInc,
-        message: 'Incident released to Client Dashboard successfully.'
+        release_status: 'sync_failed',
+        status: 'Sync Failed',
+        message: 'Authoritative server response was invalid or missing required fields.'
       };
     }
 

@@ -6,6 +6,7 @@
  * authoritative database tracing, 0 text truncation, and accurate totals.
  */
 
+import { it, expect } from 'vitest';
 import { assert } from 'console';
 
 // Golden Test Dataset (Single Fictional Client & Operations Entity)
@@ -241,13 +242,10 @@ export function runReportIntegrityTests() {
   console.log(`TOTAL REPORTS TESTED: ${reportResults.length}`);
   console.log(`PASSED: ${reportResults.filter(r => r.pass).length}`);
   console.log(`FAILED: ${reportResults.filter(r => !r.pass).length}`);
-  console.log('OVERALL STATUS:', reportResults.every(r => r.pass) ? 'SUCCESS (100% PASS)' : 'FAILURE');
-  console.log('================================================================================');
-
   return reportResults.every(r => r.pass);
 }
 
-// Run test if executed directly
-if (typeof process !== 'undefined' && process.argv && process.argv[1]?.includes('golden_data_report_integrity')) {
-  runReportIntegrityTests();
-}
+it('Master Golden-Data Report Integrity Test Suite', () => {
+  const pass = runReportIntegrityTests();
+  expect(pass).toBe(true);
+});

@@ -7,7 +7,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 const STORAGE_KEY = 'ids_pulse_db';
 const DB_VERSION_KEY = 'ids_pulse_db_version';
-const CURRENT_DB_VERSION = 'v3.0.0_100pct_clean_production';
+const CURRENT_DB_VERSION = 'v3.2.0_unique_rep_deployments';
 
 const EMPTY_SCHEMA = {
   users: [],
@@ -37,8 +37,8 @@ const ESSENTIAL_ADMIN_USERS = [
   { id: 'acct_1', name: 'Colleen Boyd', email: 'colleen@goto-ids.com', username: 'colleen', phone: '+1 (416) 555-0002', role: 'accountant', title: 'Financial Accountant / Controller', pay_currency: 'CAD', avatar: 'CB' },
   { id: 'admin_1', name: 'Shahroz Mirza', email: 'shahrozmirzallc@gmail.com', username: 'shahroz', password: 'Shahroz121$', phone: '+1 (416) 555-0000', role: 'super_admin', title: 'System Super Admin', pay_currency: 'CAD', avatar: 'SM' },
   { id: 'lead_diana', name: 'Diana Operations Lead', email: 'diana@goto-ids.com', username: 'diana', phone: '+1 (416) 555-0088', role: 'lead', title: 'Operations Lead Supervisor', pay_currency: 'CAD', avatar: 'DL' },
-  { id: 'rep_clarence', name: 'Clarence Kuiken', email: 'clarence.k@goto-ids.com', username: 'clarence', phone: '+1 (416) 555-0099', role: 'rep', title: 'Quality Liaison Rep', pay_currency: 'CAD', avatar: 'CK' },
-  { id: 'rep_test', name: 'Rep Test Inspector', email: 'rep_test@integritydriven.com', username: 'rep_test', password: 'password123', phone: '+1 (416) 555-0199', role: 'rep', title: 'Quality Liaison Rep', pay_currency: 'CAD', avatar: 'RT' }
+  { id: 'rep_clarence', name: 'Clarence Kuiken', email: 'clarence.k@goto-ids.com', username: 'clarence', phone: '+1 (416) 555-0099', role: 'rep', title: 'IDS Field Rep', pay_currency: 'CAD', avatar: 'CK' },
+  { id: 'rep_test', name: 'Rep Test Inspector', email: 'rep_test@integritydriven.com', username: 'rep_test', password: 'password123', phone: '+1 (416) 555-0199', role: 'rep', title: 'IDS Field Rep', pay_currency: 'CAD', avatar: 'RT' }
 ];
 
 const ESSENTIAL_SUPPLIERS = [];
@@ -48,7 +48,6 @@ export function initializeDB() {
   const storedVersion = localStorage.getItem(DB_VERSION_KEY);
   if (storedVersion !== CURRENT_DB_VERSION) {
     console.log(`[IDS PULSE] Updating DB Schema version from ${storedVersion} to ${CURRENT_DB_VERSION}...`);
-    localStorage.removeItem(STORAGE_KEY);
     localStorage.setItem(DB_VERSION_KEY, CURRENT_DB_VERSION);
   }
 
@@ -89,6 +88,69 @@ export function initializeDB() {
       }
     });
   }
+
+  // Seed Brand New Magna Powertrain International & Stellantis Master Datasets
+  const brandNewSuppliers = [
+    { id: 'sup_magna', name: 'Magna Powertrain International', code: 'MAGNA-PT', contact_person: 'Robert Sterling', contact_email: 'robert.sterling@magna.com', status: 'active' },
+    { id: 'sup_stellantis', name: 'Stellantis Powertrain Systems', code: 'STELLANTIS-PW', contact_person: 'Mark Vance', contact_email: 'mark.vance@stellantis.com', status: 'active' }
+  ];
+  const brandNewPlants = [
+    { id: 'plant_oakville', name: 'Ford Oakville EV Complex', code: 'PLANT-OAK-90', location: 'Oakville, ON', supplier_id: 'sup_magna', status: 'active' },
+    { id: 'plant_windsor', name: 'Windsor Assembly Plant', code: 'PLANT-202', location: 'Windsor, ON', supplier_id: 'sup_stellantis', status: 'active' }
+  ];
+  const brandNewProjects = [
+    { id: 'proj_oakville_900', name: 'Ford F-150 Lightning E-Motor Stator Containment', code: 'PRJ-OAKVILLE-900', client_id: 'sup_magna', billing_customer_id: 'sup_magna', supplier_id: 'sup_magna', plant_id: 'plant_oakville', rep_id: 'rep_clarence', po_hours: 10.0, currency: 'CAD', status: 'active' },
+    { id: 'proj_windsor_500', name: 'Stellantis Pacifica PHEV Battery Pack Isolation Project', code: 'PRJ-WINDSOR-500', client_id: 'sup_stellantis', billing_customer_id: 'sup_stellantis', supplier_id: 'sup_stellantis', plant_id: 'plant_windsor', rep_id: 'rep_test', po_hours: 8.0, currency: 'CAD', status: 'active' }
+  ];
+  const brandNewParts = [
+    { id: 'part_7t4z7000', part_number: '7T4Z-7000-A', part_name: 'E-Motor Stator Core Assembly', project_id: 'proj_oakville_900', supplier_id: 'sup_magna', status: 'active' },
+    { id: 'part_68493012', part_number: '68493012-AB', part_name: 'High Voltage Inter-Cell Busbar Connector', project_id: 'proj_windsor_500', supplier_id: 'sup_stellantis', status: 'active' }
+  ];
+  const brandNewAssignments = [
+    { id: 'asgn_magna_clarence', organization_id: 'org_ids_pulse', project_id: 'proj_oakville_900', rep_id: 'rep_clarence', billing_customer_id: 'sup_magna', supplier_id: 'sup_magna', plant_id: 'plant_oakville', authorized_regular_hours: 10.0, status: 'active', effective_from: '2026-01-01T00:00:00Z' },
+    { id: 'asgn_stellantis_clarence', organization_id: 'org_ids_pulse', project_id: 'proj_windsor_500', rep_id: 'rep_clarence', billing_customer_id: 'sup_stellantis', supplier_id: 'sup_stellantis', plant_id: 'plant_windsor', authorized_regular_hours: 8.0, status: 'active', effective_from: '2026-01-01T00:00:00Z' }
+  ];
+  const brandNewRateCards = [
+    { id: 'rc_magna_clarence', assignment_id: 'asgn_magna_clarence', billing_rate: 110.00, billing_currency: 'CAD', currency: 'CAD', pay_rate: 52.00, pay_currency: 'CAD', effective_from: '2026-01-01T00:00:00Z' },
+    { id: 'rc_stellantis_clarence', assignment_id: 'asgn_stellantis_clarence', billing_rate: 95.00, billing_currency: 'CAD', currency: 'CAD', pay_rate: 48.00, pay_currency: 'CAD', effective_from: '2026-01-01T00:00:00Z' }
+  ];
+  const brandNewContacts = [
+    { id: 'c_magna_1', name: 'Robert Sterling', email: 'robert.sterling@magna.com', role: 'Primary Quality Director', organization_id: 'sup_magna', supplier_id: 'sup_magna', client_id: 'sup_magna', status: 'active' },
+    { id: 'c_magna_2', name: 'Elena Rostova', email: 'elena.rostova@magna.com', role: 'Lead Engineering & Overtime Approver', organization_id: 'sup_magna', supplier_id: 'sup_magna', client_id: 'sup_magna', status: 'active' },
+    { id: 'c_stellantis_1', name: 'Mark Vance', email: 'mark.vance@stellantis.com', role: 'Primary Quality Manager', organization_id: 'sup_stellantis', supplier_id: 'sup_stellantis', client_id: 'sup_stellantis', status: 'active' },
+    { id: 'c_stellantis_2', name: 'Sandra Bullock', email: 'sandra.bullock@stellantis.com', role: 'Overtime Approver & Engineering Lead', organization_id: 'sup_stellantis', supplier_id: 'sup_stellantis', client_id: 'sup_stellantis', status: 'active' },
+    { id: 'c_stellantis_3', name: 'David Miller', email: 'david.miller@stellantis.com', role: 'Plant Operations Supervisor', organization_id: 'sup_stellantis', supplier_id: 'sup_stellantis', client_id: 'sup_stellantis', status: 'active' }
+  ];
+  const brandNewCustomerUsers = [
+    { id: 'user_cust_magna_robert', name: 'Robert Sterling (Primary Quality Director)', email: 'robert.sterling@magna.com', username: 'magna_client', password: 'password123', role: 'customer', supplier_id: 'sup_magna', customer_id: 'sup_magna', title: 'Magna Primary Quality Director' },
+    { id: 'user_cust_stellantis_mark', name: 'Mark Vance (Primary Quality Mgr)', email: 'mark.vance@stellantis.com', username: 'stellantis_client', password: 'password123', role: 'customer', supplier_id: 'sup_stellantis', customer_id: 'sup_stellantis', title: 'Stellantis Primary Quality Manager' }
+  ];
+
+  brandNewSuppliers.forEach(s => {
+    if (!data.suppliers.some(x => x.id === s.id)) { data.suppliers.push(s); updated = true; }
+  });
+  brandNewPlants.forEach(p => {
+    if (!data.plants.some(x => x.id === p.id)) { data.plants.push(p); updated = true; }
+  });
+  brandNewProjects.forEach(p => {
+    if (!data.projects.some(x => x.id === p.id)) { data.projects.push(p); updated = true; }
+  });
+  brandNewParts.forEach(p => {
+    if (!data.parts.some(x => x.id === p.id)) { data.parts.push(p); updated = true; }
+  });
+  brandNewAssignments.forEach(a => {
+    if (!data.assignments.some(x => x.id === a.id)) { data.assignments.push(a); updated = true; }
+  });
+  brandNewRateCards.forEach(rc => {
+    if (!data.rates.some(x => x.id === rc.id || x.assignment_id === rc.assignment_id)) { data.rates.push(rc); updated = true; }
+  });
+  if (!data.contacts) data.contacts = [];
+  brandNewContacts.forEach(c => {
+    if (!data.contacts.some(x => x.id === c.id)) { data.contacts.push(c); updated = true; }
+  });
+  brandNewCustomerUsers.forEach(u => {
+    if (!data.users.some(x => x.id === u.id || x.username === u.username)) { data.users.push(u); updated = true; }
+  });
 
   // Ensure customer accounts exist for all suppliers so client portal logins work out of the box
   if (data.suppliers && Array.isArray(data.suppliers)) {
@@ -228,9 +290,31 @@ export function getSupabaseTableName(type) {
 
 export function isFieldRep(user) {
   if (!user) return false;
-  const role = (user.role || '').toLowerCase();
-  const title = (user.title || '').toLowerCase();
-  return role === 'rep' || role === 'qre' || title.includes('rep') || title.includes('quality') || title.includes('inspector') || title.includes('engineer');
+  const role = String(user.role || '').toLowerCase();
+  
+  // Rule 8 Mandatory Distinction: NEVER treat Client Contacts / Customer Quality Managers as IDS Field Reps
+  if (role === 'customer' || role === 'client' || !!user.customer_id) {
+    return false;
+  }
+
+  // Exclude non-dispatch internal roles (accountants, executives, admins) unless explicitly flagged as rep
+  if (role === 'accountant' || role === 'finance' || role === 'owner') {
+    return false;
+  }
+
+  const title = String(user.title || '').toLowerCase();
+  
+  // Must be an IDS Field Inspector / Quality Liaison Rep / QRE
+  return (
+    role === 'rep' || 
+    role === 'qre' || 
+    role === 'inspector' || 
+    role === 'quality_rep' || 
+    title.includes('field rep') || 
+    title.includes('quality inspector') || 
+    title.includes('quality liaison') ||
+    title.includes('field inspector')
+  );
 }
 
 /**
@@ -423,27 +507,68 @@ export async function syncWithSupabase(force = false, roleOverride = null, repId
   }
 }
 
-// Flush offline queue to Supabase when back online
+let isFlushingOfflineQueue = false;
+
+// Flush offline queue to Supabase when back online (Section 6 Strict Queue Classification)
 export async function flushOfflineQueue() {
-  const queue = JSON.parse(localStorage.getItem('ids_pulse_offline_queue') || '[]');
-  if (queue.length === 0) return;
+  if (isFlushingOfflineQueue) return;
+  isFlushingOfflineQueue = true;
 
-  const failedQueue = [];
-  for (const item of queue) {
-    const targetTable = getSupabaseTableName(item.type);
-    try {
-      const { error } = await supabase.from(targetTable).upsert(item.entity);
-      if (error) {
-        console.error(`[Offline Sync Error] ${targetTable}:`, error.message);
-        failedQueue.push(item);
+  try {
+    const queue = JSON.parse(localStorage.getItem('ids_pulse_offline_queue') || '[]');
+    if (queue.length === 0) return;
+
+    const remainingQueue = [];
+    const { syncQueuedIncidentRelease } = await import('../services/incidentWorkflowService');
+
+    for (const item of queue) {
+      const isIncidentRelease = item.queue_type === 'incident_release' || item.entity?.queue_type === 'incident_release';
+
+      if (isIncidentRelease) {
+        // Section 6: ONLY queue_type === 'incident_release' invokes release RPC replay!
+        // syncQueuedIncidentRelease removes exact item from outbox on success.
+        const result = await syncQueuedIncidentRelease(item);
+        if (!result.success) {
+          remainingQueue.push({
+            ...item,
+            retry_count: (item.retry_count || 0) + 1,
+            last_error: result.message || 'Server release rejected',
+            last_attempt: new Date().toISOString()
+          });
+        }
+      } else {
+        // Unrelated non-incident queue types use standard sync logic
+        const targetTable = getSupabaseTableName(item.type);
+        if (targetTable && targetTable !== 'incidents') {
+          try {
+            const { error } = await supabase.from(targetTable).upsert(item.entity);
+            if (error) {
+              console.error(`[Offline Sync Error] ${targetTable}:`, error.message);
+              remainingQueue.push({
+                ...item,
+                retry_count: (item.retry_count || 0) + 1,
+                last_error: error.message
+              });
+            }
+          } catch (err) {
+            console.error(`[Offline Sync Exception] ${item.type}:`, err);
+            remainingQueue.push({
+              ...item,
+              retry_count: (item.retry_count || 0) + 1,
+              last_error: err.message
+            });
+          }
+        }
       }
-    } catch (err) {
-      console.error(`[Offline Sync Exception] ${item.type}:`, err);
-      failedQueue.push(item);
     }
-  }
 
-  localStorage.setItem('ids_pulse_offline_queue', JSON.stringify(failedQueue));
+    // Retain failed items or items not processed by syncQueuedIncidentRelease
+    localStorage.setItem('ids_pulse_offline_queue', JSON.stringify(remainingQueue));
+  } catch (globalErr) {
+    console.error('[Offline Flush Exception]:', globalErr);
+  } finally {
+    isFlushingOfflineQueue = false;
+  }
 }
 
 // Get the entire database
@@ -505,6 +630,13 @@ export function getEntities(type) {
       if (type === 'suppliers') {
         return entities.filter(s => s.id === customerId);
       }
+      if (type === 'incidents') {
+        return entities.filter(inc => {
+          if (!inc) return false;
+          const matchesCust = (inc.customer_id === customerId || inc.client_id === customerId);
+          return matchesCust && inc.released_to_client === true && String(inc.status) === 'Released';
+        });
+      }
     }
 
     if (role === 'qre' || role === 'rep') {
@@ -556,7 +688,7 @@ export function saveEntity(type, entity) {
 
       normalizedEntity = {
         role: 'rep',
-        title: 'Quality Inspector',
+        title: 'IDS Field Rep',
         ...entity,
         name: rawName,
         username: defaultUsername,
@@ -617,7 +749,7 @@ export function addUser(user) {
 
   const newUser = {
     role: 'rep',
-    title: 'Quality Inspector',
+    title: 'IDS Field Rep',
     ...user,
     name: rawName,
     username: defaultUsername,
@@ -746,10 +878,13 @@ export function updateExtraHoursRequestStatus(reqId, status, user, comment) {
     
     if (status === 'approved' || status === 'rejected' || status === 'pending_admin') {
       const actionText = status === 'approved' ? 'Approved' : (status === 'rejected' ? 'Rejected' : 'Reviewed');
+      const dbUsers = getEntities('users') || [];
+      const ownerEmail = dbUsers.find(u => u.role === 'owner')?.email || 'management@goto-ids.com';
+      const repEmail = dbUsers.find(u => u.id === req.rep_id || u.role === 'rep')?.email || 'operations@goto-ids.com';
       addEmailLog({
         incident_id: reqId,
-        to_emails: 'greg.p@integritydriven.com',
-        cc_emails: 'rep_assigned@integritydriven.com',
+        to_emails: ownerEmail,
+        cc_emails: repEmail,
         subject: `[OVERTIME ${actionText?.toUpperCase()}] Request ${reqId} by Customer`,
         body: `<h3>OVERTIME REQUEST ${actionText?.toUpperCase()}</h3><p>Customer user <strong>${user}</strong> has ${actionText?.toLowerCase()} the overtime request.</p><p><strong>Comment:</strong> ${comment}</p>`
       });

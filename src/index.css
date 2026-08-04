@@ -7,6 +7,12 @@
   --color-highlight: #1769E0;
   --color-slate-text: #5B6F89;
   
+  --color-surface: #FFFFFF;
+  --color-surface-elevated: #FFFFFF;
+  --color-text-primary: #10284A;
+  --color-text-secondary: #475569;
+  --color-border-subtle: #CBD8E8;
+
   --radius-custom: 10px;
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
 }
@@ -266,10 +272,24 @@ input[type="number"] {
   border: none;
   transition: all 0.15s ease;
 }
-.phone-toggle-btn.active-blue, .phone-toggle-btn.active-emerald {
+.phone-toggle-btn.active-blue, .phone-toggle-btn.active-emerald, .phone-toggle-btn.active-navy {
   background: var(--ids-emerald-600);
   color: #ffffff;
   font-weight: 800;
+}
+
+.phone-toggle-btn.active-yes {
+  background: var(--ids-emerald-600) !important;
+  color: #ffffff !important;
+  font-weight: 800 !important;
+  box-shadow: 0 1px 3px rgba(0, 143, 114, 0.25) !important;
+}
+
+.phone-toggle-btn.active-no {
+  background: var(--ids-red-600) !important;
+  color: #ffffff !important;
+  font-weight: 800 !important;
+  box-shadow: 0 1px 3px rgba(217, 45, 63, 0.25) !important;
 }
 
 /* Restored Login Component Classes */

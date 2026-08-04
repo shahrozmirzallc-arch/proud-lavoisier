@@ -18,17 +18,9 @@ export function Logo({ light = false }) {
       <img 
         src={LOGO_BASE64} 
         alt="IDS Pulse Logo" 
-        className="h-11 w-auto object-contain flex-shrink-0" 
+        className="h-22 w-auto object-contain flex-shrink-0" 
         style={{ filter: light ? 'none' : 'brightness(0) invert(1)' }}
       />
-      <div className="flex flex-col text-left leading-none">
-        <strong className={light ? "text-slate-900 font-black text-xl tracking-tight" : "text-white font-black text-xl tracking-tight"}>
-          IDS PULSE
-        </strong>
-        <span className={light ? "text-slate-600 font-semibold text-[9.5px] uppercase tracking-widest mt-1" : "text-blue-200 font-semibold text-[9.5px] uppercase tracking-widest mt-1"}>
-          INTEGRITY DRIVEN SOLUTIONS INC.
-        </span>
-      </div>
     </div>
   );
 }
@@ -326,12 +318,13 @@ export default function LoginScreen({ onSignedIn, onResetPassword, demoEnabled =
                     </span>
                     <span className="text-[9px] text-amber-600 font-semibold">Billing</span>
                   </div>
-                  <strong className="text-xs font-bold text-slate-900 block truncate">Colleen Boyd</strong>
+                <strong className="text-xs font-bold text-slate-900 block truncate">Colleen Boyd</strong>
                   <span className="text-[9.5px] text-amber-700 font-medium block truncate">Financial Controller</span>
                 </button>
 
                 {/* 4. CLIENT ROLE */}
-                <button
+                {/* CLIENT — Stellantis Client (Mark Vance) */}
+                <button 
                   type="button"
                   disabled={submitting}
                   onClick={async () => {
@@ -340,7 +333,7 @@ export default function LoginScreen({ onSignedIn, onResetPassword, demoEnabled =
                     setPassword('');
                     setSubmitting(true);
                     try {
-                      const res = await onSignedIn({ username: 'autokabel', isDemoMode: true });
+                      const res = await onSignedIn({ username: 'stellantis_client', isDemoMode: true });
                       if (!res) setError('Could not sign in as CLIENT.');
                     } catch {
                       setError('Authentication error occurred.');
@@ -356,8 +349,37 @@ export default function LoginScreen({ onSignedIn, onResetPassword, demoEnabled =
                     </span>
                     <span className="text-[9px] text-emerald-600 font-semibold">Portal</span>
                   </div>
-                  <strong className="text-xs font-bold text-slate-900 block truncate">AutoKabel Client</strong>
-                  <span className="text-[9.5px] text-emerald-700 font-medium block truncate">Supplier Quality Partner</span>
+                  <strong className="text-xs font-bold text-slate-900 block truncate">Stellantis Client</strong>
+                  <span className="text-[9.5px] text-emerald-700 font-medium block truncate">Mark Vance (Quality Mgr)</span>
+                </button>
+
+                {/* CLIENT — Magna Client (Robert Sterling) */}
+                <button 
+                  type="button"
+                  disabled={submitting}
+                  onClick={async () => {
+                    setUsername('magna_client');
+                    setPassword('');
+                    setSubmitting(true);
+                    try {
+                      const res = await onSignedIn({ username: 'magna_client', isDemoMode: true });
+                      if (!res) setError('Could not sign in as Magna Client.');
+                    } catch {
+                      setError('Authentication error occurred.');
+                    } finally {
+                      setSubmitting(false);
+                    }
+                  }}
+                  className="p-3 rounded-xl bg-blue-50/70 hover:bg-blue-100/80 border border-blue-200/80 text-left transition-all cursor-pointer shadow-xs hover:shadow-sm disabled:opacity-50"
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[9.5px] font-black uppercase tracking-wider text-blue-800 bg-blue-200/70 px-1.5 py-0.5 rounded">
+                      CLIENT
+                    </span>
+                    <span className="text-[9px] text-blue-600 font-semibold">Magna</span>
+                  </div>
+                  <strong className="text-xs font-bold text-slate-900 block truncate">Magna Client</strong>
+                  <span className="text-[9.5px] text-blue-700 font-medium block truncate">Robert Sterling (Quality Dir)</span>
                 </button>
               </div>
             </div>

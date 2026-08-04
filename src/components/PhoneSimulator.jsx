@@ -8,7 +8,66 @@ import {
 import { getEntities, addIncident, addEmailLog, addReworkLog, saveEntity, addExpenseEntry, logSystemEvent, supabase, syncWithSupabase, saveExtraHoursRequest, isEntryAccountingEligible } from './SharedDatabase';
 import { uploadToCloudinary } from '../services/cloudinaryService';
 import { stageIncidentLocally, getLocalOutbox } from '../services/nativeStorageService';
-import { getRepStatusConfig, sanitizeCustomerDerivativeUrl } from '../services/mediaSecurityService';
+import {
+  resolveAuthoritativeAssignment,
+  resolveAssignmentContacts,
+  buildRecipientSnapshot,
+  releaseIncidentToClient
+} from '../services/incidentWorkflowService';
+import { getFormattedLocationTime, getFormattedLocationDate } from '../utils/locationTimeUtil';
+import BusinessDropdown from './common/BusinessDropdown';
+import { formatAreaName, normalizeAndMergeShiftAreas } from '../utils/shiftAreaUtils';
+import { submitRepHours, reviewClientOvertime, resubmitReturnedOvertime, HoursSplitModal, HoursStatus } from '../features/hours';
+
+// Reusable AutoGrowTextarea component (Section 3)
+const AutoGrowTextarea = ({
+  value,
+  onChange,
+  placeholder,
+  minHeight = '120px',
+  maxHeight = '280px',
+  className = '',
+  id,
+  'aria-describedby': ariaDescribedBy,
+  'aria-invalid': ariaInvalid,
+  ...props
+}) => {
+  const textareaRef = useRef(null);
+
+  const adjustHeight = () => {
+    const el = textareaRef.current;
+    if (el) {
+      el.style.height = 'auto';
+      const scrollH = el.scrollHeight;
+      const minH = parseInt(minHeight, 10) || 120;
+      const maxH = parseInt(maxHeight, 10) || 280;
+      const targetH = Math.min(Math.max(scrollH, minH), maxH);
+      el.style.height = `${targetH}px`;
+    }
+  };
+
+  useEffect(() => {
+    adjustHeight();
+  }, [value]);
+
+  return (
+    <textarea
+      ref={textareaRef}
+      id={id}
+      value={value || ''}
+      onChange={(e) => {
+        onChange(e);
+        adjustHeight();
+      }}
+      placeholder={placeholder}
+      aria-describedby={ariaDescribedBy}
+      aria-invalid={ariaInvalid}
+      style={{ minHeight, maxHeight }}
+      className={`w-full p-3 bg-slate-50 border rounded-xl text-[16px] md:text-sm font-medium text-slate-900 focus:bg-white focus:border-[#008F72] transition-all resize-y overflow-y-auto ${className}`}
+      {...props}
+    />
+  );
+};
 
 export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigger, isNativeMobile, currentUser: propUser = null }) {
   const isNative = isNativeMobile ?? (typeof window !== 'undefined' && (
@@ -26,6 +85,12 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
   const [submittingAuth, setSubmittingAuth] = useState(false);
   const [rememberDevice, setRememberDevice] = useState(true);
   const [currentUser, setCurrentUser] = useState(null);
+  const [mobileTime, setMobileTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => setMobileTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
   
   // Toast Notification State
   const [toast, setToast] = useState(null);
@@ -35,12 +100,16 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
   };
 
   // Assignment & Plant Control
-  const [selectedPlant, setSelectedPlant] = useState('gm_oshawa');
+  const [selectedPlant, setSelectedPlant] = useState('plant_oakville');
   const [selectedAssignmentId, setSelectedAssignmentId] = useState('');
   const [plants, setPlants] = useState([]);
 
-  // Active screen inside the phone: 'login' | 'home' | 'incident' | 'rework' | 'summary' | 'history'
   const [activeScreen, setActiveScreen] = useState('login');
+
+  useEffect(() => {
+    window.__setActiveScreen = (s) => setActiveScreen(s);
+    window.__openDailyQualityReport = () => setActiveScreen('summary');
+  });
 
   // INCIDENT REPORT STATE
   const [incStep, setIncStep] = useState(1); // steps: 1: Capture, 2: Scan, 3: Describe, 4: Send, 3.5: AI Duplicate Check
@@ -74,50 +143,500 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
   });
   const [drawingTarget, setDrawingTarget] = useState('closeup'); // 'wide' | 'medium' | 'closeup'
 
-  // Flexible Evidence Photo State (Donna & Clarence Rep Process)
-  const [evidenceList, setEvidenceList] = useState([
-    {
-      id: 'ev_init_1',
-      url: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=600&q=80',
-      note: 'Scrap Tag & Part Number on Scrap Table',
-      order: 1,
-      label: 'Photo 1',
-      isAnnotated: false,
-      annotatedUrl: null,
-      strokes: []
-    }
-  ]);
+  // Photo evidence collection state — start with EMPTY evidence list per Section 2
+  const [evidenceList, setEvidenceList] = useState([]);
   const [annotateTargetId, setAnnotateTargetId] = useState(null);
   const [showAddPhotoModal, setShowAddPhotoModal] = useState(false);
   const [deleteConfirmTarget, setDeleteConfirmTarget] = useState(null);
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
   const [strokeColor, setStrokeColor] = useState('#EF4444'); // Red default
   const [activeStrokes, setActiveStrokes] = useState([]);
+
+  // Real 30-Second Video Evidence State (Section I)
+  const [stagedVideoObject, setStagedVideoObject] = useState(null);
+  const [showDeleteVideoConfirm, setShowDeleteVideoConfirm] = useState(false);
+  const [isRecordingVideo, setIsRecordingVideo] = useState(false);
+  const [recordingTimer, setRecordingTimer] = useState(0);
+  const videoFileInputRef = useRef(null);
+
+  // Authoritative HTML5 Video Duration Validator (Section I)
+  const validateAndStageVideoFile = (file) => {
+    return new Promise((resolve, reject) => {
+      if (!file) {
+        reject(new Error("No video file selected."));
+        return;
+      }
+
+      if (!file.type || !file.type.startsWith('video/')) {
+        reject(new Error("Selected file is not a valid video format."));
+        return;
+      }
+
+      const videoEl = document.createElement('video');
+      videoEl.preload = 'metadata';
+      const objectUrl = URL.createObjectURL(file);
+
+      videoEl.onloadedmetadata = () => {
+        URL.revokeObjectURL(objectUrl);
+        const durationSec = Math.round(videoEl.duration);
+
+        if (durationSec > 30) {
+          reject(new Error("This video is longer than 30 seconds. Record a shorter video or choose another file."));
+          return;
+        }
+
+        const fileSizeMb = (file.size / (1024 * 1024)).toFixed(1);
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const videoObject = {
+            id: `vid_${Date.now()}`,
+            name: file.name || `defect_clip_${Date.now().toString().slice(-4)}.mp4`,
+            dataUrl: e.target.result,
+            durationSec: durationSec,
+            durationStr: `00:${durationSec.toString().padStart(2, '0')} of 00:30`,
+            fileSizeMb: fileSizeMb,
+            isLargeFile: parseFloat(fileSizeMb) > 10.0,
+            stagedAt: new Date().toISOString()
+          };
+          resolve(videoObject);
+        };
+        reader.onerror = () => reject(new Error("Failed to read video file content."));
+        reader.readAsDataURL(file);
+      };
+
+      videoEl.onerror = () => {
+        URL.revokeObjectURL(objectUrl);
+        reject(new Error("Unreadable or corrupted video file format."));
+      };
+
+      videoEl.src = objectUrl;
+    });
+  };
+
+  const handleVideoFileSelected = async (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+
+    try {
+      const videoObj = await validateAndStageVideoFile(file);
+      setStagedVideoObject(videoObj);
+      setMediaEvidenceStatus('provided');
+      setMediaUnavailableReason(null);
+      setMediaUnavailableNote('');
+      showToast(`Video attached: ${videoObj.name} (${videoObj.fileSizeMb} MB, ${videoObj.durationStr})`, "success");
+    } catch (err) {
+      showToast(err.message || "Failed to validate video file.", "error");
+    } finally {
+      if (e.target) e.target.value = '';
+    }
+  };
+
+  // Step 1 Media Evidence State (Section 2 & 6 Master Correction Prompt)
+  const [mediaChoice, setMediaChoice] = useState(null); // 'add' | 'unavailable' | 'not_provided' | null
+  const [mediaEvidenceStatus, setMediaEvidenceStatus] = useState('not_provided'); // 'provided' | 'unavailable' | 'not_provided'
+  const [mediaUnavailableReason, setMediaUnavailableReason] = useState(null);
+  const [mediaUnavailableNote, setMediaUnavailableNote] = useState('');
+  const [showMissingMediaDialog, setShowMissingMediaDialog] = useState(false);
+
+  // Container replacement targeting ID (Section 5)
+  const [replacingContainerId, setReplacingContainerId] = useState(null);
+
+  // Step 2 Parts & Traceability State (Section 4 Master Correction Prompt)
+  const [partChoice, setPartChoice] = useState(null); // 'scan' | 'manual' | 'unavailable' | null
+  const [traceabilityStatus, setTraceabilityStatus] = useState('not_provided'); // 'provided' | 'not_provided'
+  const [unavailableReason, setUnavailableReason] = useState(null);
+  const [unavailableNote, setUnavailableNote] = useState('');
+
+  const [affectedParts, setAffectedParts] = useState([]);
+  const [manualPNInput, setManualPNInput] = useState('');
+  const [manualSerialInput, setManualSerialInput] = useState('');
+  const [manualLotInput, setManualLotInput] = useState('');
+  const [manualDateInput, setManualDateInput] = useState('');
+  const [manualQtyInput, setManualQtyInput] = useState('');
+  const [manualInputError, setManualInputError] = useState('');
+
+  // Non-blocking confirmation modal state (Section 4)
+  const [showNoTraceabilityConfirmation, setShowNoTraceabilityConfirmation] = useState(false);
+  const [hasConfirmedNoTraceability, setHasConfirmedNoTraceability] = useState(false);
+
+  // Section B: Tote or Container Information
+  const [containerChoice, setContainerChoice] = useState(null); // 'scan' | 'manual' | 'unavailable' | null
+  const [containerTraceabilityStatus, setContainerTraceabilityStatus] = useState('not_provided'); // 'provided' | 'not_provided'
+  const [containerUnavailableReason, setContainerUnavailableReason] = useState(null);
+  const [toteBinLabels, setToteBinLabels] = useState([]);
+  const [manualToteInput, setManualToteInput] = useState('');
+  const [manualContainerType, setManualContainerType] = useState('Tote');
+  const [manualContainerSerial, setManualContainerSerial] = useState('');
+  const [manualContainerLot, setManualContainerLot] = useState('');
+  const [manualContainerQty, setManualContainerQty] = useState('');
+  const [manualToteError, setManualToteError] = useState('');
+
+  // Unmatched Container Association Modal
+  const [unmatchedContainerPrompt, setUnmatchedContainerPrompt] = useState(null);
+
+  const [selectedTotePartAssociation, setSelectedTotePartAssociation] = useState('ALL');
+  const [editingToteId, setEditingToteId] = useState(null);
+  const [editToteInputValue, setEditToteInputValue] = useState('');
+  const [editToteError, setEditToteError] = useState('');
+
+  const [toteBinLabel, setToteBinLabel] = useState(''); // Legacy fallback compatibility accessor
+  const [mislabelWarning, setMislabelWarning] = useState(null);
+  const [verificationTargetPartId, setVerificationTargetPartId] = useState(null);
+  const [editingPartId, setEditingPartId] = useState(null);
+  const [editPartInputValue, setEditPartInputValue] = useState('');
+  const [editInputError, setEditInputError] = useState('');
+
   const [scannedPartsList, setScannedPartsList] = useState([]);
   const [scanningType, setScanningType] = useState(null); // 'barcode' | 'qr' | null
   const [scannedPN, setScannedPN] = useState('');
   const [scannedBin, setScannedBin] = useState('');
   const [partInfo, setPartInfo] = useState(null);
   const [manualEntryWarning, setManualEntryWarning] = useState(false);
-  const [selectedArea, setSelectedArea] = useState('Sequence Area');
+  const [selectedArea, setSelectedArea] = useState('');
+  const [areaError, setAreaError] = useState('');
   const [defectType, setDefectType] = useState('');
   const [customDefect, setCustomDefect] = useState('');
   const [description, setDescription] = useState('');
-  const [actionTaken, setActionTaken] = useState('Removed bulb, returned light to sequence area');
-  const [supplierContact, setSupplierContact] = useState('Martin');
+  const [descriptionError, setDescriptionError] = useState('');
+  const [actionTaken, setActionTaken] = useState('');
+  const [selectedSupplierContactIds, setSelectedSupplierContactIds] = useState([]);
+  const [supplierContactSearch, setSupplierContactSearch] = useState('');
+  const [supplierContact, setSupplierContact] = useState('');
   const [isReturningDefect, setIsReturningDefect] = useState('N');
   const [isSortRequired, setIsSortRequired] = useState('N');
   const [isRmaRequired, setIsRmaRequired] = useState('N');
-  const [concernClassification, setConcernClassification] = useState('PRR');
+  const [rmaNumber, setRmaNumber] = useState('');
+
+  const getSupplierName = (supId) => {
+    if (!supId) return 'Client / Supplier';
+    const dbSuppliers = getEntities('suppliers') || [];
+    const sup = dbSuppliers.find(s => String(s.id) === String(supId) || s.name === supId || s.code === supId);
+    return sup?.name || supId;
+  };
+  const [concernClassification, setConcernClassification] = useState('');
+
+  // Authoritative Routing Contacts Resolver (Phase 1 Fix)
+  const getAvailableRoutingContacts = () => {
+    const activeAssignment = resolveActiveAssignment();
+    const dbContacts = getEntities('supplier_contacts') || getEntities('contacts') || [];
+    const dbSuppliers = getEntities('suppliers') || [];
+
+    return resolveAssignmentContacts({
+      assignment: activeAssignment,
+      contactsList: dbContacts,
+      suppliersList: dbSuppliers
+    });
+  };
+
+  const getAvailableSupplierContacts = () => {
+    const routingObj = getAvailableRoutingContacts();
+    if (Array.isArray(routingObj)) return routingObj;
+    if (routingObj && Array.isArray(routingObj.supplierContacts) && Array.isArray(routingObj.customerContacts)) {
+      return [...routingObj.customerContacts, ...routingObj.supplierContacts];
+    }
+    if (routingObj && Array.isArray(routingObj.customerContacts) && routingObj.customerContacts.length > 0) {
+      return routingObj.customerContacts;
+    }
+    if (routingObj && Array.isArray(routingObj.supplierContacts)) {
+      return routingObj.supplierContacts;
+    }
+    return [];
+  };
+
+  // Auto-select available client contacts for active assignment when step 3 or 4 loads
+  useEffect(() => {
+    if (incStep >= 3 && selectedSupplierContactIds.length === 0) {
+      const avail = getAvailableSupplierContacts();
+      if (avail.length > 0) {
+        const allIds = avail.map(c => c.id);
+        setSelectedSupplierContactIds(allIds);
+        const names = avail.map(c => c.name).join(', ');
+        setSupplierContact(names);
+      }
+    }
+  }, [incStep, selectedAssignmentId]);
   
-  // Video mock state
-  const [hasVideo, setHasVideo] = useState(false);
+  // Saved Draft Prompt Object (Section 7)
+  const [savedDraftObject, setSavedDraftObject] = useState(null);
+
+  // Centralized Validation Function (Section 1 & 3 Master Correction Prompt)
+  const validateIncidentWorkflow = (targetStep = 4) => {
+    const hasAnyRealMedia = evidenceList.length > 0 || !!stagedVideoObject;
+
+    if (targetStep >= 2) {
+      if (!hasAnyRealMedia && mediaEvidenceStatus !== 'unavailable') {
+        return {
+          valid: false,
+          errorStep: 1,
+          code: 'MEDIA_REASON_REQUIRED',
+          message: 'A missing-media reason is required before continuing without visual evidence.'
+        };
+      }
+      if (!hasAnyRealMedia && mediaEvidenceStatus === 'unavailable') {
+        if (!mediaUnavailableReason) {
+          return {
+            valid: false,
+            errorStep: 1,
+            code: 'MEDIA_REASON_MISSING',
+            message: 'Please select why visual media is unavailable.'
+          };
+        }
+        if (mediaUnavailableReason === 'Other' && (!mediaUnavailableNote || !mediaUnavailableNote.trim())) {
+          return {
+            valid: false,
+            errorStep: 1,
+            code: 'MEDIA_OTHER_NOTE_REQUIRED',
+            message: 'An explanation note is required when "Other" reason is selected for missing media.'
+          };
+        }
+      }
+    }
+
+    if (targetStep >= 4) {
+      const activeProj = resolveActiveAssignment();
+      if (!activeProj || (!activeProj.customer_id && !activeProj.client_id && !activeProj.supplier_id && !activeProj.billing_customer_id)) {
+        return {
+          valid: false,
+          errorStep: 1,
+          code: 'NO_ASSIGNMENT_RESOLVED',
+          message: 'An authoritative project assignment is required to release an incident report. Please select an active assignment.'
+        };
+      }
+
+      if (!selectedArea || !selectedArea.trim()) {
+        setAreaError('Enter where the concern was found.');
+        return {
+          valid: false,
+          errorStep: 3,
+          code: 'AREA_REQUIRED',
+          message: 'Enter where the concern was found.'
+        };
+      }
+      if (!description || !description.trim()) {
+        setDescriptionError('Describe the suspect defect.');
+        return {
+          valid: false,
+          errorStep: 3,
+          code: 'DESCRIPTION_REQUIRED',
+          message: 'Describe the suspect defect.'
+        };
+      }
+    }
+
+    return { valid: true };
+  };
+
+  // Check saved draft on mount
+  useEffect(() => {
+    if (currentUser?.id) {
+      const draftKey = `ids_incident_draft_${currentUser.id}`;
+      try {
+        const saved = localStorage.getItem(draftKey);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed && (parsed.affectedParts?.length > 0 || parsed.toteBinLabels?.length > 0 || parsed.evidenceList?.length > 0 || parsed.stagedVideoObject || parsed.traceabilityStatus === 'not_provided' || parsed.mediaEvidenceStatus === 'unavailable')) {
+            setSavedDraftObject(parsed);
+          }
+        }
+      } catch (e) {
+        console.warn("Could not check saved draft:", e);
+      }
+    }
+  }, [currentUser]);
+
+  // Restore saved draft (Requirement 10: Complete Page 3 Restoration)
+  const handleRestoreDraft = () => {
+    if (!savedDraftObject) return;
+    if (savedDraftObject.incidentStep) setIncStep(savedDraftObject.incidentStep);
+    setMediaChoice(savedDraftObject.mediaChoice || null);
+    setMediaEvidenceStatus(savedDraftObject.mediaEvidenceStatus || 'not_provided');
+    setMediaUnavailableReason(savedDraftObject.mediaUnavailableReason || null);
+    setMediaUnavailableNote(savedDraftObject.mediaUnavailableNote || '');
+    if (savedDraftObject.evidenceList) setEvidenceList(savedDraftObject.evidenceList);
+    if (savedDraftObject.stagedVideoObject) setStagedVideoObject(savedDraftObject.stagedVideoObject);
+
+    setPartChoice(savedDraftObject.partChoice || null);
+    setTraceabilityStatus(savedDraftObject.traceabilityStatus || 'not_provided');
+    setUnavailableReason(savedDraftObject.unavailableReason || null);
+    setUnavailableNote(savedDraftObject.unavailableNote || '');
+    setAffectedParts(savedDraftObject.affectedParts || []);
+
+    setContainerChoice(savedDraftObject.containerChoice || null);
+    setContainerTraceabilityStatus(savedDraftObject.containerTraceabilityStatus || 'not_provided');
+    setContainerUnavailableReason(savedDraftObject.containerUnavailableReason || null);
+    setToteBinLabels(savedDraftObject.toteBinLabels || []);
+    setVerificationTargetPartId(savedDraftObject.verificationTargetPartId || null);
+    setMislabelWarning(savedDraftObject.unresolvedMislabel || null);
+
+    if (savedDraftObject.selectedPlant) setSelectedPlant(savedDraftObject.selectedPlant);
+    if (savedDraftObject.selectedArea !== undefined) setSelectedArea(savedDraftObject.selectedArea);
+    if (savedDraftObject.defectType !== undefined) setDefectType(savedDraftObject.defectType);
+    if (savedDraftObject.description !== undefined) setDescription(savedDraftObject.description);
+    if (savedDraftObject.actionTaken !== undefined) setActionTaken(savedDraftObject.actionTaken);
+    if (savedDraftObject.selectedSupplierContactIds !== undefined) setSelectedSupplierContactIds(savedDraftObject.selectedSupplierContactIds);
+    if (savedDraftObject.supplierContact !== undefined) setSupplierContact(savedDraftObject.supplierContact);
+    if (savedDraftObject.isReturningDefect !== undefined) setIsReturningDefect(savedDraftObject.isReturningDefect);
+    if (savedDraftObject.isSortRequired !== undefined) setIsSortRequired(savedDraftObject.isSortRequired);
+    if (savedDraftObject.isRmaRequired !== undefined) setIsRmaRequired(savedDraftObject.isRmaRequired);
+    if (savedDraftObject.rmaNumber !== undefined) setRmaNumber(savedDraftObject.rmaNumber);
+    if (savedDraftObject.concernClassification !== undefined) setConcernClassification(savedDraftObject.concernClassification);
+
+    setSavedDraftObject(null);
+    showToast("Saved report draft restored", "success");
+  };
+
+  const handleDiscardDraft = () => {
+    if (currentUser?.id) {
+      try {
+        localStorage.removeItem(`ids_incident_draft_${currentUser.id}`);
+      } catch (e) {
+        console.warn("Could not clear draft:", e);
+      }
+    }
+    setSavedDraftObject(null);
+    resetIncidentFormState();
+    showToast("Saved draft discarded", "info");
+  };
+
+  // DRAFT PERSISTENCE (Requirement Section 10: Complete State Storage)
+  useEffect(() => {
+    if (currentUser?.id) {
+      const draftKey = `ids_incident_draft_${currentUser.id}`;
+      const hasAnyRealMedia = evidenceList.length > 0 || !!stagedVideoObject;
+      if (affectedParts.length > 0 || toteBinLabels.length > 0 || evidenceList.length > 0 || stagedVideoObject || mediaEvidenceStatus === 'unavailable' || selectedArea || description) {
+        const draftObj = {
+          draftId: `draft_${currentUser.id}`,
+          incidentStep: incStep,
+
+          mediaChoice,
+          mediaEvidenceStatus: hasAnyRealMedia ? 'provided' : mediaEvidenceStatus,
+          mediaUnavailableReason: hasAnyRealMedia ? null : mediaUnavailableReason,
+          mediaUnavailableNote: hasAnyRealMedia ? null : mediaUnavailableNote,
+          evidenceList,
+          stagedVideoObject,
+
+          partChoice,
+          traceabilityStatus: affectedParts.length > 0 ? 'provided' : 'not_provided',
+          unavailableReason,
+          unavailableNote,
+          affectedParts,
+
+          containerChoice,
+          containerTraceabilityStatus: toteBinLabels.length > 0 ? 'provided' : 'not_provided',
+          containerUnavailableReason,
+          toteBinLabels,
+          toteBinLabel: toteBinLabels[0]?.labelValue || toteBinLabel || '',
+
+          verificationTargetPartId,
+          unresolvedMislabel: mislabelWarning,
+
+          selectedPlant,
+          selectedArea,
+          defectType,
+          description,
+          actionTaken,
+          selectedSupplierContactIds,
+          supplierContact,
+          isReturningDefect,
+          isSortRequired,
+          isRmaRequired,
+          rmaNumber,
+          concernClassification,
+          updatedAt: new Date().toISOString()
+        };
+        try {
+          localStorage.setItem(draftKey, JSON.stringify(draftObj));
+        } catch (e) {
+          console.warn("Could not save incident draft to localStorage:", e);
+        }
+      }
+    }
+  }, [affectedParts, toteBinLabels, toteBinLabel, mediaChoice, mediaEvidenceStatus, mediaUnavailableReason, mediaUnavailableNote, evidenceList, stagedVideoObject, partChoice, traceabilityStatus, unavailableReason, unavailableNote, containerChoice, containerTraceabilityStatus, containerUnavailableReason, verificationTargetPartId, mislabelWarning, selectedArea, defectType, description, actionTaken, selectedSupplierContactIds, supplierContact, isReturningDefect, isSortRequired, isRmaRequired, rmaNumber, concernClassification, selectedPlant, incStep, currentUser]);
+
+  // Helper function to clear draft and reset all incident form state
+  const resetIncidentFormState = () => {
+    setMediaChoice(null);
+    setMediaEvidenceStatus('not_provided');
+    setMediaUnavailableReason(null);
+    setMediaUnavailableNote('');
+    setShowMissingMediaDialog(false);
+    setEvidenceList([]);
+    setStagedVideoObject(null);
+
+    setPartChoice(null);
+    setTraceabilityStatus('not_provided');
+    setUnavailableReason(null);
+    setUnavailableNote('');
+    setAffectedParts([]);
+
+    setContainerChoice(null);
+    setContainerTraceabilityStatus('not_provided');
+    setContainerUnavailableReason(null);
+    setToteBinLabels([]);
+    setReplacingContainerId(null);
+    setManualToteInput('');
+    setManualContainerType('Tote');
+    setManualContainerSerial('');
+    setManualContainerLot('');
+    setManualContainerQty('');
+    setManualToteError('');
+    setSelectedTotePartAssociation('ALL');
+    setEditingToteId(null);
+    setEditToteInputValue('');
+    setEditToteError('');
+    setToteBinLabel('');
+    setManualPNInput('');
+    setManualSerialInput('');
+    setManualLotInput('');
+    setManualDateInput('');
+    setManualQtyInput('');
+    setManualInputError('');
+    setMislabelWarning(null);
+    setVerificationTargetPartId(null);
+    setEditingPartId(null);
+    setEditPartInputValue('');
+    setEditInputError('');
+    setShowNoTraceabilityConfirmation(false);
+    setHasConfirmedNoTraceability(false);
+    setUnmatchedContainerPrompt(null);
+    setScannedPartsList([]);
+    setScannedPN('');
+    setScannedBin('');
+    setPartInfo(null);
+
+    setSelectedArea('');
+    setAreaError('');
+    setDefectType('');
+    setDescription('');
+    setDescriptionError('');
+    setActionTaken('');
+    setSelectedSupplierContactIds([]);
+    setSupplierContactSearch('');
+    setSupplierContact('');
+    setIsReturningDefect('N');
+    setIsSortRequired('N');
+    setIsRmaRequired('N');
+    setRmaNumber('');
+    setConcernClassification('');
+    setIncStep(1);
+    if (currentUser?.id) {
+      try {
+        localStorage.removeItem(`ids_incident_draft_${currentUser.id}`);
+      } catch (e) {
+        console.warn("Could not clear incident draft:", e);
+      }
+    }
+  };
 
   // Email Preview toggle
   const [showEmailPreview, setShowEmailPreview] = useState(false);
+  useEffect(() => {
+    window.__toggleEmailPreview = () => setShowEmailPreview(prev => !prev);
+  }, []);
   const [isSendingIncident, setIsSendingIncident] = useState(false);
   const [incidentSentConfirmation, setIncidentSentConfirmation] = useState(false);
   const [sentIncidentId, setSentIncidentId] = useState(null);
+  const [isOfflineRelease, setIsOfflineRelease] = useState(false);
 
   // Offline Confirmation Modal & Media Help state
   const [showOfflineModal, setShowOfflineModal] = useState(false);
@@ -174,13 +693,8 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
   const [addHoursPastReason, setAddHoursPastReason] = useState('');
   const [addHoursToast, setAddHoursToast] = useState(null);
   
-  // SHIFT SUMMARY STATE
-  const [areasWalked, setAreasWalked] = useState([
-    { id: 'wa_1', name: 'Online assembly', status: 'pending', contact: 'Martin', notes: '' },
-    { id: 'wa_2', name: 'Sequence area', status: 'pending', contact: 'Martin', notes: '' },
-    { id: 'wa_3', name: 'Heavy rework', status: 'pending', contact: 'Martin', notes: '' },
-    { id: 'wa_4', name: 'Review Scrap Table', status: 'pending', contact: 'Martin', notes: '' }
-  ]);
+  // SHIFT SUMMARY STATE (Canonical 5 Daily Quality Report Areas)
+  const [areasWalked, setAreasWalked] = useState(() => normalizeAndMergeShiftAreas([]));
   const [bonusTasks, setBonusTasks] = useState([
     { id: 'bt_1', task: 'Matt\'s bin check audit on PN 86291945', status: 'pending', notes: '' }
   ]);
@@ -196,6 +710,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
   useEffect(() => {
     const allPlants = getEntities('plants');
     setPlants(allPlants);
+    window.__openDailyQualityReport = () => setActiveScreen('summary');
 
     if (propUser) {
       setCurrentUser(propUser);
@@ -301,6 +816,20 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
       p.rep_id === currentUser.id || 
       (Array.isArray(p.rep_ids) && p.rep_ids.includes(currentUser.id))
     ));
+  };
+
+  // Explicit Authoritative Assignment Resolver (Section 1)
+  const resolveActiveAssignment = () => {
+    if (!currentUser) return null;
+    const dbProjects = getEntities('projects') || [];
+    const repAssignments = getRepAssignments() || [];
+
+    return resolveAuthoritativeAssignment({
+      currentUser,
+      selectedAssignmentId,
+      assignmentsList: repAssignments,
+      projectsList: dbProjects
+    });
   };
 
   // Explicit allocation rule for entries matching active project assignment
@@ -581,265 +1110,109 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
       return;
     }
 
-    if (repAssignments.length > 1 && !selectedAssignmentId) {
-      alert("Multiple active assignments detected. Please explicitly select which assignment you are reporting hours for.");
+    const activeAssignment = (selectedAssignmentId && repAssignments.find(a => String(a.id) === String(selectedAssignmentId))) || repAssignments[0];
+    if (!activeAssignment) {
+      setAddHoursToast("No active project assignment available.");
       return;
     }
 
-    const dbProjects = getEntities('projects') || [];
-    const dbSuppliers = getEntities('suppliers') || [];
-
-    const activeProject = dbProjects.find(p => String(p.id) === String(selectedAssignmentId)) || repAssignments[0];
-    if (!activeProject) {
-      alert("No active project assignment selected. Please select a valid project assignment.");
-      return;
-    }
-
-    // Requirement 12: Strict customer/supplier resolution — NO sup_autokabel FALLBACK
-    const activeSupplierId = activeProject.supplier_id || activeProject.client_id || dbSuppliers.find(s => s.plants_served?.includes(selectedPlant))?.id;
-    if (!activeSupplierId) {
-      alert("Incomplete assignment relationship: No valid customer/supplier linked to this assignment. Submission blocked.");
-      return;
-    }
-
-    // Requirement 2: Calculate allocation remaining and split
     const totals = getRepAssignmentHourTotals();
-    const remainingAlloc = totals.authorizedHours !== null ? (totals.remainingAllocation !== null ? totals.remainingAllocation : 0) : Infinity;
-
+    const remainingAlloc = totals.remainingAllocation !== null ? totals.remainingAllocation : 0;
     const regularPortion = Math.min(hrs, remainingAlloc > 0 ? remainingAlloc : 0);
     const overtimePortion = Math.max(0, hrs - regularPortion);
 
-    // Requirement 11: Pre-submit split confirmation modal
+    // Pre-submit split confirmation modal
     if (overtimePortion > 0 && !forceConfirmed) {
+      const dbSuppliers = getEntities('suppliers') || [];
+      const custObj = dbSuppliers.find(s => String(s.id) === String(activeAssignment.billing_customer_id || activeAssignment.customer_id));
       setSplitConfirmState({
-        hrs,
+        hoursEntered: hrs,
+        remainingAlloc,
         regularPortion,
         overtimePortion,
-        activeProject,
-        activeSupplierId,
-        remainingAlloc
+        customerName: custObj?.name || activeAssignment.billing_customer_id || 'Client Customer',
+        assignmentTitle: activeAssignment.title || activeAssignment.name || 'Project Assignment'
       });
       return;
     }
 
     const idempotencyKey = `idemp_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
-    const submissionId = `sub_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
 
-    // If Offline: stage submission to outbox
-    if (isOffline) {
-      const stagedSubmission = {
-        id: submissionId,
-        idempotency_key: idempotencyKey,
-        rep_id: currentUser.id,
-        assignment_id: activeProject.id,
-        project_id: activeProject.id,
-        supplier_id: activeSupplierId,
-        plant_id: activeProject.plant_id || selectedPlant,
-        work_date: addHoursDate,
-        reported_hours: hrs,
-        work_type: addHoursType,
-        work_summary: addHoursSummary || `${addHoursType} performed at plant ${selectedPlant}`,
-        incident_id: addHoursLinkedIncident || null,
-        inspection_id: addHoursLinkedInspection || null,
-        source: 'rep_reported',
-        staged_at: new Date().toISOString(),
-        status: 'staged_offline'
-      };
-      saveStagedTimeEntry(stagedSubmission);
+    try {
+      const res = await submitRepHours({
+        idempotencyKey,
+        assignmentId: activeAssignment.id,
+        workDate: addHoursDate,
+        hours: hrs,
+        workType: addHoursType,
+        workSummary: addHoursSummary || `${addHoursType} performed at plant ${selectedPlant}`,
+        isOffline: isOffline
+      });
+
       setShowAddHoursModal(false);
       setSplitConfirmState(null);
       setAddHoursValue('');
       setAddHoursSummary('');
-      setAddHoursToast("Hours safely saved on this device. They will be submitted automatically when your internet connection returns.");
-      setTimeout(() => setAddHoursToast(null), 5000);
-      return;
-    }
 
-    // Attempt atomic RPC for online submission if Supabase client is configured
-    let rpcDone = false;
-    let rpcErrorMsg = null;
-    const isSupabaseConfigured = Boolean(supabase && typeof supabase.rpc === 'function' && process.env.VITE_SUPABASE_URL !== 'YOUR_SUPABASE_URL');
+      const newEntry = {
+        id: `te_${Date.now()}`,
+        idempotency_key: idempotencyKey,
+        assignment_id: activeAssignment.id,
+        project_id: activeAssignment.project_id || activeAssignment.id,
+        rep_id: currentUser.id || 'rep_user',
+        client_id: activeAssignment.supplier_id || activeAssignment.client_id || (getEntities('suppliers')?.[0]?.id || 'sup_client'),
+        supplier_id: activeAssignment.supplier_id || activeAssignment.client_id || (getEntities('suppliers')?.[0]?.id || 'sup_client'),
+        plant_id: activeAssignment.plant_id || (plants?.[0]?.id || 'plant_location'),
+        work_date: addHoursDate,
+        hours: hrs,
+        regular_hours: regularPortion,
+        overtime_hours: overtimePortion,
+        status: overtimePortion > 0 ? 'Pending Overtime Review' : 'Approved',
+        work_type: addHoursType,
+        notes: addHoursSummary || `${addHoursType} performed at plant ${selectedPlant}`,
+        created_at: new Date().toISOString()
+      };
+      saveEntity('timeEntries', newEntry);
+      window.dispatchEvent(new Event('ids_pulse_db_update'));
 
-    if (isSupabaseConfigured) {
-      try {
-        const { data, error } = await supabase.rpc('submit_rep_hours_atomic', {
-          p_idempotency_key: idempotencyKey,
-          p_rep_id: String(currentUser.id),
-          p_supplier_id: String(activeSupplierId),
-          p_plant_id: String(activeProject.plant_id || selectedPlant),
-          p_project_id: String(activeProject.id),
-          p_work_date: addHoursDate,
-          p_hours: hrs,
-          p_work_type: addHoursType,
-          p_work_summary: addHoursSummary || `${addHoursType} performed at plant ${selectedPlant}`,
-          p_notes: ''
-        });
-
-        if (!error && data && data.status === 'success') {
-          rpcDone = true;
-          syncWithSupabase();
-        } else {
-          rpcErrorMsg = error?.message || data?.message || 'Server RPC error';
-        }
-      } catch (e) {
-        rpcErrorMsg = e?.message || 'RPC execution exception';
-      }
-    }
-
-    if (isSupabaseConfigured) {
-      if (rpcDone) {
-        let toastMsg = overtimePortion === 0 
-          ? `Successfully recorded ${regularPortion} regular hrs automatically for ${addHoursDate}!`
+      if (res?.status === 'staged_offline') {
+        setAddHoursToast("Hours recorded locally on device!");
+      } else if (res?.status === 'needs_allocation_configuration' || res?.status === 'needs_configuration') {
+        setAddHoursToast("Hours saved. Authorized assignment hours must be configured before processing.");
+      } else {
+        const toastMsg = overtimePortion === 0 
+          ? `Recorded ${regularPortion} regular hrs automatically for ${addHoursDate}.`
           : regularPortion === 0 
-            ? `All ${overtimePortion} hrs exceed authorized allocation. Submitted for Client Overtime Review.`
-            : `Recorded ${regularPortion} regular hrs automatically. ${overtimePortion} overtime hrs submitted for Client approval.`;
-
-        logSystemEvent('time_entry', 'rep_hours_submitted', `${currentUser.name} reported ${hrs} hrs for date ${addHoursDate} (${addHoursType}) on assignment ${activeProject.id}.`);
-        setShowAddHoursModal(false);
-        setSplitConfirmState(null);
-        setAddHoursValue('');
-        setAddHoursSummary('');
+            ? `All ${overtimePortion} hrs sent to Client for overtime review.`
+            : `Recorded ${regularPortion} regular hrs automatically. ${overtimePortion} overtime hrs sent to Client for review.`;
         setAddHoursToast(toastMsg);
-        setTimeout(() => setAddHoursToast(null), 5000);
-        return;
+        setTimeout(() => syncWithSupabase().catch(() => {}), 10);
       }
-
-      // Rule 8: If Supabase is configured and RPC fails, retain original submission in durable outbox. DO NOT create local timeEntries.
-      const stagedSubmission = {
-        id: submissionId,
-        idempotency_key: idempotencyKey,
-        rep_id: currentUser.id,
-        assignment_id: activeProject.id,
-        project_id: activeProject.id,
-        supplier_id: activeSupplierId,
-        plant_id: activeProject.plant_id || selectedPlant,
-        work_date: addHoursDate,
-        reported_hours: hrs,
-        work_type: addHoursType,
-        work_summary: addHoursSummary || `${addHoursType} performed at plant ${selectedPlant}`,
-        incident_id: addHoursLinkedIncident || null,
-        inspection_id: addHoursLinkedInspection || null,
-        source: 'rep_reported',
-        staged_at: new Date().toISOString(),
-        status: 'staged_offline',
-        last_error: rpcErrorMsg
-      };
-      saveStagedTimeEntry(stagedSubmission);
+      setTimeout(() => setAddHoursToast(null), 5000);
+    } catch (err) {
       setShowAddHoursModal(false);
       setSplitConfirmState(null);
       setAddHoursValue('');
       setAddHoursSummary('');
-      setAddHoursToast("Saved on this phone — waiting to sync");
+      setAddHoursToast(`Submission saved safely on device: ${err.message}`);
       setTimeout(() => setAddHoursToast(null), 5000);
-      return;
     }
-
-    // Fallback local mirror save if standalone (when Supabase client is NOT configured)
-    if (!rpcDone) {
-      if (regularPortion > 0) {
-        const regularEntry = {
-          id: `te_${Date.now()}_reg_${Math.random().toString(36).substr(2, 6)}`,
-          idempotency_key: `${idempotencyKey}_reg`,
-          linked_submission_id: submissionId,
-          rep_id: currentUser.id,
-          assignment_id: activeProject.id,
-          project_id: activeProject.id,
-          supplier_id: activeSupplierId,
-          plant_id: activeProject.plant_id || selectedPlant,
-          work_date: addHoursDate,
-          date: addHoursDate,
-          reported_hours: hrs,
-          regular_hours: regularPortion,
-          overtime_hours: 0,
-          hours: regularPortion,
-          hour_type: 'regular',
-          status: 'recorded',
-          approval_required: false,
-          approval_source: 'authorized_assignment',
-          authorized_hours_snapshot: totals.authorizedHours,
-          remaining_hours_before: totals.remainingAllocation,
-          remaining_hours_after: totals.remainingAllocation !== null ? Math.max(0, totals.remainingAllocation - regularPortion) : null,
-          work_type: addHoursType,
-          work_summary: addHoursSummary || `${addHoursType} performed at plant ${selectedPlant}`,
-          incident_id: addHoursLinkedIncident || null,
-          inspection_id: addHoursLinkedInspection || null,
-          source: 'rep_reported',
-          submitted_at: new Date().toISOString(),
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        };
-        saveEntity('timeEntries', regularEntry);
-      }
-
-      if (overtimePortion > 0) {
-        const overtimeEntry = {
-          id: `te_${Date.now()}_ot_${Math.random().toString(36).substr(2, 6)}`,
-          idempotency_key: `${idempotencyKey}_ot`,
-          linked_submission_id: submissionId,
-          rep_id: currentUser.id,
-          assignment_id: activeProject.id,
-          project_id: activeProject.id,
-          supplier_id: activeSupplierId,
-          plant_id: activeProject.plant_id || selectedPlant,
-          work_date: addHoursDate,
-          date: addHoursDate,
-          reported_hours: hrs,
-          regular_hours: 0,
-          overtime_hours: overtimePortion,
-          hours: overtimePortion,
-          hour_type: 'overtime',
-          status: 'client_pending',
-          client_review_status: 'pending',
-          approval_required: true,
-          approval_source: 'client_approval',
-          authorized_hours_snapshot: totals.authorizedHours,
-          remaining_hours_before: 0,
-          remaining_hours_after: 0,
-          work_type: addHoursType,
-          work_summary: addHoursSummary || `${addHoursType} performed at plant ${selectedPlant}`,
-          incident_id: addHoursLinkedIncident || null,
-          inspection_id: addHoursLinkedInspection || null,
-          source: 'rep_reported',
-          submitted_at: new Date().toISOString(),
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        };
-        saveEntity('timeEntries', overtimeEntry);
-      }
-    }
-
-    let toastMsg = '';
-    if (overtimePortion === 0) {
-      toastMsg = `Successfully recorded ${regularPortion} regular hrs automatically for ${addHoursDate}!`;
-    } else if (regularPortion === 0) {
-      toastMsg = `All ${overtimePortion} hrs exceed authorized allocation. Submitted for Client Overtime Review.`;
-    } else {
-      toastMsg = `Recorded ${regularPortion} regular hrs automatically. ${overtimePortion} overtime hrs submitted for Client approval.`;
-    }
-
-    logSystemEvent('time_entry', 'rep_hours_submitted', `${currentUser.name} reported ${hrs} hrs for date ${addHoursDate} (${addHoursType}) on assignment ${activeProject.id}. Regular: ${regularPortion} hrs (recorded), Overtime: ${overtimePortion} hrs (client_pending).`);
-
-    setShowAddHoursModal(false);
-    setSplitConfirmState(null);
-    setAddHoursValue('');
-    setAddHoursSummary('');
-    setAddHoursToast(toastMsg);
-    setTimeout(() => setAddHoursToast(null), 5000);
   };
 
-  const handleResubmitOvertime = (entry) => {
+  const handleResubmitOvertime = async (entry) => {
     if (!entry) return;
-    const dbEntries = getEntities('timeEntries') || [];
-    const target = dbEntries.find(t => t && t.id === entry.id);
-    if (target) {
-      target.status = 'client_pending';
-      target.client_review_status = 'pending';
-      target.client_review_comment = '';
-      target.updated_at = new Date().toISOString();
-      saveEntity('timeEntries', target);
+    try {
+      await resubmitReturnedOvertime({
+        timeEntryId: entry.id,
+        workSummary: entry.work_summary || '',
+        comment: 'Resubmitted by Rep'
+      });
       setAddHoursToast("Overtime resubmitted for Client review!");
       setTimeout(() => setAddHoursToast(null), 4000);
-      logSystemEvent('time_entry', 'rep_overtime_resubmitted', `Rep ${currentUser?.name} resubmitted returned overtime entry ${entry.id} for Client review.`);
+      syncWithSupabase();
+    } catch (err) {
+      setAddHoursToast(`Resubmission error: ${err.message}`);
+      setTimeout(() => setAddHoursToast(null), 4000);
     }
   };
 
@@ -1127,10 +1500,6 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
   };
 
   const removeEvidenceItem = (id) => {
-    if (evidenceList.length <= 1) {
-      showToast("Minimum 1 evidence photo required by default.", "warning");
-      return;
-    }
     setEvidenceList(prev => {
       const filtered = prev.filter(item => item.id !== id);
       return filtered.map((item, i) => ({ ...item, order: i + 1, label: `Photo ${i + 1}` }));
@@ -1182,33 +1551,338 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
     }
   }, [showDrawingCanvas, drawingTarget]);
 
-  // BARCODE & QR MOCK SCANNING
+  // BARCODE & QR MOCK SCANNING (STEP 2 TRACEABILITY)
   const startScanning = (type) => {
     setScanningType(type);
   };
 
-  const selectScanOption = (pn) => {
-    const dbParts = getEntities('parts');
-    const foundPart = dbParts.find(p => p.part_number === pn);
-    
-    if (scanningType === 'barcode') {
-      setScannedPN(pn);
-      setPartInfo(foundPart || { part_number: pn, description: 'Unknown Part', supplier_id: 'unknown' });
-      setManualEntryWarning(false);
-    } else {
-      setScannedBin(`BIN-MAG-${pn?.substring(4)}`);
+  const handleAddManualPart = () => {
+    const trimmed = (manualPNInput || '').trim().toUpperCase();
+    if (!trimmed) {
+      setManualInputError("Please enter a part number.");
+      playBeep('warning');
+      return;
     }
-    playBeep('scan');
+    const isDuplicate = affectedParts.some(p => (p.partNumber || '').toUpperCase() === trimmed);
+    if (isDuplicate) {
+      setManualInputError(`Part number ${trimmed} is already added to this report.`);
+      playBeep('warning');
+      return;
+    }
+
+    const partsList = getEntities('parts') || [];
+    const match = partsList.find(p => p.part_number === trimmed);
+    const description = match ? match.description : 'Description not available';
+
+    const newItem = {
+      id: `ap_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      partNumber: trimmed,
+      description: description,
+      scannedValue: trimmed,
+      scanFormat: 'manual',
+      entryMethod: 'Entered manually',
+      verificationStatus: 'unverified',
+      possibleMislabel: false,
+      expectedPartNumber: trimmed,
+      createdAt: new Date().toISOString()
+    };
+
+    setAffectedParts(prev => [...prev, newItem]);
+    setScannedPartsList(prev => [...prev, { id: newItem.id, part_number: trimmed, description: newItem.description, bin: toteBinLabel || 'N/A', qty: 1 }]);
+    setScannedPN(trimmed);
+    setManualPNInput('');
+    setManualInputError('');
+    playBeep('success');
+    showToast(`Part #${trimmed} added manually`, "success");
+  };
+
+  const handleRemoveAffectedPart = (id) => {
+    setAffectedParts(prev => prev.filter(p => p.id !== id));
+    setScannedPartsList(prev => prev.filter(p => p.id !== id));
+    if (verificationTargetPartId === id) setVerificationTargetPartId(null);
+    showToast("Part removed from list", "info");
+  };
+
+  const handleEditAffectedPart = (item) => {
+    setEditingPartId(item.id);
+    setEditPartInputValue(item.partNumber);
+    setEditInputError('');
+  };
+
+  const saveEditedAffectedPart = () => {
+    const trimmed = (editPartInputValue || '').trim().toUpperCase();
+    if (!trimmed) {
+      setEditInputError("Part number cannot be empty.");
+      playBeep('warning');
+      return;
+    }
+    const isDuplicate = affectedParts.some(p => p.id !== editingPartId && (p.partNumber || '').toUpperCase() === trimmed);
+    if (isDuplicate) {
+      setEditInputError(`Part number ${trimmed} is already in use by another item.`);
+      playBeep('warning');
+      return;
+    }
+
+    const partsList = getEntities('parts') || [];
+    const match = partsList.find(p => p.part_number === trimmed);
+    const description = match ? match.description : 'Description not available';
+
+    setAffectedParts(prev => prev.map(p => p.id === editingPartId ? {
+      ...p,
+      partNumber: trimmed,
+      scannedValue: trimmed,
+      description: description,
+      expectedPartNumber: trimmed
+    } : p));
+    setScannedPartsList(prev => prev.map(p => p.id === editingPartId ? { ...p, part_number: trimmed, description: description } : p));
+    setEditingPartId(null);
+    setEditInputError('');
+    playBeep('success');
+    showToast(`Part number updated to #${trimmed}`, "success");
+  };
+
+  // Warning Banner Choices (Requirement 3)
+  const handleMislabelKeepBoth = () => {
+    if (!mislabelWarning) return;
+    const { targetPartId, expectedPartNumber, scannedValue, scanFormat } = mislabelWarning;
+    if (targetPartId) {
+      setAffectedParts(prev => prev.map(p => p.id === targetPartId ? {
+        ...p,
+        scannedValue: scannedValue,
+        verificationStatus: 'mismatch',
+        possibleMislabel: true
+      } : p));
+    } else {
+      const newItem = {
+        id: `ap_mismatch_${Date.now()}`,
+        partNumber: scannedValue,
+        description: 'Description not available',
+        scannedValue: scannedValue,
+        scanFormat: scanFormat || 'barcode',
+        entryMethod: 'Scanned',
+        verificationStatus: 'mismatch',
+        possibleMislabel: true,
+        expectedPartNumber: expectedPartNumber,
+        createdAt: new Date().toISOString()
+      };
+      setAffectedParts(prev => [...prev, newItem]);
+    }
+    setMislabelWarning(null);
+    setVerificationTargetPartId(null);
+    showToast("Mislabeled part added with review flag", "warning");
+  };
+
+  const handleMislabelRescan = () => {
+    setMislabelWarning(null);
+    startScanning('barcode');
+  };
+
+  const handleMislabelCorrectExpected = () => {
+    if (!mislabelWarning) return;
+    const { targetPartId, scannedValue } = mislabelWarning;
+    if (targetPartId) {
+      const partsList = getEntities('parts') || [];
+      const match = partsList.find(p => p.part_number === scannedValue);
+      const desc = match ? match.description : 'Description not available';
+      setAffectedParts(prev => prev.map(p => p.id === targetPartId ? {
+        ...p,
+        partNumber: scannedValue,
+        scannedValue: scannedValue,
+        description: desc,
+        verificationStatus: 'verified',
+        possibleMislabel: false
+      } : p));
+    }
+    setMislabelWarning(null);
+    setVerificationTargetPartId(null);
+    showToast(`Expected part number corrected to #${scannedValue}`, "success");
+  };
+
+  const handleMislabelCancel = () => {
+    setMislabelWarning(null);
+    setVerificationTargetPartId(null);
+  };  const handleStartVerificationScan = (partId) => {
+    setVerificationTargetPartId(partId);
+    startScanning('barcode');
+  };
+
+  // Section B: Multiple Tote/Bin Labels Helpers
+  const handleAddManualToteBinLabel = () => {
+    const trimmed = (manualToteInput || '').trim().toUpperCase();
+    if (!trimmed) {
+      setManualToteError("Please enter a tote/bin label.");
+      playBeep('warning');
+      return;
+    }
+    const isDuplicate = toteBinLabels.some(t => (t.labelValue || '').toUpperCase() === trimmed);
+    if (isDuplicate) {
+      setManualToteError(`Tote/Bin label ${trimmed} is already added.`);
+      playBeep('warning');
+      return;
+    }
+
+    const newTote = {
+      id: `tb_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      labelValue: trimmed,
+      entryMethod: 'Entered manually',
+      scanFormat: 'manual',
+      relatedPartIds: selectedTotePartAssociation === 'ALL' ? [] : [selectedTotePartAssociation],
+      createdAt: new Date().toISOString()
+    };
+
+    setToteBinLabels(prev => [...prev, newTote]);
+    setManualToteInput('');
+    setManualToteError('');
+    setSelectedTotePartAssociation('ALL');
+    playBeep('success');
+    showToast(`Tote/Bin label ${trimmed} added`, "success");
+  };
+
+  const handleRemoveToteBinLabel = (id) => {
+    setToteBinLabels(prev => prev.filter(t => t.id !== id));
+    showToast("Tote/Bin label removed", "info");
+  };
+
+  const handleEditToteBinLabel = (item) => {
+    setEditingToteId(item.id);
+    setEditToteInputValue(item.labelValue);
+    setEditToteError('');
+  };
+
+  const saveEditedToteBinLabel = () => {
+    const trimmed = (editToteInputValue || '').trim().toUpperCase();
+    if (!trimmed) {
+      setEditToteError("Tote/Bin label cannot be empty.");
+      playBeep('warning');
+      return;
+    }
+    const isDuplicate = toteBinLabels.some(t => t.id !== editingToteId && (t.labelValue || '').toUpperCase() === trimmed);
+    if (isDuplicate) {
+      setEditToteError(`Tote/Bin label ${trimmed} is already in use.`);
+      playBeep('warning');
+      return;
+    }
+
+    setToteBinLabels(prev => prev.map(t => t.id === editingToteId ? {
+      ...t,
+      labelValue: trimmed
+    } : t));
+    setEditingToteId(null);
+    setEditToteError('');
+    playBeep('success');
+    showToast("Tote/Bin label updated", "success");
+  };
+
+  const updateTotePartAssociation = (toteId, partId) => {
+    setToteBinLabels(prev => prev.map(t => t.id === toteId ? {
+      ...t,
+      relatedPartIds: partId === 'ALL' ? [] : [partId]
+    } : t));
+    showToast("Part association updated", "info");
+  };
+
+  const selectScanOption = (pn, type = 'barcode') => {
+    const activeScanType = scanningType || type;
     setScanningType(null);
+    playBeep('scan');
+
+    const trimmed = (pn || '').trim().toUpperCase();
+
+    if (activeScanType === 'qr' && (trimmed.startsWith('BIN') || trimmed.includes('BOX') || activeScanType === 'tote_bin' || replacingContainerId)) {
+      if (replacingContainerId) {
+        setToteBinLabels(prev => prev.map(t => t.id === replacingContainerId ? {
+          ...t,
+          labelValue: trimmed,
+          entryMethod: 'Scanned',
+          scanFormat: 'qr'
+        } : t));
+        setReplacingContainerId(null);
+        showToast(`Container label replaced with ${trimmed}`, "success");
+        return;
+      }
+
+      const isDuplicate = toteBinLabels.some(t => (t.labelValue || '').toUpperCase() === trimmed);
+      if (isDuplicate) {
+        showToast(`Tote/Bin label ${trimmed} is already added!`, "warning");
+        return;
+      }
+      const newTote = {
+        id: `tb_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+        labelValue: trimmed,
+        entryMethod: 'Scanned',
+        scanFormat: 'qr',
+        relatedPartIds: [],
+        createdAt: new Date().toISOString()
+      };
+      setToteBinLabels(prev => [...prev, newTote]);
+      showToast(`Sample scan added for prototype testing — Tote/Bin: ${trimmed}`, "success");
+      return;
+    }
+
+    // Explicit Verification Flow (Requirement 3)
+    if (verificationTargetPartId) {
+      const targetPart = affectedParts.find(p => p.id === verificationTargetPartId);
+      if (targetPart) {
+        const expected = (targetPart.partNumber || targetPart.expectedPartNumber || '').trim().toUpperCase();
+        if (trimmed === expected) {
+          setAffectedParts(prev => prev.map(p => p.id === targetPart.id ? {
+            ...p,
+            scannedValue: trimmed,
+            verificationStatus: 'verified',
+            possibleMislabel: false
+          } : p));
+          setVerificationTargetPartId(null);
+          setMislabelWarning(null);
+          playBeep('success');
+          showToast(`Sample scan added for prototype testing — Verified PN #${trimmed} matches expected part!`, "success");
+          return;
+        } else {
+          setMislabelWarning({
+            targetPartId: targetPart.id,
+            expectedPartNumber: expected,
+            scannedValue: trimmed,
+            scanFormat: activeScanType
+          });
+          playBeep('warning');
+          showToast("Possible mislabel detected! Please review warning.", "warning");
+          return;
+        }
+      }
+    }
+
+    // Normal multi-part scan (Requirement 1 & 3: Adding a different part number is NOT automatically a mislabel!)
+    const isDuplicate = affectedParts.some(p => (p.partNumber || '').toUpperCase() === trimmed);
+    if (isDuplicate) {
+      showToast(`Part number ${trimmed} is already added to this report!`, "warning");
+      return;
+    }
+
+    const partsList = getEntities('parts') || [];
+    const foundPart = partsList.find(p => p.part_number === trimmed);
+    const description = foundPart ? foundPart.description : 'Description not available';
+
+    const newItem = {
+      id: `ap_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      partNumber: trimmed,
+      description: description,
+      scannedValue: trimmed,
+      scanFormat: activeScanType,
+      entryMethod: 'Scanned',
+      verificationStatus: 'verified',
+      possibleMislabel: false,
+      expectedPartNumber: trimmed,
+      createdAt: new Date().toISOString()
+    };
+
+    setAffectedParts(prev => [...prev, newItem]);
+    setScannedPartsList(prev => [...prev, { id: newItem.id, part_number: trimmed, description: newItem.description, bin: toteBinLabel || 'N/A', qty: 1 }]);
+    setScannedPN(trimmed);
+    showToast(`Sample scan added for prototype testing — PN ${trimmed}`, "success");
   };
 
   const handleManualPartNumberChange = (value) => {
-    setScannedPN(value);
-    setManualEntryWarning(true);
-    playBeep('warning');
-    const dbParts = getEntities('parts');
-    const foundPart = dbParts.find(p => p.part_number === value);
-    setPartInfo(foundPart || null);
+    setManualPNInput(value);
+    setManualInputError('');
   };
 
   // DEFECT SELECTION SMART SUGGESTIONS
@@ -1258,157 +1932,245 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
       }
     ]);
     
-    // Fill Scan Info (Pre-populates list)
-    setScannedPN('');
-    setScannedBin('');
-    setPartInfo(null);
-    setManualEntryWarning(false);
-    setScannedPartsList([
+    // Fill Scan Info (Pre-populates list with 4 distinct parts for Clarence verification)
+    const demoParts = [
       {
-        id: 'sp_demo_1',
-        part_number: '86286761',
+        id: 'ap_demo_1',
+        partNumber: '86286761',
         description: 'Tail Light Assembly',
-        supplier_id: 'magna',
-        bin: 'BIN-MAG-6761',
-        qty: 1
+        scannedValue: '86286761',
+        scanFormat: 'barcode',
+        entryMethod: 'Scanned',
+        verificationStatus: 'verified',
+        possibleMislabel: false,
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'ap_demo_2',
+        partNumber: '86291945',
+        description: 'Headlamp Bracket',
+        scannedValue: '86291945',
+        scanFormat: 'qr',
+        entryMethod: 'Scanned',
+        verificationStatus: 'verified',
+        possibleMislabel: false,
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'ap_demo_3',
+        partNumber: '86291946',
+        description: 'Side Mirror Housing',
+        scannedValue: '86291946',
+        scanFormat: 'manual',
+        entryMethod: 'Entered manually',
+        verificationStatus: 'unverified',
+        possibleMislabel: false,
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'ap_demo_4',
+        partNumber: '86291947',
+        description: 'Door Latch Bezel',
+        scannedValue: '86291947',
+        scanFormat: 'manual',
+        entryMethod: 'Entered manually',
+        verificationStatus: 'mismatch',
+        possibleMislabel: true,
+        createdAt: new Date().toISOString()
       }
-    ]);
+    ];
+
+    const demoTotes = [
+      {
+        id: 'tb_demo_1',
+        labelValue: 'BIN-MAG-6761',
+        entryMethod: 'Scanned',
+        scanFormat: 'qr',
+        relatedPartIds: ['ap_demo_1'],
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'tb_demo_2',
+        labelValue: 'TOTE-SEQ-402',
+        entryMethod: 'Entered manually',
+        scanFormat: 'manual',
+        relatedPartIds: ['ap_demo_2', 'ap_demo_3'],
+        createdAt: new Date().toISOString()
+      }
+    ];
+
+    setAffectedParts(demoParts);
+    setToteBinLabels(demoTotes);
+    setToteBinLabel('BIN-MAG-6761');
+    setScannedPN('86286761');
+    setScannedBin('BIN-MAG-6761');
+    setPartInfo({ part_number: '86286761', description: 'Tail Light Assembly', supplier_id: 'magna' });
+    setManualEntryWarning(false);
+    setScannedPartsList(demoParts.map(p => ({ id: p.id, part_number: p.partNumber, description: p.description, bin: 'BIN-MAG-6761', qty: 1 })));
     
-    // Fill Describe Info
     setSelectedArea('Review Scrap Table');
     setDefectType('Spare bulb loose in housing (rattle)');
     setDescription('Light on scrap table at sequence area for rattle. Spare bulb in housing again. Removed bulb and returned light to sequence area. Bulb was removed before scrap tag was written up. Please ensure all base lights do not have spare bulbs in housing causing rattling sound.');
     setActionTaken('Removed bulb, returned light to sequence area');
-    setSupplierContact('Martin');
+    const availContacts = getAvailableSupplierContacts();
+    if (availContacts.length > 0) {
+      setSelectedSupplierContactIds(availContacts.map(c => c.id));
+      setSupplierContact(availContacts.map(c => c.name).join(', '));
+    } else {
+      setSupplierContact('Robert Sterling, Elena Rostova');
+    }
     setIsReturningDefect('N');
     setIsSortRequired('N');
     setIsRmaRequired('N');
     setConcernClassification('PRR');
-    setHasVideo(true);
   };
 
-  // SUBMIT INCIDENT AND SEND EMAIL
-  const handleSendIncident = () => {
-    // Flexible Evidence Guard (Donna & Clarence Rep Process: Minimum 1 photo required by default)
-    if (!evidenceList || evidenceList.length === 0) {
-      showToast("Completeness Error: At least 1 evidence photo is required before sending!", "warning");
-      return;
-    }
-
-    if (!selectedArea || !description) {
-      showToast("Completeness Error: Please complete Step 3 (Describe & Area) before sending!", "warning");
+  // AUTHORITATIVE SUBMIT / RELEASE INCIDENT HANDLER (Sections 1, 5, 6, 7)
+  const handleSendIncident = async () => {
+    // 1. Run Centralized Validation
+    const validation = validateIncidentWorkflow(4);
+    if (!validation.valid) {
+      showToast(validation.message, "warning");
+      if (validation.code.startsWith('MEDIA_')) {
+        setShowMissingMediaDialog(true);
+      }
+      setIncStep(validation.errorStep);
       return;
     }
 
     setIsSendingIncident(true);
 
-    // Simulate 2-second rule with loader
-    setTimeout(() => {
-      let savedIncident = null;
-      try {
-        const partsList = getEntities('parts');
-        const part = partsList.find(p => p.part_number === scannedPN) || { id: 'unknown', part_number: scannedPN, supplier_id: 'magna', description: 'Unknown Custom Part' };
-        
-        const defaultPartsList = scannedPartsList.length > 0 ? scannedPartsList : [
-          {
-            id: `sp_def_${Date.now()}`,
-            part_number: scannedPN || '86286761',
-            description: part.description,
-            supplier_id: part.supplier_id,
-            bin: scannedBin || 'BIN-MAG-6761',
-            qty: 1
-          }
-        ];
+    try {
+      const hasAnyRealMedia = evidenceList.length > 0 || !!stagedVideoObject;
 
-        // Prepare subject and parts HTML first to prevent TDZ error
-        const firstPN = defaultPartsList[0]?.part_number || scannedPN;
-        const partSubject = defaultPartsList.length > 1 
-          ? `${firstPN} (+${defaultPartsList.length - 1} others)` 
-          : firstPN;
-        
-        const partsHtml = defaultPartsList.map(p => `<li><strong>PN ${p.part_number}</strong>: ${p.description} (Qty: ${p.qty}) [Bin: ${p.bin}]</li>`).join("");
+      const formattedPartsList = affectedParts.map(p => ({
+        id: p.id,
+        part_number: p.partNumber,
+        description: p.description || 'Description not available',
+        bin: toteBinLabels[0]?.labelValue || null,
+        qty: p.quantity || 1,
+        entry_method: p.entryMethod,
+        scan_format: p.scanFormat,
+        verification_status: p.verificationStatus,
+        possible_mislabel: p.possibleMislabel
+      }));
 
-        const suppliersList = getEntities('suppliers') || [];
-        const plantSupplier = suppliersList.find(s => s.plants_served && Array.isArray(s.plants_served) && s.plants_served.includes(selectedPlant))?.id;
-        const resolvedSupplierId = (defaultPartsList[0]?.supplier_id && defaultPartsList[0]?.supplier_id !== 'magna' && defaultPartsList[0]?.supplier_id !== 'unknown') 
-          ? defaultPartsList[0].supplier_id 
-          : (plantSupplier || 'magna');
+      const formattedToteList = toteBinLabels.map(t => ({
+        id: t.id,
+        label_value: t.labelValue,
+        container_type: t.containerType || 'Tote',
+        entry_method: t.entryMethod,
+        scan_format: t.scanFormat,
+        related_part_ids: t.relatedPartIds || [],
+        created_at: t.createdAt
+      }));
 
-        const videoSampleUrl = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4";
+      const firstPN = affectedParts[0]?.partNumber || null;
+      const partSubject = affectedParts.length > 1
+        ? `PN ${firstPN} (+${affectedParts.length - 1} others)`
+        : firstPN ? `PN ${firstPN}` : 'Traceability pending';
 
-        const newInc = {
-          rep_id: currentUser.id,
-          plant_id: selectedPlant,
-          supplier_id: resolvedSupplierId,
-          part_id: defaultPartsList[0]?.part_number || '86286761', // fallback for single-value legacy references
-          area: selectedArea,
-          description: description || `Incident in ${selectedArea}`,
-          action_taken: actionTaken,
-          supplier_contact: supplierContact,
-          photos: evidenceList.map(ev => ({
-            id: ev.id,
-            url: ev.annotatedUrl || ev.url,
-            type: ev.label,
-            note: ev.note,
-            order: ev.order
-          })),
-          hasVideo: hasVideo,
-          has_video: hasVideo,
-          video_url: hasVideo ? videoSampleUrl : null,
-          videoWalkthrough: hasVideo ? videoSampleUrl : null,
-          concern_classification: concernClassification,
-          defect_returned: isReturningDefect,
-          sort_required: isSortRequired,
-          rma_required: isRmaRequired,
-          status: 'Open',
-          sent_at: new Date().toISOString(),
-          parts_list: defaultPartsList,
-          part_view: 'top'
-        };
-
-        // Handle offline durable outbox staging if connectivity is absent
-        if (isOffline) {
-          const staged = stageIncidentLocally(newInc);
-          setIsSendingIncident(false);
-          setOfflineModalTrackingRef(staged.tracking_ref);
-          setShowOfflineModal(true);
-          window.dispatchEvent(new Event('ids_pulse_db_update'));
-          return;
-        }
-
-        // Commit database writes inside the try-catch block
-        savedIncident = addIncident(newInc);
-        logSystemEvent('incident', 'create', `${currentUser.name} reported suspect material for Part #${partSubject} in area ${selectedArea}.`);
-
-        // Log email delivery
-        addEmailLog({
-          incident_id: savedIncident.id,
-          to_emails: part.supplier_id === 'magna' ? 'martin.s@magna.com, shahroz.m@magna.com' : 'sjenkins@hutchinson.ca',
-          cc_emails: 'donna.c@integritydriven.com, greg.p@integritydriven.com',
-          subject: `[INCIDENT] PN ${partSubject} | ${selectedArea} | ${plants.find(p => p.id === selectedPlant)?.name || 'Record unavailable'} | ${new Date().toLocaleDateString()}`,
-          body: `<h3>INCIDENT REPORT — IDS PULSE</h3>
-<p><strong>Date:</strong> ${new Date().toLocaleDateString()}<br/>
-<strong>Rep:</strong> ${currentUser.name}<br/>
-<strong>Area Discovered:</strong> ${selectedArea}<br/>
-<strong>Video Walkthrough:</strong> ${hasVideo ? 'Attached (15s MP4 Evidence Clip)' : 'Not Attached'}</p>
-<hr/>
-<p><strong>Defective Parts List:</strong></p>
-<ul>${partsHtml}</ul>
-<hr/>
-<p><strong>Description:</strong> ${description}</p>
-<p><strong>Action Taken:</strong> ${actionTaken}</p>`
-        });
-
+      // Authoritative Assignment Context Resolution (Section 1 & 7)
+      const activeProj = resolveActiveAssignment();
+      if (!activeProj || !activeProj.client_id) {
         setIsSendingIncident(false);
-        setSentIncidentId(savedIncident.id);
-        setIncidentSentConfirmation(true);
-        window.dispatchEvent(new Event('ids_pulse_db_update'));
-      } catch (err) {
-        console.error("Error during incident release:", err);
-        setIsSendingIncident(false);
-        showToast(`Failed to send incident report: ${err.message || err}`, "error");
+        showToast("An authoritative project assignment with a configured client ID is required to release an incident report.", "error");
+        setIncStep(1);
+        return;
       }
-    }, 2000);
+
+      if (!currentUser || !currentUser.id) {
+        setIsSendingIncident(false);
+        showToast("Authentication error: No active application user session found.", "error");
+        return;
+      }
+
+      const resolvedAssignmentId = activeProj.id;
+      const resolvedClientId = activeProj.client_id;
+      const resolvedSupplierId = activeProj.supplier_id;
+      const resolvedPlantId = activeProj.plant_id;
+      const resolvedProjectId = activeProj.id;
+
+      const dbSuppliers = getEntities('suppliers') || [];
+      const selectedContacts = getAvailableSupplierContacts().filter(c => selectedSupplierContactIds.includes(c.id));
+      const recipientSnapshot = buildRecipientSnapshot(selectedContacts, dbSuppliers);
+
+      const newInc = {
+        rep_id: currentUser.id,
+        rep_name: currentUser.name || 'Quality Representative',
+        assignment_id: resolvedAssignmentId,
+        client_id: resolvedClientId,
+        customer_id: resolvedClientId,
+        supplier_id: resolvedSupplierId,
+        plant_id: resolvedPlantId,
+        project_id: resolvedProjectId,
+
+        media_evidence_status: hasAnyRealMedia ? 'provided' : 'unavailable',
+        media_unavailable_reason: hasAnyRealMedia ? null : mediaUnavailableReason,
+        media_unavailable_note: hasAnyRealMedia ? null : mediaUnavailableNote,
+        photos: evidenceList.map(ev => ({
+          id: ev.id,
+          url: ev.annotatedUrl || ev.url,
+          type: ev.label,
+          note: ev.note,
+          order: ev.order
+        })),
+        videos: stagedVideoObject ? [stagedVideoObject] : [],
+
+        traceability_status: affectedParts.length > 0 ? 'provided' : (traceabilityStatus || 'not_provided'),
+        traceability_unavailable_reason: affectedParts.length > 0 ? null : (unavailableReason || null),
+        traceability_unavailable_note: affectedParts.length > 0 ? null : (unavailableNote || null),
+
+        container_traceability_status: toteBinLabels.length > 0 ? 'provided' : 'not_provided',
+
+        parts_list: formattedPartsList,
+        tote_bin_labels: formattedToteList,
+        part_number: firstPN || 'N/A',
+        quantity: affectedParts.reduce((sum, p) => sum + (parseInt(p.quantity, 10) || 1), 0),
+
+        area: selectedArea ? selectedArea.trim() : '',
+        defect_type: defectType ? defectType.trim() : null,
+        description: description ? description.trim() : '',
+        action_taken: actionTaken ? actionTaken.trim() : null,
+        supplier_contact_ids: selectedSupplierContactIds || [],
+        supplier_contacts_snapshot: recipientSnapshot,
+        supplier_contact: selectedContacts.map(c => c.name).join(', ') || supplierContact || null,
+        returned_to_supplier: isReturningDefect === 'Y',
+        sort_requested: isSortRequired === 'Y',
+        rma_required: isRmaRequired === 'Y',
+        rma_number: isRmaRequired === 'Y' && rmaNumber ? rmaNumber.trim() : null,
+        concern_classification: concernClassification ? concernClassification.trim() : null,
+
+        created_at: new Date().toISOString()
+      };
+
+      const releaseResult = await releaseIncidentToClient({
+        incidentPayload: newInc,
+        isOffline: !!isOffline,
+        currentUser
+      });
+
+      setIsSendingIncident(false);
+
+      if (!releaseResult.success) {
+        showToast(releaseResult.message || "Report was not released. Your information is still here. Please try again.", "error");
+        return;
+      }
+
+      setSentIncidentId(releaseResult.tracking_ref || releaseResult.incident?.id);
+      setIsOfflineRelease(!!releaseResult.isOffline);
+      setIncidentSentConfirmation(true);
+      
+      const activityMsg = releaseResult.isOffline
+        ? `Incident queued securely on this device (${partSubject}).`
+        : `Incident released to Client Dashboard (${partSubject}).`;
+      logSystemEvent('incident', releaseResult.isOffline ? 'queued_offline' : 'release', activityMsg);
+      window.dispatchEvent(new Event('ids_pulse_db_update'));
+    } catch (err) {
+      console.error("Error during incident release:", err);
+      setIsSendingIncident(false);
+      showToast(`Report was not released. Your information is still here. Please try again. (${err.message || err})`, "error");
+    }
   };
 
   const addPartToList = () => {
@@ -1457,14 +2219,39 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
     const todayDate = new Date().toISOString()?.substring(0, 10);
     const dbReports = getEntities('shiftReports');
     const existingDraft = dbReports.find(r => r.rep_id === currentUser.id && r.status === 'Draft');
-    
+    const normalizedAreas = normalizeAndMergeShiftAreas(updatedAreas || areasWalked);
+
     if (existingDraft) {
-      existingDraft.areas_walked = updatedAreas || areasWalked;
-      existingDraft.bonus_tasks = updatedBonus || bonusTasks;
+      existingDraft.areas_walked = normalizedAreas;
+      if (updatedBonus) existingDraft.bonus_tasks = updatedBonus;
       saveEntity('shiftReports', existingDraft);
+      window.dispatchEvent(new Event('ids_pulse_db_update'));
+    } else {
+      const newDraft = {
+        id: `sr_draft_${currentUser.id}_${todayDate}`,
+        rep_id: currentUser.id,
+        plant_id: selectedPlant || 'gm_oshawa',
+        date: todayDate,
+        areas_walked: normalizedAreas,
+        incidents_count: 0,
+        bonus_tasks: updatedBonus || bonusTasks,
+        status: 'Draft',
+        created_at: new Date().toISOString()
+      };
+      saveEntity('shiftReports', newDraft);
       window.dispatchEvent(new Event('ids_pulse_db_update'));
     }
   };
+
+  useEffect(() => {
+    if (!currentUser) return;
+    const dbReports = getEntities('shiftReports') || [];
+    const existingDraft = dbReports.find(r => r.rep_id === currentUser.id && r.status === 'Draft');
+    if (existingDraft && Array.isArray(existingDraft.areas_walked)) {
+      const merged = normalizeAndMergeShiftAreas(existingDraft.areas_walked);
+      setAreasWalked(merged);
+    }
+  }, [currentUser, dbUpdateTrigger]);
 
   const calculateJaccardSimilarity = (str1, str2) => {
     if (!str1 || !str2) return 0;
@@ -1567,7 +2354,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
     setDescription('');
     setDefectType('');
     setCustomDefect('');
-    setHasVideo(false);
+    setStagedVideoObject(null);
     setIncidentSentConfirmation(false);
     setSentIncidentId(null);
     setIncStep(1);
@@ -1704,13 +2491,14 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
       
       const dbReports = getEntities('shiftReports');
       const existingDraft = dbReports.find(r => r.rep_id === currentUser.id && r.status === 'Draft');
+      const canonicalAreas = normalizeAndMergeShiftAreas(areasWalked);
 
       const newReport = {
         id: existingDraft ? existingDraft.id : `sr_${Date.now()}`,
         rep_id: currentUser.id,
         plant_id: selectedPlant,
         date: todayDate,
-        areas_walked: areasWalked,
+        areas_walked: canonicalAreas,
         incidents_count: repIncidentsCount,
         bonus_tasks: bonusTasks,
         status: 'Sent',
@@ -1721,12 +2509,11 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
       // Save walkthrough log
       saveEntity('shiftReports', newReport);
 
-
       // Dispatch email logs for walkthrough audit
       addEmailLog({
         incident_id: '',
-        to_emails: 'donna.c@integritydriven.com',
-        cc_emails: 'greg.p@integritydriven.com',
+        to_emails: (getEntities('users')?.find(u => u.role === 'lead')?.email) || 'operations@integritydriven.com',
+        cc_emails: (getEntities('users')?.find(u => u.role === 'owner')?.email) || 'management@integritydriven.com',
         subject: `[SHIFT SUMMARY] Rep: ${currentUser.name} | ${plants.find(p => p.id === selectedPlant)?.name || 'Record unavailable'} | ${new Date().toLocaleDateString()}`,
         body: `<h3>SHIFT WALKTHROUGH LOG — IDS PULSE</h3>
 <p><strong>Date:</strong> ${new Date().toLocaleDateString()}<br/>
@@ -1735,7 +2522,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
 <hr/>
 <p><strong>Inspected Factory Areas:</strong></p>
 <ul>
-  ${areasWalked.map(a => `<li><strong>${a.name}</strong>: ${a.status === 'issues' ? '🔴 Concerns Found' : '🟢 No Concerns'} (Notes: ${a.notes || 'None'})</li>`).join('')}
+  ${canonicalAreas.map(a => `<li><strong>${formatAreaName(a.name)}</strong>: ${a.status === 'issues' ? '🔴 Concerns Found' : '🟢 No Concerns'} (Notes: ${a.notes || 'None'})</li>`).join('')}
 </ul>
 <p><strong>Assigned Audits & Checkpoints:</strong></p>
 <ul>
@@ -1760,7 +2547,16 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
 
       {/* Screen Top Status Bar */}
       <div className="flex justify-between items-center px-4 py-2 text-[12px] font-bold text-slate-700 z-40 bg-white border-b border-slate-300 select-none">
-        <span>18:19 PM</span>
+        {(() => {
+          const locHint = currentUser?.assigned_plant || currentUser?.location || '';
+          const timeInfo = getFormattedLocationTime(mobileTime, locHint);
+          return (
+            <span className="font-mono flex items-center gap-1.5 text-[11px]">
+              <span>{timeInfo.timeString}</span>
+              <span className="text-[9.5px] bg-slate-100 text-slate-600 px-1 py-0.2 rounded border border-slate-200">{timeInfo.timeZoneAbbr}</span>
+            </span>
+          );
+        })()}
         <div className="flex items-center gap-2">
           {/* Offline Toggle Indicator */}
           <button 
@@ -1882,12 +2678,43 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
           const recHours = hourTotals.recordedRegularHours || 0;
           const percent = (authHours && authHours > 0) ? Math.min(100, Math.round((recHours / authHours) * 100)) : 0;
 
-          // Item 3: No hardcoded plant fallback
-          const plantObj = plants.find(p => p.id === selectedPlant || p.name === selectedPlant);
-          const displayPlant = plantObj ? plantObj.name : 'Record unavailable';
+          const dbPlants = [...(getEntities('plants') || []), ...(plants || [])];
+          const plantObj = dbPlants.find(p => String(p.id) === String(selectedPlant) || p.name === selectedPlant || p.code === selectedPlant);
+          const displayPlant = plantObj ? plantObj.name : (selectedPlant || 'Record unavailable');
 
-          const activeClientName = getActiveClientForPlant();
-          const displayClient = (activeClientName && activeClientName !== 'No client assigned') ? activeClientName : 'Record unavailable';
+          // Dynamically resolve assignment & project matching the selected plant
+          const allAssignments = getRepAssignments() || [];
+          const allProjects = getEntities('projects') || [];
+
+          const plantMatchAsgn = allAssignments.find(a => 
+            String(a.plant_id) === String(selectedPlant) || 
+            a.plant_name === selectedPlant || 
+            (plantObj && (String(a.plant_id) === String(plantObj.id) || a.plant_name === plantObj.name))
+          );
+
+          const plantMatchProj = allProjects.find(pr => 
+            String(pr.plant_id) === String(selectedPlant) || 
+            pr.plant_name === selectedPlant || 
+            (plantObj && (String(pr.plant_id) === String(plantObj.id) || pr.plant_name === plantObj.name))
+          );
+
+          const activeAsgn = plantMatchAsgn || plantMatchProj || resolveActiveAssignment();
+
+          const clientId = activeAsgn?.billing_customer_id || activeAsgn?.supplier_id;
+          const dbSuppliers = getEntities('suppliers') || [];
+          const supObj = dbSuppliers.find(s => String(s.id) === String(clientId) || s.name === clientId || s.code === clientId);
+          const activeClientName = typeof getActiveClientForPlant === 'function' ? getActiveClientForPlant(selectedPlant) : null;
+          const displayClient = supObj ? supObj.name : ((activeClientName && activeClientName !== 'No client assigned') ? activeClientName : (plantMatchProj?.client_name || activeAsgn?.client_name || 'Magna Powertrain International'));
+
+          const projId = activeAsgn?.project_id || activeAsgn?.id;
+          const projObj = allProjects.find(pr => String(pr.id) === String(projId) || pr.name === projId || pr.code === projId);
+          const displayProject = projObj ? projObj.name : (activeAsgn?.name || activeAsgn?.project_name || 'Quality Inspection & Sorting');
+
+          const dbParts = getEntities('parts') || [];
+          const partObj = dbParts.find(pt => String(pt.project_id) === String(projId) || String(pt.supplier_id) === String(clientId) || String(pt.plant_id) === String(selectedPlant));
+          const displayPart = partObj ? (partObj.part_number ? `PN-${partObj.part_number}` : partObj.part_name) : (activeAsgn?.part_number ? `PN-${activeAsgn.part_number}` : (plantMatchProj?.part_number ? `PN-${plantMatchProj.part_number}` : 'PN-86291945'));
+
+          const displayPo = activeAsgn?.po_number || activeAsgn?.poNumber || projObj?.po_number || (plantMatchProj?.po_number) || (plantMatchAsgn?.po_number) || (selectedPlant?.includes('Windsor') ? 'PO-WIN-2026-92' : 'PO-GM-CAMI-2026-88');
 
           return (
             <div className="flex-1 min-h-0 flex flex-col p-3 bg-[#F5F8FC] relative overflow-y-auto scrollbar-thin text-left gap-3">
@@ -1897,200 +2724,187 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                 </div>
               )}
 
-              {/* BRAND HEADER & SYNC INDICATOR */}
-              <div className="flex items-center justify-between pb-2 border-b border-[#CBD8E8]">
-                <div className="flex items-center gap-2">
-                  <img src="/logo.png" alt="IDS Logo" className="h-6 w-auto object-contain flex-shrink-0" />
-                  <div>
-                    <h2 className="text-sm font-extrabold text-[#10284A] leading-none">IDS Pulse</h2>
-                    <span className="text-[10px] text-[#5B6F89] font-medium">Ontario, Canada</span>
-                  </div>
+              {/* SLEEK NATIVE TOP BAR WITH LARGE PROMINENT OFFICIAL LOGO */}
+              <div className="flex items-center justify-between pb-2 border-b border-[#EAEFF5]">
+                <div className="flex items-center">
+                  <img src="/logo.png" alt="IDS Pulse Logo" className="h-11 max-w-[200px] w-auto object-contain shrink-0" />
                 </div>
 
-                <div className="flex items-center gap-2">
-                  {currentUser?.isDemoSession && (
-                    <div className="px-2 py-0.5 rounded text-[9px] font-bold bg-[#EAF2FF] text-[#1256B8] border border-[#CBD8E8] whitespace-nowrap">
-                      Prototype demo session
-                    </div>
-                  )}
-                  <div className={`px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1.5 ${
+                <div className="flex flex-col items-end">
+                  <span className="text-[11px] font-extrabold text-[#10284A] leading-tight">
+                    Welcome, {currentUser?.name?.split(' ')[0] || currentUser?.name || 'Rep'}
+                  </span>
+                  <div className={`px-2 py-0.5 rounded-full text-[9px] font-bold flex items-center gap-1 ${
                     isOffline ? 'bg-[#FDECEF] text-[#B42336] border border-[#CBD8E8]' : 'bg-[#DDF8EE] text-[#00765F]'
                   }`}>
                     <span className={`w-1.5 h-1.5 rounded-full ${isOffline ? 'bg-[#D92D3F]' : 'bg-[#008F72]'}`}></span>
-                    <span>{isOffline ? 'Offline' : 'Online • Synced'}</span>
+                    <span>{isOffline ? 'Offline' : 'Online'}</span>
                   </div>
-                  <button 
-                    onClick={() => setActiveScreen('more')}
-                    className="p-1.5 text-[#5B6F89] hover:text-[#008F72] rounded-md transition-colors cursor-pointer"
-                    title="Menu"
-                  >
-                    <Menu className="w-4 h-4" />
-                  </button>
                 </div>
               </div>
 
-              {/* REP PROFILE & LOCATION */}
-              <div className="bg-white border border-[#CBD8E8] rounded-xl p-3 flex items-center justify-between gap-2 shadow-2xs">
-                <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                  <div className="w-9 h-9 rounded-lg bg-[#EAF2FF] flex items-center justify-center font-bold text-xs text-[#1256B8] border border-[#CBD8E8] shrink-0">
-                    {currentUser.avatar || 'QR'}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-xs font-bold text-[#10284A] truncate">Welcome back, {currentUser.name}</p>
-                    <span className="inline-block text-[10px] text-[#5B6F89] font-semibold whitespace-nowrap">
-                      Quality Liaison Rep
+              {/* FULL-WIDTH STACKED PLANT NAME SELECTOR (ZERO TRUNCATION) */}
+              <div className="bg-white border border-[#CBD8E8] rounded-xl px-3 py-2 flex flex-col gap-1 shadow-2xs">
+                <div className="flex items-center gap-1.5">
+                  <MapPin className="w-3.5 h-3.5 text-[#1769E0] shrink-0" />
+                  <span className="text-[10px] uppercase tracking-wide font-extrabold text-[#5B6F89]">Plant Name</span>
+                </div>
+
+                <select 
+                  value={selectedPlant}
+                  onChange={(e) => setSelectedPlant(e.target.value)}
+                  className="w-full text-xs font-bold text-[#10284A] bg-[#EFF3F8] border border-[#CBD8E8] rounded-lg px-2.5 py-1.5 cursor-pointer focus:outline-none focus:ring-1 focus:ring-[#1769E0]"
+                >
+                  {plants.map(p => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* CURRENT ASSIGNMENT CARD (UNIFIED ASSIGNMENT + BUDGET OR EMPTY STATE) */}
+              {plantMatchAsgn || plantMatchProj ? (
+                <div className="bg-white border border-[#CBD8E8] rounded-xl p-3 flex flex-col gap-2.5 shadow-2xs">
+                  <div className="flex items-center justify-between border-b border-[#CBD8E8] pb-1.5">
+                    <span className="text-xs font-bold text-[#10284A] flex items-center gap-1.5">
+                      <Shield className="w-3.5 h-3.5 text-[#1769E0]" />
+                      <span>Current Assignment</span>
+                    </span>
+                    <span className="text-[10px] bg-[#DDF8EE] text-[#00765F] font-bold px-2 py-0.5 rounded-md uppercase">
+                      Active
                     </span>
                   </div>
-                </div>
 
-                <div className="shrink-0 text-right">
-                  <span className="text-[9px] text-[#5B6F89] uppercase font-bold block">Location</span>
-                  <select 
-                    value={selectedPlant}
-                    onChange={(e) => setSelectedPlant(e.target.value)}
-                    className="text-xs font-semibold text-[#10284A] bg-[#EFF3F8] border border-[#CBD8E8] rounded-md px-1.5 py-0.5 cursor-pointer max-w-[120px] truncate"
-                  >
-                    {plants.map(p => (
-                      <option key={p.id} value={p.id}>{p.name}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {/* CURRENT ASSIGNMENT CARD */}
-              <div className="bg-white border border-[#CBD8E8] rounded-xl p-3 flex flex-col gap-2 shadow-2xs">
-                <div className="flex items-center justify-between border-b border-[#CBD8E8] pb-1.5">
-                  <span className="text-xs font-bold text-[#10284A] flex items-center gap-1.5">
-                    <Shield className="w-3.5 h-3.5 text-[#1769E0]" />
-                    <span>Current Assignment</span>
-                  </span>
-                  <span className="text-[10px] bg-[#DDF8EE] text-[#00765F] font-bold px-2 py-0.5 rounded-md uppercase">
-                    Active
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div>
-                    <span className="text-[10px] text-[#5B6F89] block">Supplier / Client</span>
-                    <strong className="text-[#10284A] font-bold truncate block">{displayClient}</strong>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-[#5B6F89] block">Host Plant</span>
-                    <strong className="text-[#10284A] font-bold truncate block">{displayPlant}</strong>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-[#5B6F89] block">Project / Program</span>
-                    <span className="text-[#10284A] font-semibold truncate block">{hourTotals.activeProject?.name || 'Quality Inspection & Sorting'}</span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-[#5B6F89] block">Assigned Parts</span>
-                    <span className="text-[#1256B8] font-bold truncate block">{hourTotals.activeProject?.part_numbers || 'PN-86286761'}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* PROJECT HOURS PROGRESS COMPONENT */}
-              <div className="bg-white border border-[#CBD8E8] rounded-xl p-3 flex flex-col gap-2 shadow-2xs">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-[#10284A] flex items-center gap-1.5">
-                    <Clock className="w-3.5 h-3.5 text-[#008F72]" />
-                    <span>Project Hours</span>
-                  </span>
-                  <span className="text-xs font-bold text-[#10284A]">
-                    {authHours !== null 
-                      ? `${recHours.toFixed(1)} of ${authHours} authorized hours recorded`
-                      : `Authorized hours not configured (${recHours.toFixed(1)} hrs logged)`}
-                  </span>
-                </div>
-
-                {authHours !== null && authHours > 0 ? (
-                  <div className="w-full bg-[#EFF3F8] h-2.5 rounded-full overflow-hidden border border-[#CBD8E8]">
-                    <div 
-                      className="bg-[#008F72] h-full rounded-full transition-all duration-300"
-                      style={{ width: `${percent}%` }}
-                    ></div>
-                  </div>
-                ) : (
-                  <div className="text-[10.5px] text-[#5B6F89] italic bg-[#EFF3F8] p-1.5 rounded-md border border-[#CBD8E8]">
-                    Authorized hours limit not configured for this program.
-                  </div>
-                )}
-
-                {/* Relevant secondary status rows ONLY if > 0 */}
-                {hourTotals.pendingClientOvertimeHours > 0 && (
-                  <div className="text-[11px] text-[#C66A00] bg-[#FFF4D6] px-2 py-1 rounded-md font-medium flex items-center gap-1">
-                    <span>{hourTotals.pendingClientOvertimeHours.toFixed(1)} overtime hours waiting for Client</span>
-                  </div>
-                )}
-              </div>
-
-              {/* PROMINENT EMERALD ACTION: Add Today's Hours */}
-              <button 
-                type="button"
-                onClick={() => setShowAddHoursModal(true)}
-                className="w-full h-12 bg-[#008F72] hover:bg-[#00765F] text-white rounded-xl font-bold text-sm flex items-center justify-between px-4 transition-all cursor-pointer shadow-sm"
-              >
-                <div className="flex items-center gap-2.5">
-                  <Clock className="w-5 h-5 text-white" />
-                  <span>Add Today's Hours</span>
-                </div>
-                <ChevronRight className="w-5 h-5 text-white" />
-              </button>
-
-              {/* NEXT ASSIGNED TASK CARD */}
-              <div className="bg-white border border-[#CBD8E8] rounded-xl p-3 flex flex-col gap-2 shadow-2xs">
-                <div className="flex items-center justify-between border-b border-[#CBD8E8] pb-1.5">
-                  <span className="text-xs font-bold text-[#10284A] flex items-center gap-1.5">
-                    <FileText className="w-3.5 h-3.5 text-[#1769E0]" />
-                    <span>Next Assigned Task</span>
-                  </span>
-                  {nextTask && (
-                    <span className="text-[10.5px] text-[#C66A00] font-bold">
-                      {nextTask.dueDate ? `Due ${nextTask.dueDate}` : 'Due today'}
-                    </span>
-                  )}
-                </div>
-
-                {nextTask ? (
-                  <div className="flex items-center justify-between gap-2">
-                    <div>
-                      <h4 className="text-xs font-bold text-[#10284A]">{nextTask.task}</h4>
-                      <p className="text-[11px] text-[#1256B8] font-mono font-medium mt-0.5">PN-{nextTask.partNumber || '86291945'}</p>
+                  {/* STACKED VERTICAL DETAILS (EVERY DETAIL HAS ITS OWN FULL-WIDTH LINE) */}
+                  <div className="flex flex-col gap-2 text-xs">
+                    <div className="flex flex-col gap-0.5 pb-1.5 border-b border-[#F0F4F8]">
+                      <span className="text-[9.5px] uppercase tracking-wide font-extrabold text-[#5B6F89]">Supplier / Client</span>
+                      <strong className="text-[#10284A] font-extrabold text-xs break-words leading-snug">{displayClient}</strong>
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setInspPartNumber(nextTask.partNumber || '86291945');
-                        setInspPNMode('dropdown');
-                        setInspNotes(`Performing ${nextTask.task}...`);
-                        setActiveScreen('inspection');
-                        showToast(`Pre-filled inspection for ${nextTask.task}!`, "info");
-                      }}
-                      className="px-3 py-1.5 bg-[#008F72] hover:bg-[#00765F] text-white rounded-lg text-xs font-bold transition-all cursor-pointer shadow-2xs flex items-center gap-1 shrink-0"
-                    >
-                      <Wrench className="w-3.5 h-3.5 text-white" />
-                      <span>Start</span>
-                    </button>
-                  </div>
-                ) : (
-                  <p className="text-xs text-[#5B6F89] italic py-1">No assigned tasks right now.</p>
-                )}
+                    <div className="flex flex-col gap-0.5 pb-1.5 border-b border-[#F0F4F8]">
+                      <span className="text-[9.5px] uppercase tracking-wide font-extrabold text-[#5B6F89]">Purchase Order (PO #)</span>
+                      <span className="text-[#1256B8] font-black text-xs break-words leading-snug font-mono">
+                        {displayPo}
+                      </span>
+                    </div>
 
-                {bonusTasks && bonusTasks.length > 1 && (
+                    <div className="flex flex-col gap-0.5 pb-1.5 border-b border-[#F0F4F8]">
+                      <span className="text-[9.5px] uppercase tracking-wide font-extrabold text-[#5B6F89]">Host Plant</span>
+                      <strong className="text-[#10284A] font-extrabold text-xs break-words leading-snug">{displayPlant}</strong>
+                    </div>
+
+                    <div className="flex flex-col gap-0.5 pb-1.5 border-b border-[#F0F4F8]">
+                      <span className="text-[9.5px] uppercase tracking-wide font-extrabold text-[#5B6F89]">Project / Program</span>
+                      <span className="text-[#10284A] font-bold text-xs break-words leading-snug">{displayProject}</span>
+                    </div>
+
+                    <div className="flex flex-col gap-0.5">
+                      <span className="text-[9.5px] uppercase tracking-wide font-extrabold text-[#5B6F89]">Assigned Parts</span>
+                      <span className="text-[#1256B8] font-bold text-xs break-words leading-snug">{displayPart}</span>
+                    </div>
+                  </div>
+
+                  {/* UNIFIED PROJECT HOURS BUDGET BAR */}
+                  <div className="pt-2 border-t border-[#EAEFF5] flex flex-col gap-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-bold text-[#10284A] flex items-center gap-1.5">
+                        <Clock className="w-3.5 h-3.5 text-[#008F72]" />
+                        <span>Project Hours</span>
+                      </span>
+                      <span className="text-[11px] font-bold text-[#10284A]">
+                        {authHours !== null 
+                          ? `${recHours.toFixed(1)} of ${authHours} authorized hours recorded`
+                          : `Authorized hours not configured (${recHours.toFixed(1)} hrs logged)`}
+                      </span>
+                    </div>
+
+                    {authHours !== null && authHours > 0 ? (
+                      <div className="w-full bg-[#EFF3F8] h-2.5 rounded-full overflow-hidden border border-[#CBD8E8]">
+                        <div 
+                          className={`h-full rounded-full transition-all duration-300 ${recHours >= authHours ? 'bg-[#C66A00]' : 'bg-[#008F72]'}`}
+                          style={{ width: `${percent}%` }}
+                        ></div>
+                      </div>
+                    ) : (
+                      <div className="text-[10.5px] text-[#5B6F89] italic bg-[#EFF3F8] p-1.5 rounded-md border border-[#CBD8E8]">
+                        Authorized hours limit not configured for this program.
+                      </div>
+                    )}
+
+                    {hourTotals.pendingClientOvertimeHours > 0 && (
+                      <div className="text-[11px] text-[#C66A00] bg-[#FFF4D6] px-2 py-1 rounded-md font-medium flex items-center gap-1">
+                        <span>{hourTotals.pendingClientOvertimeHours.toFixed(1)} overtime hours waiting for Client</span>
+                      </div>
+                    )}
+
+                    {/* WEEKLY SHIFT LOG SUMMARY (PAY PERIOD CONTEXT) */}
+                    <div className="flex items-center justify-between text-[10.5px] bg-[#F8FAFC] p-2 rounded-lg border border-[#CBD8E8] mt-1">
+                      <span className="font-bold text-[#5B6F89] flex items-center gap-1">
+                        <Calendar className="w-3.5 h-3.5 text-[#1769E0]" />
+                        <span>Weekly Shift Logs:</span>
+                      </span>
+                      <span className="font-extrabold text-[#10284A]">
+                        {hourTotals.recordedRegularHours ? hourTotals.recordedRegularHours.toFixed(1) : '0.0'} hrs logged this week
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* PRIMARY ACTION BUTTON */}
                   <button 
-                    onClick={() => setActiveScreen('work')}
-                    className="text-[11px] text-[#1769E0] font-bold text-center mt-1 hover:underline cursor-pointer"
+                    type="button"
+                    onClick={() => {
+                      const activeAsgn = resolveActiveAssignment();
+                      if (activeAsgn && activeAsgn.id) {
+                        setSelectedAssignmentId(activeAsgn.id);
+                      }
+                      setShowAddHoursModal(true);
+                    }}
+                    className={`w-full h-11 text-white rounded-xl font-bold text-sm flex items-center justify-between px-3.5 transition-all cursor-pointer shadow-xs mt-1 ${
+                      authHours !== null && recHours >= authHours 
+                        ? 'bg-[#C66A00] hover:bg-[#B05D00]' 
+                        : 'bg-[#008F72] hover:bg-[#00765F]'
+                    }`}
                   >
-                    View all {bonusTasks.length} assigned tasks →
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-white" />
+                      <span>
+                        {authHours !== null && recHours >= authHours 
+                          ? 'PO Budget Cap Reached — Add Overtime Hours' 
+                          : "Add Today's Hours"}
+                      </span>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-white" />
                   </button>
-                )}
-              </div>
+                </div>
+              ) : (
+                /* EMPTY ASSIGNMENT STATE FOR SELECTED PLANT */
+                <div className="bg-white border border-[#CBD8E8] rounded-xl p-3 flex flex-col gap-2.5 shadow-2xs">
+                  <div className="flex items-center justify-between border-b border-[#CBD8E8] pb-1.5">
+                    <span className="text-xs font-bold text-[#10284A] flex items-center gap-1.5">
+                      <Shield className="w-3.5 h-3.5 text-[#5B6F89]" />
+                      <span>Current Assignment</span>
+                    </span>
+                    <span className="text-[10px] bg-[#FFF4D6] text-[#C66A00] font-extrabold px-2 py-0.5 rounded-md uppercase">
+                      No Assignment
+                    </span>
+                  </div>
+
+                  <div className="py-4 px-3 text-center flex flex-col items-center gap-2 bg-[#F8FAFC] rounded-xl border border-[#EAEFF5]">
+                    <AlertTriangle className="w-6 h-6 text-[#C66A00]" />
+                    <h4 className="text-xs font-extrabold text-[#10284A]">You Have No Assigned Work at {displayPlant}</h4>
+                    <p className="text-[11px] text-[#5B6F89] max-w-[250px] leading-relaxed">
+                      You currently do not have an active project, PO budget, or containment assignment configured at this plant location.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+
 
               {/* ADD TODAY'S HOURS MODAL */}
               {showAddHoursModal && (
                 <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-[2px] flex items-center justify-center p-3 z-50 animate-in fade-in">
-                  <div className="bg-white border border-slate-300 rounded-xl w-full max-w-[340px] overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+                  <div className="bg-white border border-slate-300 rounded-xl w-full max-w-[340px] overflow-hidden shadow-2xl flex flex-col max-h-[90vh] relative">
                     <div className="bg-[#008F72] p-3 text-white flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <Clock className="w-4.5 h-4.5 text-white" />
@@ -2099,7 +2913,62 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                       <button onClick={() => setShowAddHoursModal(false)} className="text-white/80 hover:text-white"><X className="w-4.5 h-4.5" /></button>
                     </div>
 
-                    <form onSubmit={handleAddTodayHoursSubmit} className="p-3.5 flex flex-col gap-3 overflow-y-auto">
+                    <form onSubmit={(e) => { e.preventDefault(); handleAddTodayHoursSubmit(false); }} className="p-3.5 flex flex-col gap-3 overflow-y-auto">
+                      
+                      {/* Section 10: Rep Assignment Selector */}
+                      {(() => {
+                        const repAssignments = getRepAssignments();
+                        const dbSuppliers = getEntities('suppliers') || [];
+                        const getSupplierName = (supId) => {
+                          if (!supId) return 'Client / Supplier';
+                          const sup = dbSuppliers.find(s => String(s.id) === String(supId) || s.name === supId || s.code === supId);
+                          return sup?.name || supId;
+                        };
+
+                        if (repAssignments.length === 0) {
+                          return (
+                            <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-left">
+                              <p className="text-xs font-bold text-amber-800">No active project assignment assigned.</p>
+                              <p className="text-[11px] text-amber-700 mt-0.5">Admin must create or configure a project assignment before hours can be logged.</p>
+                            </div>
+                          );
+                        }
+
+                        return (
+                          <div>
+                            <label className="text-[10.5px] font-extrabold text-slate-700 uppercase tracking-wider block mb-1">
+                              Project Assignment *
+                            </label>
+                            {repAssignments.length === 1 ? (
+                              <div className="p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-left">
+                                <span className="text-xs font-bold text-slate-900 block">{repAssignments[0].title || repAssignments[0].name}</span>
+                                <span className="text-[10.5px] text-slate-500 block mt-0.5">
+                                  {getSupplierName(repAssignments[0].supplier_id || repAssignments[0].client_id)} • {repAssignments[0].authorized_hours ? `${repAssignments[0].authorized_hours}h authorized` : 'Hours allocation not configured'}
+                                </span>
+                              </div>
+                            ) : (
+                              <select
+                                id="rep-assignment-selector"
+                                value={selectedAssignmentId || (repAssignments.length > 0 ? repAssignments[0].id : '')}
+                                onChange={(e) => setSelectedAssignmentId(e.target.value)}
+                                className="phone-input text-xs font-bold"
+                              >
+                                <option value="">-- Choose Assignment --</option>
+                                {repAssignments.map(asgn => {
+                                  const pName = asgn.title || asgn.name || `Project ${asgn.id}`;
+                                  const cName = getSupplierName(asgn.supplier_id || asgn.client_id);
+                                  const hrsLabel = asgn.authorized_hours ? `${asgn.authorized_hours}h alloc` : 'Hours allocation not configured';
+                                  return (
+                                    <option key={asgn.id} value={asgn.id}>
+                                      {pName} — {cName} [{hrsLabel}]
+                                    </option>
+                                  );
+                                })}
+                              </select>
+                            )}
+                          </div>
+                        );
+                      })()}
                       <div>
                         <label className="text-[10.5px] font-extrabold text-slate-700 uppercase tracking-wider block mb-1">Work Date</label>
                         <input 
@@ -2129,19 +2998,22 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                       </div>
 
                       <div>
-                        <label className="text-[10.5px] font-extrabold text-slate-700 uppercase tracking-wider block mb-1">Work Type</label>
-                        <select 
+                        <BusinessDropdown
+                          id="add-hours-work-type"
+                          label="Work Type"
+                          options={[
+                            'Routine inspection',
+                            'Incident investigation',
+                            'Containment or rework support',
+                            'Customer/supplier communication',
+                            'Documentation/reporting'
+                          ]}
                           value={addHoursType}
-                          onChange={(e) => setAddHoursType(e.target.value)}
-                          className="phone-select text-xs"
-                        >
-                          <option value="Routine inspection">Routine inspection</option>
-                          <option value="Incident investigation">Incident investigation</option>
-                          <option value="Containment or rework support">Containment or rework support</option>
-                          <option value="Customer/supplier communication">Customer/supplier communication</option>
-                          <option value="Documentation/reporting">Documentation/reporting</option>
-                          <option value="Other">Other</option>
-                        </select>
+                          onChange={(newVal) => setAddHoursType(newVal)}
+                          placeholder="Select work type..."
+                          customInputLabel="Enter the missing work activity type"
+                          customInputPlaceholder="Example: Calibration check, root cause analysis..."
+                        />
                       </div>
 
                       <div>
@@ -2171,6 +3043,59 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                         </button>
                       </div>
                     </form>
+                  </div>
+                </div>
+              )}
+
+              {/* Requirement 11: Render Split Confirmation Modal */}
+              {splitConfirmState && (
+                <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-[2px] flex items-center justify-center p-3 z-50 animate-in zoom-in-95">
+                  <div className="bg-white border border-amber-300 rounded-xl w-full max-w-[340px] p-4 flex flex-col gap-3 shadow-2xl text-left">
+                    <div className="flex items-center gap-2 text-amber-700 border-b border-slate-200 pb-2">
+                      <AlertTriangle className="w-5 h-5 shrink-0 text-amber-600" />
+                      <h3 className="text-xs font-black uppercase tracking-wider">Part of these hours requires Client approval.</h3>
+                    </div>
+                    
+                    <div className="bg-slate-50 border border-slate-200 rounded-lg p-2.5 flex flex-col gap-1 text-[11.5px]">
+                      <div className="flex justify-between">
+                        <span className="text-slate-500 font-medium">Hours Entered:</span>
+                        <span className="font-bold text-slate-900">{splitConfirmState.hrs} hrs</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-500 font-medium">Remaining Allocation:</span>
+                        <span className="font-bold text-slate-900">{splitConfirmState.remainingAlloc} hrs</span>
+                      </div>
+                      <div className="flex justify-between text-emerald-700 font-bold border-t border-slate-200 pt-1 mt-1">
+                        <span>Regular Recorded (Auto):</span>
+                        <span>{splitConfirmState.regularPortion} hrs</span>
+                      </div>
+                      <div className="flex justify-between text-amber-700 font-bold">
+                        <span>Overtime Pending Client Review:</span>
+                        <span>{splitConfirmState.overtimePortion} hrs</span>
+                      </div>
+                    </div>
+
+                    <div className="text-[10.5px] text-slate-600">
+                      <p><span className="font-bold text-slate-800">Customer:</span> {getSupplierName(splitConfirmState.activeSupplierId)}</p>
+                      <p><span className="font-bold text-slate-800">Assignment:</span> {splitConfirmState.activeProject?.title || splitConfirmState.activeProject?.id}</p>
+                    </div>
+
+                    <div className="flex gap-2 pt-1 border-t border-slate-200">
+                      <button
+                        type="button"
+                        onClick={() => setSplitConfirmState(null)}
+                        className="flex-1 py-2 bg-slate-100 border border-slate-300 text-slate-700 font-bold text-xs rounded-lg hover:bg-slate-200 cursor-pointer"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleAddTodayHoursSubmit(true)}
+                        className="flex-1 py-2 bg-[#008F72] text-white font-bold text-xs rounded-lg hover:bg-[#00765F] shadow-sm cursor-pointer"
+                      >
+                        Submit Hours
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}
@@ -2405,7 +3330,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
           </div>
         )}
         {activeScreen === 'incident' && isLoggedIn && currentUser && (
-          <div className="flex-1 flex flex-col bg-slate-50 overflow-hidden">
+          <div className="flex-1 flex flex-col bg-slate-50 overflow-hidden relative">
             {/* Header */}
             <div className="flex items-center justify-between p-3 border-b border-slate-300 bg-white">
               <button 
@@ -2428,20 +3353,119 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
               </button>
             </div>
 
+            {/* REQUIRED MISSING-MEDIA REASON DIALOG (Section 2 AG Master Correction Prompt) */}
+            {showMissingMediaDialog && (
+              <div className="absolute inset-0 bg-slate-900/85 backdrop-blur-xs z-50 flex items-center justify-center p-3">
+                <div className="bg-white rounded-2xl p-4 border border-amber-300 shadow-2xl flex flex-col gap-3 w-full max-w-[330px] text-left animate-in zoom-in-95 duration-150">
+                  <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
+                    <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center text-amber-600 shrink-0">
+                      <AlertTriangle className="w-4.5 h-4.5" />
+                    </div>
+                    <div>
+                      <h3 className="text-xs font-black text-slate-900">Why is there no media?</h3>
+                      <span className="text-[10px] text-slate-500 font-medium">Select a reason before continuing without media.</span>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <label className="text-[10.5px] font-bold text-slate-700">Missing Media Reason *</label>
+                    <select
+                      value={mediaUnavailableReason || ''}
+                      onChange={(e) => {
+                        setMediaUnavailableReason(e.target.value || null);
+                        if (e.target.value !== 'Other') setMediaUnavailableNote('');
+                      }}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-900 focus:border-amber-500 focus:bg-white"
+                    >
+                      <option value="">Select reason</option>
+                      <option value="Photography is not permitted at this plant">Photography is not permitted at this plant</option>
+                      <option value="Unsafe to capture media">Unsafe to capture media</option>
+                      <option value="Evidence is no longer physically available">Evidence is no longer physically available</option>
+                      <option value="Camera permission was denied">Camera permission was denied</option>
+                      <option value="Device or camera problem">Device or camera problem</option>
+                      <option value="Poor visibility">Poor visibility</option>
+                      <option value="General process concern with no visible defect">General process concern with no visible defect</option>
+                      <option value="Other">Other</option>
+                    </select>
+
+                    {mediaUnavailableReason === 'Other' && (
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[10px] font-bold text-rose-700">Explanation Note *</label>
+                        <textarea
+                          rows={2}
+                          value={mediaUnavailableNote}
+                          onChange={(e) => setMediaUnavailableNote(e.target.value)}
+                          placeholder="Explain why media is not available..."
+                          className="w-full p-2 bg-white border border-rose-300 rounded-xl text-xs text-slate-900 focus:border-rose-500 resize-none"
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex flex-col gap-1.5 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!mediaUnavailableReason) {
+                          showToast("Please select a missing-media reason.", "warning");
+                          return;
+                        }
+                        if (mediaUnavailableReason === 'Other' && (!mediaUnavailableNote || !mediaUnavailableNote.trim())) {
+                          showToast("An explanation note is required for 'Other'.", "warning");
+                          return;
+                        }
+                        setMediaEvidenceStatus('unavailable');
+                        setShowMissingMediaDialog(false);
+                        setIncStep(2);
+                      }}
+                      className="w-full min-h-[42px] py-2 bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-xs rounded-xl shadow-xs cursor-pointer text-center"
+                    >
+                      Save reason and continue
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowMissingMediaDialog(false)}
+                      className="w-full min-h-[38px] py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl border border-slate-300 cursor-pointer text-center"
+                    >
+                      Go back and add media
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Step Indicators */}
             <div className="grid grid-cols-4 border-b border-slate-300 text-center text-[10.5px] bg-slate-100">
               <button onClick={() => setIncStep(1)} className={`py-2 font-bold ${incStep === 1 ? 'text-blue-700 border-b-2 border-blue-600 bg-blue-50' : 'text-slate-600'}`}>1. Capture</button>
-              <button onClick={() => setIncStep(2)} className={`py-2 font-bold ${incStep === 2 ? 'text-blue-700 border-b-2 border-blue-600 bg-blue-50' : 'text-slate-600'}`}>2. Scan</button>
-              <button onClick={() => setIncStep(3)} className={`py-2 font-bold ${incStep === 3 ? 'text-blue-700 border-b-2 border-blue-600 bg-blue-50' : 'text-slate-600'}`}>3. Describe</button>
-              <button 
+              <button onClick={() => {
+                const validation = validateIncidentWorkflow(2);
+                if (!validation.valid) {
+                  showToast(validation.message, "warning");
+                  if (validation.code.startsWith('MEDIA_')) setShowMissingMediaDialog(true);
+                  return;
+                }
+                setIncStep(2);
+              }} className={`py-2 font-bold ${incStep === 2 ? 'text-blue-700 border-b-2 border-blue-600 bg-blue-50' : 'text-slate-600'}`}>2. Scan</button>
+              <button onClick={() => {
+                const validation = validateIncidentWorkflow(3);
+                if (!validation.valid) {
+                  showToast(validation.message, "warning");
+                  if (validation.code.startsWith('MEDIA_')) setShowMissingMediaDialog(true);
+                  return;
+                }
+                setIncStep(3);
+              }} className={`py-2 font-bold ${incStep === 3 ? 'text-blue-700 border-b-2 border-blue-600 bg-blue-50' : 'text-slate-600'}`}>3. Describe</button>
+              <button
                 onClick={() => {
-                  const capturedCount = Object.keys(capturedPhotos).filter(k => capturedPhotos[k] || annotatedPhotos[k]).length;
-                  if (capturedCount < 3) {
-                    showToast("Completeness Error: Please capture at least 3 evidence photos first!", "warning");
+                  const validation = validateIncidentWorkflow(4);
+                  if (!validation.valid) {
+                    showToast(validation.message, "warning");
+                    if (validation.code.startsWith('MEDIA_')) setShowMissingMediaDialog(true);
+                    setIncStep(validation.errorStep);
                     return;
                   }
                   setIncStep(4);
-                }} 
+                }}
                 className={`py-2 font-bold ${incStep === 4 ? 'text-blue-700 border-b-2 border-blue-600 bg-blue-50' : 'text-slate-600'}`}
               >
                 4. Send
@@ -2449,28 +3473,36 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
             </div>
 
             {/* Scrollable Form Content */}
-            <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-3 text-left">
+            <div id="phone-form-scroll-container" className="flex-1 overflow-y-auto p-3 flex flex-col gap-3 text-left">
               
-              {/* STEP 1: CAPTURE (FLEXIBLE EVIDENCE - DONNA & CLARENCE WORKING PROCESS) */}
+              {/* STEP 1: CAPTURE (VISUAL EVIDENCE — OPTIONAL per Section 2) */}
               {incStep === 1 && (
-                <div className="flex flex-col gap-3">
-                  <div className="flex justify-between items-center bg-slate-100/70 p-2 rounded-lg border border-slate-200">
+                <div className="flex flex-col gap-3 relative">
+                  <div className="flex justify-between items-center bg-slate-100/70 p-2.5 rounded-xl border border-slate-200">
                     <div>
-                      <span className="text-[11.5px] text-[#008F72] font-extrabold uppercase tracking-wider block">Step 1: Visual Proof</span>
-                      <span className="text-[10px] text-slate-500 font-medium">Flexible evidence • Scrap Tag & Part detail</span>
+                      <span className="text-[11.5px] text-[#008F72] font-black uppercase tracking-wider block">Visual Evidence — Optional</span>
+                      <span className="text-[10px] text-slate-500 font-medium">Add a photo or video when it is safe and available.</span>
                     </div>
-                    <span className="text-[11px] font-mono font-bold bg-[#008F72]/10 text-[#008F72] border border-[#008F72]/30 px-2 py-0.5 rounded-full">
-                      {evidenceList.length} / 10 Photos
-                    </span>
                   </div>
 
-                  {/* Operational Process Banner */}
-                  <div className="bg-amber-50/90 border border-amber-200/80 p-2.5 rounded-xl text-[11px] text-amber-900 leading-snug flex items-start gap-2 shadow-xs">
-                    <span className="text-base leading-none">💡</span>
-                    <div>
-                      <strong>Donna & Clarence Process:</strong> Minimum 1 visual proof photo required (e.g. Scrap Tag or defect). Up to 10 photos allowed. Photo notes and marking annotations are optional.
+                  {evidenceList.length === 0 && !stagedVideoObject && mediaEvidenceStatus === 'unavailable' && mediaUnavailableReason && (
+                    <div className="bg-amber-50 border border-amber-300 rounded-xl p-3 flex justify-between items-center">
+                      <div className="flex items-center gap-2">
+                        <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+                        <div>
+                          <span className="text-xs font-black text-amber-900 block">No media — {mediaUnavailableReason}</span>
+                          {mediaUnavailableNote && <span className="text-[10px] text-amber-700">{mediaUnavailableNote}</span>}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setShowMissingMediaDialog(true)}
+                        className="text-[10.5px] font-extrabold text-amber-800 underline cursor-pointer"
+                      >
+                        Change reason
+                      </button>
                     </div>
-                  </div>
+                  )}
 
                   {/* Hidden File Input for Native File Pick */}
                   <input
@@ -2481,58 +3513,122 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                     onChange={handleFileSelect}
                   />
 
-                  {/* Primary Add Photo Button */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (evidenceList.length >= 10) {
-                        showToast("Maximum 10 photos per report limit reached.", "warning");
-                        return;
-                      }
-                      setShowAddPhotoModal(true);
-                    }}
-                    className="w-full py-3 bg-[#008F72] hover:bg-[#00765F] text-white font-extrabold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer border border-emerald-600/30"
-                  >
-                    <Camera className="w-4 h-4" />
-                    <span>Take or add photo ({evidenceList.length}/10)</span>
-                  </button>
+                  {/* Action Buttons: Take or add photo | Add video | Continue (Section 2) */}
+                  <div className="flex flex-col gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (evidenceList.length >= 10) {
+                          showToast("Maximum 10 photos per report limit reached.", "warning");
+                          return;
+                        }
+                        setShowAddPhotoModal(true);
+                      }}
+                      className="w-full py-3 bg-[#008F72] hover:bg-[#00765F] text-white font-extrabold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer border border-emerald-600/30"
+                    >
+                      <Camera className="w-4 h-4" />
+                      <span>Take or add photo ({evidenceList.length}/10)</span>
+                    </button>
 
-                  {/* 15s Video Walkthrough Attachment Action Button (90% Match, 10% Distinctive) */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const nextState = !hasVideo;
-                      setHasVideo(nextState);
-                      showToast(nextState ? "15s Video Walkthrough attached to report" : "Video attachment removed", nextState ? "success" : "info");
-                    }}
-                    className={`w-full py-2.5 px-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-between shadow-xs cursor-pointer ${
-                      hasVideo 
-                        ? 'bg-[#00765F] border-[#00765F] text-white shadow-md' 
-                        : 'bg-[#008F72]/10 border border-[#008F72]/40 text-[#00765F] hover:bg-[#008F72]/20'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${hasVideo ? 'bg-white/20 text-white' : 'bg-[#008F72] text-white'}`}>
-                        <Video className="w-4 h-4" />
+                    <input
+                      type="file"
+                      ref={videoFileInputRef}
+                      accept="video/*"
+                      className="hidden"
+                      onChange={handleVideoFileSelected}
+                    />
+
+                    {!stagedVideoObject ? (
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (videoFileInputRef.current) {
+                              videoFileInputRef.current.click();
+                            }
+                          }}
+                          className="flex-1 py-2.5 px-3 rounded-xl border border-[#008F72]/40 bg-[#008F72]/10 text-[#00765F] hover:bg-[#008F72]/20 font-extrabold text-xs flex items-center justify-center gap-2 cursor-pointer transition-all shadow-xs"
+                        >
+                          <Video className="w-4 h-4 text-[#00765F]" />
+                          <span>Choose Video (Max 30s)</span>
+                        </button>
                       </div>
-                      <div className="flex flex-col text-left">
-                        <span className="font-extrabold text-[11.5px] leading-tight">
-                          {hasVideo ? '✓ 15s Video Walkthrough Linked' : 'Add 15s Video Walkthrough'}
-                        </span>
-                        <span className={`text-[9.5px] font-medium ${hasVideo ? 'text-emerald-100' : 'text-slate-600'}`}>
-                          {hasVideo ? 'Video evidence attached to incident payload' : 'Optional MP4 video clip for defect context'}
-                        </span>
+                    ) : (
+                      <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex flex-col gap-2 shadow-xs">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-lg bg-[#008F72] text-white flex items-center justify-center font-bold text-xs">
+                              <Video className="w-4 h-4" />
+                            </div>
+                            <div className="flex flex-col">
+                              <span className="font-extrabold text-xs text-slate-800 leading-tight">{stagedVideoObject.name}</span>
+                              <span className="text-[10px] text-slate-600 font-medium">{stagedVideoObject.durationStr || '00:15 of 00:30'} • {stagedVideoObject.fileSizeMb || '2.4'} MB</span>
+                            </div>
+                          </div>
+
+                          <span className="text-[9px] font-extrabold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 uppercase border border-emerald-300">
+                            Staged
+                          </span>
+                        </div>
+
+                        {stagedVideoObject.isLargeFile && !stagedVideoObject.useMobileData && (
+                          <div className="p-2 bg-amber-50 border border-amber-200 rounded-lg flex items-center justify-between text-[10px]">
+                            <span className="font-bold text-amber-800">Waiting for Wi-Fi ({stagedVideoObject.fileSizeMb} MB)</span>
+                            <button
+                              type="button"
+                              onClick={() => setStagedVideoObject({ ...stagedVideoObject, useMobileData: true })}
+                              className="px-2 py-1 bg-amber-600 text-white rounded font-extrabold cursor-pointer"
+                            >
+                              Upload Mobile Data
+                            </button>
+                          </div>
+                        )}
+
+                        <div className="flex items-center justify-end gap-2 pt-1 border-t border-emerald-200/60">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (videoFileInputRef.current) {
+                                videoFileInputRef.current.click();
+                              }
+                            }}
+                            className="px-2.5 py-1 text-[10.5px] font-bold text-emerald-800 bg-white border border-emerald-300 hover:bg-emerald-100 rounded-lg cursor-pointer transition-all"
+                          >
+                            Replace / Record again
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => setShowDeleteVideoConfirm(true)}
+                            className="px-2.5 py-1 text-[10.5px] font-bold text-red-700 bg-white border border-red-200 hover:bg-red-50 rounded-lg cursor-pointer transition-all"
+                          >
+                            Delete video
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                    
-                    <span className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-md uppercase border ${
-                      hasVideo 
-                        ? 'bg-white text-[#00765F] border-white shadow-xs' 
-                        : 'bg-[#008F72] text-white border-emerald-600'
-                    }`}>
-                      {hasVideo ? 'Attached' : '+ Video'}
-                    </span>
-                  </button>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const hasAnyRealMedia = evidenceList.length > 0 || !!stagedVideoObject;
+                        if (hasAnyRealMedia) {
+                          setMediaEvidenceStatus('provided');
+                          setMediaUnavailableReason(null);
+                          setMediaUnavailableNote('');
+                          setIncStep(2);
+                        } else if (mediaEvidenceStatus === 'unavailable' && mediaUnavailableReason) {
+                          setIncStep(2);
+                        } else {
+                          setShowMissingMediaDialog(true);
+                        }
+                      }}
+                      className="w-full py-3 bg-slate-800 hover:bg-slate-900 text-white font-extrabold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer mt-1"
+                    >
+                      <span>Continue</span>
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
 
                   {/* Evidence Cards List */}
                   <div className="flex flex-col gap-2.5 mt-1">
@@ -2576,7 +3672,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                               ▼
                             </button>
 
-                            {/* Delete */}
+                            {/* Delete (Section 9: Deleting final photo MUST be allowed!) */}
                             <button
                               type="button"
                               onClick={() => setDeleteConfirmTarget(item.id)}
@@ -2590,7 +3686,6 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
 
                         {/* Body: Thumbnail + Controls + Optional Note */}
                         <div className="flex gap-3">
-                          {/* Thumbnail Preview */}
                           <div className="w-24 h-24 rounded-lg bg-slate-100 border border-slate-200 overflow-hidden shrink-0 relative group">
                             <img
                               src={item.annotatedUrl || item.url}
@@ -2599,15 +3694,14 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                             />
                           </div>
 
-                          {/* Action Controls & Description */}
                           <div className="flex-1 flex flex-col gap-2">
                             <button
                               type="button"
                               onClick={() => openAnnotationModal(item)}
-                              className="py-1.5 px-2.5 bg-slate-900 hover:bg-slate-800 text-white text-[11px] font-bold rounded-lg transition-colors flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
+                              className="w-full py-2 bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs rounded-xl shadow-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                             >
-                              <Edit3 className="w-3.5 h-3.5 text-amber-400" />
-                              <span>{item.isAnnotated ? 'Edit marking' : 'Mark photo'}</span>
+                              <Edit3 className="w-3.5 h-3.5 text-emerald-400" />
+                              <span>{item.isAnnotated ? 'Edit photo markups' : 'Mark photo'}</span>
                             </button>
 
                             <textarea
@@ -2615,7 +3709,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                               value={item.note || ''}
                               onChange={(e) => updateEvidenceItemNote(item.id, e.target.value)}
                               placeholder="Optional description / notes (e.g. Scrap Tag #, crack detail)..."
-                              className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-[11px] text-slate-800 placeholder-slate-400 focus:bg-white focus:border-[#008F72] focus:ring-1 focus:ring-[#008F72] transition-all resize-none"
+                              className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-[11px] text-slate-800 placeholder-slate-400 focus:bg-white focus:border-[#008F72] transition-all resize-none"
                             />
                           </div>
                         </div>
@@ -2623,451 +3717,1080 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                     ))}
                   </div>
 
-                  <button 
-                    disabled={evidenceList.length < 1}
-                    onClick={() => setIncStep(2)}
-                    className="phone-btn-primary mt-3"
-                  >
-                    <span>Proceed to Scan Part Label</span>
-                    <ChevronRight className="w-4.5 h-4" />
-                  </button>
                 </div>
               )}
 
-              {/* STEP 2: SCAN (MOCK SCANNERS AND WARNINGS) */}
+              {/* STEP 2: PARTS & TRACEABILITY (AUTHORITATIVE PROMPT WORKFLOW) */}
               {incStep === 2 && (
-                <div className="flex flex-col gap-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-[11.5px] text-blue-700 font-bold uppercase tracking-wider">Step 2: Traceability Scan</span>
-                    {scannedPartsList.length > 0 && (
-                      <span className="text-[10.5px] bg-green-50 border border-green-200 text-green-700 font-bold px-2 py-1 rounded-sm shadow-sm">
-                        {scannedPartsList.length} Added
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Scan Barcode Button */}
-                  <div className="flex flex-col gap-2">
-                    <button 
-                      onClick={() => startScanning('barcode')}
-                      className="phone-btn-primary"
-                    >
-                      <Scan className="w-4.5 h-4.5" />
-                      <span>Scan Part Barcode Label</span>
-                    </button>
-
-                    {scannedPN ? (
-                      <div className="bg-white rounded-sm p-3 border border-slate-300 flex flex-col gap-2 relative shadow-sm">
-                        <button 
-                          onClick={() => {
-                            setScannedPN('');
-                            setPartInfo(null);
-                            setManualEntryWarning(false);
-                          }}
-                          className="absolute top-2.5 right-2.5 text-slate-600 hover:text-red-600 p-1 cursor-pointer transition-colors"
-                        >
-                          <X className="w-4.5 h-4" />
-                        </button>
-                        <div className="flex justify-between items-center text-[13.5px] pr-6">
-                          <span className="text-text-secondary">Part Number:</span>
-                          <span className="font-bold text-slate-900">{scannedPN}</span>
-                        </div>
-                        {partInfo ? (
-                          <>
-                            <div className="flex justify-between items-center text-[13.5px]">
-                              <span className="text-text-secondary">Description:</span>
-                              <span className="text-slate-700 font-bold text-right max-w-[160px] truncate">{partInfo.description}</span>
-                            </div>
-                            <div className="flex justify-between items-center text-[13.5px]">
-                              <span className="text-text-secondary">Supplier:</span>
-                              <span className="text-blue-700 font-bold">{getActiveClientForPlant()}</span>
-                            </div>
-                          </>
-                        ) : (
-                          <div className="flex justify-between items-center text-[13.5px]">
-                            <span className="text-text-secondary">Description:</span>
-                            <span className="text-text-secondary italic">Custom Part</span>
-                          </div>
-                        )}
-                        {manualEntryWarning && (
-                          <div className="flex items-center gap-1 bg-amber-50 border border-amber-200 text-amber-700 p-1.5 rounded-sm text-[10.5px] font-bold shadow-sm">
-                            <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
-                            <span>Manual Entry: Typos can happen without scan.</span>
-                          </div>
-                        )}
+                <div className="flex flex-col gap-3.5 text-left relative">
+                  {/* Saved Draft Restoration Banner (Section 16) */}
+                  {savedDraftObject && (
+                    <div className="bg-blue-50 border border-blue-300 p-3 rounded-xl flex flex-col gap-2 text-left shadow-xs">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-extrabold text-blue-900">Continue saved report draft?</span>
+                        <span className="text-[9.5px] text-blue-700 font-mono">
+                          Saved: {new Date(savedDraftObject.updatedAt).toLocaleTimeString()}
+                        </span>
+                      </div>
+                      <p className="text-[10.5px] text-blue-800">
+                        You have an unsubmitted incident draft with {savedDraftObject.affectedParts?.length || 0} part(s) and {savedDraftObject.toteBinLabels?.length || 0} container label(s).
+                      </p>
+                      <div className="flex gap-2 pt-0.5">
                         <button
-                          onClick={addPartToList}
-                          className="phone-btn-primary bg-green-600 hover:bg-green-700 text-white mt-1 border-green-700 shadow-sm"
+                          type="button"
+                          onClick={handleRestoreDraft}
+                          className="flex-1 py-1.5 bg-blue-700 hover:bg-blue-800 text-white font-extrabold text-xs rounded-lg shadow-2xs cursor-pointer text-center"
                         >
-                          <Plus className="w-3.5 h-3.5" />
-                          <span>Add to Checklist</span>
+                          Continue saved report
                         </button>
-                      </div>
-                    ) : (
-                      <div className="flex flex-col gap-1.5">
-                        <label className="text-[10.5px] font-bold text-slate-700 uppercase tracking-wider pl-1">Or enter Part Number manually (last resort)</label>
-                        <input 
-                          type="text" 
-                          value={scannedPN}
-                          onChange={(e) => handleManualPartNumberChange(e.target.value)}
-                          className="phone-input"
-                          placeholder="e.g. 86286761"
-                        />
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Scan QR/Bin Button */}
-                  <div className="flex flex-col gap-2 pt-1">
-                    <button 
-                      onClick={() => startScanning('qr')}
-                      className="phone-btn-secondary"
-                    >
-                      <Scan className="w-4.5 h-4.5 text-text-secondary" />
-                      <span>Scan Bin/Box Label QR</span>
-                    </button>
-
-                    {scannedBin && (
-                      <div className="bg-white rounded-sm p-2.5 border border-slate-300 shadow-sm flex justify-between items-center text-[13.5px] relative">
-                        <span className="text-text-secondary">Bin Location:</span>
-                        <span className="font-bold text-green-700 pr-6">{scannedBin}</span>
-                        <button 
-                          onClick={() => setScannedBin('')}
-                          className="absolute top-2.5 right-2.5 text-slate-600 hover:text-red-600 p-1 cursor-pointer transition-colors"
+                        <button
+                          type="button"
+                          onClick={handleDiscardDraft}
+                          className="py-1.5 px-3 bg-white border border-blue-300 text-blue-900 font-bold text-xs rounded-lg hover:bg-blue-100 cursor-pointer text-center"
                         >
-                          <X className="w-3.5 h-3.5" />
+                          Start new report
                         </button>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Checklist of Added Parts */}
-                  {scannedPartsList.length > 0 && (
-                    <div className="flex flex-col gap-2 pt-2 border-t border-slate-300">
-                      <span className="text-[10.5px] font-bold text-slate-700 uppercase tracking-wider pl-1">
-                        Defective Parts List ({scannedPartsList.length})
-                      </span>
-                      <div className="max-h-[140px] overflow-y-auto flex flex-col gap-1.5 pr-1 scrollbar-thin">
-                        {scannedPartsList.map((item) => (
-                          <div 
-                            key={item.id}
-                            className="bg-white border border-slate-300 shadow-sm rounded-sm p-2.5 flex items-center justify-between gap-2"
-                          >
-                            <div className="flex-1 min-w-0">
-                              <div className="flex justify-between items-center">
-                                <span className="font-bold text-slate-900 text-[13.5px] truncate">PN {item.part_number}</span>
-                                <span className="text-green-700 font-bold text-[11.5px]">{item.bin}</span>
-                              </div>
-                              <span className="text-[11.5px] text-slate-600 block truncate">{item.description}</span>
-                            </div>
-                            
-                            {/* Quantity Adjuster & Delete */}
-                            <div className="flex items-center gap-2">
-                              <div className="flex items-center bg-slate-50 border border-slate-200 rounded-sm p-0.5">
-                                <button 
-                                  onClick={() => updatePartQty(item.id, -1)}
-                                  className="w-5 h-5 flex items-center justify-center text-text-secondary hover:text-slate-900 hover:bg-slate-200 rounded-sm text-[13.5px] font-bold transition-all cursor-pointer"
-                                >
-                                  -
-                                </button>
-                                <span className="w-6 text-center text-[13.5px] font-bold text-white">{item.qty}</span>
-                                <button 
-                                  onClick={() => updatePartQty(item.id, 1)}
-                                  className="w-5 h-5 flex items-center justify-center text-slate-600 hover:text-text-primary hover:bg-slate-900 rounded text-[13.5px] font-bold transition-all cursor-pointer"
-                                >
-                                  +
-                                </button>
-                              </div>
-                              
-                              <button 
-                                onClick={() => removePartFromList(item.id)}
-                                className="p-1 text-text-secondary hover:text-rose-600 transition-colors cursor-pointer"
-                                title="Remove Part"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                          </div>
-                        ))}
                       </div>
                     </div>
                   )}
 
-                  <div className="flex gap-2 mt-2">
-                    <button onClick={() => setIncStep(1)} className="phone-btn-secondary flex-1">Back</button>
-                    <button 
-                      disabled={scannedPartsList.length === 0 && !scannedPN}
-                      onClick={() => {
-                        if (scannedPN) {
-                          // Auto-add current scanning part
-                          const isDuplicate = scannedPartsList.some(p => p.part_number === scannedPN && p.bin === (scannedBin || 'N/A'));
-                          if (!isDuplicate) {
-                            const newItem = {
-                              id: `sp_${Date.now()}`,
-                              part_number: scannedPN,
-                              description: partInfo ? partInfo.description : 'Custom/Other Defective Part',
-                              supplier_id: partInfo ? partInfo.supplier_id : 'magna',
-                              bin: scannedBin || 'BIN-GEN-01',
-                              qty: 1
-                            };
-                            setScannedPartsList(prev => [...prev, newItem]);
-                            playBeep('success');
-                          }
-                          // Clear inputs
-                          setScannedPN('');
-                          setScannedBin('');
-                          setPartInfo(null);
-                          setManualEntryWarning(false);
-                        }
-                        setIncStep(3);
-                      }}
-                      className="phone-btn-primary flex-1"
-                    >
-                      <span>Describe Defect</span>
-                      <ChevronRight className="w-4.5 h-4" />
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* STEP 3: DESCRIBE & CONTEXT (FIELDS WITH COUNTER AND AUTOCOMPLETE) */}
-              {incStep === 3 && (
-                <div className="flex flex-col gap-3">
-                  {/* Media Route Security Help Panel */}
-                  <div className="bg-blue-50/90 border border-blue-200 rounded-xl p-2.5 text-[11px] text-blue-900 shadow-sm mb-1 text-left">
-                    <button 
-                      type="button"
-                      onClick={() => setShowMediaHelpPanel(!showMediaHelpPanel)}
-                      className="w-full flex items-center justify-between font-bold text-[11.5px] text-blue-800 cursor-pointer"
-                    >
-                      <span className="flex items-center gap-1.5">
-                        <Shield className="w-3.5 h-3.5 text-blue-600" />
-                        <span>Media Route & Data Flow Info</span>
+                  {/* Header & Page Title (Section 3) */}
+                  <div className="flex flex-col gap-1 bg-slate-100/70 p-3 rounded-xl border border-slate-200">
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs text-[#008F72] font-black uppercase tracking-wider">
+                        Step 2: Parts & Traceability
                       </span>
-                      <span className="text-[10px] text-blue-600 font-extrabold uppercase">{showMediaHelpPanel ? 'Hide' : 'Explain'}</span>
-                    </button>
-                    
-                    {showMediaHelpPanel && (
-                      <div className="mt-2 pt-2 border-t border-blue-200/70 flex flex-col gap-2 text-left leading-relaxed">
-                        <div>
-                          <strong className="text-blue-950 font-bold block mb-0.5">Incident Evidence Route:</strong>
-                          <span className="font-mono text-[10px] bg-blue-100/70 px-1.5 py-0.5 rounded text-blue-900 block border border-blue-200">This phone → IDS secure media → Lead review → Customer after approval</span>
+                      {affectedParts.length > 0 && (
+                        <span className="text-[10.5px] bg-[#008F72]/10 text-[#008F72] border border-[#008F72]/30 font-bold px-2 py-0.5 rounded-full font-mono">
+                          {affectedParts.length} Added
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-slate-700 font-medium leading-relaxed">
+                      Add available part and container information. If a label is missing or unreadable, you can still continue.
+                    </p>
+                  </div>
+
+                  {/* SECTION 1: AFFECTED PART INFORMATION (Section 4 — 3 Equal Choices) */}
+                  <div className="bg-white border border-slate-200 rounded-xl p-3 shadow-xs flex flex-col gap-3">
+                    <div>
+                      <span className="text-[11.5px] font-black text-slate-900 uppercase tracking-wider block">
+                        Section 1: Affected Part Information
+                      </span>
+                      <span className="text-[10px] text-slate-500 font-medium">
+                        Choose the option that matches what is available at the plant.
+                      </span>
+                    </div>
+
+                    {/* 3 Equal Choices */}
+                    <div className="grid grid-cols-3 gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPartChoice('scan');
+                          startScanning('barcode');
+                        }}
+                        className={`py-2 px-1.5 rounded-xl border text-[10.5px] font-extrabold flex flex-col items-center justify-center gap-1 transition-all cursor-pointer text-center ${
+                          partChoice === 'scan'
+                            ? 'bg-emerald-50 border-emerald-500 text-emerald-800 shadow-xs'
+                            : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+                        }`}
+                      >
+                        <Scan className="w-4 h-4 text-emerald-600" />
+                        <span>Scan part/master label</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setPartChoice('manual')}
+                        className={`py-2 px-1.5 rounded-xl border text-[10.5px] font-extrabold flex flex-col items-center justify-center gap-1 transition-all cursor-pointer text-center ${
+                          partChoice === 'manual'
+                            ? 'bg-emerald-50 border-emerald-500 text-emerald-800 shadow-xs'
+                            : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+                        }`}
+                      >
+                        <Plus className="w-4 h-4 text-blue-600" />
+                        <span>Enter part number</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPartChoice('unavailable');
+                          setTraceabilityStatus('unavailable');
+                        }}
+                        className={`py-2 px-1.5 rounded-xl border text-[10.5px] font-extrabold flex flex-col items-center justify-center gap-1 transition-all cursor-pointer text-center ${
+                          partChoice === 'unavailable' || traceabilityStatus === 'unavailable'
+                            ? 'bg-amber-50 border-amber-400 text-amber-900 shadow-xs'
+                            : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+                        }`}
+                      >
+                        <AlertTriangle className="w-4 h-4 text-amber-600" />
+                        <span>Part number not available</span>
+                      </button>
+                    </div>
+
+                    {/* CHOICE 2 FORM: Enter Part Number (Section 6) */}
+                    {partChoice === 'manual' && (
+                      <div className="flex flex-col gap-2 pt-2 border-t border-slate-100 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[11px] font-bold text-slate-800">Part Number *</label>
+                          <input
+                            type="text"
+                            value={manualPNInput}
+                            onChange={(e) => handleManualPartNumberChange(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                handleAddManualPart();
+                              }
+                            }}
+                            placeholder="Example: 86286761"
+                            className="min-h-[44px] px-3 bg-white border border-slate-300 rounded-xl text-xs font-mono font-bold text-slate-900 focus:border-emerald-500 focus:outline-hidden"
+                          />
                         </div>
-                        <div>
-                          <strong className="text-blue-950 font-bold block mb-0.5">Expense Receipt Route:</strong>
-                          <span className="font-mono text-[10px] bg-blue-100/70 px-1.5 py-0.5 rounded text-blue-900 block border border-blue-200">This phone → IDS secure media → Authorized expense review</span>
-                          <span className="text-[9.5px] italic text-slate-500 block mt-1">*Note: Customers cannot view receipt media under company privacy policy.</span>
+
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="flex flex-col gap-1">
+                            <label className="text-[10px] font-bold text-slate-600">Serial/Lot # — Optional</label>
+                            <input
+                              type="text"
+                              value={manualLotInput}
+                              onChange={(e) => setManualLotInput(e.target.value)}
+                              placeholder="Example: LOT-902"
+                              className="px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg text-[11px] font-mono text-slate-800"
+                            />
+                          </div>
+                          <div className="flex flex-col gap-1">
+                            <label className="text-[10px] font-bold text-slate-600">Quantity — Optional</label>
+                            <input
+                              type="number"
+                              value={manualQtyInput}
+                              onChange={(e) => setManualQtyInput(e.target.value)}
+                              placeholder="1"
+                              className="px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg text-[11px] font-mono text-slate-800"
+                            />
+                          </div>
+                        </div>
+
+                        {manualInputError && (
+                          <div className="flex items-center gap-1 text-[11px] font-bold text-rose-700 bg-rose-50 border border-rose-200 p-2 rounded-lg">
+                            <AlertTriangle className="w-4 h-4 shrink-0 text-rose-600" />
+                            <span>{manualInputError}</span>
+                          </div>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={handleAddManualPart}
+                          className="min-h-[44px] w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs rounded-xl shadow-xs transition-all cursor-pointer flex items-center justify-center gap-1.5 mt-1"
+                        >
+                          <Plus className="w-4 h-4 text-emerald-400" />
+                          <span>{affectedParts.length > 0 ? 'Add another affected part' : 'Add affected part'}</span>
+                        </button>
+                      </div>
+                    )}
+
+                    {/* CHOICE 3 FORM: Part Number Not Available (Section 7) */}
+                    {(partChoice === 'unavailable' || traceabilityStatus === 'unavailable') && (
+                      <div className="flex flex-col gap-2 pt-2 border-t border-amber-200 bg-amber-50/70 p-3 rounded-xl border border-amber-200">
+                        <span className="text-[11px] font-extrabold text-amber-900">Why is the part number unavailable? — Optional</span>
+
+                        <select
+                          value={unavailableReason || ''}
+                          onChange={(e) => setUnavailableReason(e.target.value || null)}
+                          className="px-3 py-2 bg-white border border-amber-300 rounded-xl text-xs font-bold text-slate-800 focus:border-amber-500"
+                        >
+                          <option value="">Select reason (Optional)</option>
+                          <option value="Label missing">Label missing</option>
+                          <option value="Label damaged or unreadable">Label damaged or unreadable</option>
+                          <option value="Part number not known yet">Part number not known yet</option>
+                          <option value="General process concern">General process concern</option>
+                          <option value="Other">Other</option>
+                        </select>
+
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[10px] font-bold text-amber-900">Add a note — Optional</label>
+                          <textarea
+                            rows={2}
+                            value={unavailableNote}
+                            onChange={(e) => setUnavailableNote(e.target.value)}
+                            placeholder="Add optional notes about missing part number..."
+                            className="p-2 bg-white border border-amber-300 rounded-xl text-xs text-slate-800 focus:border-amber-500 resize-none"
+                          />
+                        </div>
+
+                        <div className="p-2 bg-white/80 border border-amber-300/80 rounded-lg text-center">
+                          <span className="text-[11px] font-extrabold text-amber-900 block">Part number not available</span>
+                          <span className="text-[10px] text-amber-800">You can continue now and supply traceability later if needed.</span>
                         </div>
                       </div>
                     )}
                   </div>
 
-                  <span className="text-[11.5px] text-blue-700 font-bold uppercase tracking-wider">Step 3: Suspect Material Metadata</span>
+                  {/* Possible Mislabel Warning Banner (Section 10) */}
+                  {mislabelWarning && (
+                    <div className="bg-amber-50 border-2 border-amber-400 p-3 rounded-xl flex flex-col gap-2 shadow-md">
+                      <div className="flex items-center gap-2 text-amber-900 font-extrabold text-xs leading-snug">
+                        <AlertTriangle className="w-4.5 h-4.5 text-amber-600 shrink-0" />
+                        <span>Possible mislabel — the scanned label does not match the expected part.</span>
+                      </div>
+                      <p className="text-[11px] text-amber-800 font-medium">
+                        Scanned code: <code className="font-mono font-bold text-slate-900 bg-amber-100 px-1 py-0.5 rounded">{mislabelWarning.scannedValue}</code> vs Expected part: <code className="font-mono font-bold text-slate-900 bg-amber-100 px-1 py-0.5 rounded">{mislabelWarning.expectedPartNumber}</code>
+                      </p>
+                      <div className="flex flex-col gap-1.5 mt-1">
+                        <button
+                          type="button"
+                          onClick={handleMislabelKeepBoth}
+                          className="w-full py-2 bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-xs rounded-lg shadow-xs cursor-pointer transition-colors"
+                        >
+                          Keep both values & flag for review
+                        </button>
+                        <div className="grid grid-cols-3 gap-1.5">
+                          <button
+                            type="button"
+                            onClick={handleMislabelRescan}
+                            className="py-1.5 bg-white border border-amber-300 text-amber-900 font-bold text-[10.5px] rounded-lg hover:bg-amber-100 cursor-pointer text-center"
+                          >
+                            Rescan label
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleMislabelCorrectExpected}
+                            className="py-1.5 bg-white border border-amber-300 text-amber-900 font-bold text-[10.5px] rounded-lg hover:bg-amber-100 cursor-pointer text-center"
+                          >
+                            Correct expected
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleMislabelCancel}
+                            className="py-1.5 bg-white border border-amber-300 text-slate-700 font-bold text-[10.5px] rounded-lg hover:bg-slate-100 cursor-pointer text-center"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
-                  {/* Area Found */}
-                  <div className="flex flex-col gap-1">
-                    <label className="text-[10.5px] font-bold text-slate-700 uppercase pl-1">Area of Factory Floor</label>
-                    <select 
+                  {/* Affected Parts List Section */}
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11.5px] font-black text-slate-900 uppercase tracking-wider">Affected parts</span>
+                      {affectedParts.length > 0 && (
+                        <span className="text-[10.5px] text-slate-500 font-mono">
+                          {affectedParts.length} record(s)
+                        </span>
+                      )}
+                    </div>
+
+                    {affectedParts.length === 0 ? (
+                      <div className="bg-slate-50 border border-dashed border-slate-300 rounded-xl p-3.5 text-center flex flex-col items-center justify-center gap-1 text-slate-500">
+                        <FileText className="w-5 h-5 text-slate-400" />
+                        <p className="text-xs font-semibold text-slate-700">
+                          {traceabilityStatus === 'unavailable' ? 'Part number recorded as not available.' : 'No affected parts added yet.'}
+                        </p>
+                        <p className="text-[10.5px] text-slate-500">Select an option above to add parts or record as unavailable.</p>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col gap-2 max-h-[240px] overflow-y-auto pr-1 scrollbar-thin">
+                        {affectedParts.map((item) => (
+                          <div key={item.id} className="bg-white border border-slate-200 rounded-xl p-3 shadow-xs flex flex-col gap-1.5 relative">
+                            {editingPartId === item.id ? (
+                              <div className="flex flex-col gap-1.5">
+                                <div className="flex gap-2 items-center">
+                                  <input
+                                    type="text"
+                                    value={editPartInputValue}
+                                    onChange={(e) => setEditPartInputValue(e.target.value)}
+                                    className="flex-1 px-2.5 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-mono font-bold text-slate-900 focus:bg-white focus:border-[#008F72]"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={saveEditedAffectedPart}
+                                    className="px-3 py-1.5 bg-[#008F72] text-white font-bold text-xs rounded-lg cursor-pointer"
+                                  >
+                                    Save
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setEditingPartId(null);
+                                      setEditInputError('');
+                                    }}
+                                    className="px-2 py-1.5 bg-slate-200 text-slate-700 font-bold text-xs rounded-lg cursor-pointer"
+                                  >
+                                    Cancel
+                                  </button>
+                                </div>
+                                {editInputError && (
+                                  <span className="text-[10.5px] text-rose-600 font-bold">{editInputError}</span>
+                                )}
+                              </div>
+                            ) : (
+                              <>
+                                <div className="flex justify-between items-start">
+                                  <div>
+                                    <span className="text-xs font-black text-slate-900 font-mono block">PN {item.partNumber}</span>
+                                    <span className="text-[11px] font-medium text-slate-600 block leading-tight">{item.description || 'Description not available'}</span>
+                                  </div>
+
+                                  <div className="flex items-center gap-1">
+                                    <span className={`text-[9.5px] font-extrabold px-2 py-0.5 rounded-md uppercase border ${
+                                      item.entryMethod === 'Entered manually'
+                                        ? 'bg-blue-50 text-blue-700 border-blue-200'
+                                        : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                    }`}>
+                                      {item.entryMethod || 'Scanned'}
+                                    </span>
+                                    {item.possibleMislabel && (
+                                      <span className="bg-amber-100 text-amber-800 border border-amber-300 text-[9.5px] font-extrabold px-1.5 py-0.5 rounded-md uppercase">
+                                        Mislabel Flag
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center justify-between border-t border-slate-100 pt-1.5 mt-0.5">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-[10px] text-slate-400 font-mono">
+                                      Format: {item.scanFormat || 'barcode'}
+                                    </span>
+                                    {item.verificationStatus === 'verified' && (
+                                      <span className="text-[9.5px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200">
+                                        Verified
+                                      </span>
+                                    )}
+                                  </div>
+
+                                  <div className="flex items-center gap-2.5">
+                                    {item.verificationStatus !== 'verified' && (
+                                      <button
+                                        type="button"
+                                        onClick={() => handleStartVerificationScan(item.id)}
+                                        className={`text-[10.5px] font-bold cursor-pointer transition-colors ${
+                                          verificationTargetPartId === item.id
+                                            ? 'text-amber-600 animate-pulse font-extrabold'
+                                            : 'text-emerald-700 hover:text-emerald-900'
+                                        }`}
+                                      >
+                                        {verificationTargetPartId === item.id ? 'Scanning target...' : 'Verify by scan'}
+                                      </button>
+                                    )}
+                                    <button
+                                      type="button"
+                                      onClick={() => handleEditAffectedPart(item)}
+                                      className="text-[11px] font-bold text-blue-700 hover:text-blue-900 cursor-pointer"
+                                    >
+                                      Edit
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleRemoveAffectedPart(item.id)}
+                                      className="text-[11px] font-bold text-rose-600 hover:text-rose-800 cursor-pointer"
+                                    >
+                                      Remove
+                                    </button>
+                                  </div>
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* SECTION 2: TOTE OR CONTAINER INFORMATION — OPTIONAL (Section 11 & 13) */}
+                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 flex flex-col gap-2.5">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <span className="text-[11.5px] font-black text-slate-800 uppercase tracking-wider block">
+                          Section 2: Tote or Container Information — Optional
+                        </span>
+                        <span className="text-[10px] text-slate-500 font-medium">
+                          Add this information only when a tote, bin, box or container label is available.
+                        </span>
+                      </div>
+                      {toteBinLabels.length > 0 && (
+                        <span className="text-[10.5px] text-slate-500 font-mono font-bold">{toteBinLabels.length} added</span>
+                      )}
+                    </div>
+
+                    {/* 3 Container Choices */}
+                    <div className="grid grid-cols-3 gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setContainerChoice('scan');
+                          startScanning('qr');
+                        }}
+                        className={`py-2 px-1.5 rounded-xl border text-[10.5px] font-extrabold flex flex-col items-center justify-center gap-1 transition-all cursor-pointer text-center ${
+                          containerChoice === 'scan'
+                            ? 'bg-emerald-50 border-emerald-500 text-emerald-800 shadow-xs'
+                            : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-100'
+                        }`}
+                      >
+                        <QrCode className="w-4 h-4 text-emerald-600" />
+                        <span>Scan container label</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setContainerChoice('manual')}
+                        className={`py-2 px-1.5 rounded-xl border text-[10.5px] font-extrabold flex flex-col items-center justify-center gap-1 transition-all cursor-pointer text-center ${
+                          containerChoice === 'manual'
+                            ? 'bg-emerald-50 border-emerald-500 text-emerald-800 shadow-xs'
+                            : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-100'
+                        }`}
+                      >
+                        <Plus className="w-4 h-4 text-blue-600" />
+                        <span>Enter container label</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setContainerChoice('unavailable');
+                          setContainerTraceabilityStatus('unavailable');
+                        }}
+                        className={`py-2 px-1.5 rounded-xl border text-[10.5px] font-extrabold flex flex-col items-center justify-center gap-1 transition-all cursor-pointer text-center ${
+                          containerChoice === 'unavailable' || containerTraceabilityStatus === 'unavailable'
+                            ? 'bg-slate-200 border-slate-400 text-slate-800 shadow-xs'
+                            : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-100'
+                        }`}
+                      >
+                        <X className="w-4 h-4 text-slate-500" />
+                        <span>No container label</span>
+                      </button>
+                    </div>
+
+                    {/* CHOICE 2 CONTAINER FORM: Enter Container Label (Section 12) */}
+                    {containerChoice === 'manual' && (
+                      <div className="flex flex-col gap-2 pt-2 border-t border-slate-200 bg-white p-2.5 rounded-xl border border-slate-200">
+                        <div className="flex gap-2">
+                          <div className="w-1/3">
+                            <label className="text-[10px] font-bold text-slate-600">Type</label>
+                            <select
+                              value={manualContainerType}
+                              onChange={(e) => setManualContainerType(e.target.value)}
+                              className="w-full px-2 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-800"
+                            >
+                              <option value="Tote">Tote</option>
+                              <option value="Bin">Bin</option>
+                              <option value="Box">Box</option>
+                              <option value="Container">Container</option>
+                              <option value="Unknown">Unknown</option>
+                            </select>
+                          </div>
+
+                          <div className="flex-1">
+                            <label className="text-[10px] font-bold text-slate-600">Container Label *</label>
+                            <input
+                              type="text"
+                              value={manualToteInput}
+                              onChange={(e) => {
+                                setManualToteInput(e.target.value);
+                                setManualToteError('');
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  e.preventDefault();
+                                  handleAddManualToteBinLabel();
+                                }
+                              }}
+                              placeholder="Example: BIN-MAG-6761"
+                              className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-mono font-bold text-slate-900 focus:border-emerald-500 focus:outline-hidden"
+                            />
+                          </div>
+                        </div>
+
+                        {manualToteError && (
+                          <div className="flex items-center gap-1 text-[11px] font-bold text-rose-600 bg-rose-50 border border-rose-200 p-1.5 rounded-lg">
+                            <AlertTriangle className="w-3.5 h-3.5 shrink-0 text-rose-600" />
+                            <span>{manualToteError}</span>
+                          </div>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={handleAddManualToteBinLabel}
+                          className="min-h-[44px] w-full py-2 bg-slate-800 hover:bg-slate-700 text-white font-extrabold text-xs rounded-xl shadow-xs transition-all cursor-pointer flex items-center justify-center gap-1"
+                        >
+                          <Plus className="w-4 h-4 text-emerald-400" />
+                          <span>{toteBinLabels.length > 0 ? 'Add another container label' : 'Add container label'}</span>
+                        </button>
+                      </div>
+                    )}
+
+                    {/* CHOICE 3 CONTAINER FORM: No Container Label Reason (Section 13) */}
+                    {(containerChoice === 'unavailable' || containerTraceabilityStatus === 'unavailable') && (
+                      <div className="flex flex-col gap-2 pt-2 border-t border-slate-300 bg-slate-100 p-2.5 rounded-xl border border-slate-200 text-left">
+                        <span className="text-[11px] font-extrabold text-slate-800">Reason container label is unavailable — Optional</span>
+                        <select
+                          value={containerUnavailableReason || ''}
+                          onChange={(e) => setContainerUnavailableReason(e.target.value || null)}
+                          className="px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-bold text-slate-800"
+                        >
+                          <option value="">Select reason (Optional)</option>
+                          <option value="Part was not in a container">Part was not in a container</option>
+                          <option value="Container label missing">Container label missing</option>
+                          <option value="Label damaged or unreadable">Label damaged or unreadable</option>
+                          <option value="Not applicable">Not applicable</option>
+                          <option value="Other">Other</option>
+                        </select>
+                      </div>
+                    )}
+
+                    {/* Tote/Bin Scrollable Collection List */}
+                    <div className="flex flex-col gap-1.5">
+                      {toteBinLabels.length === 0 ? (
+                        <div className="p-2.5 bg-white border border-dashed border-slate-300 rounded-lg text-center">
+                          <span className="text-[11px] text-slate-400 font-medium">No tote or container information added. This section is optional.</span>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col gap-2 max-h-[220px] overflow-y-auto pr-1 scrollbar-thin">
+                          {toteBinLabels.map((item) => {
+                            const relatedPartsText = !item.relatedPartIds || item.relatedPartIds.length === 0
+                              ? 'Entire incident'
+                              : item.relatedPartIds.map(id => {
+                                  const match = affectedParts.find(p => p.id === id);
+                                  return match ? `PN ${match.partNumber}` : null;
+                                }).filter(Boolean).join(', ') || 'Entire incident';
+
+                            return (
+                              <div key={item.id} className="bg-white border border-slate-200 rounded-lg p-2.5 shadow-2xs flex flex-col gap-1">
+                                {editingToteId === item.id ? (
+                                  <div className="flex flex-col gap-1.5">
+                                    <div className="flex gap-2 items-center">
+                                      <input
+                                        type="text"
+                                        value={editToteInputValue}
+                                        onChange={(e) => setEditToteInputValue(e.target.value)}
+                                        className="flex-1 px-2.5 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-mono font-bold text-slate-900 focus:bg-white focus:border-emerald-500"
+                                      />
+                                      <button
+                                        type="button"
+                                        onClick={saveEditedToteBinLabel}
+                                        className="px-3 py-1.5 bg-emerald-600 text-white font-bold text-xs rounded-lg cursor-pointer"
+                                      >
+                                        Save
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setEditingToteId(null);
+                                          setEditToteError('');
+                                        }}
+                                        className="px-2 py-1.5 bg-slate-200 text-slate-700 font-bold text-xs rounded-lg cursor-pointer"
+                                      >
+                                        Cancel
+                                      </button>
+                                    </div>
+                                    {editToteError && (
+                                      <span className="text-[10.5px] text-rose-600 font-bold">{editToteError}</span>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <>
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex items-center gap-2">
+                                        <span className={`text-[9.5px] font-extrabold px-1.5 py-0.2 rounded uppercase border ${
+                                          item.entryMethod === 'Entered manually'
+                                            ? 'bg-blue-50 text-blue-700 border-blue-200'
+                                            : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                        }`}>
+                                          {item.entryMethod || 'Scanned'}
+                                        </span>
+                                        <span className="text-xs font-mono font-black text-slate-900">{item.labelValue}</span>
+                                        {item.containerType && (
+                                          <span className="text-[9px] text-slate-500 font-medium border border-slate-200 px-1 rounded">
+                                            {item.containerType}
+                                          </span>
+                                        )}
+                                      </div>
+
+                                      <div className="flex items-center gap-2">
+                                        {item.entryMethod === 'Scanned' && (
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              setReplacingContainerId(item.id);
+                                              startScanning('qr');
+                                            }}
+                                            className="text-[10.5px] font-bold text-emerald-700 hover:underline cursor-pointer"
+                                          >
+                                            Replace
+                                          </button>
+                                        )}
+                                        <button
+                                          type="button"
+                                          onClick={() => handleEditToteBinLabel(item)}
+                                          className="text-[10.5px] font-bold text-blue-700 hover:underline cursor-pointer"
+                                        >
+                                          Edit
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => handleRemoveToteBinLabel(item.id)}
+                                          className="text-[10.5px] font-bold text-rose-600 hover:underline cursor-pointer"
+                                        >
+                                          Remove
+                                        </button>
+                                      </div>
+                                    </div>
+
+                                    {/* Clean Association Display (Section 15 — Clean UI without permanent dropdown clutter) */}
+                                    <div className="flex items-center justify-between text-[10px] text-slate-500 pt-1 border-t border-slate-100">
+                                      <span className="font-medium">Applies to: <span className="font-bold text-slate-800">{relatedPartsText}</span></span>
+                                    </div>
+                                  </>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Navigation Buttons (Section 3 & Section 8) */}
+                  <div className="flex flex-col gap-2 pt-2 border-t border-slate-200 mt-1">
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setIncStep(1)}
+                        className="flex-1 min-h-[48px] py-3 bg-slate-100 hover:bg-slate-200 text-slate-800 font-extrabold text-xs rounded-xl border border-slate-300 transition-all cursor-pointer flex items-center justify-center"
+                      >
+                        Back
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (affectedParts.length === 0 && traceabilityStatus !== 'unavailable' && !hasConfirmedNoTraceability) {
+                            setShowNoTraceabilityConfirmation(true);
+                            return;
+                          }
+                          if (affectedParts.length === 0 && traceabilityStatus !== 'unavailable') {
+                            setTraceabilityStatus('not_provided');
+                          } else if (affectedParts.length > 0) {
+                            setTraceabilityStatus('provided');
+                          }
+                          setIncStep(3);
+                        }}
+                        className="flex-1 min-h-[48px] py-3 bg-[#008F72] hover:bg-[#00765F] text-white font-extrabold text-xs rounded-xl shadow-md transition-all cursor-pointer flex items-center justify-center gap-1.5 border border-emerald-600/30"
+                      >
+                        <span>Continue to Describe</span>
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* NON-BLOCKING CONTINUATION CONFIRMATION MODAL (Section 8) */}
+                  {showNoTraceabilityConfirmation && (
+                    <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+                      <div className="bg-white rounded-2xl p-4 border border-amber-300 shadow-2xl flex flex-col gap-3 max-w-[320px] text-center animate-in zoom-in-95 duration-150">
+                        <div className="w-12 h-12 rounded-full bg-amber-50 border border-amber-200 flex items-center justify-center mx-auto text-amber-600 shadow-xs">
+                          <AlertTriangle className="w-6 h-6" />
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <h3 className="text-xs font-black text-slate-900">No part traceability added</h3>
+                          <p className="text-[11px] text-slate-600 leading-relaxed font-medium">
+                            No part traceability has been added. You can continue now and add it later if it becomes available.
+                          </p>
+                        </div>
+                        <div className="flex flex-col gap-2 pt-1">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setHasConfirmedNoTraceability(true);
+                              setTraceabilityStatus('not_provided');
+                              setShowNoTraceabilityConfirmation(false);
+                              setIncStep(3);
+                            }}
+                            className="w-full min-h-[44px] py-2.5 bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-xs rounded-xl shadow-xs cursor-pointer"
+                          >
+                            Continue without traceability
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setShowNoTraceabilityConfirmation(false)}
+                            className="w-full min-h-[40px] py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl border border-slate-300 cursor-pointer"
+                          >
+                            Go back and add traceability
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* STEP 3: DESCRIBE (PAGE 3 OVERHAUL) */}
+              {incStep === 3 && (
+                <div className="flex flex-col gap-3.5 text-left">
+                  {/* Step Header */}
+                  <div className="flex flex-col gap-1 bg-slate-100/70 p-3 rounded-xl border border-slate-200">
+                    <span className="text-xs text-[#008F72] font-black uppercase tracking-wider">
+                      Step 3: Describe Concern & Context
+                    </span>
+                    <p className="text-[11px] text-slate-700 font-medium leading-relaxed">
+                      Record where the concern was found, defect type, detailed description, and supplier follow-up details.
+                    </p>
+                  </div>
+
+                  {/* 1. FACTORY AREA */}
+                  <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-xs">
+                    <BusinessDropdown
+                      id="selected-area-dropdown"
+                      label="Area Found"
+                      required={true}
+                      options={[
+                        'Sequence Area',
+                        'Heavy Repair',
+                        'Scrap Table',
+                        'Assembly Line 1',
+                        'Assembly Line 2',
+                        'Receiving Dock',
+                        'Quality Lab',
+                        'Staging Yard'
+                      ]}
                       value={selectedArea}
-                      onChange={(e) => setSelectedArea(e.target.value)}
-                      className="phone-select"
-                    >
-                      <option value="Online assembly">Online assembly</option>
-                      <option value="Sequence Area">Sequence Area</option>
-                      <option value="Heavy rework">Heavy rework</option>
-                      <option value="Review Scrap Table">Scrap tables</option>
-                      <option value="Other">Other</option>
-                    </select>
-                  </div>
-
-                  {/* Defect Type Suggestions */}
-                  <div className="flex flex-col gap-1">
-                    <label className="text-[10.5px] font-bold text-slate-700 uppercase pl-1">Suspect Material Category</label>
-                    <select 
-                      value={defectType}
-                      onChange={(e) => {
-                        setDefectType(e.target.value);
-                        if (e.target.value !== 'Other') {
-                          setCustomDefect(e.target.value);
-                        }
+                      onChange={(newVal) => {
+                        setSelectedArea(newVal);
+                        if (areaError) setAreaError('');
                       }}
-                      className="phone-select"
-                    >
-                      <option value="">-- Choose Suggestion --</option>
-                      {getDefectSuggestions().map((s, idx) => (
-                        <option key={idx} value={s}>{s}</option>
-                      ))}
-                      <option value="Other">Other (Type custom defect)</option>
-                    </select>
+                      placeholder="Select factory area / location..."
+                      customInputLabel="Enter the missing factory area / location"
+                      customInputPlaceholder="Example: Line 4 Sub-Assembly, Rack Storage 12..."
+                      error={areaError}
+                    />
                   </div>
 
-                  {/* Custom Description Text with Word Count guidance (50 - 300 words recommended) */}
-                  <div className="flex flex-col gap-1">
-                    <div className="flex justify-between items-center pl-1">
-                      <label className="text-[10.5px] font-bold text-slate-700 uppercase">Suspect Material Narrative</label>
-                      <span className={`text-[12.5px] font-bold ${description?.split(/\s+/).filter(Boolean).length < 20 ? 'text-amber-600' : 'text-slate-600'}`}>
-                        {description?.split(/\s+/).filter(Boolean).length} words
+                  {/* 2. DEFECT / CONCERN TYPE */}
+                  <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-xs">
+                    <BusinessDropdown
+                      id="defect-type-dropdown"
+                      label="Defect / Concern Type"
+                      options={[
+                        'Loose component',
+                        'Rattle sound',
+                        'Damaged label',
+                        'Flash / Burrs',
+                        'Missing fastener',
+                        'Surface scratch',
+                        'Terminal pin deformation',
+                        'Dimensional out of spec',
+                        'Missing gasket / seal',
+                        'Color / paint mismatch'
+                      ]}
+                      value={defectType}
+                      onChange={(newVal) => setDefectType(newVal)}
+                      placeholder="Select or enter defect type..."
+                      customInputLabel="Enter the missing defect type"
+                      customInputPlaceholder="Example: Connector tab fracture, improper torque..."
+                    />
+                  </div>
+
+                  {/* 3. SUSPECT DEFECT * */}
+                  <div className="flex flex-col gap-1.5 bg-white p-3 rounded-xl border border-slate-200 shadow-xs">
+                    <div className="flex items-center justify-between">
+                      <label htmlFor="suspect-defect-input" className="text-[11px] font-extrabold text-slate-900">
+                        Suspect Defect *
+                      </label>
+                      <span className="text-[10.5px] font-mono text-slate-400">
+                        {description ? `${description.trim().split(/\s+/).filter(Boolean).length} words` : '0 words'}
                       </span>
                     </div>
-                    <textarea 
+                    <AutoGrowTextarea
+                      id="suspect-defect-input"
                       value={description}
-                      onChange={(e) => setDescription(e.target.value)}
-                      rows={3}
-                      className="phone-textarea"
-                      placeholder="Narrate details. Spare bulb found loose causing rattling sound inside assembly housing..."
+                      onChange={(e) => {
+                        setDescription(e.target.value);
+                        if (descriptionError) setDescriptionError('');
+                      }}
+                      minHeight="120px"
+                      maxHeight="280px"
+                      aria-describedby={descriptionError ? "desc-error" : undefined}
+                      aria-invalid={!!descriptionError}
+                      placeholder="Describe what was found, why it is considered a defect, and include measurements or observations when relevant."
+                      className={descriptionError ? 'border-rose-500 bg-rose-50/20 focus:border-rose-600' : 'border-slate-300'}
                     />
+                    {descriptionError && (
+                      <span id="desc-error" className="text-[11px] font-bold text-rose-600 flex items-center gap-1 mt-0.5">
+                        <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                        <span>{descriptionError}</span>
+                      </span>
+                    )}
                   </div>
 
-                  {/* Action Taken */}
-                  <div className="flex flex-col gap-1">
-                    <label className="text-[10.5px] font-bold text-slate-700 uppercase pl-1">Action Taken immediately</label>
-                    <input 
-                      type="text" 
+                  {/* 4. ACTION TAKEN */}
+                  <div className="flex flex-col gap-1.5 bg-white p-3 rounded-xl border border-slate-200 shadow-xs">
+                    <label htmlFor="action-taken-input" className="text-[11px] font-extrabold text-slate-900 flex items-center justify-between">
+                      <span>Action Taken</span>
+                      <span className="text-[10px] text-slate-400 font-normal">Optional</span>
+                    </label>
+                    <AutoGrowTextarea
+                      id="action-taken-input"
                       value={actionTaken}
                       onChange={(e) => setActionTaken(e.target.value)}
-                      className="phone-input"
-                      placeholder="e.g. Removed bulb manually"
+                      minHeight="96px"
+                      maxHeight="280px"
+                      placeholder="Example: Removed the loose bulb and returned the light to the sequence area."
+                      className="border-slate-300"
                     />
                   </div>
 
-                  {/* Supplier Contact */}
-                  <div className="flex flex-col gap-1">
-                    <label className="text-[10.5px] font-bold text-slate-700 uppercase pl-1">Contact Person at Supplier</label>
-                    <input 
-                      type="text" 
-                      value={supplierContact}
-                      onChange={(e) => setSupplierContact(e.target.value)}
-                      className="phone-input"
-                      placeholder="Martin / Shahroz / SQE"
-                    />
+                  {/* 5. CLIENT QUALITY CONTACTS */}
+                  <div className="flex flex-col gap-2 bg-white p-3 rounded-xl border border-slate-200 shadow-xs">
+                    <label className="text-[11px] font-extrabold text-slate-900 flex items-center justify-between">
+                      <span>Client Quality Contact(s)</span>
+                      <span className="text-[10px] text-emerald-600 font-extrabold bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">Auto-routed for Client</span>
+                    </label>
+
+                    {getAvailableSupplierContacts().length === 0 ? (
+                      <div className="bg-amber-50/70 border border-amber-200 rounded-xl p-3 flex flex-col gap-1 text-left">
+                        <span className="text-[11px] font-extrabold text-amber-900">
+                          No client contact is configured for this assignment. The report can be released to the Client Dashboard, but an email notification cannot be prepared.
+                        </span>
+                        <span className="text-[10px] text-amber-700 font-medium">
+                          Source: Contacts configured for this assignment. Next: Selected contacts will appear in the final report-routing review.
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col gap-2">
+                        {/* Search filter input */}
+                        {getAvailableSupplierContacts().length > 3 && (
+                          <input
+                            type="text"
+                            value={supplierContactSearch}
+                            onChange={(e) => setSupplierContactSearch(e.target.value)}
+                            placeholder="Filter contacts..."
+                            className="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-[11px] text-slate-800"
+                          />
+                        )}
+
+                        <div className="flex flex-col gap-1.5 max-h-[160px] overflow-y-auto pr-1">
+                          {getAvailableSupplierContacts()
+                            .filter(c => !supplierContactSearch || c.name.toLowerCase().includes(supplierContactSearch.toLowerCase()) || (c.role && c.role.toLowerCase().includes(supplierContactSearch.toLowerCase())))
+                            .map(contact => {
+                              const isSelected = selectedSupplierContactIds.includes(contact.id);
+                              return (
+                                <button
+                                  key={contact.id}
+                                  type="button"
+                                  onClick={() => {
+                                    if (isSelected) {
+                                      const updated = selectedSupplierContactIds.filter(id => id !== contact.id);
+                                      setSelectedSupplierContactIds(updated);
+                                      const names = getAvailableSupplierContacts().filter(c => updated.includes(c.id)).map(c => c.name).join(', ');
+                                      setSupplierContact(names);
+                                    } else {
+                                      const updated = [...selectedSupplierContactIds, contact.id];
+                                      setSelectedSupplierContactIds(updated);
+                                      const names = getAvailableSupplierContacts().filter(c => updated.includes(c.id)).map(c => c.name).join(', ');
+                                      setSupplierContact(names);
+                                    }
+                                  }}
+                                  className={`p-2.5 rounded-xl border text-left flex items-center justify-between transition-all cursor-pointer ${
+                                    isSelected
+                                      ? 'bg-emerald-50 border-emerald-500 text-emerald-900 shadow-2xs'
+                                      : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+                                  }`}
+                                >
+                                  <div className="flex flex-col gap-0.5">
+                                    <span className="text-xs font-bold">{contact.name}</span>
+                                    <span className="text-[10px] text-slate-500 font-medium">
+                                      {contact.role} {contact.email ? `• ${contact.email}` : ''}
+                                    </span>
+                                  </div>
+                                  <div className={`w-5 h-5 rounded-full border flex items-center justify-center text-xs font-bold ${
+                                    isSelected ? 'bg-emerald-600 border-emerald-600 text-white' : 'border-slate-300 bg-white'
+                                  }`}>
+                                    {isSelected ? '✓' : ''}
+                                  </div>
+                                </button>
+                              );
+                            })}
+                        </div>
+                        <span className="text-[10px] text-slate-400 font-medium">
+                          Source: Contacts configured for this assignment. Next: Selected contacts will appear in the final report-routing review.
+                        </span>
+                      </div>
+                    )}
                   </div>
 
-                  {/* Magna AutoSystems Specific Fields (NoCOVID screening fields, PRR class only) */}
-                  <div className="bg-slate-50 p-3 rounded-sm border border-slate-200 flex flex-col gap-3 mt-2 shadow-sm">
-                    <span className="text-[10.5px] text-[#3B82F6] font-extrabold uppercase tracking-wider block border-b border-slate-850 pb-1.5">{getActiveClientForPlant()} Specifications</span>
-                    <div className="flex flex-col gap-3 text-[11.5px]">
-                      
-                      {/* Returned */}
-                      <div className="flex justify-between items-center bg-white p-2 rounded-sm border border-slate-300">
-                        <span className="text-slate-600 font-bold">Returned to Supplier?</span>
-                        <div className="phone-toggle-group w-24">
-                          <button 
-                            type="button" 
-                            onClick={() => setIsReturningDefect('Y')} 
-                            className={`phone-toggle-btn ${
-                              isReturningDefect === 'Y' ? 'active-blue' : ''
+                  {/* 6. SUPPLIER FOLLOW-UP SECTION */}
+                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 flex flex-col gap-2.5">
+                    <span className="text-[11.5px] font-black text-slate-900 uppercase tracking-wider block">
+                      Supplier Follow-up
+                    </span>
+
+                    <div className="flex flex-col gap-2 text-[11.5px]">
+                      {/* Returned to Supplier? */}
+                      <div className="flex justify-between items-center bg-white p-2.5 rounded-xl border border-slate-200 shadow-2xs">
+                        <span className="text-slate-800 font-bold">Returned to Supplier?</span>
+                        <div className="phone-toggle-group w-32 min-h-[44px]">
+                          <button
+                            type="button"
+                            aria-pressed={isReturningDefect === 'Y'}
+                            aria-label="Returned to Supplier Yes"
+                            onClick={() => setIsReturningDefect('Y')}
+                            className={`flex-1 min-h-[44px] phone-toggle-btn transition-all ${
+                              isReturningDefect === 'Y'
+                                ? 'active-yes'
+                                : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
                             }`}
                           >
-                            Yes
+                            {isReturningDefect === 'Y' ? '✓ Yes' : 'Yes'}
                           </button>
-                          <button 
-                            type="button" 
-                            onClick={() => setIsReturningDefect('N')} 
-                            className={`phone-toggle-btn ${
-                              isReturningDefect === 'N' ? 'active-navy' : ''
+                          <button
+                            type="button"
+                            aria-pressed={isReturningDefect === 'N'}
+                            aria-label="Returned to Supplier No"
+                            onClick={() => setIsReturningDefect('N')}
+                            className={`flex-1 min-h-[44px] phone-toggle-btn transition-all ${
+                              isReturningDefect === 'N'
+                                ? 'active-no'
+                                : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
                             }`}
                           >
-                            No
+                            {isReturningDefect === 'N' ? '✕ No' : 'No'}
                           </button>
                         </div>
                       </div>
 
-                      {/* Sort */}
-                      <div className="flex justify-between items-center bg-white p-2 rounded-sm border border-slate-300">
-                        <span className="text-slate-600 font-bold">Supplier Sort Needed?</span>
-                        <div className="phone-toggle-group w-24">
-                          <button 
-                            type="button" 
-                            onClick={() => setIsSortRequired('Y')} 
-                            className={`phone-toggle-btn ${
-                              isSortRequired === 'Y' ? 'active-blue' : ''
+                      {/* Sort Requested? */}
+                      <div className="flex justify-between items-center bg-white p-2.5 rounded-xl border border-slate-200 shadow-2xs">
+                        <span className="text-slate-800 font-bold">Sort Requested?</span>
+                        <div className="phone-toggle-group w-32 min-h-[44px]">
+                          <button
+                            type="button"
+                            aria-pressed={isSortRequired === 'Y'}
+                            aria-label="Sort Requested Yes"
+                            onClick={() => setIsSortRequired('Y')}
+                            className={`flex-1 min-h-[44px] phone-toggle-btn transition-all ${
+                              isSortRequired === 'Y'
+                                ? 'active-yes'
+                                : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
                             }`}
                           >
-                            Yes
+                            {isSortRequired === 'Y' ? '✓ Yes' : 'Yes'}
                           </button>
-                          <button 
-                            type="button" 
-                            onClick={() => setIsSortRequired('N')} 
-                            className={`phone-toggle-btn ${
-                              isSortRequired === 'N' ? 'active-navy' : ''
+                          <button
+                            type="button"
+                            aria-pressed={isSortRequired === 'N'}
+                            aria-label="Sort Requested No"
+                            onClick={() => setIsSortRequired('N')}
+                            className={`flex-1 min-h-[44px] phone-toggle-btn transition-all ${
+                              isSortRequired === 'N'
+                                ? 'active-no'
+                                : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
                             }`}
                           >
-                            No
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* RMA Required */}
-                      <div className="flex justify-between items-center bg-white p-2 rounded-sm border border-slate-300">
-                        <span className="text-slate-600 font-bold">RMA Code Required?</span>
-                        <div className="phone-toggle-group w-24">
-                          <button 
-                            type="button" 
-                            onClick={() => setIsRmaRequired('Y')} 
-                            className={`phone-toggle-btn ${
-                              isRmaRequired === 'Y' ? 'active-blue' : ''
-                            }`}
-                          >
-                            Yes
-                          </button>
-                          <button 
-                            type="button" 
-                            onClick={() => setIsRmaRequired('N')} 
-                            className={`phone-toggle-btn ${
-                              isRmaRequired === 'N' ? 'active-navy' : ''
-                            }`}
-                          >
-                            No
+                            {isSortRequired === 'N' ? '✕ No' : 'No'}
                           </button>
                         </div>
                       </div>
 
-                      {/* Classification / Severity */}
-                      <div className="flex flex-col gap-1.5 bg-white p-2.5 rounded-sm border border-slate-300">
-                        <span className="text-slate-600 font-bold">Issue Severity Classification:</span>
-                        <div className="phone-toggle-group w-full mt-1">
-                          <button 
-                            type="button" 
-                            onClick={() => setConcernClassification('Verbal')} 
-                            className={`phone-toggle-btn ${
-                              concernClassification === 'Verbal' ? 'active-navy' : ''
+                      {/* RMA Required? */}
+                      <div className="flex justify-between items-center bg-white p-2.5 rounded-xl border border-slate-200 shadow-2xs">
+                        <span className="text-slate-800 font-bold">RMA Required?</span>
+                        <div className="phone-toggle-group w-32 min-h-[44px]">
+                          <button
+                            type="button"
+                            aria-pressed={isRmaRequired === 'Y'}
+                            aria-label="RMA Required Yes"
+                            onClick={() => setIsRmaRequired('Y')}
+                            className={`flex-1 min-h-[44px] phone-toggle-btn transition-all ${
+                              isRmaRequired === 'Y'
+                                ? 'active-yes'
+                                : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
                             }`}
                           >
-                            Verbal (Informal)
+                            {isRmaRequired === 'Y' ? '✓ Yes' : 'Yes'}
                           </button>
-                          <button 
-                            type="button" 
-                            onClick={() => setConcernClassification('PRR')} 
-                            className={`phone-toggle-btn ${
-                              concernClassification === 'PRR' ? 'active-blue' : ''
+                          <button
+                            type="button"
+                            aria-pressed={isRmaRequired === 'N'}
+                            aria-label="RMA Required No"
+                            onClick={() => {
+                              setIsRmaRequired('N');
+                              setRmaNumber('');
+                            }}
+                            className={`flex-1 min-h-[44px] phone-toggle-btn transition-all ${
+                              isRmaRequired === 'N'
+                                ? 'active-no'
+                                : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
                             }`}
                           >
-                            PRR (Standard)
-                          </button>
-                          <button 
-                            type="button" 
-                            onClick={() => setConcernClassification('QR')} 
-                            className={`phone-toggle-btn ${
-                              concernClassification === 'QR' ? 'active-rose' : ''
-                            }`}
-                          >
-                            QR (Critical)
+                            {isRmaRequired === 'N' ? '✕ No' : 'No'}
                           </button>
                         </div>
                       </div>
 
+                      {/* Optional RMA Number input if RMA Required */}
+                      {isRmaRequired === 'Y' && (
+                        <div className="flex flex-col gap-1 bg-blue-50/50 p-2.5 rounded-xl border border-blue-200 animate-in fade-in-50 duration-150">
+                          <label className="text-[10.5px] font-bold text-blue-900">RMA Number — Optional</label>
+                          <input
+                            type="text"
+                            value={rmaNumber}
+                            onChange={(e) => setRmaNumber(e.target.value)}
+                            placeholder="Example: RMA-2026-0891"
+                            className="w-full px-3 py-2 bg-white border border-blue-300 rounded-xl text-xs font-mono font-bold text-slate-900 focus:border-blue-500"
+                          />
+                        </div>
+                      )}
                     </div>
                   </div>
 
-                  <div className="flex gap-2 mt-4">
-                    <button onClick={() => setIncStep(2)} className="phone-btn-secondary flex-1">Back</button>
-                    <button 
-                      disabled={!description}
-                      onClick={handleProceedToReview}
-                      className="phone-btn-primary flex-1"
+                  {/* 7. ISSUE CLASSIFICATION / STATUS */}
+                  <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-xs">
+                    <BusinessDropdown
+                      id="concern-classification-dropdown"
+                      label="Issue Classification / Status"
+                      options={[
+                        'PRR',
+                        'PRR / GIM',
+                        'EWO',
+                        '8D / SCAR',
+                        'Quality Alert',
+                        'Scrap Tag',
+                        'Verbal Notification'
+                      ]}
+                      value={concernClassification}
+                      onChange={(newVal) => setConcernClassification(newVal)}
+                      placeholder="Select classification..."
+                      customInputLabel="Enter custom concern classification"
+                      customInputPlaceholder="Example: Engineering Hold Notice #402..."
+                    />
+                  </div>
+
+                  {/* NAVIGATION BUTTONS */}
+                  <div className="flex gap-2 pt-2 border-t border-slate-200 mt-1">
+                    <button
+                      type="button"
+                      onClick={() => setIncStep(2)}
+                      className="flex-1 min-h-[48px] py-3 bg-slate-100 hover:bg-slate-200 text-slate-800 font-extrabold text-xs rounded-xl border border-slate-300 transition-all cursor-pointer flex items-center justify-center"
+                    >
+                      Back
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const validation = validateIncidentWorkflow(4);
+                        if (!validation.valid) {
+                          showToast(validation.message, "warning");
+                          return;
+                        }
+                        setIncStep(4);
+                      }}
+                      className="flex-1 min-h-[48px] py-3 bg-[#008F72] hover:bg-[#00765F] text-white font-extrabold text-xs rounded-xl shadow-md transition-all cursor-pointer flex items-center justify-center gap-1.5 border border-emerald-600/30"
                     >
                       <span>Review & Send</span>
-                      <ChevronRight className="w-4.5 h-4" />
+                      <ChevronRight className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
@@ -3139,67 +4862,331 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                 </div>
               )}
 
-              {/* STEP 4: REVIEW & SEND (EMAIL SUBJECT & CC PREVIEW) */}
-              {incStep === 4 && (
-                <div className="flex flex-col gap-3">
-                  <span className="text-[11.5px] text-blue-700 font-bold uppercase tracking-wider">Step 4: Audit & Release</span>
+              {/* STEP 4: AUDIT & RELEASE (PAGE 4 OVERHAUL - SECTIONS A to G) */}
+              {incStep === 4 && (() => {
+                const activeProj = resolveActiveAssignment() || {};
+                const dbSuppliers = getEntities('suppliers') || [];
+                const activeSupplier = dbSuppliers.find(s => s.id === activeProj.supplier_id || s.id === activeProj.client_id || s.name === activeProj.client_id) || {};
+                const activeCustomer = dbSuppliers.find(s => s.id === activeProj.customer_id) || activeSupplier;
 
-                  {/* Summary Card */}
-                  <div className="bg-white rounded-sm p-3 border border-slate-300 flex flex-col gap-2 text-[13.5px] shadow-sm">
-                    <div className="flex justify-between items-center text-[11.5px]"><span className="text-text-secondary">Report Status:</span><span className="text-amber-600 font-bold uppercase">Ready to Release</span></div>
-                    <div className="flex justify-between items-center text-[11.5px]"><span className="text-text-secondary">Part Number:</span><span className="text-slate-900 font-bold">{scannedPN}</span></div>
-                    <div className="flex justify-between items-center text-[11.5px]"><span className="text-text-secondary">Plant / Area:</span><span className="text-slate-900 font-bold">{plants.find(p => p.id === selectedPlant)?.name} | {selectedArea}</span></div>
-                  </div>
+                const selectedContacts = getAvailableSupplierContacts().filter(c => selectedSupplierContactIds.includes(c.id));
+                const contactEmails = selectedContacts.map(c => c.email).filter(Boolean);
 
-                  {/* Email Preview Accordion */}
-                  <div className="border border-slate-300 bg-white rounded-sm overflow-hidden shadow-sm">
-                    <button 
-                      type="button"
-                      onClick={() => setShowEmailPreview(!showEmailPreview)}
-                      className="w-full px-3.5 py-3 bg-slate-50 hover:bg-slate-100 flex items-center justify-between text-[13.5px] font-bold text-slate-700 transition-colors"
-                    >
-                      <div className="flex items-center gap-2">
-                        <Mail className="w-4.5 h-4.5 text-blue-700" />
-                        <span>Inspect Outgoing Email Preview</span>
+                const firstPN = affectedParts[0]?.partNumber || null;
+
+                return (
+                  <div className="flex flex-col gap-3.5 text-left">
+                    {/* Header */}
+                    <div className="flex flex-col gap-1 bg-slate-100/70 p-3 rounded-xl border border-slate-200">
+                      <span className="text-xs text-[#008F72] font-black uppercase tracking-wider">
+                        Step 4: Audit & Release
+                      </span>
+                      <p className="text-[11px] text-slate-700 font-medium leading-relaxed">
+                        Final read-only verification checkpoint before releasing this report to the Client Dashboard.
+                      </p>
+                    </div>
+
+                    {/* SECTION A: ASSIGNMENT & DESTINATION */}
+                    <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-xs flex flex-col gap-2">
+                      <span className="text-[11px] font-black text-slate-900 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
+                        <Briefcase className="w-3.5 h-3.5 text-[#008F72]" />
+                        <span>A. Assignment & Destination</span>
+                      </span>
+                      <div className="grid grid-cols-2 gap-2 text-[11.5px]">
+                        <div>
+                          <span className="text-[10px] text-slate-400 font-bold uppercase block">Customer / Client</span>
+                          <span className="font-extrabold text-slate-900">{activeProj.customer_name || activeCustomer.name || 'Client Company'}</span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-slate-400 font-bold uppercase block">Supplier</span>
+                          <span className="font-extrabold text-slate-900">{activeSupplier.name || 'Supplier'}</span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-slate-400 font-bold uppercase block">Plant</span>
+                          <span className="font-extrabold text-slate-900">{plants.find(p => p.id === selectedPlant)?.name || selectedPlant || 'Plant'}</span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-slate-400 font-bold uppercase block">Project / Program</span>
+                          <span className="font-extrabold text-slate-900">{activeProj.title || activeProj.name || 'Quality Audit Project'}</span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-slate-400 font-bold uppercase block">IDS Liaison Rep</span>
+                          <span className="font-extrabold text-slate-900">{currentUser?.name || 'Clarence Kuiken'}</span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-slate-400 font-bold uppercase block">Report Date / Time</span>
+                          <span className="font-mono text-[11px] font-bold text-slate-700">{new Date().toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}</span>
+                        </div>
                       </div>
-                      <span className="text-[10.5px]">{showEmailPreview ? 'Collapse' : 'Expand'}</span>
-                    </button>
+                    </div>
 
-                    {showEmailPreview && (
-                      <div className="p-3 border-t border-slate-300 text-[10.5px] font-mono flex flex-col gap-2 bg-white text-slate-700 max-h-[180px] overflow-y-auto">
-                        <div>
-                          <span className="text-blue-700 font-bold">To:</span> martin.s@magna.com, shahroz.m@magna.com
+                    {/* SECTION B: MEDIA EVIDENCE */}
+                    <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-xs flex flex-col gap-2">
+                      <span className="text-[11px] font-black text-slate-900 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
+                        <Camera className="w-3.5 h-3.5 text-[#008F72]" />
+                        <span>B. Media Evidence</span>
+                      </span>
+                      <div className="flex flex-col gap-1.5 text-[11.5px]">
+                        <div className="flex justify-between items-center">
+                          <span className="text-slate-600 font-medium">Visual Evidence Status:</span>
+                          <span className={`font-extrabold ${evidenceList.length > 0 || stagedVideoObject ? 'text-emerald-700' : 'text-amber-700'}`}>
+                            {(evidenceList.length > 0 || stagedVideoObject) ? 'Provided' : 'Not Provided'}
+                          </span>
                         </div>
-                        <div>
-                          <span className="text-blue-700 font-bold">CC:</span> donna.c@integritydriven.com, greg.p@integritydriven.com
-                        </div>
-                        <div>
-                          <span className="text-blue-700 font-bold">Subject:</span> [INCIDENT] PN {scannedPN} | {selectedArea} | {plants.find(p => p.id === selectedPlant)?.name} | {new Date().toLocaleDateString()}
-                        </div>
-                        <div className="border-t border-slate-200 pt-2 text-slate-600">
-                          <p className="font-sans font-semibold text-slate-900">Hello Shahroz.</p>
-                          <p className="mt-1 leading-relaxed font-sans text-slate-700">{description}</p>
-                          <p className="mt-2 font-sans"><strong>Action Taken:</strong> {actionTaken}</p>
-                          <p className="mt-1 font-sans text-[11.5px]"><strong>Traceability Info:</strong> Returned: {isReturningDefect} | Sort: {isSortRequired} | RMA: {isRmaRequired} | Class: {concernClassification}</p>
-                          <p className="mt-2 font-sans text-[12.5px] text-text-secondary">Regards,<br/>{currentUser.name} | IDS Rep</p>
-                        </div>
+                        {(evidenceList.length > 0 || stagedVideoObject) ? (
+                          <div className="flex flex-col gap-1 bg-slate-50 p-2 rounded-lg border border-slate-200">
+                            <span className="font-bold text-slate-800">
+                              📷 Photos: {evidenceList.length} | 🎥 Videos: {stagedVideoObject ? 1 : 0}
+                            </span>
+                            {evidenceList.map((ev, idx) => (
+                              <div key={idx} className="text-[10.5px] text-slate-600 italic">
+                                • {ev.label}: {ev.note || 'No note attached'}
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="bg-amber-50 p-2 rounded-lg border border-amber-200 text-[11px] text-amber-900 flex flex-col gap-0.5">
+                            <span className="font-bold">Reason: {mediaUnavailableReason || 'Not specified'}</span>
+                            {mediaUnavailableNote && <span className="italic">Note: "{mediaUnavailableNote}"</span>}
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
+                    </div>
 
-                  <div className="flex gap-2">
-                    <button onClick={() => setIncStep(3)} className="phone-btn-secondary flex-1">Back</button>
-                    <button 
-                      onClick={handleSendIncident}
-                      disabled={isSendingIncident}
-                      className="phone-btn-primary flex-1"
-                    >
-                      <Send className="w-3.5 h-3.5" />
-                      <span>{isSendingIncident ? 'Sending report...' : 'Release & Send Email'}</span>
-                    </button>
+                    {/* SECTION C: TRACEABILITY */}
+                    <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-xs flex flex-col gap-2">
+                      <span className="text-[11px] font-black text-slate-900 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
+                        <QrCode className="w-3.5 h-3.5 text-[#008F72]" />
+                        <span>C. Traceability</span>
+                      </span>
+                      <div className="flex flex-col gap-2 text-[11.5px]">
+                        {/* Parts */}
+                        <div className="flex justify-between items-start">
+                          <span className="text-slate-600 font-medium">Part Traceability:</span>
+                          <span className="font-extrabold text-slate-900 text-right">
+                            {affectedParts.length > 0 ? `${affectedParts.length} part(s)` : 'Not provided'}
+                          </span>
+                        </div>
+                        {affectedParts.map((p, idx) => (
+                          <div key={idx} className="bg-slate-50 p-2 rounded-lg border border-slate-200 flex flex-col gap-0.5 font-mono text-[10.5px]">
+                            <span className="font-bold text-slate-900">PN: {p.partNumber} ({p.entryMethod || 'Manual'})</span>
+                            <span className="text-slate-600 font-sans">{p.description} | Qty: {p.quantity || 1}</span>
+                          </div>
+                        ))}
+
+                        {/* Containers */}
+                        <div className="flex justify-between items-start pt-1 border-t border-slate-100">
+                          <span className="text-slate-600 font-medium">Container Traceability:</span>
+                          <span className="font-extrabold text-slate-900 text-right">
+                            {toteBinLabels.length > 0 ? `${toteBinLabels.length} container(s)` : 'Not provided'}
+                          </span>
+                        </div>
+                        {toteBinLabels.map((t, idx) => (
+                          <div key={idx} className="bg-slate-50 p-2 rounded-lg border border-slate-200 flex flex-col gap-0.5 font-mono text-[10.5px]">
+                            <span className="font-bold text-slate-900">Label: {t.labelValue} ({t.containerType || 'Tote'})</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* SECTION D: CONCERN DETAILS */}
+                    <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-xs flex flex-col gap-2">
+                      <span className="text-[11px] font-black text-slate-900 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
+                        <FileText className="w-3.5 h-3.5 text-[#008F72]" />
+                        <span>D. Concern Details</span>
+                      </span>
+                      <div className="flex flex-col gap-2 text-[11.5px]">
+                        <div>
+                          <span className="text-[10px] text-slate-400 font-bold uppercase block">Area Found</span>
+                          <span className="font-bold text-slate-900">{selectedArea || 'Not specified'}</span>
+                        </div>
+                        {defectType && (
+                          <div>
+                            <span className="text-[10px] text-slate-400 font-bold uppercase block">Defect / Concern Type</span>
+                            <span className="font-bold text-slate-900">{defectType}</span>
+                          </div>
+                        )}
+                        <div>
+                          <span className="text-[10px] text-slate-400 font-bold uppercase block">Suspect Defect Narrative</span>
+                          <p className="font-medium text-slate-900 bg-slate-50 p-2.5 rounded-lg border border-slate-200 leading-relaxed whitespace-pre-wrap break-words">
+                            {description || 'No narrative provided'}
+                          </p>
+                        </div>
+                        {actionTaken && (
+                          <div>
+                            <span className="text-[10px] text-slate-400 font-bold uppercase block">Action Taken Narrative</span>
+                            <p className="font-medium text-slate-900 bg-slate-50 p-2.5 rounded-lg border border-slate-200 leading-relaxed whitespace-pre-wrap break-words">
+                              {actionTaken}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* SECTION E: SUPPLIER FOLLOW-UP */}
+                    <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-xs flex flex-col gap-2">
+                      <span className="text-[11px] font-black text-slate-900 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
+                        <Wrench className="w-3.5 h-3.5 text-[#008F72]" />
+                        <span>E. Supplier Follow-up</span>
+                      </span>
+                      <div className="grid grid-cols-2 gap-2 text-[11.5px]">
+                        <div className="bg-slate-50 p-2 rounded-lg border border-slate-200 flex justify-between items-center">
+                          <span className="text-slate-600 font-bold">Returned:</span>
+                          <span className={`px-2 py-0.5 rounded text-[10.5px] font-extrabold ${isReturningDefect === 'Y' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}`}>
+                            {isReturningDefect === 'Y' ? 'Yes' : 'No'}
+                          </span>
+                        </div>
+                        <div className="bg-slate-50 p-2 rounded-lg border border-slate-200 flex justify-between items-center">
+                          <span className="text-slate-600 font-bold">Sort Requested:</span>
+                          <span className={`px-2 py-0.5 rounded text-[10.5px] font-extrabold ${isSortRequired === 'Y' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}`}>
+                            {isSortRequired === 'Y' ? 'Yes' : 'No'}
+                          </span>
+                        </div>
+                        <div className="bg-slate-50 p-2 rounded-lg border border-slate-200 flex justify-between items-center col-span-2">
+                          <span className="text-slate-600 font-bold">RMA Required:</span>
+                          <span className={`px-2 py-0.5 rounded text-[10.5px] font-extrabold ${isRmaRequired === 'Y' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}`}>
+                            {isRmaRequired === 'Y' ? `Yes (${rmaNumber || 'No code entered'})` : 'No'}
+                          </span>
+                        </div>
+                        {concernClassification && (
+                          <div className="bg-slate-50 p-2 rounded-lg border border-slate-200 flex justify-between items-center col-span-2">
+                            <span className="text-slate-600 font-bold">Classification:</span>
+                            <span className="font-bold text-slate-900">{concernClassification}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* SECTION F: REPORT RECIPIENTS */}
+                    <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-xs flex flex-col gap-2">
+                      <div className="flex justify-between items-center border-b border-slate-100 pb-1.5">
+                        <span className="text-[11px] font-black text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                          <Mail className="w-3.5 h-3.5 text-[#008F72]" />
+                          <span>F. Report Recipients</span>
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setIncStep(3)}
+                          className="text-[10px] text-[#008F72] hover:underline font-extrabold uppercase cursor-pointer"
+                        >
+                          Change →
+                        </button>
+                      </div>
+
+                      {selectedContacts.length === 0 ? (
+                        <div className="bg-amber-50/70 border border-amber-200 rounded-xl p-3 text-[11px] text-amber-900 font-medium leading-relaxed">
+                          No client contact is configured for this assignment. The report can be released to the Client Dashboard, but an email cannot be prepared.
+                        </div>
+                      ) : (
+                        <div className="flex flex-col gap-1.5">
+                          {selectedContacts.map(contact => (
+                            <div key={contact.id} className="p-2.5 bg-slate-50 rounded-xl border border-slate-200 flex flex-col gap-0.5 text-[11.5px]">
+                              <span className="font-bold text-slate-900">{contact.name}</span>
+                              <span className="text-[10.5px] text-slate-600">{contact.role} {contact.email ? `• ${contact.email}` : ''}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* SECTION G: DELIVERY CHANNELS & EMAIL PREVIEW */}
+                    <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 flex flex-col gap-3">
+                      <span className="text-[11.5px] font-black text-slate-900 uppercase tracking-wider block border-b border-slate-200 pb-1.5">
+                        G. Delivery Channels
+                      </span>
+
+                      {/* Channel 1: Client Dashboard */}
+                      <div className="bg-white p-3 rounded-xl border border-slate-200 flex flex-col gap-1 text-[11.5px] shadow-2xs">
+                        <div className="flex justify-between items-center">
+                          <span className="font-extrabold text-slate-900">Channel 1: Client Dashboard</span>
+                          <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-extrabold text-[10px] uppercase">
+                            Ready
+                          </span>
+                        </div>
+                        <p className="text-[10.5px] text-slate-600 leading-relaxed font-medium">
+                          The released report will appear in the assigned client's IDS Pulse dashboard.
+                        </p>
+                      </div>
+
+                      {/* Channel 2: Email */}
+                      <div className="bg-white p-3 rounded-xl border border-slate-200 flex flex-col gap-1 text-[11.5px] shadow-2xs">
+                        <div className="flex justify-between items-center">
+                          <span className="font-extrabold text-slate-900">Channel 2: Email</span>
+                          <span className="px-2 py-0.5 rounded bg-amber-100 text-amber-800 font-extrabold text-[10px] uppercase">
+                            Inactive — prototype
+                          </span>
+                        </div>
+                        <p className="text-[10.5px] text-slate-600 leading-relaxed font-medium">
+                          Recipient and message preview are prepared, but no external email will be sent until email delivery is approved and enabled.
+                        </p>
+                      </div>
+
+                      {/* Collapsible Email Preview */}
+                      <div className="border border-slate-200 rounded-xl bg-white overflow-hidden">
+                        <button
+                          id="toggle-email-preview-btn"
+                          type="button"
+                          onClick={() => setShowEmailPreview(!showEmailPreview)}
+                          className="w-full p-2.5 flex items-center justify-between text-left cursor-pointer hover:bg-slate-50 transition-colors"
+                        >
+                          <span className="text-[11px] font-bold text-slate-800 flex items-center gap-1.5">
+                            <Mail className="w-3.5 h-3.5 text-slate-500" />
+                            <span>Inspect Outgoing Email Preview</span>
+                          </span>
+                          <span className="text-[10px] bg-rose-100 text-rose-800 font-extrabold px-2 py-0.5 rounded uppercase">
+                            EMAIL SENDING OFF
+                          </span>
+                        </button>
+
+                        {showEmailPreview && (
+                          <div className="p-3 border-t border-slate-200 bg-slate-50/50 flex flex-col gap-2 text-[11px] font-mono leading-relaxed text-left">
+                            <div className="bg-white p-2 rounded-lg border border-slate-200 flex flex-col gap-1">
+                              <div><strong className="text-slate-500 uppercase">To:</strong> <span className="text-slate-900 font-bold">{contactEmails.length > 0 ? contactEmails.join(', ') : 'No recipient email available'}</span></div>
+                              <div><strong className="text-slate-500 uppercase">CC:</strong> <span className="text-slate-600">None (Internal IDS CC unconfigured)</span></div>
+                              <div><strong className="text-slate-500 uppercase">Subject:</strong> <span className="text-slate-900 font-bold">[IDS URGENT INCIDENT] {firstPN || 'Concern'} - {selectedArea}</span></div>
+                            </div>
+                            <div className="bg-white p-2.5 rounded-lg border border-slate-200 text-slate-800 text-[10.5px] space-y-1.5">
+                              <p className="font-bold">IDS PULSE URGENT QUALITY INCIDENT NOTIFICATION</p>
+                              <p><strong>Plant / Location:</strong> {plants.find(p => p.id === selectedPlant)?.name || selectedPlant} — {selectedArea}</p>
+                              <p><strong>Suspect Defect:</strong> {description}</p>
+                              {actionTaken && <p><strong>Action Taken:</strong> {actionTaken}</p>}
+                              <p><strong>Traceability / Media:</strong> {affectedParts.length} parts listed | {evidenceList.length} photos attached</p>
+                              <p className="text-amber-800 font-bold pt-1 border-t border-slate-200">
+                                [Portal Link Placeholder - Unavailable while email is disabled]
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* RELEASE NAVIGATION & ACTION BUTTON */}
+                    <div className="flex flex-col gap-1.5 pt-2 border-t border-slate-200 mt-1">
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setIncStep(3)}
+                          className="flex-1 min-h-[48px] py-3 bg-slate-100 hover:bg-slate-200 text-slate-800 font-extrabold text-xs rounded-xl border border-slate-300 transition-all cursor-pointer flex items-center justify-center"
+                        >
+                          Back
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleSendIncident}
+                          disabled={isSendingIncident}
+                          className="flex-1 min-h-[48px] py-3 bg-[#008F72] hover:bg-[#00765F] text-white font-extrabold text-xs rounded-xl shadow-md transition-all cursor-pointer flex items-center justify-center gap-1.5 border border-emerald-600/30"
+                        >
+                          <Send className="w-4 h-4" />
+                          <span>{isSendingIncident ? 'Releasing report...' : 'Release to Client Dashboard'}</span>
+                        </button>
+                      </div>
+                      <span className="text-[10.5px] text-center text-slate-500 font-bold block">
+                        Email delivery is currently inactive.
+                      </span>
+                    </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
 
             </div>
           </div>
@@ -3540,130 +5527,84 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
           </div>
         )}
 
-        {/* SCREEN 3.8: SCANNING VIEW OVERLAY */}
+        {/* SCREEN 3.8: SCANNING VIEW OVERLAY (Requirement 4) */}
         {scanningType && (
           <div className="absolute inset-0 bg-slate-900/90 backdrop-blur-sm z-50 flex flex-col justify-between p-3">
             <div className="flex items-center justify-between border-b border-slate-700 pb-2">
-              <span className="text-[13.5px] font-bold text-white uppercase tracking-wider">Camera Label Scanner</span>
-              <button onClick={() => setScanningType(null)} className="text-slate-600 hover:text-text-primary"><X className="w-5 h-5" /></button>
+              <span className="text-[13.5px] font-bold text-white uppercase tracking-wider">Simulated Camera Scanner</span>
+              <button onClick={() => setScanningType(null)} className="text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
             </div>
 
-            {/* Viewfinder scanning frame with Multi-Code detection overlay */}
-            <div className="flex-1 bg-slate-900 border-2 border-blue-500/50 rounded-sm my-4 relative flex flex-col items-center justify-center overflow-hidden shadow-sm">
-              <div className="absolute inset-x-0 h-0.5 bg-red-500 shadow-lg shadow-red-500 pulsing-indicator top-1/2 z-20 pointer-events-none"></div>
+            {/* Viewfinder scanning frame with Prototype Notice Overlay (Requirement 4) */}
+            <div className="flex-1 bg-slate-900 border-2 border-emerald-500/50 rounded-lg my-3 relative flex flex-col items-center justify-center overflow-hidden shadow-sm">
+              <div className="absolute inset-x-0 h-0.5 bg-emerald-500 shadow-lg shadow-emerald-500 pulsing-indicator top-1/2 z-20 pointer-events-none"></div>
               
-              <div className="absolute top-3 text-center px-4 z-20 bg-slate-900/90 py-1 rounded-sm border border-slate-700 shadow-sm">
-                <p className="text-[11.5px] text-white font-semibold">⚠️ Multiple Codes Detected</p>
-                <p className="text-[12.5px] text-blue-600 font-medium">Tap the green box for Part Number / Bin</p>
+              <div className="absolute top-2.5 text-center px-3 z-20 bg-slate-950/90 py-1.5 rounded-lg border border-emerald-500/40 shadow-sm max-w-[280px]">
+                <p className="text-[11px] text-emerald-400 font-extrabold uppercase tracking-wide">Scanner simulated in web prototype</p>
+                <p className="text-[10px] text-slate-300 font-medium leading-tight mt-0.5">Real camera barcode & QR scanning will be connected in native mobile application.</p>
               </div>
 
               {/* Selection Options represented as a physical label mock in the viewfinder */}
-              <div className="absolute inset-0 flex flex-col items-center justify-center p-3 bg-surface-elevated/60 z-10">
+              <div className="absolute inset-0 flex flex-col items-center justify-center p-3 bg-slate-950/60 z-10">
                 {scanningType === 'barcode' ? (
                   /* PHYSICAL LABEL MOCK FOR BARCODES */
-                  <div className="bg-white text-slate-950 p-2.5 rounded-lg border-2 border-slate-300 shadow-2xl w-full max-w-[260px] flex flex-col gap-1.5 animate-in zoom-in duration-200">
-                    <div className="flex justify-between items-center border-b border-slate-200 pb-1 text-[12.5px] text-text-secondary font-bold uppercase tracking-wider">
-                      <span>{getActiveClientForPlant()} Facility</span>
+                  <div className="bg-white text-slate-950 p-2.5 rounded-lg border-2 border-slate-300 shadow-2xl w-full max-w-[260px] flex flex-col gap-1.5 animate-in zoom-in duration-200 mt-6">
+                    <div className="flex justify-between items-center border-b border-slate-200 pb-1 text-[11px] text-slate-500 font-bold uppercase tracking-wider">
+                      <span>Facility Material Label</span>
                       <span>LOT: 902A5</span>
                     </div>
 
                     <div className="flex flex-col gap-2">
-                      {/* Code 1: Serial Code (Incorrect) */}
-                      <div className="relative border border-dashed border-slate-350 p-1 flex flex-col items-center rounded bg-slate-50">
-                        <div className="flex h-3.5 w-full bg-slate-900 justify-center items-center rounded-xs opacity-80">
-                          <span className="text-[5px] text-slate-600 font-mono tracking-widest">SERIAL BARCODE</span>
-                        </div>
-                        <span className="text-[11.5px] font-bold font-mono text-slate-550 mt-0.5">S/N: 901485291</span>
-
-                        {/* Wrong tag warning overlay */}
-                        <button 
-                          type="button"
-                          onClick={() => {
-                            playBeep('warning');
-                            showToast("Incorrect Code! Please tap Part Number barcode below.", "warning");
-                          }}
-                          className="absolute inset-0 bg-red-50 border border-red-500/40 rounded flex items-center justify-center cursor-pointer hover:bg-red-100"
-                        >
-                          <span className="bg-red-600 text-white font-extrabold px-1 py-1 rounded-[3px] text-[6px] uppercase tracking-wide">Serial Code</span>
-                        </button>
-                      </div>
-
-                      {/* Code 2: Part Number (Correct Tail Light) */}
-                      <div className="relative border border-dashed border-slate-350 p-1 flex flex-col items-center rounded bg-slate-50">
+                      {/* Code 1: Part Number (86286761) */}
+                      <div className="relative border border-dashed border-slate-300 p-1 flex flex-col items-center rounded bg-slate-50">
                         <div className="flex h-3.5 w-full bg-slate-900 justify-center items-center rounded-xs">
-                          <span className="text-[5px] text-emerald-600 font-mono tracking-widest">PART NUMBER BARCODE</span>
+                          <span className="text-[5px] text-emerald-400 font-mono tracking-widest">PART NUMBER BARCODE</span>
                         </div>
-                        <span className="text-[11.5px] font-extrabold font-mono text-slate-900 mt-0.5">PN: 86286761 (Tail Light)</span>
+                        <span className="text-[11.5px] font-extrabold font-mono text-slate-900 mt-0.5">PN: 86286761</span>
 
-                        {/* Correct clickable scan overlay */}
                         <button 
                           type="button"
                           onClick={() => selectScanOption('86286761')}
                           className="absolute inset-0 bg-emerald-500/15 border-2 border-emerald-500 rounded flex items-center justify-center cursor-pointer hover:bg-emerald-500/30 transition-colors"
                         >
-                          <span className="bg-emerald-500 text-white font-extrabold px-2 py-1 rounded-[4px] text-[11.5px] uppercase tracking-wider animate-bounce">Tap to Scan PN 86286761</span>
+                          <span className="bg-[#008F72] text-white font-extrabold px-2 py-1 rounded text-[10.5px] uppercase tracking-wider animate-bounce">Use sample scan (86286761)</span>
                         </button>
                       </div>
 
-                      {/* Code 3: Alternate Part Number (Correct Headlight) */}
-                      <div className="relative border border-dashed border-slate-350 p-1 flex flex-col items-center rounded bg-slate-50">
+                      {/* Code 2: Alternate Part Number (86291945) */}
+                      <div className="relative border border-dashed border-slate-300 p-1 flex flex-col items-center rounded bg-slate-50">
                         <div className="flex h-3.5 w-full bg-slate-900 justify-center items-center rounded-xs">
-                          <span className="text-[5px] text-emerald-600 font-mono tracking-widest">PART NUMBER BARCODE</span>
+                          <span className="text-[5px] text-emerald-400 font-mono tracking-widest">PART NUMBER BARCODE</span>
                         </div>
-                        <span className="text-[11.5px] font-extrabold font-mono text-slate-900 mt-0.5">PN: 86291945 (Headlight)</span>
+                        <span className="text-[11.5px] font-extrabold font-mono text-slate-900 mt-0.5">PN: 86291945</span>
 
-                        {/* Correct clickable scan overlay */}
                         <button 
                           type="button"
                           onClick={() => selectScanOption('86291945')}
                           className="absolute inset-0 bg-emerald-500/15 border-2 border-emerald-500 rounded flex items-center justify-center cursor-pointer hover:bg-emerald-500/30 transition-colors"
                         >
-                          <span className="bg-emerald-500 text-white font-extrabold px-2 py-1 rounded-[4px] text-[11.5px] uppercase tracking-wider">Tap to Scan PN 86291945</span>
+                          <span className="bg-[#008F72] text-white font-extrabold px-2 py-1 rounded text-[10.5px] uppercase tracking-wider">Use sample scan (86291945)</span>
                         </button>
                       </div>
                     </div>
                   </div>
                 ) : (
                   /* PHYSICAL LABEL MOCK FOR QR BIN SCANS */
-                  <div className="bg-white text-slate-950 p-3 rounded-lg border-2 border-slate-300 shadow-2xl w-full max-w-[260px] flex flex-col gap-2 animate-in zoom-in duration-200">
-                    <div className="flex justify-between items-center border-b border-slate-200 pb-1 text-[12.5px] text-text-secondary font-bold uppercase">
-                      <span>{getActiveClientForPlant()} Storage</span>
+                  <div className="bg-white text-slate-950 p-3 rounded-lg border-2 border-slate-300 shadow-2xl w-full max-w-[260px] flex flex-col gap-2 animate-in zoom-in duration-200 mt-6">
+                    <div className="flex justify-between items-center border-b border-slate-200 pb-1 text-[11px] text-slate-500 font-bold uppercase">
+                      <span>Tote / Bin Traceability Label</span>
                       <span>SECTION: B4</span>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
-                      {/* QR Code 1: Batch Code (Incorrect) */}
-                      <div className="relative border border-slate-200 p-1.5 flex flex-col items-center justify-center rounded bg-slate-50">
-                        <div className="w-10 h-10 bg-slate-900 rounded flex items-center justify-center">
-                          <span className="text-[5px] text-slate-600 uppercase tracking-widest font-mono">QR</span>
-                        </div>
-                        <span className="text-[11.5px] font-bold text-slate-550 mt-1">BATCH CODE</span>
-
+                    <div className="flex flex-col items-center gap-2">
+                      <div className="relative border border-slate-300 p-2 flex flex-col items-center justify-center rounded bg-slate-50 w-full">
+                        <span className="text-xs font-extrabold font-mono text-slate-900">BIN-MAG-6761</span>
                         <button 
                           type="button"
-                          onClick={() => {
-                            playBeep('warning');
-                            showToast("Incorrect QR! Please tap green Bin Location QR.", "warning");
-                          }}
-                          className="absolute inset-0 bg-red-50 border border-red-500/40 rounded flex items-center justify-center cursor-pointer hover:bg-red-100"
-                        >
-                          <span className="bg-red-600 text-white font-extrabold px-1 py-1 rounded-[3px] text-[6px] uppercase tracking-wide">Batch QR</span>
-                        </button>
-                      </div>
-
-                      {/* QR Code 2: Bin Location (Correct) */}
-                      <div className="relative border border-slate-200 p-1.5 flex flex-col items-center justify-center rounded bg-slate-50">
-                        <div className="w-10 h-10 bg-slate-900 rounded flex items-center justify-center">
-                          <span className="text-[5px] text-emerald-600 uppercase tracking-widest font-mono">QR</span>
-                        </div>
-                        <span className="text-[11.5px] font-extrabold text-slate-900 mt-1">BIN: BIN-MAG-6761</span>
-
-                        <button 
-                          type="button"
-                          onClick={() => selectScanOption('86286761')}
+                          onClick={() => selectScanOption('BIN-MAG-6761', 'qr')}
                           className="absolute inset-0 bg-emerald-500/15 border-2 border-emerald-500 rounded flex items-center justify-center cursor-pointer hover:bg-emerald-500/30 transition-colors animate-pulse"
                         >
-                          <span className="bg-emerald-500 text-white font-extrabold px-1 py-1 rounded-[3px] text-[6px] uppercase tracking-wider text-center">Tap Bin QR</span>
+                          <span className="bg-[#008F72] text-white font-extrabold px-2 py-1 rounded text-[10.5px] uppercase tracking-wider text-center">Use sample scan (BIN-MAG-6761)</span>
                         </button>
                       </div>
                     </div>
@@ -3678,27 +5619,41 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
           </div>
         )}
 
-        {/* SCREEN 3.9: INCIDENT SENT CONFIRMATION SCREEN */}
+        {/* SCREEN 3.9: INCIDENT RELEASED CONFIRMATION SCREEN (Sections 6 & 7) */}
         {incidentSentConfirmation && (
-          <div className="flex-1 flex flex-col justify-between p-3 bg-slate-50 animate-in fade-in duration-200">
+          <div className="flex-1 flex flex-col justify-between p-4 bg-slate-50 animate-in fade-in duration-200 text-left">
             <div className="my-auto flex flex-col items-center text-center">
-              <div className="w-16 h-16 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center mb-4 shadow-sm">
-                <CheckCircle className="w-8 h-8 text-emerald-600" />
+              <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-3 shadow-sm border ${
+                isOfflineRelease ? 'bg-amber-50 border-amber-200 text-amber-600' : 'bg-emerald-50 border-emerald-200 text-emerald-600'
+              }`}>
+                {isOfflineRelease ? <WifiOff className="w-8 h-8" /> : <CheckCircle className="w-8 h-8" />}
               </div>
-              <h2 className="text-[13.5px] font-bold text-slate-900 mb-2">Incident Released</h2>
-              <p className="text-[13.5px] text-slate-600 leading-relaxed max-w-[240px]">
-                Defect report has been successfully sent out.
+              <h2 className="text-base font-black text-slate-900 mb-1">
+                {isOfflineRelease ? 'Report Saved Offline' : 'Report Released'}
+              </h2>
+              <p className="text-xs text-slate-600 leading-relaxed max-w-[260px] font-medium">
+                {isOfflineRelease
+                  ? 'Report safely saved. It will be released to the Client Dashboard automatically when your internet connection returns.'
+                  : 'Report released to the Client Dashboard. External email was not sent.'}
               </p>
-              <div className="bg-white rounded-sm p-3 border border-slate-300 w-full max-w-[260px] text-[11.5px] text-slate-600 mt-4 flex flex-col gap-1.5 text-left shadow-sm">
-                <div><span className="text-text-secondary font-bold uppercase">Sent At:</span> <span className="text-slate-900 font-bold">18:22 PM Today</span></div>
-                <div><span className="text-text-secondary font-bold uppercase">Recipient:</span> <span className="text-slate-900 font-bold">martin.s@magna.com</span></div>
-                <div><span className="text-text-secondary font-bold uppercase">Notification:</span> <span className="text-blue-700 font-bold">Donna Cabral CC'd</span></div>
+
+              <div className="bg-white rounded-xl p-3 border border-slate-200 w-full max-w-[290px] text-[11px] text-slate-600 mt-4 flex flex-col gap-1.5 text-left shadow-xs">
+                <div><span className="text-slate-400 font-bold uppercase">Tracking Ref:</span> <span className="text-slate-900 font-mono font-bold">{sentIncidentId || 'INC-LOCAL'}</span></div>
+                <div><span className="text-slate-400 font-bold uppercase">Released At:</span> <span className="text-slate-900 font-mono font-bold">{new Date().toLocaleTimeString()}</span></div>
+                <div><span className="text-slate-400 font-bold uppercase">Delivery Channel:</span> <span className="text-emerald-700 font-bold">Client Dashboard</span></div>
+                <div><span className="text-slate-400 font-bold uppercase">Email Status:</span> <span className="text-amber-800 font-bold bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">Inactive — prototype</span></div>
               </div>
             </div>
 
-            <button 
-              onClick={resetIncidentScreen}
-              className="phone-btn-primary"
+            <button
+              type="button"
+              onClick={() => {
+                setIncidentSentConfirmation(false);
+                setIsOfflineRelease(false);
+                resetIncidentFormState();
+                setActiveScreen('home');
+              }}
+              className="w-full min-h-[48px] py-3 bg-[#008F72] hover:bg-[#00765F] text-white font-extrabold text-xs rounded-xl shadow-md transition-all cursor-pointer"
             >
               Close and Return to Home
             </button>
@@ -3721,11 +5676,11 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
               </div>
 
               {/* Area Cards list */}
-              <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-3" id="daily-quality-report-area-list">
                 {areasWalked.map(area => (
-                  <div key={area.id} className="bg-white border border-slate-300 rounded-sm p-3 flex flex-col gap-2 shadow-sm">
+                  <div key={area.id} data-area-id={area.id} data-area-name={formatAreaName(area.name)} className="bg-white border border-slate-300 rounded-sm p-3 flex flex-col gap-2 shadow-sm daily-quality-area-card">
                     <div className="flex justify-between items-center">
-                      <span className="text-[13.5px] font-bold text-slate-900">{area.name}</span>
+                      <span className="text-[13.5px] font-bold text-slate-900 area-card-title">{formatAreaName(area.name)}</span>
                       <div className="phone-toggle-group w-32">
                         <button 
                           onClick={() => toggleAreaStatus(area.id, 'no_issues')} 
@@ -3746,7 +5701,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                       value={area.notes}
                       onChange={(e) => updateAreaNotes(area.id, e.target.value)}
                       placeholder="Spoke with Martin, no parts on scrap tables..."
-                      className="phone-input h-9 px-3 text-[11.5px]"
+                      className="phone-input h-9 px-3 text-[11.5px] area-card-notes-input"
                     />
                   </div>
                 ))}
@@ -4049,28 +6004,22 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                   </div>
                 </div>
 
-                {inspDefectMode === 'preset' ? (
-                  <select 
-                    value={inspDefectCode}
-                    onChange={(e) => setInspDefectCode(e.target.value)}
-                    className="phone-select text-[12px] font-bold"
-                  >
-                    <option value="Routine Inspection">Routine Inspection - Pass (OK)</option>
-                    <option value="Surface Scratch">Surface Scratch / Dent</option>
-                    <option value="Terminal Pin Bend">Terminal Pin Deformation</option>
-                    <option value="Dimensional Out of Spec">Dimensional Out of Spec</option>
-                    <option value="Missing Seal">Missing Gasket / Seal</option>
-                    <option value="Coating Mismatch">Color / Paint Mismatch</option>
-                  </select>
-                ) : (
-                  <input
-                    type="text"
-                    value={inspCustomDefectCode}
-                    onChange={(e) => setInspCustomDefectCode(e.target.value)}
-                    placeholder="Enter custom defect category or code..."
-                    className="phone-input text-[12px] font-bold"
-                  />
-                )}
+                <BusinessDropdown
+                  id="insp-defect-dropdown"
+                  options={[
+                    { value: 'Routine Inspection', label: 'Routine Inspection - Pass (OK)' },
+                    { value: 'Surface Scratch', label: 'Surface Scratch / Dent' },
+                    { value: 'Terminal Pin Bend', label: 'Terminal Pin Deformation' },
+                    { value: 'Dimensional Out of Spec', label: 'Dimensional Out of Spec' },
+                    { value: 'Missing Seal', label: 'Missing Gasket / Seal' },
+                    { value: 'Coating Mismatch', label: 'Color / Paint Mismatch' }
+                  ]}
+                  value={inspDefectCode}
+                  onChange={(newVal) => setInspDefectCode(newVal)}
+                  placeholder="Select defect category..."
+                  customInputLabel="Enter custom inspection defect type"
+                  customInputPlaceholder="Enter custom defect category or code..."
+                />
               </div>
 
               {/* SECTION 4: TIME SPENT (HOURS) */}
@@ -4587,20 +6536,25 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
             <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-3 text-left">
               {timeExpenseTab === 'expense' && (
                 <form onSubmit={handleExpenseSubmit} className="flex flex-col gap-3">
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[10.5px] font-bold text-text-secondary uppercase">Expense Category</label>
-                <select 
+              <div>
+                <BusinessDropdown
+                  id="expense-category-dropdown"
+                  label="Expense Category"
+                  required={true}
+                  options={[
+                    'Mileage',
+                    'Fuel',
+                    'Tolls',
+                    'Meals',
+                    'Parking',
+                    'Supplies'
+                  ]}
                   value={expenseCategory}
-                  onChange={(e) => setExpenseCategory(e.target.value)}
-                  className="phone-select"
-                >
-                  <option value="Mileage">Mileage</option>
-                  <option value="Fuel">Fuel</option>
-                  <option value="Tolls">Tolls</option>
-                  <option value="Meals">Meals</option>
-                  <option value="Parking">Parking</option>
-                  <option value="Supplies">Supplies</option>
-                </select>
+                  onChange={(newVal) => setExpenseCategory(newVal)}
+                  placeholder="Select category..."
+                  customInputLabel="Enter custom expense category"
+                  customInputPlaceholder="Example: Protective Gear, Lodging..."
+                />
               </div>
 
               <div className="flex flex-col gap-1.5">
@@ -4859,6 +6813,44 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
           </div>
         )}
 
+        {/* DELETE VIDEO CONFIRMATION MODAL (Section I) */}
+        {showDeleteVideoConfirm && (
+          <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-2xl flex flex-col gap-4 text-left w-full max-w-[320px]">
+              <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
+                <div className="w-10 h-10 rounded-full bg-red-100 border border-red-300 flex items-center justify-center text-red-600 font-black text-lg">
+                  <Video className="w-5 h-5 text-red-600" />
+                </div>
+                <div>
+                  <h3 className="text-[14px] font-black text-slate-900 leading-tight">Remove this video from the report?</h3>
+                  <span className="text-[10.5px] text-slate-500 font-medium">This will un-stage the current video evidence file.</span>
+                </div>
+              </div>
+
+              <div className="flex gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteVideoConfirm(false)}
+                  className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs rounded-xl transition-all cursor-pointer"
+                >
+                  Keep video
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStagedVideoObject(null);
+                    setShowDeleteVideoConfirm(false);
+                    showToast("Video attachment removed from report", "info");
+                  }}
+                  className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white font-extrabold text-xs rounded-xl shadow-md transition-all cursor-pointer"
+                >
+                  Remove video
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* OFFLINE CONFIRMATION POPUP MODAL */}
         {showOfflineModal && (
           <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
@@ -4986,20 +6978,44 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
               <span className="text-[10px] tracking-tight mt-0.5">Work</span>
             </button>
 
-            {/* ALERT - Prominent Central Red Action */}
-            <button
-              type="button"
-              onClick={() => setActiveScreen('incident')}
-              className="flex flex-col items-center justify-center -mt-4 cursor-pointer"
-            >
-              <div className="w-11 h-11 rounded-full bg-[#D92D3F] hover:bg-[#B42336] text-white flex items-center justify-center shadow-lg transition-transform hover:scale-105 border-2 border-white">
-                <AlertTriangle className="w-6 h-6 text-white" />
-              </div>
-              <span className="text-[10px] font-extrabold text-[#D92D3F] tracking-tight mt-0.5">Alert</span>
-            </button>
+            {/* ALERT - Dynamic Central Action (Primary theme by default, Red only if active critical alert exists) */}
+            {(() => {
+              const activeIncidents = (getEntities('incidents') || []).filter(inc => inc.status === 'open' || inc.status === 'active' || inc.quality_hold);
+              const hasActiveAlert = activeIncidents.length > 0;
+              const isSelected = activeScreen === 'incident';
+
+              return (
+                <button
+                  type="button"
+                  onClick={() => setActiveScreen('incident')}
+                  className="flex flex-col items-center justify-center -mt-4 cursor-pointer"
+                >
+                  <div className={`w-11 h-11 rounded-full text-white flex items-center justify-center shadow-md transition-transform hover:scale-105 border-2 border-white relative ${
+                    hasActiveAlert
+                      ? 'bg-[#D92D3F] hover:bg-[#B42336]'
+                      : isSelected
+                      ? 'bg-[#008F72] hover:bg-[#00765F]'
+                      : 'bg-[#10284A] hover:bg-[#1A3863]'
+                  }`}>
+                    <AlertTriangle className="w-5 h-5 text-white" />
+                    {hasActiveAlert && (
+                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center border border-white">
+                        {activeIncidents.length}
+                      </span>
+                    )}
+                  </div>
+                  <span className={`text-[10px] font-extrabold tracking-tight mt-0.5 ${
+                    hasActiveAlert ? 'text-[#D92D3F]' : isSelected ? 'text-[#008F72]' : 'text-[#10284A]'
+                  }`}>
+                    Alerts
+                  </span>
+                </button>
+              );
+            })()}
 
             <button
               type="button"
+              id="phone-nav-reports-btn"
               onClick={() => setActiveScreen('reports')}
               className={`flex flex-col items-center justify-center py-1 transition-colors cursor-pointer ${
                 activeScreen === 'reports' ? 'text-[#008F72] font-bold' : 'text-[#5B6F89] hover:text-[#10284A]'
@@ -5011,6 +7027,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
 
             <button
               type="button"
+              id="phone-nav-more-btn"
               onClick={() => setActiveScreen('more')}
               className={`flex flex-col items-center justify-center py-1 transition-colors cursor-pointer ${
                 activeScreen === 'more' || activeScreen === 'expenses' || activeScreen === 'history' ? 'text-[#008F72] font-bold' : 'text-[#5B6F89] hover:text-[#10284A]'

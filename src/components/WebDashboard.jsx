@@ -3,7 +3,7 @@ import {
   Shield, Activity, Server, FileText, Users, Mail, DollarSign, Database, 
   Search, Filter, ChevronRight, ChevronDown, X, Clock, CheckCircle2, UserCheck, AlertCircle, AlertTriangle, 
   FileSpreadsheet, Calendar, ArrowRight, UserPlus, MapPin, Printer, Download, Eye, EyeOff, Sparkles,
-  Milestone, TrendingUp, FolderKanban, PlusCircle, ArrowLeft, Camera, ClipboardCheck, Zap, Building2, ShieldAlert, User, Cpu, Mic, Video, Trash2, History, Lock
+  Milestone, TrendingUp, FolderKanban, PlusCircle, Plus, ArrowLeft, Camera, ClipboardCheck, Zap, Building2, ShieldAlert, User, Cpu, Mic, Video, Trash2, History, Lock
 } from 'lucide-react';
 import { getEntities, saveEntity, resetDB, logSystemEvent, addProject, deleteRate, isFieldRep, syncWithSupabase, supabase, addUser, isEntryAccountingEligible } from './SharedDatabase';
 import { jsPDF } from 'jspdf';
@@ -13,6 +13,7 @@ import IntegrityWeeklyTimesheet from './IntegrityWeeklyTimesheet';
 import { generateIntegrityInvoicePDF } from '../utils/generateInvoicePdf';
 import { InvoiceModal } from './InvoiceModal';
 import { performAtomicClientOnboarding, formatRateDisplay } from '../services/onboardingService';
+import { getFormattedLocationTime, getFormattedLocationDate } from '../utils/locationTimeUtil';
 
 export const EXPENSE_GROUPS = {
   INTERNAL: 'Internal Expense (IDS)',
@@ -115,13 +116,81 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   const [newProjBilling, setNewProjBilling] = useState('');
   const [newProjPay, setNewProjPay] = useState('');
   const [newProjPoHours, setNewProjPoHours] = useState('100');
-  const [newProjCurrency, setNewProjCurrency] = useState('USD');
+  const [newProjCurrency, setNewProjCurrency] = useState('CAD');
+  const [newProjPoNumber, setNewProjPoNumber] = useState('');
+  const [newProjPartNumber, setNewProjPartNumber] = useState('');
   
   // Toast Notification State (Non-blocking replacement for native alerts)
   const [toast, setToast] = useState(null);
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 3500);
+  };
+
+  // Quick Add Client Contact Modal State
+  const [addContactSupplier, setAddContactSupplier] = useState(null);
+  const [newContactName, setNewContactName] = useState('');
+  const [newContactEmail, setNewContactEmail] = useState('');
+  const [newContactRole, setNewContactRole] = useState('Customer Quality Manager');
+  const [newContactPhone, setNewContactPhone] = useState('');
+
+  const handleSaveContactToSupplier = (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    if (!addContactSupplier || !newContactName.trim()) {
+      showToast("Please enter contact name.", "error");
+      return;
+    }
+
+    const newContactObj = {
+      id: `cnt_${Date.now()}`,
+      name: newContactName.trim(),
+      email: newContactEmail.trim(),
+      role: newContactRole.trim() || 'Customer Quality Manager',
+      phone: newContactPhone.trim()
+    };
+
+    const existingContacts = Array.isArray(addContactSupplier.contacts) ? addContactSupplier.contacts : [];
+    const updatedContacts = [...existingContacts, newContactObj];
+
+    const updatedSupplier = {
+      ...addContactSupplier,
+      contacts: updatedContacts,
+      contact_name: addContactSupplier.contact_name || newContactObj.name,
+      contact_email: addContactSupplier.contact_email || newContactObj.email
+    };
+
+    // Save to suppliers collection
+    saveEntity('suppliers', updatedSupplier);
+    setSuppliers(prev => prev.map(s => s.id === updatedSupplier.id ? updatedSupplier : s));
+
+    // Rule 10: Auto-create Client Portal User login
+    if (newContactEmail.trim()) {
+      const dbUsers = getEntities('users') || [];
+      const userExists = dbUsers.some(u => u.email === newContactEmail.trim() || u.username === newContactEmail.trim().split('@')[0]);
+      if (!userExists) {
+        const newClientUser = {
+          id: `user_cust_${Date.now()}`,
+          name: newContactName.trim(),
+          email: newContactEmail.trim(),
+          username: newContactEmail.trim().split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, ''),
+          role: 'customer',
+          title: newContactRole.trim() || 'Customer Quality Manager',
+          customer_id: addContactSupplier.id,
+          supplier_id: addContactSupplier.id,
+          phone: newContactPhone.trim(),
+          created_at: new Date().toISOString()
+        };
+        saveEntity('users', newClientUser);
+        setUsers(prev => [...prev, newClientUser]);
+      }
+    }
+
+    showToast(`Client Contact "${newContactName.trim()}" added to ${addContactSupplier.name}!`, "success");
+    setAddContactSupplier(null);
+    setNewContactName('');
+    setNewContactEmail('');
+    setNewContactRole('Customer Quality Manager');
+    setNewContactPhone('');
   };
 
   // Admin Hours Review Queue State & Action Handlers
@@ -408,7 +477,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   const [editForm, setEditForm] = useState({ date: '', qty: '', amount: '', notes: '', reason: '' });
   
   // CER Weekly Timesheet State (matching user's screenshot)
-  const [weeklyGridPerson, setWeeklyGridPerson] = useState('Boyd Colleen');
+  const [weeklyGridPerson, setWeeklyGridPerson] = useState('Clarence Kuiken');
   const [weeklyGridDate, setWeeklyGridDate] = useState('2026-07-09');
   const [weeklyGridSaveMessage, setWeeklyGridSaveMessage] = useState(false);
 
@@ -448,15 +517,15 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   const dynamicRepCards = useMemo(() => {
     let scopedProjects = projects || [];
 
-    // Deduplicate project cards by unique (supplier, plant, project_name, rep) key
-    const uniqueProjectsMap = new Map();
+    // Deduplicate project cards so each unique IDS Field Rep has ONE active deployment card
+    const uniqueRepMap = new Map();
     scopedProjects.forEach(p => {
-      const key = `${p.supplier_id || p.supplier_name}_${p.plant_id || p.plant_name}_${p.name || p.project_name}_${p.rep_id || p.rep_name}`;
-      if (!uniqueProjectsMap.has(key)) {
-        uniqueProjectsMap.set(key, p);
+      const repKey = p.rep_id || p.rep_name || 'rep_clarence';
+      if (!uniqueRepMap.has(repKey)) {
+        uniqueRepMap.set(repKey, p);
       }
     });
-    scopedProjects = Array.from(uniqueProjectsMap.values());
+    scopedProjects = Array.from(uniqueRepMap.values());
 
     if (userRole === 'customer') {
       scopedProjects = scopedProjects.filter(p => 
@@ -484,23 +553,75 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
         let repName = repObj.name || (p.rep_id ? p.rep_id.replace(/^rep_/, '').replace(/_/g, ' ') : 'Clarence Kuiken');
         repName = repName.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
 
+        let roleTitle = repObj.title || repObj.role || 'IDS Field Rep';
+        if (!roleTitle || roleTitle.toLowerCase().includes('inspector') || roleTitle.toLowerCase().includes('liaison') || roleTitle.toLowerCase().includes('engineer')) {
+          roleTitle = repName.includes('Clarence') ? 'IDS Senior Field Rep' : 'IDS Field Rep';
+        }
+
         const supplierName = resolveSupplierName(p.supplier_id || p.supplier_name, suppliers);
         const plantLocation = resolvePlantName(p.plant_id || p.plant_name, plants);
 
         const colors = ['bg-blue-600', 'bg-cyan-600', 'bg-indigo-600', 'bg-purple-600', 'bg-emerald-600'];
-        
+
+        // Dynamic Status & Inspected Pcs calculation based on shiftReports and reworkLogs
+        const matchedShiftReports = (shiftReports || []).filter(sr => {
+          if (!sr) return false;
+          const srRep = String(sr.rep_id || '').toLowerCase();
+          const pRep = String(p.rep_id || '').toLowerCase();
+          const uRep = String(repObj.id || '').toLowerCase();
+          const uName = String(repObj.name || '').toLowerCase();
+          return srRep === pRep || srRep === uRep || srRep === uName || pRep.includes(srRep) || srRep.includes(pRep);
+        });
+
+        const latestSubmittedReport = matchedShiftReports.slice().reverse().find(sr => 
+          sr.status === 'Sent' || sr.status === 'published' || sr.status === 'approved' || sr.status === 'completed'
+        ) || matchedShiftReports.slice().reverse().find(sr => sr.status === 'Draft');
+
+        const matchedReworkLogs = (reworkLogs || []).filter(rw => {
+          if (!rw) return false;
+          const rwRep = String(rw.rep_id || '').toLowerCase();
+          const pRep = String(p.rep_id || '').toLowerCase();
+          const uRep = String(repObj.id || '').toLowerCase();
+          return rwRep === pRep || rwRep === uRep || pRep.includes(rwRep);
+        });
+
+        const totalReworkQty = matchedReworkLogs.reduce((acc, curr) => acc + (Number(curr.qty) || 0), 0);
+
+        let dynamicStatus = 'ON-SITE / CLOCKED IN';
+        let dynamicStatusColor = 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500/40';
+        let dynamicDotColor = 'bg-emerald-400 animate-pulse';
+        let dynamicInspected = 'Active Inspecting';
+
+        if (latestSubmittedReport && (latestSubmittedReport.status === 'Sent' || latestSubmittedReport.status === 'published' || latestSubmittedReport.status === 'approved' || latestSubmittedReport.status === 'completed')) {
+          dynamicStatus = 'REPORT SUBMITTED';
+          dynamicStatusColor = 'bg-blue-500/20 text-blue-700 dark:text-blue-300 border-blue-500/40';
+          dynamicDotColor = 'bg-blue-500';
+          const pcsCount = Number(latestSubmittedReport.total_inspected_pcs || latestSubmittedReport.parts_inspected || latestSubmittedReport.inspected || totalReworkQty || 0);
+          dynamicInspected = `${pcsCount} Pcs (Report Sent)`;
+        } else if (latestSubmittedReport && latestSubmittedReport.status === 'Draft') {
+          dynamicStatus = 'DRAFT REPORT / INSPECTING';
+          dynamicStatusColor = 'bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/40';
+          dynamicDotColor = 'bg-amber-400 animate-pulse';
+          const pcsCount = Number(latestSubmittedReport.total_inspected_pcs || latestSubmittedReport.parts_inspected || totalReworkQty || 0);
+          dynamicInspected = pcsCount > 0 ? `${pcsCount} Pcs (Draft)` : 'Active Inspecting';
+        } else if (totalReworkQty > 0) {
+          dynamicInspected = `${totalReworkQty} Pcs Inspected`;
+        } else if (userRole !== 'customer' && userRole !== 'qre' && userRole !== 'rep' && p.billing_rate) {
+          dynamicInspected = `$${parseFloat(p.billing_rate).toFixed(2)}/hr`;
+        }
+
         return {
           name: repName,
-          role: repObj.title || repObj.role || 'Quality Resident Engineer',
-          status: 'ON-SITE / CLOCKED IN',
-          statusColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
-          dotColor: 'bg-emerald-400',
+          role: roleTitle,
+          status: dynamicStatus,
+          statusColor: dynamicStatusColor,
+          dotColor: dynamicDotColor,
           plant: supplierName,
           location: plantLocation,
           project: p.name || 'Quality Inspection Audit',
-          parts: p.part_number ? [p.part_number] : (p.plants_served ? [p.plants_served].flat() : ['PN AT-4472']),
-          shiftTime: 'Active Session',
-          inspected: (userRole === 'customer' || userRole === 'qre' || userRole === 'rep') ? 'Inspecting' : (p.billing_rate ? `$${parseFloat(p.billing_rate).toFixed(2)}/hr` : 'Inspecting'),
+          parts: p.part_number ? [p.part_number] : (p.plants_served ? [p.plants_served].flat() : (p.part_numbers ? [p.part_numbers].flat() : ['PN Pending'])),
+          shiftTime: latestSubmittedReport ? 'Shift Report Filed' : 'Active Session',
+          inspected: dynamicInspected,
           defects: 'Logged',
           avatarBg: colors[idx % colors.length]
         };
@@ -508,7 +629,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     }
 
     return [];
-  }, [projects, users, suppliers, plants]);
+  }, [projects, users, suppliers, plants, shiftReports, reworkLogs, userRole, currentUserRepId, currentUserCustomerId]);
   const [weeklyGridData, setWeeklyGridData] = useState({
     'Monday 7/6/2026': { location: 'Magna Brampton', miles: '45', billable_hours: '8.0', shift: 'A', non_billable_hours: '0', per_diem: '25.00', piece_count: '120', warehouse: '0', hilo: '0', gas: '0', trucking: '0', bonus: '0', other_expenses: '0', paid_by_cer: '0', description: 'Sorting automotive harness components', attached: false },
     'Tuesday 7/7/2026': { location: 'Magna Brampton', miles: '45', billable_hours: '8.0', shift: 'A', non_billable_hours: '0', per_diem: '25.00', piece_count: '145', warehouse: '0', hilo: '0', gas: '0', trucking: '0', bonus: '0', other_expenses: '0', paid_by_cer: '0', description: 'Visual inspection & containment', attached: false },
@@ -537,6 +658,17 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       console.error("Error loading persisted CER grid:", err);
     }
   }, [weeklyGridPerson]);
+
+  // Ensure weeklyGridPerson is synchronized with valid IDS Field Reps only
+  useEffect(() => {
+    const fieldReps = (users || []).filter(isFieldRep);
+    if (fieldReps.length > 0) {
+      const isValidRep = fieldReps.some(r => r.name === weeklyGridPerson);
+      if (!isValidRep) {
+        setWeeklyGridPerson(fieldReps[0].name);
+      }
+    }
+  }, [users, weeklyGridPerson]);
 
   // Dynamic Select State Initializers (never hardcode static defaults)
   const getInitialRepId = () => {
@@ -697,12 +829,43 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     return () => window.removeEventListener('ids_pulse_open_invoice', handleOpenInvoice);
   }, [dbUpdateTrigger]);
 
-  // Dynamic Rate Override Resolver - Rates Table is Single Source of Truth
+  // Central Currency Resolvers based on Customer Location (US -> USD, Canada -> CAD)
+  const getCustomerCurrency = (supplier_id, plant_id = '') => {
+    const supplier = (suppliers || []).find(s => s && (s.id === supplier_id || s.name === supplier_id));
+    const plant = (plants || []).find(p => p && (p.id === plant_id || p.name === plant_id));
+
+    if (supplier?.currency) return supplier.currency;
+    if (plant?.currency) return plant.currency;
+
+    const str = `${JSON.stringify(supplier || {})} ${JSON.stringify(plant || {})}`.toLowerCase();
+
+    // Check US indicators
+    if (
+      str.includes('us') || 
+      str.includes('usa') || 
+      str.includes('united states') || 
+      str.includes('michigan') || 
+      str.includes('detroit') || 
+      str.includes('ohio') || 
+      str.includes('texas') || 
+      str.includes('illinois') || 
+      str.includes('indiana')
+    ) {
+      return 'USD';
+    }
+
+    // Default for Canadian facilities (Oakville, Windsor, Brampton, Oshawa, ON) -> CAD
+    return 'CAD';
+  };
+
+  // Dynamic Rate Override Resolver - Location Aware
   const getRepSupplierRates = (rep_id, supplier_id, plant_id = '') => {
     const role = userRole || 'customer';
     const isAdmin = ['admin', 'owner', 'super_admin', 'accountant', 'lead', 'shahroz'].includes(role);
+    const defaultCurrency = getCustomerCurrency(supplier_id, plant_id);
+
     if (!isAdmin) {
-      return { billing_rate: 0.00, pay_rate: 0.00, currency: 'USD', is_configured: false };
+      return { billing_rate: 0.00, pay_rate: 0.00, currency: defaultCurrency, is_configured: false };
     }
 
     // 1. Read from rates table
@@ -724,7 +887,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       return {
         billing_rate: isNaN(bRate) ? 0.00 : bRate,
         pay_rate: isNaN(pRate) ? 0.00 : pRate,
-        currency: rateMatch.currency || 'CAD',
+        currency: rateMatch.currency || rateMatch.billing_currency || defaultCurrency,
         is_configured: true
       };
     }
@@ -745,21 +908,30 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       return {
         billing_rate: isNaN(bRate) ? 0.00 : bRate,
         pay_rate: isNaN(pRate) ? 0.00 : pRate,
-        currency: projMatch.currency || 'CAD',
+        currency: projMatch.currency || defaultCurrency,
         is_configured: true
       };
     }
 
     // No rate configured in rates or projects table
-    return { billing_rate: 0.00, pay_rate: 0.00, currency: 'CAD', is_configured: false };
+    return { billing_rate: 0.00, pay_rate: 0.00, currency: defaultCurrency, is_configured: false };
   };
 
   const getRepPayCurrency = (rep_id) => {
-    const rep = users.find(u => u && u.id === rep_id);
+    const rep = users.find(u => u && (u.id === rep_id || u.username === rep_id));
     if (rep && rep.pay_currency) {
       return rep.pay_currency;
     }
-    if (rep_id === 'rep_hugo' || rep_id === 'rep_nabil' || rep_id === 'rep_rogelio') {
+    if (rep) {
+      const repText = JSON.stringify(rep).toLowerCase();
+      if (repText.includes('us') || repText.includes('usa') || repText.includes('michigan') || repText.includes('detroit') || repText.includes('ohio')) {
+        return 'USD';
+      }
+      if (repText.includes('canada') || repText.includes('ontario') || repText.includes('oakville') || repText.includes('windsor')) {
+        return 'CAD';
+      }
+    }
+    if (rep_id === 'rep_hugo' || rep_id === 'rep_nabil' || rep_id === 'rep_rogelio' || rep_id === 'hugo' || rep_id === 'nabil' || rep_id === 'rogelio') {
       return 'USD';
     }
     return 'CAD';
@@ -780,12 +952,13 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
   // Look up project currency for expenses based on rep & supplier combination
   const getExpenseCurrency = (exp) => {
+    if (!exp) return 'CAD';
     const dbProjects = getEntities('projects') || [];
-    const projMatch = dbProjects.find(p => p && p.rep_id === exp.rep_id && p.client_id === exp.supplier_id);
-    if (projMatch) {
-      return projMatch.currency || 'USD';
+    const projMatch = dbProjects.find(p => p && (p.rep_id === exp.rep_id || p.rep_id === exp.user_id) && (p.client_id === exp.supplier_id || p.supplier_id === exp.supplier_id));
+    if (projMatch && projMatch.currency) {
+      return projMatch.currency;
     }
-    return 'USD';
+    return getCustomerCurrency(exp.supplier_id, exp.plant_id);
   };
 
   // Submit handers
@@ -2172,22 +2345,6 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     window.addEventListener('ids_pulse_db_update', refreshAllStateData);
     return () => window.removeEventListener('ids_pulse_db_update', refreshAllStateData);
   }, [dbUpdateTrigger]);
-
-  const handleReset = () => {
-    const confirmReset = window.confirm(
-      "100% Purge / Reset Database?\n\nThis will completely purge all non-essential company, project, rate, and shift data across local storage AND Supabase cloud database. Essential admin login accounts will be preserved. Do you want to proceed?"
-    );
-    if (!confirmReset) return;
-
-    resetDB();
-    setSelectedIncident(null);
-    setSelectedEmailLog(null);
-    setSelectedShiftReport(null);
-    showToast("Database completely purged clean! Reloading page...", "info");
-    setTimeout(() => {
-      window.location.reload();
-    }, 800);
-  };
 
   const handleUpdateStatus = (incidentId, newStatus) => {
     const dbIncidents = getEntities('incidents');
@@ -4679,12 +4836,19 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
               <button onClick={() => setSyncError(null)} className="ml-1 text-slate-400 hover:text-slate-600">✕</button>
             </div>
           )}
-          <div className="text-right hidden md:flex flex-col text-[11.5px] font-medium text-text-secondary pr-1.5 h-9 justify-center">
-            <span className="text-text-primary font-bold font-mono leading-none">
-              {currentTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })} EST
-            </span>
-            <span className="text-[12.5px] text-text-secondary mt-0.5 leading-none">Ontario Plant Time</span>
-          </div>
+          {(() => {
+            const currentSupp = (suppliers || []).find(s => s && s.id === currentUserCustomerId);
+            const locHint = currentSupp?.address || currentSupp?.city || (projects || [])[0]?.plant_location || '';
+            const timeInfo = getFormattedLocationTime(currentTime, locHint);
+            return (
+              <div className="text-right hidden md:flex flex-col text-[11.5px] font-medium text-text-secondary pr-1.5 h-9 justify-center">
+                <span className="text-text-primary font-bold font-mono leading-none">
+                  {timeInfo.timeString} {timeInfo.timeZoneAbbr}
+                </span>
+                <span className="text-[12.5px] text-text-secondary mt-0.5 leading-none">{timeInfo.locationLabel}</span>
+              </div>
+            );
+          })()}
 
           {/* User Profile Widget */}
           <div className="flex items-center gap-2 px-2.5 h-9 bg-surface-elevated border border-slate-100 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
@@ -4706,7 +4870,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
               } else if (userRole === 'rep') {
                 const repId = currentUserRepId || appMeta.rep_id;
                 const repObj = (users || []).find(u => u.id === repId || u.username === targetUsername);
-                fullName = repObj?.name || userMeta.full_name || 'Field Inspector';
+                fullName = repObj?.name || userMeta.full_name || 'IDS Field Rep';
                 title = repObj?.title || 'Quality Liaison Rep';
                 initials = fullName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) || 'QI';
               } else {
@@ -4734,7 +4898,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
       {/* DAILY CALENDAR DATE NAVIGATION & FLOOR HEALTH STATUS STRIP */}
       {!forceRoadmapOnly && (
-        <div className="flex flex-col mt-4 flex-shrink-0 bg-surface-elevated border border-border-subtle p-3 rounded-2xl gap-3" onClick={(e) => e.stopPropagation()}>
+        <div className="flex flex-col mt-4 flex-shrink-0 p-1 rounded-2xl gap-3" onClick={(e) => e.stopPropagation()}>
           
           {/* Top Row: Active selected date display and quick toggle options */}
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border-subtle pb-3">
@@ -4869,60 +5033,60 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
         </div>
       )}
 
-      {/* Metrics Cards row with Vibrant Dark Glassmorphic Design */}
+      {/* Metrics Cards row */}
       {!forceRoadmapOnly && (
         <div className="grid grid-cols-4 gap-3 mt-5 flex-shrink-0">
-          <div className="bg-gradient-to-br from-red-950/50 via-slate-900/90 to-slate-900/90 border border-red-500/30 hover:border-red-400/60 shadow-lg shadow-red-950/20 rounded-2xl p-3.5 flex flex-col justify-between h-28 transition-all group">
+          <div className="border border-rose-500/30 hover:border-rose-400/60 rounded-2xl p-3.5 flex flex-col justify-between h-28 transition-all group">
             <div>
-              <span className="text-[10.5px] font-extrabold text-red-300 uppercase tracking-wider block">Active Suspect Materials</span>
-              <span className="text-2xl font-extrabold text-red-400 mt-0.5 block leading-none font-mono">{totalOpenIncidents}</span>
+              <span className="text-[10.5px] font-extrabold text-rose-500 uppercase tracking-wider block">Active Defect Containments</span>
+              <span className="text-2xl font-extrabold text-text-primary mt-0.5 block leading-none font-mono">{totalOpenIncidents}</span>
             </div>
-            <span className="text-[10.5px] text-red-300 bg-red-950/80 border border-red-500/40 px-2 py-1 rounded-lg font-extrabold w-fit uppercase tracking-wider">
+            <span className="text-[10.5px] text-rose-500 border border-rose-500/30 px-2 py-1 rounded-lg font-extrabold w-fit uppercase tracking-wider">
               Awaiting Supplier Actions
             </span>
           </div>
           
-          <div className="bg-gradient-to-br from-emerald-950/50 via-slate-900/90 to-slate-900/90 border border-emerald-500/30 hover:border-emerald-400/60 shadow-lg shadow-emerald-950/20 rounded-2xl p-3.5 flex flex-col justify-between h-28 transition-all group">
+          <div className="border border-emerald-500/30 hover:border-emerald-400/60 rounded-2xl p-3.5 flex flex-col justify-between h-28 transition-all group">
             <div>
-              <span className="text-[10.5px] font-extrabold text-emerald-300 uppercase tracking-wider block">Parts Reworked</span>
-              <span className="text-2xl font-extrabold text-emerald-400 mt-0.5 block leading-none font-mono">{totalReworkPcs} pcs</span>
+              <span className="text-[10.5px] font-extrabold text-emerald-600 uppercase tracking-wider block">Parts Reworked</span>
+              <span className="text-2xl font-extrabold text-text-primary mt-0.5 block leading-none font-mono">{totalReworkPcs} pcs</span>
             </div>
-            <span className="text-[10.5px] text-emerald-300 bg-emerald-950/80 border border-emerald-500/40 px-2 py-1 rounded-lg font-extrabold w-fit uppercase tracking-wider">
+            <span className="text-[10.5px] text-emerald-600 border border-emerald-500/30 px-2 py-1 rounded-lg font-extrabold w-fit uppercase tracking-wider">
               Rework Logs Synced
             </span>
           </div>
           
-          <div className="bg-gradient-to-br from-cyan-950/50 via-slate-900/90 to-slate-900/90 border border-cyan-500/30 hover:border-cyan-400/60 shadow-lg shadow-cyan-950/20 rounded-2xl p-3.5 flex flex-col justify-between h-28 transition-all group">
+          <div className="border border-cyan-500/30 hover:border-cyan-400/60 rounded-2xl p-3.5 flex flex-col justify-between h-28 transition-all group">
             <div>
-              <span className="text-[10.5px] font-extrabold text-cyan-300 uppercase tracking-wider block">Active Rep Dispatches</span>
-              <span className="text-2xl font-extrabold text-cyan-400 mt-0.5 block leading-none font-mono">{activeRepsCount} reps</span>
+              <span className="text-[10.5px] font-extrabold text-cyan-600 uppercase tracking-wider block">Active Rep Dispatches</span>
+              <span className="text-2xl font-extrabold text-text-primary mt-0.5 block leading-none font-mono">{activeRepsCount} reps</span>
             </div>
-            <span className="text-[10.5px] text-cyan-300 bg-cyan-950/80 border border-cyan-500/40 px-2 py-1 rounded-lg font-extrabold w-fit uppercase tracking-wider">
+            <span className="text-[10.5px] text-cyan-600 border border-cyan-500/30 px-2 py-1 rounded-lg font-extrabold w-fit uppercase tracking-wider">
               Auditing Plant Floors
             </span>
           </div>
           
           {['admin', 'owner', 'accountant', 'lead', 'shahroz', 'super_admin']?.includes(userRole) ? (
-            <div className="bg-gradient-to-br from-purple-950/50 via-slate-900/90 to-slate-900/90 border border-purple-500/30 hover:border-purple-400/60 shadow-lg shadow-purple-950/20 rounded-2xl p-3.5 flex flex-col justify-between h-28 transition-all group">
+            <div className="border border-purple-500/30 hover:border-purple-400/60 rounded-2xl p-3.5 flex flex-col justify-between h-28 transition-all group">
               <div>
-                <span className="text-[10.5px] font-extrabold text-purple-300 uppercase tracking-wider block">Supplier Invoice Billable</span>
-                <span className="text-2xl font-extrabold text-purple-400 mt-0.5 block leading-none font-mono">
+                <span className="text-[10.5px] font-extrabold text-purple-600 uppercase tracking-wider block">Supplier Invoice Billable</span>
+                <span className="text-2xl font-extrabold text-text-primary mt-0.5 block leading-none font-mono">
                   {selectedCurrencyFilter === 'CAD' ? `C$ ${cadInvoicedTotal.toFixed(2)}` : 
                    selectedCurrencyFilter === 'USD' ? `US$ ${usdInvoicedTotal.toFixed(2)}` : 
                    `C$ ${cadInvoicedTotal.toFixed(2)} / US$ ${usdInvoicedTotal.toFixed(2)}`}
                 </span>
               </div>
-              <span className="text-[10.5px] text-purple-300 bg-purple-950/80 border border-purple-500/40 px-2 py-1 rounded-lg font-extrabold w-fit uppercase tracking-wider">
+              <span className="text-[10.5px] text-purple-600 border border-purple-500/30 px-2 py-1 rounded-lg font-extrabold w-fit uppercase tracking-wider">
                 Rate: $0.73/km standard
               </span>
             </div>
           ) : (
-            <div className="bg-gradient-to-br from-purple-950/50 via-slate-900/90 to-slate-900/90 border border-purple-500/30 hover:border-purple-400/60 shadow-lg shadow-purple-950/20 rounded-2xl p-3.5 flex flex-col justify-between h-28 transition-all group">
+            <div className="border border-purple-500/30 hover:border-purple-400/60 rounded-2xl p-3.5 flex flex-col justify-between h-28 transition-all group">
               <div>
-                <span className="text-[10.5px] font-extrabold text-purple-300 uppercase tracking-wider block">Total Audited Hours</span>
-                <span className="text-2xl font-extrabold text-purple-400 mt-0.5 block leading-none font-mono">{totalHours.toFixed(1)} hrs</span>
+                <span className="text-[10.5px] font-extrabold text-purple-600 uppercase tracking-wider block">Total Audited Hours</span>
+                <span className="text-2xl font-extrabold text-text-primary mt-0.5 block leading-none font-mono">{totalHours.toFixed(1)} hrs</span>
               </div>
-              <span className="text-[10.5px] text-purple-300 bg-purple-950/80 border border-purple-500/40 px-2 py-1 rounded-lg font-extrabold w-fit uppercase tracking-wider">
+              <span className="text-[10.5px] text-purple-600 border border-purple-500/30 px-2 py-1 rounded-lg font-extrabold w-fit uppercase tracking-wider">
                 Audited Floor Hours Logged
               </span>
             </div>
@@ -4941,7 +5105,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
             {userRole === 'qre' && (
               <div className="flex flex-col gap-3">
                 {/* AI INTELLIGENCE */}
-                <div className="p-2.5 rounded-2xl bg-slate-900/50 border border-slate-800/70 shadow-sm flex flex-col gap-1.5">
+                <div className="flex flex-col gap-1.5 mb-1">
                   <div className="text-[11px] font-extrabold text-[#3B82F6] uppercase tracking-wider px-2 py-0.5 flex items-center gap-2">
                     <Sparkles className="w-3.5 h-3.5 text-[#3B82F6]" />
                     <span>AI Assistant</span>
@@ -4963,7 +5127,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 </div>
 
                 {/* QUALITY & FIELD OPERATIONS */}
-                <div className="p-2.5 rounded-2xl bg-slate-900/50 border border-slate-800/70 shadow-sm flex flex-col gap-1.5">
+                <div className="flex flex-col gap-1.5 mb-1">
                   <div className="text-[11px] font-extrabold text-sky-400 uppercase tracking-wider px-2 py-0.5 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Activity className="w-3.5 h-3.5 text-sky-400 animate-pulse" />
@@ -5064,7 +5228,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 </div>
 
                 {/* MY WORK & LOGGING */}
-                <div className="p-2.5 rounded-2xl bg-slate-900/50 border border-slate-800/70 shadow-sm flex flex-col gap-1.5">
+                <div className="flex flex-col gap-1.5 mb-1">
                   <div className="text-[11px] font-extrabold text-emerald-400 uppercase tracking-wider px-2 py-0.5 flex items-center gap-2">
                     <Clock className="w-3.5 h-3.5 text-emerald-400" />
                     <span>My Work & Logging</span>
@@ -5158,7 +5322,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
               <div className="flex flex-col gap-3">
                 
                 {/* GROUP 1: AI INTELLIGENCE */}
-                <div className="p-2.5 rounded-2xl bg-slate-900/50 border border-slate-800/70 shadow-sm flex flex-col gap-1.5">
+                <div className="flex flex-col gap-1.5 mb-1">
                   <div 
                     onClick={() => toggleGroup('ai')}
                     className="text-[11px] font-extrabold text-[#3B82F6] uppercase tracking-wider px-2 py-1 flex items-center justify-between cursor-pointer select-none hover:text-blue-300 transition-colors"
@@ -5194,7 +5358,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 </div>
 
                 {/* GROUP 2: QUALITY & OPERATIONS */}
-                <div className="p-2.5 rounded-2xl bg-slate-900/50 border border-slate-800/70 shadow-sm flex flex-col gap-1.5">
+                <div className="flex flex-col gap-1.5 mb-1">
                     <div 
                       onClick={() => toggleGroup('quality')}
                       className="text-[11px] font-extrabold text-sky-400 uppercase tracking-wider px-2 py-1 flex items-center justify-between cursor-pointer select-none hover:text-sky-300 transition-colors"
@@ -5324,7 +5488,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   </div>
 
                 {/* GROUP 3: FINANCIALS & AUDIT */}
-                <div className="p-2.5 rounded-2xl bg-slate-900/50 border border-slate-800/70 shadow-sm flex flex-col gap-1.5">
+                <div className="flex flex-col gap-1.5 mb-1">
                   <div 
                     onClick={() => toggleGroup('financials')}
                     className="text-[11px] font-extrabold text-emerald-400 uppercase tracking-wider px-2 py-1 flex items-center justify-between cursor-pointer select-none hover:text-emerald-300 transition-colors"
@@ -5360,7 +5524,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 </div>
 
                 {/* GROUP 4: DIRECTORIES & COMMS */}
-                <div className="p-2.5 rounded-2xl bg-slate-900/50 border border-slate-800/70 shadow-sm flex flex-col gap-1.5">
+                <div className="flex flex-col gap-1.5 mb-1">
                   <div 
                     onClick={() => toggleGroup('comms')}
                     className="text-[11px] font-extrabold text-purple-400 uppercase tracking-wider px-2 py-1 flex items-center justify-between cursor-pointer select-none hover:text-purple-300 transition-colors"
@@ -5417,7 +5581,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 </div>
 
                 {/* GROUP 5: SYSTEM & ADMIN */}
-                <div className="p-2.5 rounded-2xl bg-slate-900/50 border border-slate-800/70 shadow-sm flex flex-col gap-1.5">
+                <div className="flex flex-col gap-1.5 mb-1">
                   <div 
                     onClick={() => toggleGroup('system')}
                     className="text-[11px] font-extrabold text-cyan-400 uppercase tracking-wider px-2 py-1 flex items-center justify-between cursor-pointer select-none hover:text-cyan-300 transition-colors"
@@ -5478,18 +5642,6 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         {activeTab === 'users' && <div className="w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_6px_#22d3ee]"></div>}
                       </button>
 
-                      <button 
-                        onClick={handleReset}
-                        className="w-full h-11 px-3.5 rounded-xl font-bold text-[14.5px] transition-all cursor-pointer flex items-center justify-between border bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 hover:text-rose-100 border-rose-500/40 shadow-sm"
-                        title="Purge all non-essential test data from local storage and Supabase cloud database"
-                      >
-                        <div className="flex items-center gap-2.5">
-                          <Trash2 className="w-4.5 h-4.5 text-rose-400" />
-                          <span>Clean Database (Purge)</span>
-                        </div>
-                        <span className="text-[10px] bg-rose-500/20 text-rose-300 px-1.5 py-0.5 rounded font-mono font-bold">RESET</span>
-                      </button>
-
                       {isAdminOrOwner && (
                         <button 
                           onClick={() => setActiveTab('system-logs')}
@@ -5515,44 +5667,44 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
           </div>
         )}
 
-        <div className="flex-1 bg-surface-elevated border border-border-subtle rounded-2xl p-6 sm:p-8 flex flex-col min-h-0">
+        <div className="flex-1 rounded-2xl p-6 sm:p-8 flex flex-col min-h-0">
           {/* TAB 0.5: LIVE REP OPERATIONS & PROJECT COMMAND CENTER */}
           {activeTab === 'command-center' && userRole !== 'customer' && (
             <div className="flex-1 flex flex-col gap-6 min-h-0 text-left overflow-y-auto pr-1">
               
               {/* TOP EXECUTIVE BANNER */}
-              <div className="bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 border border-blue-500/30 rounded-2xl p-6 shadow-xl relative overflow-hidden flex-shrink-0">
+              <div className="border border-blue-500/30 rounded-2xl p-6 relative overflow-hidden flex-shrink-0">
                 <div className="absolute right-0 top-0 translate-x-4 -translate-y-4 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 relative z-10">
                   <div>
                     <div className="flex items-center gap-2 mb-2">
-                      <span className="bg-blue-500/20 text-blue-300 border border-blue-400/30 text-[11px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1.5">
-                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                      <span className="bg-blue-500/20 text-blue-600 border border-blue-400/30 text-[11px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
                         Live Dispatch Command
                       </span>
-                      <span className="text-slate-400 text-xs font-semibold">Integrity Driven Solutions Inc.</span>
+                      <span className="text-text-secondary text-xs font-semibold">Integrity Driven Solutions Inc.</span>
                     </div>
-                    <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+                    <h2 className="text-2xl sm:text-3xl font-black text-text-primary tracking-tight">
                       Live Rep Operations & Project Command Center
                     </h2>
-                    <p className="text-slate-300 text-sm mt-1 max-w-3xl">
+                    <p className="text-text-secondary text-sm mt-1 max-w-3xl font-medium">
                       Real-time single-pane operational transparency. Track active Rep deployments, plant locations, part numbers affected, shift hours, and quality output in one live workspace.
                     </p>
                   </div>
 
                   {/* Top Summary Badges */}
                   <div className="flex items-center gap-3 flex-wrap">
-                    <div className="bg-slate-950/60 border border-slate-800 px-4 py-2.5 rounded-xl flex flex-col items-center">
-                      <span className="text-[10.5px] font-bold text-slate-400 uppercase tracking-wider">Active Field Reps</span>
-                      <span className="text-xl font-black text-emerald-400 mt-0.5">{dynamicRepCards.length} Active</span>
+                    <div className="border border-slate-300 dark:border-slate-800 px-4 py-2.5 rounded-xl flex flex-col items-center">
+                      <span className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Active Field Reps</span>
+                      <span className="text-xl font-black text-emerald-600 mt-0.5">{dynamicRepCards.length} Active</span>
                     </div>
-                    <div className="bg-slate-950/60 border border-slate-800 px-4 py-2.5 rounded-xl flex flex-col items-center">
-                      <span className="text-[10.5px] font-bold text-slate-400 uppercase tracking-wider">Today's Inspection</span>
-                      <span className="text-xl font-black text-cyan-400 mt-0.5">{totalInspectedPcsToday}</span>
+                    <div className="border border-slate-300 dark:border-slate-800 px-4 py-2.5 rounded-xl flex flex-col items-center">
+                      <span className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Today's Inspection</span>
+                      <span className="text-xl font-black text-cyan-600 mt-0.5">{totalInspectedPcsToday}</span>
                     </div>
-                    <div className="bg-slate-950/60 border border-slate-800 px-4 py-2.5 rounded-xl flex flex-col items-center">
-                      <span className="text-[10.5px] font-bold text-slate-400 uppercase tracking-wider">Quality Pass Rate</span>
-                      <span className="text-xl font-black text-emerald-300 mt-0.5">{qualityPassRateDynamic}</span>
+                    <div className="border border-slate-300 dark:border-slate-800 px-4 py-2.5 rounded-xl flex flex-col items-center">
+                      <span className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Quality Pass Rate</span>
+                      <span className="text-xl font-black text-emerald-600 mt-0.5">{qualityPassRateDynamic}</span>
                     </div>
                   </div>
                 </div>
@@ -5567,17 +5719,17 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                       setActiveTab('time-tracking');
                     });
                   }}
-                  className="bg-gradient-to-br from-blue-950/90 via-slate-900 to-slate-950 border-2 border-blue-500/60 hover:border-blue-400 p-5 rounded-2xl flex items-center gap-4 cursor-pointer transition-all hover:scale-[1.02] shadow-xl shadow-blue-500/20 group text-left"
+                  className="border-2 border-blue-500/60 hover:border-blue-500 p-5 rounded-2xl flex items-center gap-4 cursor-pointer transition-all hover:scale-[1.02] group text-left"
                 >
                   <div className="w-14 h-14 rounded-2xl bg-blue-600 flex items-center justify-center text-white shadow-md flex-shrink-0 group-hover:scale-110 transition-transform">
                     <Clock className="w-7 h-7 text-white" />
                   </div>
                   <div className="flex flex-col text-left">
-                    <span className="text-xs font-black text-blue-400 uppercase tracking-widest">
+                    <span className="text-xs font-black text-blue-600 uppercase tracking-widest">
                       {['admin', 'owner', 'lead', 'shahroz'].includes(userRole) ? 'Step 1: Admin Back-Office Backup' : 'Step 1: Daily Hours'}
                     </span>
-                    <span className="text-base sm:text-lg font-black text-white mt-0.5 leading-tight">Log Shift & Hours</span>
-                    <span className="text-xs text-slate-300 mt-1 font-medium">
+                    <span className="text-base sm:text-lg font-black text-text-primary mt-0.5 leading-tight">Log Shift & Hours</span>
+                    <span className="text-xs text-text-secondary mt-1 font-medium">
                       {['admin', 'owner', 'lead', 'shahroz'].includes(userRole) ? 'Manual rep shift entry if mobile fails' : 'Timesheet, plant location & breaks'}
                     </span>
                   </div>
@@ -5590,17 +5742,17 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                       setActiveTab('incidents');
                     });
                   }}
-                  className="bg-gradient-to-br from-red-950/90 via-slate-900 to-slate-950 border-2 border-red-500/60 hover:border-red-400 p-5 rounded-2xl flex items-center gap-4 cursor-pointer transition-all hover:scale-[1.02] shadow-xl shadow-red-500/20 group text-left"
+                  className="border-2 border-red-500/60 hover:border-red-500 p-5 rounded-2xl flex items-center gap-4 cursor-pointer transition-all hover:scale-[1.02] group text-left"
                 >
                   <div className="w-14 h-14 rounded-2xl bg-red-600 flex items-center justify-center text-white shadow-md flex-shrink-0 group-hover:scale-110 transition-transform">
                     <AlertTriangle className="w-7 h-7 text-white" />
                   </div>
                   <div className="flex flex-col text-left">
-                    <span className="text-xs font-black text-red-400 uppercase tracking-widest">
+                    <span className="text-xs font-black text-rose-600 uppercase tracking-widest">
                       {['admin', 'owner', 'lead', 'shahroz'].includes(userRole) ? 'Step 2: Admin Back-Office Override' : 'Step 2: Quality Hold'}
                     </span>
-                    <span className="text-base sm:text-lg font-black text-white mt-0.5 leading-tight">Report Defect Hold</span>
-                    <span className="text-xs text-slate-300 mt-1 font-medium">
+                    <span className="text-base sm:text-lg font-black text-text-primary mt-0.5 leading-tight">Report Defect Hold</span>
+                    <span className="text-xs text-text-secondary mt-1 font-medium">
                       {['admin', 'owner', 'lead', 'shahroz'].includes(userRole) ? 'Log defect photo on rep behalf' : 'Log defect photos & Part Number'}
                     </span>
                   </div>
@@ -5609,17 +5761,17 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 <button
                   type="button"
                   onClick={() => handleDownloadDailySummaryPdf()}
-                  className="bg-gradient-to-br from-emerald-950/90 via-slate-900 to-slate-950 border-2 border-emerald-500/60 hover:border-emerald-400 p-5 rounded-2xl flex items-center gap-4 cursor-pointer transition-all hover:scale-[1.02] shadow-xl shadow-emerald-500/20 group text-left"
+                  className="border-2 border-emerald-500/60 hover:border-emerald-500 p-5 rounded-2xl flex items-center gap-4 cursor-pointer transition-all hover:scale-[1.02] group text-left"
                 >
                   <div className="w-14 h-14 rounded-2xl bg-emerald-600 flex items-center justify-center text-white shadow-md flex-shrink-0 group-hover:scale-110 transition-transform">
                     <FileText className="w-7 h-7 text-white" />
                   </div>
                   <div className="flex flex-col text-left">
-                    <span className="text-xs font-black text-emerald-400 uppercase tracking-widest">
+                    <span className="text-xs font-black text-emerald-600 uppercase tracking-widest">
                       {['admin', 'owner', 'lead', 'shahroz'].includes(userRole) ? 'Step 3: Official Client Export' : 'Step 3: Daily Summary'}
                     </span>
-                    <span className="text-base sm:text-lg font-black text-white mt-0.5 leading-tight">Download Daily PDF</span>
-                    <span className="text-xs text-slate-300 mt-1 font-medium">
+                    <span className="text-base sm:text-lg font-black text-text-primary mt-0.5 leading-tight">Download Daily PDF</span>
+                    <span className="text-xs text-text-secondary mt-1 font-medium">
                       {['admin', 'owner', 'lead', 'shahroz'].includes(userRole) ? 'Export official client PDF summary' : 'Export official quality report'}
                     </span>
                   </div>
@@ -5630,50 +5782,50 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
               <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
                 
                 {/* Shift Progress & Output Metrics (Span 2) */}
-                <div className="xl:col-span-2 bg-slate-900/80 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between shadow-lg">
-                  <div className="flex items-center justify-between mb-4 border-b border-slate-800 pb-3">
-                    <h3 className="text-base font-extrabold text-white tracking-wide flex items-center gap-2">
-                      <Activity className="w-5 h-5 text-emerald-400" />
+                <div className="xl:col-span-2 border border-slate-300 dark:border-slate-800 rounded-2xl p-5 flex flex-col justify-between">
+                  <div className="flex items-center justify-between mb-4 border-b border-slate-300 dark:border-slate-800 pb-3">
+                    <h3 className="text-base font-extrabold text-text-primary tracking-wide flex items-center gap-2">
+                      <Activity className="w-5 h-5 text-emerald-600" />
                       <span>Shift Output & Operations Metrics</span>
                     </h3>
-                    <span className="text-xs bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded font-bold uppercase">Live Progress</span>
+                    <span className="text-xs bg-emerald-500/20 text-emerald-600 border border-emerald-500/30 px-2 py-0.5 rounded font-bold uppercase">Live Progress</span>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div className="bg-slate-950/80 border border-slate-800 p-4 rounded-xl flex flex-col justify-between">
-                      <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Active Hours Today</span>
-                      <div className="text-3xl font-black text-blue-400 mt-2">{totalHours.toFixed(1)} hrs</div>
-                      <span className="text-[11px] text-slate-400 mt-1">Across {activeRepsCount} deployed Reps</span>
+                    <div className="border border-slate-300 dark:border-slate-800 p-4 rounded-xl flex flex-col justify-between">
+                      <span className="text-xs font-bold text-text-secondary uppercase tracking-wider">Total Active Hours Today</span>
+                      <div className="text-3xl font-black text-blue-600 mt-2">{totalHours.toFixed(1)} hrs</div>
+                      <span className="text-[11px] text-text-secondary mt-1">Across {activeRepsCount} deployed Reps</span>
                     </div>
 
-                    <div className="bg-slate-950/80 border border-slate-800 p-4 rounded-xl flex flex-col justify-between">
-                      <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Pieces Inspected</span>
-                      <div className="text-3xl font-black text-emerald-400 mt-2">{totalInspectedPcsToday}</div>
-                      <span className="text-[11px] text-emerald-400/80 font-semibold mt-1">✓ On target for shift quota</span>
+                    <div className="border border-slate-300 dark:border-slate-800 p-4 rounded-xl flex flex-col justify-between">
+                      <span className="text-xs font-bold text-text-secondary uppercase tracking-wider">Pieces Inspected</span>
+                      <div className="text-3xl font-black text-emerald-600 mt-2">{totalInspectedPcsToday}</div>
+                      <span className="text-[11px] text-emerald-600 font-semibold mt-1">✓ On target for shift quota</span>
                     </div>
 
-                    <div className="bg-slate-950/80 border border-slate-800 p-4 rounded-xl flex flex-col justify-between">
-                      <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Quality Defect Containments</span>
-                      <div className="text-3xl font-black text-amber-400 mt-2">
+                    <div className="border border-slate-300 dark:border-slate-800 p-4 rounded-xl flex flex-col justify-between">
+                      <span className="text-xs font-bold text-text-secondary uppercase tracking-wider">Quality Defect Containments</span>
+                      <div className="text-3xl font-black text-amber-600 mt-2">
                         {(incidents || []).filter(i => showAllDates || i.created_at?.startsWith(selectedDate)).length} logged
                       </div>
-                      <span className="text-[11px] text-amber-300 font-semibold mt-1">⚠ 100% contained on-site</span>
+                      <span className="text-[11px] text-amber-600 font-semibold mt-1">⚠ 100% contained on-site</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Live Quality Alerts & Containment Stream */}
-                <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 shadow-lg flex flex-col">
-                  <div className="flex items-center justify-between mb-4 border-b border-slate-800 pb-3">
-                    <h3 className="text-base font-extrabold text-white tracking-wide flex items-center gap-2">
-                      <Shield className="w-5 h-5 text-amber-400" />
+                <div className="border border-slate-300 dark:border-slate-800 rounded-2xl p-5 flex flex-col bg-surface-elevated">
+                  <div className="flex items-center justify-between mb-4 border-b border-slate-300 dark:border-slate-800 pb-3">
+                    <h3 className="text-base font-extrabold text-text-primary tracking-wide flex items-center gap-2">
+                      <Shield className="w-5 h-5 text-amber-600" />
                       <span>Active Quality Containment Alerts</span>
                     </h3>
                   </div>
 
                   <div className="space-y-3 flex-1 overflow-y-auto">
                     {(incidents || []).length === 0 ? (
-                      <div className="p-4 rounded-xl bg-slate-950/40 border border-slate-800 text-center text-slate-400 italic text-xs">
+                      <div className="p-4 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-300 dark:border-slate-800 text-center text-slate-800 dark:text-slate-200 font-bold italic text-xs">
                         No active quality containment holds reported today.
                       </div>
                     ) : (
@@ -5696,21 +5848,21 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
               {/* SECTION 1 & 2: LIVE REP DEPLOYMENT CARDS & PART TRACEABILITY */}
               <div>
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-base font-extrabold text-white tracking-wide flex items-center gap-2">
-                    <Activity className="w-5 h-5 text-blue-400" />
+                  <h3 className="text-base font-extrabold text-text-primary tracking-wide flex items-center gap-2">
+                    <Activity className="w-5 h-5 text-blue-600" />
                     <span>Live Rep Deployment & Active Project Cards</span>
                   </h3>
-                  <span className="text-xs font-semibold text-slate-400">{dynamicRepCards.length} Active Operatives Synchronized</span>
+                  <span className="text-xs font-semibold text-text-secondary">{dynamicRepCards.length} Active Operatives Synchronized</span>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
                   {dynamicRepCards.length === 0 ? (
-                    <div className="col-span-full bg-slate-900/60 border border-slate-800 p-8 rounded-2xl text-center text-slate-400 italic text-sm">
+                    <div className="col-span-full border border-slate-300 dark:border-slate-800 p-8 rounded-2xl text-center bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 font-extrabold italic text-sm">
                       No active field rep operations deployed. Onboard a field representative or map a client project to view real-time live command metrics.
                     </div>
                   ) : (
                     dynamicRepCards.map((rep, idx) => (
-                    <div key={idx} className="bg-slate-900/80 border border-slate-800 hover:border-blue-500/50 rounded-2xl p-4 flex flex-col justify-between gap-3 shadow-lg hover:shadow-blue-500/10 transition-all group">
+                    <div key={idx} className="border border-slate-800 hover:border-blue-500/50 rounded-2xl p-4 flex flex-col justify-between gap-3 transition-all group">
                       
                       {/* Rep Header */}
                       <div>
@@ -5720,8 +5872,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                               {rep.name.split(' ').map(n=>n[0]).join('')}
                             </div>
                             <div>
-                              <h4 className="text-sm font-extrabold text-white group-hover:text-blue-300 transition-colors leading-tight">{rep.name}</h4>
-                              <span className="text-[11px] text-slate-400 font-semibold">{rep.role}</span>
+                              <h4 className="text-sm font-extrabold text-text-primary group-hover:text-blue-600 transition-colors leading-tight">{rep.name}</h4>
+                              <span className="text-[11px] text-text-secondary font-semibold">{rep.role}</span>
                             </div>
                           </div>
                         </div>
@@ -5733,23 +5885,23 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         </div>
 
                         {/* Plant & Location */}
-                        <div className="bg-slate-950/70 border border-slate-800/80 rounded-xl p-2.5 mb-3">
-                          <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block mb-0.5">Assigned Plant & Location</span>
-                          <strong className="text-xs font-bold text-slate-200 block">{rep.plant}</strong>
-                          <span className="text-[11px] text-blue-400 font-semibold block mt-0.5">{rep.location}</span>
+                        <div className="border border-slate-300 dark:border-slate-800 rounded-xl p-2.5 mb-3">
+                          <span className="text-[10px] font-extrabold text-text-secondary uppercase tracking-wider block mb-0.5">Assigned Plant & Location</span>
+                          <strong className="text-xs font-bold text-text-primary block">{rep.plant}</strong>
+                          <span className="text-[11px] text-blue-600 font-semibold block mt-0.5">{rep.location}</span>
                         </div>
 
                         {/* Active Project & Parts */}
                         <div className="space-y-2">
                           <div>
-                            <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block mb-0.5">Active Project</span>
-                            <span className="text-xs font-semibold text-slate-300">{rep.project}</span>
+                            <span className="text-[10px] font-extrabold text-text-secondary uppercase tracking-wider block mb-0.5">Active Project</span>
+                            <span className="text-xs font-semibold text-text-primary">{rep.project}</span>
                           </div>
                           <div>
-                            <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block mb-1">Parts Traceability</span>
+                            <span className="text-[10px] font-extrabold text-text-secondary uppercase tracking-wider block mb-1">Parts Traceability</span>
                             <div className="flex gap-1.5 flex-wrap">
                               {rep.parts.map((p, pIdx) => (
-                                <span key={pIdx} className="bg-blue-950/80 text-blue-300 border border-blue-500/40 text-[10.5px] font-black px-2 py-0.5 rounded-md">
+                                <span key={pIdx} className="bg-blue-50 text-blue-700 border border-blue-300 text-[10.5px] font-black px-2 py-0.5 rounded-md">
                                   {p}
                                 </span>
                               ))}
@@ -5759,17 +5911,17 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                       </div>
 
                       {/* Metrics & Quick Action */}
-                      <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between">
-                        <div className="text-[11px] text-slate-300 space-y-0.5">
-                          <div>⏱️ <strong>{rep.shiftTime}</strong></div>
-                          <div>📊 Inspected: <strong className="text-emerald-400">{rep.inspected}</strong></div>
+                      <div className="pt-3 border-t border-slate-300 dark:border-slate-800/80 flex items-center justify-between">
+                        <div className="text-[11px] text-text-secondary space-y-0.5">
+                          <div className="text-text-primary font-bold">⏱️ <strong>{rep.shiftTime}</strong></div>
+                          <div>📊 Inspected: <strong className="text-emerald-700 font-extrabold">{rep.inspected}</strong></div>
                         </div>
 
                         <div className="flex items-center gap-2">
                           <button
                             type="button"
                             onClick={() => setSelectedDispatchRep(rep)}
-                            className="bg-blue-600/20 hover:bg-blue-600 border border-blue-500/40 hover:border-blue-500 text-blue-300 hover:text-white font-bold text-xs px-2.5 py-1.5 rounded-xl transition-all cursor-pointer shadow-sm"
+                            className="bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs px-3 py-1.5 rounded-xl transition-all cursor-pointer shadow-md"
                           >
                             Quick Dispatch
                           </button>
@@ -5780,7 +5932,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                 setHandoverTargetRep(rep);
                                 setShowHandoverModal(true);
                               }}
-                              className="bg-amber-600/20 hover:bg-amber-600 border border-amber-500/40 hover:border-amber-500 text-amber-300 hover:text-white font-bold text-xs px-2 py-1.5 rounded-xl transition-all cursor-pointer shadow-sm flex items-center gap-1"
+                              className="bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-xs px-3 py-1.5 rounded-xl transition-all cursor-pointer shadow-md flex items-center gap-1"
                               title="Transfer shift to Senior Inspector without loss of hours"
                             >
                               <span>⚡ Handover</span>
@@ -5795,25 +5947,25 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
               </div>
 
               {/* SECTION 2.5: LIVE PLANT OPERATIONS & PO BUDGET TELEMETRY */}
-              <div className="bg-slate-900/90 border border-cyan-500/40 rounded-2xl p-5 shadow-2xl relative overflow-hidden my-2">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 border-b border-slate-800 pb-3">
+              <div className="border border-cyan-500/40 rounded-2xl p-5 relative overflow-hidden my-2">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 border-b border-slate-300 dark:border-slate-800 pb-3">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 rounded-xl">
-                      <FolderKanban className="w-5 h-5 text-cyan-400" />
+                    <div className="p-2 bg-cyan-500/20 text-cyan-600 border border-cyan-500/30 rounded-xl">
+                      <FolderKanban className="w-5 h-5 text-cyan-600" />
                     </div>
                     <div>
-                      <h3 className="text-base font-extrabold text-white tracking-wide flex items-center gap-2">
+                      <h3 className="text-base font-extrabold text-text-primary tracking-wide flex items-center gap-2">
                         <span>Live Plant Operations & PO Budget Telemetry</span>
-                        <span className="text-[10px] bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 px-2 py-0.5 rounded-full font-black uppercase tracking-wider">Live Audit</span>
+                        <span className="text-[10px] bg-cyan-500/20 text-cyan-600 border border-cyan-500/30 px-2 py-0.5 rounded-full font-black uppercase tracking-wider">Live Audit</span>
                       </h3>
-                      <span className="text-xs text-slate-400 font-medium">Real-Time Client Purchase Order (PO) Budget Caps, Deployed Operatives & Plant Locations</span>
+                      <span className="text-xs text-text-secondary font-medium">Real-Time Client Purchase Order (PO) Budget Caps, Deployed Operatives & Plant Locations</span>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
                       onClick={() => setShowQuickAddClient(true)}
-                      className="bg-cyan-600/20 hover:bg-cyan-600 border border-cyan-500/40 hover:border-cyan-500 text-cyan-300 hover:text-white font-bold text-xs px-3 py-1.5 rounded-xl transition-all cursor-pointer shadow-sm flex items-center gap-1.5"
+                      className="bg-cyan-600/20 hover:bg-cyan-600 border border-cyan-500/40 hover:border-cyan-500 text-cyan-600 hover:text-white font-bold text-xs px-3 py-1.5 rounded-xl transition-all cursor-pointer shadow-sm flex items-center gap-1.5"
                     >
                       <span>+ Onboard Project & PO</span>
                     </button>
@@ -5821,13 +5973,13 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 </div>
 
                 {projects.length === 0 ? (
-                  <div className="p-8 bg-slate-950/60 border border-slate-800/80 rounded-xl text-center flex flex-col items-center gap-3">
-                    <div className="w-12 h-12 rounded-2xl bg-cyan-950/50 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
+                  <div className="p-8 border border-slate-300 dark:border-slate-800/80 rounded-xl text-center flex flex-col items-center gap-3">
+                    <div className="w-12 h-12 rounded-2xl bg-cyan-100 border border-cyan-300 flex items-center justify-center text-cyan-600">
                       <FolderKanban className="w-6 h-6" />
                     </div>
                     <div>
-                      <h4 className="text-sm font-extrabold text-white">No Active Plant Operations or PO Budgets Configured</h4>
-                      <p className="text-xs text-slate-400 max-w-md mt-1">
+                      <h4 className="text-sm font-extrabold text-text-primary">No Active Plant Operations or PO Budgets Configured</h4>
+                      <p className="text-xs text-text-secondary max-w-md mt-1">
                         Onboard a client project, map a plant location, and set an allocated PO budget to monitor live operational telemetry and avoid budget overruns.
                       </p>
                     </div>
@@ -5843,7 +5995,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse min-w-[750px]">
                       <thead>
-                        <tr className="border-b border-slate-800 text-[11px] font-extrabold text-slate-400 uppercase tracking-wider">
+                        <tr className="border-b border-slate-300 dark:border-slate-800 text-[11px] font-extrabold text-text-secondary uppercase tracking-wider">
                           <th className="py-2.5 px-3">Plant Location</th>
                           <th className="py-2.5 px-3">Client / Supplier</th>
                           <th className="py-2.5 px-3">Deployed Rep</th>
@@ -5853,7 +6005,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                           <th className="py-2.5 px-3 text-right">PO Status</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-800/60 text-xs">
+                      <tbody className="divide-y divide-slate-300 dark:divide-slate-800/60 text-xs text-text-primary">
                         {projects.map((proj) => {
                           const allocatedPO = parseFloat(proj.po_hours || proj.poHours || 100);
                           const projTimeEntries = (timeEntries || []).filter(t => (t.project_id === proj.id || (t.supplier_id === proj.supplier_id && t.rep_id === proj.rep_id)) && isEntryAccountingEligible(t));
@@ -5866,18 +6018,18 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                           const remainingPO = Math.max(0, allocatedPO - totalLogged);
                           const usagePercent = Math.min(100, (totalLogged / allocatedPO) * 100);
                           
-                          let statusColor = "bg-emerald-500/20 text-emerald-300 border-emerald-500/40";
+                          let statusColor = "bg-emerald-500/20 text-emerald-700 border-emerald-500/40";
                           let statusText = "🟢 Active";
-                          let barColor = "bg-emerald-400";
+                          let barColor = "bg-emerald-500";
                           
                           if (usagePercent >= 100) {
-                            statusColor = "bg-red-500/20 text-red-300 border-red-500/40";
+                            statusColor = "bg-red-500/20 text-red-700 border-red-500/40";
                             statusText = "🔴 PO Cap Reached";
                             barColor = "bg-red-500";
                           } else if (usagePercent >= 80) {
-                            statusColor = "bg-amber-500/20 text-amber-300 border-amber-500/40";
+                            statusColor = "bg-amber-500/20 text-amber-700 border-amber-500/40";
                             statusText = "🟡 Cap Near (Warning)";
-                            barColor = "bg-amber-400";
+                            barColor = "bg-amber-500";
                           }
 
                           const plantNameDisplay = proj.plant_name || proj.plantName || plants.find(pl => pl.id === proj.plant_id || pl.name?.toLowerCase() === (proj.plant_id || '').toLowerCase())?.name || (proj.plant_id ? proj.plant_id.replace(/^plant_/, '').replace(/_/g, ' ') : 'Plant Floor');
@@ -5887,30 +6039,30 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                           const repNameDisplay = proj.rep_name || users.find(u => String(u.id) === String(proj.rep_id) || u.username === proj.rep_id || u.name?.toLowerCase() === (proj.rep_id || '').toLowerCase())?.name || (proj.rep_id ? proj.rep_id.replace(/^rep_/, '').replace(/_/g, ' ') : 'Unassigned Rep');
 
                           return (
-                            <tr key={proj.id} className="hover:bg-slate-800/40 transition-colors">
-                              <td className="py-3 px-3 font-bold text-white flex items-center gap-2">
-                                <span className="w-2 h-2 rounded-full bg-cyan-400"></span>
+                            <tr key={proj.id} className="hover:bg-slate-100 dark:hover:bg-slate-800/40 transition-colors">
+                              <td className="py-3 px-3 font-bold text-text-primary flex items-center gap-2">
+                                <span className="w-2 h-2 rounded-full bg-cyan-500"></span>
                                 <span>{plantNameDisplay}</span>
                               </td>
-                              <td className="py-3 px-3 font-semibold text-slate-300">
+                              <td className="py-3 px-3 font-semibold text-text-secondary">
                                 {supplierNameDisplay}
                               </td>
-                              <td className="py-3 px-3 font-bold text-blue-300">
+                              <td className="py-3 px-3 font-bold text-blue-600">
                                 {repNameDisplay}
                               </td>
-                              <td className="py-3 px-3 text-slate-300">
+                              <td className="py-3 px-3 text-text-secondary">
                                 {proj.scope_of_work || proj.scopeOfWork || proj.name || 'Quality Inspection & Sorting'}
                               </td>
-                              <td className="py-3 px-3 font-bold text-cyan-400">
+                              <td className="py-3 px-3 font-bold text-cyan-600">
                                 {todayLogged.toFixed(1)} hrs
                               </td>
                               <td className="py-3 px-3">
                                 <div className="w-48 space-y-1">
-                                  <div className="flex justify-between text-[10.5px] font-bold text-slate-300">
+                                  <div className="flex justify-between text-[10.5px] font-bold text-text-primary">
                                     <span>{totalLogged.toFixed(1)} / {allocatedPO.toFixed(1)} hrs</span>
-                                    <span className="text-slate-400">{remainingPO.toFixed(1)} hrs left</span>
+                                    <span className="text-text-secondary">{remainingPO.toFixed(1)} hrs left</span>
                                   </div>
-                                  <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                                  <div className="w-full h-1.5 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
                                     <div className={`h-full ${barColor} transition-all duration-500`} style={{ width: `${usagePercent}%` }}></div>
                                   </div>
                                 </div>
@@ -7144,16 +7296,16 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                   {inc.defect_type || 'Quality Audit Defect'}
                                 </span>
                               </div>
-                              <span className="text-xs text-slate-300 font-semibold">{inc.description}</span>
+                              <span className="text-xs text-text-secondary font-semibold">{inc.description}</span>
                             </div>
                             <div className="text-right flex items-center gap-2">
                               <div className="text-right">
-                                <span className="text-[11px] text-slate-400 font-mono block">{inc.date || inc.created_at?.split('T')[0]}</span>
-                                <span className="text-[10.5px] text-emerald-400 font-extrabold uppercase">Status: {inc.status || 'Open'}</span>
+                                <span className="text-[11px] text-text-secondary font-mono block">{inc.date || inc.created_at?.split('T')[0]}</span>
+                                <span className="text-[10.5px] text-emerald-600 font-extrabold uppercase">Status: {inc.status || 'Open'}</span>
                               </div>
                               <button 
                                 onClick={(e) => { e.stopPropagation(); setSelectedIncident(inc); }}
-                                className="bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 text-[11px] font-extrabold px-3 py-1.5 rounded-lg flex items-center gap-1 transition-colors"
+                                className="bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-600 border border-cyan-500/30 text-[11px] font-extrabold px-3 py-1.5 rounded-lg flex items-center gap-1 transition-colors"
                               >
                                 👁️ Inspect Proofs
                               </button>
@@ -7162,27 +7314,27 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
                           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-border-subtle text-[11px]">
                             <div className="bg-surface-elevated p-2 rounded border border-border-subtle">
-                              <span className="text-slate-400 block text-[9.5px] uppercase font-bold">Plant Location</span>
-                              <span className="text-white font-bold">{inc.area || 'Assembly Line'}</span>
+                              <span className="text-text-secondary block text-[9.5px] uppercase font-bold">Plant Location</span>
+                              <span className="text-text-primary font-bold">{inc.area || 'Assembly Line'}</span>
                             </div>
                             <div className="bg-surface-elevated p-2 rounded border border-border-subtle">
-                              <span className="text-slate-400 block text-[9.5px] uppercase font-bold">Defect Quantity</span>
-                              <span className="text-amber-400 font-bold">{inc.quantity || inc.parts_list?.[0]?.qty || 1} Pcs</span>
+                              <span className="text-text-secondary block text-[9.5px] uppercase font-bold">Defect Quantity</span>
+                              <span className="text-amber-600 font-bold">{inc.quantity || inc.parts_list?.[0]?.qty || 1} Pcs</span>
                             </div>
                             <div className="bg-surface-elevated p-2 rounded border border-border-subtle">
-                              <span className="text-slate-400 block text-[9.5px] uppercase font-bold">Reporting Inspector</span>
-                              <span className="text-cyan-300 font-bold">{inc.rep_name || 'Rep Test Inspector'}</span>
+                              <span className="text-text-secondary block text-[9.5px] uppercase font-bold">Reporting Inspector</span>
+                              <span className="text-cyan-600 font-bold">{inc.rep_name || 'Rep Test Inspector'}</span>
                             </div>
                             <div className="bg-surface-elevated p-2 rounded border border-border-subtle">
-                              <span className="text-slate-400 block text-[9.5px] uppercase font-bold">Classification</span>
-                              <span className="text-rose-400 font-bold">{inc.concern_classification || 'PRR Containment'}</span>
+                              <span className="text-text-secondary block text-[9.5px] uppercase font-bold">Classification</span>
+                              <span className="text-rose-600 font-bold">{inc.concern_classification || 'PRR Containment'}</span>
                             </div>
                           </div>
 
                           {/* Media Attachments Preview */}
                           <div className="flex items-center justify-between pt-2 border-t border-border-subtle/40">
                             <div className="flex items-center gap-3">
-                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Media Proofs:</span>
+                              <span className="text-[10px] font-bold text-text-secondary uppercase tracking-wider">Media Proofs:</span>
                               <span className="bg-cyan-950/60 text-cyan-300 border border-cyan-800/40 text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1">
                                 📸 {inc.photos?.length || 3} Defect Photos
                               </span>
@@ -7604,6 +7756,13 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 </div>
                 <div className="flex items-center gap-2">
                   <button 
+                    onClick={() => setShowQuickAddClient(true)}
+                    className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold py-1.5 px-3 rounded-lg text-xs cursor-pointer shadow-sm transition-colors"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>+ Onboard Client Company</span>
+                  </button>
+                  <button 
                     onClick={handlePrintSupplierDirectoryReport}
                     className="flex items-center gap-1.5 bg-surface border border-border-subtle hover:bg-surface-elevated text-text-primary font-bold py-1.5 px-3 rounded-lg text-[13.5px] cursor-pointer transition-colors"
                   >
@@ -7621,25 +7780,41 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
               </div>
               <div className="flex-1 overflow-y-auto scrollbar-thin pr-1 grid grid-cols-2 gap-3">
                 {suppliers.map(sup => (
-                  <div key={sup.id} className="bg-surface-elevated border border-border-subtle rounded-2xl p-3 flex flex-col gap-3 h-fit">
+                  <div key={sup.id} className="bg-surface-elevated border border-border-subtle rounded-2xl p-4 flex flex-col gap-3 h-fit text-left">
                     <div className="flex justify-between items-start">
                       <div>
-                        <h4 className="text-[14.5px] font-extrabold text-text-primary">{sup.name}</h4>
-                        <span className="text-[11.5px] text-text-secondary">Active Supplier Partner</span>
+                        <h4 className="text-sm font-extrabold text-text-primary">{sup.name}</h4>
+                        <span className="text-[11.5px] text-text-secondary font-semibold">Active Supplier Partner</span>
                       </div>
-                      <span className="px-2 py-1 bg-emerald-50 border border-emerald-200 text-emerald-600 text-[10.5px] font-bold rounded-full">ACTIVE CONTRACT</span>
+                      <span className="px-2 py-1 bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10.5px] font-extrabold rounded-full">ACTIVE CONTRACT</span>
                     </div>
                     
-                    <div className="border-t border-border-subtle pt-2 flex flex-col gap-1.5 text-[13.5px] text-text-secondary">
-                      <div><span className="font-bold text-text-secondary">QM Contacts:</span></div>
+                    <div className="border-t border-border-subtle pt-2.5 flex flex-col gap-2 text-[13.5px] text-text-secondary">
+                      <div className="flex items-center justify-between">
+                        <span className="font-extrabold text-text-primary text-[11.5px] uppercase tracking-wider">QM Contacts / Client Reps:</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setAddContactSupplier(sup);
+                            setNewContactName('');
+                            setNewContactEmail('');
+                            setNewContactRole('Customer Quality Manager');
+                            setNewContactPhone('');
+                          }}
+                          className="inline-flex items-center gap-1 text-[11px] font-black text-blue-700 hover:text-blue-800 bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-lg transition-all cursor-pointer shadow-xs"
+                        >
+                          <Plus className="w-3 h-3" />
+                          <span>Add Client Rep</span>
+                        </button>
+                      </div>
                       {((sup.contacts && sup.contacts.length > 0) ? sup.contacts : (sup.contact_name ? [{ name: sup.contact_name, email: sup.contact_email, role: 'Quality Contact' }] : [])).map((c, i) => (
-                        <div key={i} className="bg-surface p-2 rounded-lg border border-border-subtle flex justify-between items-center text-[11.5px]">
+                        <div key={i} className="bg-surface p-2.5 rounded-xl border border-border-subtle flex justify-between items-center text-[11.5px]">
                           <div>
-                            <p className="font-semibold text-text-primary">{typeof c === 'object' ? c.name : c}</p>
-                            <p className="text-text-secondary text-[10.5px]">{typeof c === 'object' ? (c.role || c.title || 'Quality Contact') : 'Quality Contact'}</p>
+                            <p className="font-extrabold text-text-primary">{typeof c === 'object' ? c.name : c}</p>
+                            <p className="text-text-secondary text-[10.5px] font-semibold">{typeof c === 'object' ? (c.role || c.title || 'Customer Quality Manager') : 'Customer Quality Manager'}</p>
                           </div>
                           {(typeof c === 'object' ? c.email : sup.contact_email) && (
-                            <a href={`mailto:${typeof c === 'object' ? c.email : sup.contact_email}`} className="text-[#3B82F6] hover:underline font-mono">
+                            <a href={`mailto:${typeof c === 'object' ? c.email : sup.contact_email}`} className="text-[#3B82F6] hover:underline font-mono font-bold">
                               {typeof c === 'object' ? c.email : sup.contact_email}
                             </a>
                           )}
@@ -7848,14 +8023,14 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
             ) : (
               <div className="flex-1 flex flex-col gap-3 min-h-0 text-left">
                 {/* Portal Header */}
-                <div className="flex justify-between items-center pb-2 border-b border-border-subtle flex-shrink-0">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-3 border-b border-border-subtle flex-shrink-0">
                   <div>
                     <h3 className="text-[14.5px] font-bold text-text-primary uppercase tracking-wider">Invoicing, Rates & Payroll Portal</h3>
-                    <span className="text-[11.5px] text-text-secondary">Colleen's accountant workspace</span>
+                    <span className="text-[11.5px] text-text-secondary font-medium">Colleen's accountant workspace</span>
                   </div>
                   
                   {/* Sub-tab navigation */}
-                  <div className="flex gap-2 bg-surface p-1 rounded-xl border border-border-subtle">
+                  <div className="flex items-center gap-1.5 bg-surface p-1.5 rounded-xl border border-border-subtle overflow-x-auto scrollbar-thin max-w-full">
 
                     <button
                       onClick={() => setAccountingSubTab('review-queue')}
@@ -8011,44 +8186,44 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                     <tr key={entry.id} className="hover:bg-surface/60 transition-colors">
                                       <td className="py-3 px-3">
                                         <div className="font-bold text-text-primary">{repName}</div>
-                                        <div className="text-[11px] font-mono text-emerald-400 mt-0.5">📅 {entry.date || entry.work_date || 'Today'}</div>
+                                        <div className="text-[11px] font-mono text-emerald-700 font-bold mt-0.5">📅 {entry.date || entry.work_date || 'Today'}</div>
                                       </td>
                                       <td className="py-3 px-3">
                                         <div className="font-semibold text-text-primary">{supName}</div>
                                         <div className="text-[11px] text-text-secondary">{plantName}</div>
                                       </td>
                                       <td className="py-3 px-3">
-                                        <span className={`px-2 py-0.5 rounded font-bold text-[10.5px] uppercase ${
-                                          isRegular ? 'bg-emerald-500/20 text-emerald-300' : 'bg-amber-500/20 text-amber-300'
+                                        <span className={`px-2.5 py-1 rounded-md font-extrabold text-[10.5px] uppercase border shadow-sm ${
+                                          isRegular ? 'bg-emerald-100 text-emerald-900 border-emerald-300' : 'bg-amber-100 text-amber-900 border-amber-300'
                                         }`}>
                                           {isRegular ? 'Regular' : 'Overtime'}
                                         </span>
                                       </td>
-                                      <td className="py-3 px-3 font-mono font-bold text-emerald-400 text-sm">
+                                      <td className="py-3 px-3 font-mono font-black text-emerald-700 text-sm">
                                         {parseFloat(entry.hours || 0).toFixed(1)} hrs
                                       </td>
                                       <td className="py-3 px-3">
                                         {isRegular ? (
                                           <div className="flex flex-col gap-0.5">
-                                            <span className="px-2 py-0.5 rounded bg-emerald-600/30 text-emerald-300 font-extrabold text-[10.5px] inline-block w-max">
+                                            <span className="px-2.5 py-1 rounded-md bg-emerald-100 text-emerald-900 border border-emerald-300 font-extrabold text-[10.5px] inline-block w-max shadow-sm">
                                               Recorded Automatically
                                             </span>
-                                            <span className="text-[10px] text-slate-400">Auth Assignment Allocation</span>
+                                            <span className="text-[10.5px] text-slate-600 font-medium">Auth Assignment Allocation</span>
                                           </div>
                                         ) : (
                                           <div className="flex flex-col gap-0.5">
-                                            <span className={`px-2 py-0.5 rounded font-extrabold text-[10.5px] inline-block w-max ${
-                                              entry.status === 'client_approved' || entry.client_review_status === 'approved' ? 'bg-purple-500/30 text-purple-300' :
-                                              entry.status === 'client_returned' || entry.client_review_status === 'returned' ? 'bg-amber-500/30 text-amber-300' :
-                                              entry.status === 'client_rejected' || entry.client_review_status === 'rejected' ? 'bg-rose-500/30 text-rose-300' :
-                                              'bg-amber-400/30 text-amber-200'
+                                            <span className={`px-2.5 py-1 rounded-md font-extrabold text-[10.5px] inline-block w-max border shadow-sm ${
+                                              entry.status === 'client_approved' || entry.client_review_status === 'approved' ? 'bg-purple-100 text-purple-900 border-purple-300' :
+                                              entry.status === 'client_returned' || entry.client_review_status === 'returned' ? 'bg-amber-100 text-amber-900 border-amber-300' :
+                                              entry.status === 'client_rejected' || entry.client_review_status === 'rejected' ? 'bg-rose-100 text-rose-900 border-rose-300' :
+                                              'bg-amber-100 text-amber-900 border-amber-300'
                                             }`}>
                                               {entry.status === 'client_approved' || entry.client_review_status === 'approved' ? 'Client Approved' :
                                                entry.status === 'client_returned' || entry.client_review_status === 'returned' ? 'Returned for Correction' :
                                                entry.status === 'client_rejected' || entry.client_review_status === 'rejected' ? 'Client Rejected' :
                                                'Client Approval Pending'}
                                             </span>
-                                            <span className="text-[10px] text-slate-400">Client Approval Required</span>
+                                            <span className="text-[10.5px] text-slate-600 font-medium">Client Approval Required</span>
                                           </div>
                                         )}
                                       </td>
@@ -8057,11 +8232,11 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                           <div>
                                             <div className="font-semibold text-text-primary">By: {entry.client_reviewed_by}</div>
                                             {entry.client_review_comment && (
-                                              <div className="text-[10.5px] text-amber-300 italic mt-0.5">"{entry.client_review_comment}"</div>
+                                              <div className="text-[10.5px] text-amber-800 font-semibold italic mt-0.5">"{entry.client_review_comment}"</div>
                                             )}
                                           </div>
                                         ) : (
-                                          <span className="text-slate-500 italic">No client action yet</span>
+                                          <span className="text-slate-600 font-semibold italic">No client action yet</span>
                                         )}
                                       </td>
                                     </tr>
@@ -8655,24 +8830,34 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                             <select
                               value={weeklyGridPerson}
                               onChange={(e) => setWeeklyGridPerson(e.target.value)}
-                              className="bg-surface border border-border-subtle rounded-lg px-3 py-1.5 text-text-primary font-bold focus:outline-none"
+                              className="bg-surface border border-border-subtle rounded-lg px-3 py-1.5 text-text-primary font-bold focus:outline-none cursor-pointer"
                             >
-                              <option value="Boyd Colleen">Boyd Colleen</option>
-                              <option value="Hugo Reyes">Hugo Reyes</option>
-                              <option value="Clarence Thomas">Clarence Thomas</option>
-                              <option value="Nabil Al-Mansoor">Nabil Al-Mansoor</option>
-                              <option value="Rogelio Vance">Rogelio Vance</option>
-                              <option value="Shahroz Mirza">Shahroz Mirza</option>
+                              {(() => {
+                                const fieldReps = (users || []).filter(isFieldRep);
+                                if (fieldReps.length === 0) {
+                                  return (
+                                    <>
+                                      <option value="Clarence Kuiken">Clarence Kuiken</option>
+                                      <option value="Hugo Reyes">Hugo Reyes</option>
+                                      <option value="Nabil Al-Mansoor">Nabil Al-Mansoor</option>
+                                      <option value="Rogelio Vance">Rogelio Vance</option>
+                                    </>
+                                  );
+                                }
+                                return fieldReps.map(u => (
+                                  <option key={u.id || u.username || u.name} value={u.name}>{u.name}</option>
+                                ));
+                              })()}
                             </select>
                           </div>
 
                           <div className="flex items-center gap-2">
                             <span className="text-text-secondary font-semibold">Pick a Date:</span>
                             <input
-                              type="text"
+                              type="date"
                               value={weeklyGridDate}
                               onChange={(e) => setWeeklyGridDate(e.target.value)}
-                              className="bg-surface border border-border-subtle rounded-lg px-2.5 py-1.5 text-text-primary font-mono text-center w-28 focus:outline-none"
+                              className="bg-surface border border-border-subtle rounded-lg px-2.5 py-1 text-text-primary font-mono text-center w-36 focus:outline-none cursor-pointer"
                             />
                             <button 
                               type="button"
@@ -8700,7 +8885,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                             onClick={handleSaveWeeklyGrid}
                             className="bg-surface-elevated hover:bg-surface border border-border-subtle text-text-primary font-bold px-4 py-1.5 rounded-lg text-[13px] shadow-sm transition-all cursor-pointer border-b-2 active:translate-y-0.5"
                           >
-                            Saves Changes
+                            Save Changes
                           </button>
                         </div>
                       </div>
@@ -8710,23 +8895,23 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         <table className="w-full text-left text-[11px] border-collapse bg-white text-slate-900 font-sans">
                           <thead>
                             <tr className="bg-slate-100 text-slate-800 font-bold border-b border-gray-400 text-center">
-                              <th className="p-2 border-r border-gray-300 w-28">Day / Date</th>
-                              <th className="p-2 border-r border-gray-300">Location</th>
-                              <th className="p-2 border-r border-gray-300 bg-amber-100/70 text-slate-900">Miles</th>
-                              <th className="p-2 border-r border-gray-300">Billable Hours</th>
-                              <th className="p-2 border-r border-gray-300">Shift A,B,C</th>
-                              <th className="p-2 border-r border-gray-300">Non Billable Hours</th>
-                              <th className="p-2 border-r border-gray-300 bg-amber-100/70 text-slate-900">Per Diem</th>
-                              <th className="p-2 border-r border-gray-300">Piece Count</th>
-                              <th className="p-2 border-r border-gray-300 bg-amber-100/70 text-slate-900">Warehouse</th>
-                              <th className="p-2 border-r border-gray-300 bg-amber-100/70 text-slate-900">Hi Lo</th>
-                              <th className="p-2 border-r border-gray-300">Gas</th>
-                              <th className="p-2 border-r border-gray-300">Trucking</th>
-                              <th className="p-2 border-r border-gray-300">Bonus</th>
-                              <th className="p-2 border-r border-gray-300">Other expenses</th>
-                              <th className="p-2 border-r border-gray-300">Paid By CER</th>
-                              <th className="p-2 border-r border-gray-300 bg-amber-100/70 text-slate-900 w-64">Description</th>
-                              <th className="p-2">Attach.</th>
+                              <th className="p-2 border-r border-gray-300 w-28 whitespace-nowrap">Day / Date</th>
+                              <th className="p-2 border-r border-gray-300 min-w-[130px] whitespace-nowrap">Location</th>
+                              <th className="p-2 border-r border-gray-300 bg-amber-100/70 text-slate-900 whitespace-nowrap">Miles / KM</th>
+                              <th className="p-2 border-r border-gray-300 whitespace-nowrap">Billable Hours</th>
+                              <th className="p-2 border-r border-gray-300 whitespace-nowrap">Shift A,B,C</th>
+                              <th className="p-2 border-r border-gray-300 whitespace-nowrap">Non Billable Hours</th>
+                              <th className="p-2 border-r border-gray-300 bg-amber-100/70 text-slate-900 whitespace-nowrap">Per Diem</th>
+                              <th className="p-2 border-r border-gray-300 whitespace-nowrap">Piece Count</th>
+                              <th className="p-2 border-r border-gray-300 bg-amber-100/70 text-slate-900 whitespace-nowrap">Warehouse</th>
+                              <th className="p-2 border-r border-gray-300 bg-amber-100/70 text-slate-900 whitespace-nowrap">Hi Lo</th>
+                              <th className="p-2 border-r border-gray-300 whitespace-nowrap">Gas</th>
+                              <th className="p-2 border-r border-gray-300 whitespace-nowrap">Trucking</th>
+                              <th className="p-2 border-r border-gray-300 whitespace-nowrap">Bonus</th>
+                              <th className="p-2 border-r border-gray-300 whitespace-nowrap">Other expenses</th>
+                              <th className="p-2 border-r border-gray-300 whitespace-nowrap">Paid By CER</th>
+                              <th className="p-2 border-r border-gray-300 bg-amber-100/70 text-slate-900 min-w-[180px] whitespace-nowrap">Description</th>
+                              <th className="p-2 whitespace-nowrap">Attach.</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -9116,111 +9301,119 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                           </form>
 
                           <div className="bg-surface-elevated border border-border-subtle p-6 sm:p-8 rounded-2xl col-span-2 flex flex-col gap-3">
-                            <h4 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider border-b border-border-subtle pb-2">Active Field Representatives</h4>
+                            <h4 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider border-b border-border-subtle pb-2">Active Field Representatives & Configured Rates</h4>
                             <div className="overflow-x-auto w-full"><table className="w-full text-[13.5px] text-left">
                               <thead>
-                                <tr className="border-b border-border-subtle text-text-secondary font-bold uppercase text-[10.5px]"><th>Rep Name</th><th>Email</th><th>Phone</th><th>Pay Currency</th><th>Role</th></tr>
+                                <tr className="border-b border-border-subtle text-text-secondary font-bold uppercase text-[10.5px]"><th>Rep Name</th><th>Email</th><th>Phone</th><th>Pay Rate ($/hr)</th><th>Bill Rate ($/hr)</th><th>Pay Currency</th><th>Role</th></tr>
                               </thead>
                               <tbody className="divide-y divide-slate-850 text-text-primary">
-                                {users.filter(isFieldRep).map(r => (
-                                  <tr key={r.id}>
-                                    <td className="py-2 text-text-primary font-bold flex items-center gap-2">
-                                      <span className="w-6 h-6 rounded-full bg-[#3B82F6] flex items-center justify-center text-[11.5px] text-[#3B82F6] font-bold">{r.avatar}</span>
-                                      {r.name}
-                                    </td>
-                                    <td className="py-2 font-mono text-slate-450">{r.email}</td>
-                                    <td className="py-2 text-text-secondary">{r.phone}</td>
-                                    <td className="py-2 font-mono text-[#3B82F6] font-bold">{r.pay_currency || getRepPayCurrency(r.id)}</td>
-                                    <td className="py-2"><span className="px-2 py-1 rounded bg-emerald-50 text-emerald-600 text-[12.5px] font-bold uppercase">Field QRE</span></td>
-                                  </tr>
-                                ))}
+                                {users.filter(isFieldRep).map(r => {
+                                  const repRates = getRepSupplierRates(r.id);
+                                  const payRateVal = r.pay_rate || repRates.pay_rate || 20.00;
+                                  const billRateVal = r.billing_rate || repRates.billing_rate || 28.00;
+                                  const currencyVal = r.pay_currency || repRates.currency || 'USD';
+                                  const symbol = currencyVal === 'CAD' ? 'C$' : 'US$';
+
+                                  return (
+                                    <tr key={r.id}>
+                                      <td className="py-2 text-text-primary font-bold flex items-center gap-2">
+                                        <span className="w-6 h-6 rounded-full bg-[#3B82F6] flex items-center justify-center text-[11.5px] text-white font-bold">{r.avatar}</span>
+                                        {r.name}
+                                      </td>
+                                      <td className="py-2 font-mono text-text-secondary">{r.email}</td>
+                                      <td className="py-2 text-text-secondary">{r.phone}</td>
+                                      <td className="py-2 font-mono text-emerald-700 font-extrabold">{symbol} {parseFloat(payRateVal).toFixed(2)}/hr</td>
+                                      <td className="py-2 font-mono text-blue-600 font-extrabold">{symbol} {parseFloat(billRateVal).toFixed(2)}/hr</td>
+                                      <td className="py-2 font-mono text-[#3B82F6] font-bold">{currencyVal}</td>
+                                      <td className="py-2"><span className="px-2 py-1 rounded bg-emerald-100 text-emerald-800 text-[12.5px] font-bold uppercase border border-emerald-300">Field QRE</span></td>
+                                    </tr>
+                                  );
+                                })}
                               </tbody>
                             </table></div>
                           </div>
                         </div>
                       )}
 
-                      {/* RATES OVERRIDES SECTION */}
-                      {adminCrudTab === 'customers' && (
-                        <div className="grid grid-cols-3 gap-3 pt-6 border-t border-border-subtle">
-                          <form onSubmit={handleSaveRateConfig} className="bg-surface-elevated border border-border-subtle p-6 sm:p-8 rounded-2xl flex flex-col gap-3">
-                            <h4 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider border-b border-border-subtle pb-2">Set Custom Rate Override</h4>
-                            <div className="flex flex-col gap-1"><label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Representative</label>
-                              <select 
-                                value={configRepId} 
-                                onChange={(e) => {
-                                  if (e.target.value === 'ADD_NEW') {
-                                    setShowQuickAddRep(true);
-                                  } else {
-                                    setConfigRepId(e.target.value);
-                                  }
-                                }}
-                                className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary"
-                              >
-                                {users.filter(isFieldRep).map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
-                                <option value="ADD_NEW" className="text-cyan-600 font-bold">+ Add New Rep...</option>
-                              </select>
-                            </div>
-                            <div className="flex flex-col gap-1"><label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Client</label>
-                              <select 
-                                value={configSupplierId} 
-                                onChange={(e) => {
-                                  if (e.target.value === 'ADD_NEW') {
-                                    setShowQuickAddClient(true);
-                                  } else {
-                                    setConfigSupplierId(e.target.value);
-                                  }
-                                }}
-                                className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary"
-                              >
-                                {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                                <option value="ADD_NEW" className="text-cyan-600 font-bold">+ Add New Client...</option>
-                              </select>
-                            </div>
-                            <div className="flex flex-col gap-1"><label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Pay Rate ($/hr)</label>
-                              <input type="number" step="0.5" value={configPayRate} onChange={(e) => setConfigPayRate(e.target.value)} className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary" />
-                            </div>
-                            <div className="flex flex-col gap-1"><label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Bill Rate ($/hr)</label>
-                              <input type="number" step="0.5" value={configBillingRate} onChange={(e) => setConfigBillingRate(e.target.value)} className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary" />
-                            </div>
-                            <div className="flex flex-col gap-1"><label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Billing Currency</label>
-                              <select value={configCurrency} onChange={(e) => setConfigCurrency(e.target.value)} className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary">
-                                <option value="USD">USD (US$)</option>
-                                <option value="CAD">CAD (C$)</option>
-                              </select>
-                            </div>
-                            <button type="submit" className="bg-[#3B82F6] text-text-primary font-bold py-2 rounded-xl text-[13.5px] mt-2">Save Rate Override</button>
-                          </form>
-                          
-                          <div className="bg-surface-elevated border border-border-subtle p-6 sm:p-8 rounded-2xl col-span-2 flex flex-col gap-3">
-                            <h4 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider border-b border-border-subtle pb-2">Custom Rates Overrides Matrix</h4>
-                            {rates.length === 0 ? <div className="text-center py-6 text-slate-550 italic">No custom rates configured. System defaults applied ($28/hr billing, $20/hr pay).</div> : (
-                              <div className="overflow-x-auto w-full"><table className="w-full text-[13.5px] text-left">
-                                <thead>
-                                  <tr className="border-b border-border-subtle text-text-secondary font-bold uppercase text-[10.5px]"><th>Rep</th><th>Client</th><th className="text-right">Bill Rate</th><th className="text-right">Pay Rate</th><th className="text-right">Action</th></tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-850 text-text-primary">
-                                  {(rates || []).filter(Boolean).map(r => {
-                                    const billCurrency = r.currency || 'USD';
-                                    const billSymbol = billCurrency === 'CAD' ? 'C$' : 'US$';
-                                    const repPayCurrency = getRepPayCurrency(r.rep_id);
-                                    const paySymbol = repPayCurrency === 'CAD' ? 'C$' : 'US$';
-                                    return (
-                                      <tr key={r.id}>
-                                        <td className="py-2 text-text-primary font-semibold">{users.find(u => u.id === r.rep_id)?.name || 'Rep'}</td>
-                                        <td className="py-2 text-text-secondary">{suppliers.find(s => s.id === r.supplier_id)?.name || 'Client'}</td>
-                                        <td className="py-2 text-right font-bold text-[#3B82F6]">{billSymbol} {parseFloat(r.billing_rate).toFixed(2)}/hr</td>
-                                        <td className="py-2 text-right font-bold text-emerald-450">{paySymbol} {parseFloat(r.pay_rate).toFixed(2)}/hr</td>
-                                        <td className="py-2 text-right"><button onClick={() => handleDeleteRate(r.id)} className="px-2 py-1 bg-surface-elevated text-rose-600 text-[10.5px] uppercase rounded">Delete</button></td>
-                                      </tr>
-                                    );
-                                  })}
-                                </tbody>
-                              </table></div>
-                            )}
+                      {/* RATES OVERRIDES SECTION - ALWAYS VISIBLE */}
+                      <div className="grid grid-cols-3 gap-3 pt-6 border-t border-border-subtle mt-4">
+                        <form onSubmit={handleSaveRateConfig} className="bg-surface-elevated border border-border-subtle p-6 sm:p-8 rounded-2xl flex flex-col gap-3">
+                          <h4 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider border-b border-border-subtle pb-2">Set Custom Rate Override</h4>
+                          <div className="flex flex-col gap-1"><label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Representative</label>
+                            <select 
+                              value={configRepId} 
+                              onChange={(e) => {
+                                if (e.target.value === 'ADD_NEW') {
+                                  setShowQuickAddRep(true);
+                                } else {
+                                  setConfigRepId(e.target.value);
+                                }
+                              }}
+                              className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary"
+                            >
+                              {users.filter(isFieldRep).map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                              <option value="ADD_NEW" className="text-cyan-600 font-bold">+ Add New Rep...</option>
+                            </select>
                           </div>
+                          <div className="flex flex-col gap-1"><label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Client</label>
+                            <select 
+                              value={configSupplierId} 
+                              onChange={(e) => {
+                                if (e.target.value === 'ADD_NEW') {
+                                  setShowQuickAddClient(true);
+                                } else {
+                                  setConfigSupplierId(e.target.value);
+                                }
+                              }}
+                              className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary"
+                            >
+                              {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                              <option value="ADD_NEW" className="text-cyan-600 font-bold">+ Add New Client...</option>
+                            </select>
+                          </div>
+                          <div className="flex flex-col gap-1"><label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Pay Rate ($/hr)</label>
+                            <input type="number" step="0.5" value={configPayRate} onChange={(e) => setConfigPayRate(e.target.value)} className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary" />
+                          </div>
+                          <div className="flex flex-col gap-1"><label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Bill Rate ($/hr)</label>
+                            <input type="number" step="0.5" value={configBillingRate} onChange={(e) => setConfigBillingRate(e.target.value)} className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary" />
+                          </div>
+                          <div className="flex flex-col gap-1"><label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Billing Currency</label>
+                            <select value={configCurrency} onChange={(e) => setConfigCurrency(e.target.value)} className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary">
+                              <option value="USD">USD (US$)</option>
+                              <option value="CAD">CAD (C$)</option>
+                            </select>
+                          </div>
+                          <button type="submit" className="bg-[#3B82F6] text-white font-bold py-2 rounded-xl text-[13.5px] mt-2 shadow-md">Save Rate Override</button>
+                        </form>
+                        
+                        <div className="bg-surface-elevated border border-border-subtle p-6 sm:p-8 rounded-2xl col-span-2 flex flex-col gap-3">
+                          <h4 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider border-b border-border-subtle pb-2">Custom Rates Overrides Matrix</h4>
+                          {rates.length === 0 ? <div className="text-center py-6 text-text-secondary italic">No custom rates configured. System defaults applied ($28/hr billing, $20/hr pay).</div> : (
+                            <div className="overflow-x-auto w-full"><table className="w-full text-[13.5px] text-left">
+                              <thead>
+                                <tr className="border-b border-border-subtle text-text-secondary font-bold uppercase text-[10.5px]"><th>Rep</th><th>Client</th><th className="text-right">Bill Rate</th><th className="text-right">Pay Rate</th><th className="text-right">Action</th></tr>
+                              </thead>
+                              <tbody className="divide-y divide-slate-850 text-text-primary">
+                                {(rates || []).filter(Boolean).map(r => {
+                                  const billCurrency = r.currency || 'USD';
+                                  const billSymbol = billCurrency === 'CAD' ? 'C$' : 'US$';
+                                  const repPayCurrency = getRepPayCurrency(r.rep_id);
+                                  const paySymbol = repPayCurrency === 'CAD' ? 'C$' : 'US$';
+                                  return (
+                                    <tr key={r.id}>
+                                      <td className="py-2 text-text-primary font-semibold">{users.find(u => u.id === r.rep_id)?.name || 'Rep'}</td>
+                                      <td className="py-2 text-text-secondary">{suppliers.find(s => s.id === r.supplier_id)?.name || 'Client'}</td>
+                                      <td className="py-2 text-right font-bold text-blue-600">{billSymbol} {parseFloat(r.billing_rate).toFixed(2)}/hr</td>
+                                      <td className="py-2 text-right font-bold text-emerald-700">{paySymbol} {parseFloat(r.pay_rate).toFixed(2)}/hr</td>
+                                      <td className="py-2 text-right"><button onClick={() => handleDeleteRate(r.id)} className="px-2.5 py-1 bg-rose-100 text-rose-700 text-[10.5px] font-bold uppercase rounded border border-rose-300 hover:bg-rose-200">Delete</button></td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table></div>
+                          )}
                         </div>
-                      )}
+                      </div>
                     </div>
                   )}
 
@@ -10082,25 +10275,25 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto scrollbar-thin font-mono text-[10.5px] p-3 bg-black/60 rounded-xl border border-border-subtle flex flex-col gap-1.5">
+                <div className="flex-1 overflow-y-auto scrollbar-thin font-mono text-[11px] p-3.5 bg-slate-950 rounded-xl border border-slate-800 flex flex-col gap-2 shadow-inner">
                   {(() => {
                     const logs = getEntities('systemLogs') || [];
                     if (logs.length === 0) {
-                      return <div className="text-slate-650 italic text-center py-10">Console buffer empty. Perform operations on the phone simulator or dashboard to see logs stream.</div>;
+                      return <div className="text-slate-500 italic text-center py-10">Console buffer empty. Perform operations on the phone simulator or dashboard to see logs stream.</div>;
                     }
                     return logs.slice().reverse().map(l => {
-                      let badgeColor = 'bg-blue-50 text-blue-600 border-blue-200';
-                      if (l.category === 'auth') badgeColor = 'bg-indigo-50 text-indigo-600 border-indigo-200';
-                      if (l.category === 'shift') badgeColor = 'bg-amber-50 text-amber-600 border-amber-200';
-                      if (l.category === 'incident') badgeColor = 'bg-rose-50 text-rose-600 border-rose-200';
-                      if (l.category === 'rework') badgeColor = 'bg-cyan-50 text-cyan-600 border-cyan-200';
-                      if (l.category === 'system') badgeColor = 'bg-emerald-50 text-emerald-600 border-emerald-200';
-                      if (l.category === 'payroll') badgeColor = 'bg-emerald-50 text-[#3B82F6] border-emerald-200';
+                      let badgeColor = 'bg-blue-500/20 text-blue-300 border-blue-500/40';
+                      if (l.category === 'auth') badgeColor = 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40';
+                      if (l.category === 'shift') badgeColor = 'bg-amber-500/20 text-amber-300 border-amber-500/40';
+                      if (l.category === 'incident') badgeColor = 'bg-rose-500/20 text-rose-300 border-rose-500/40';
+                      if (l.category === 'rework') badgeColor = 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40';
+                      if (l.category === 'system') badgeColor = 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40';
+                      if (l.category === 'payroll') badgeColor = 'bg-purple-500/20 text-purple-300 border-purple-500/40';
                       return (
-                        <div key={l.id} className="pb-1.5 border-b border-border-subtle flex items-start gap-3">
-                          <span className="text-slate-550 flex-shrink-0">[{new Date(l.timestamp).toLocaleTimeString()}]</span>
-                          <span className={`px-2 py-1 rounded border text-[12.5px] font-extrabold uppercase tracking-wider ${badgeColor}`}>{l.category}</span>
-                          <span className="text-text-secondary"><strong className="text-text-primary">{l.action?.toUpperCase()}</strong>: {l.details}</span>
+                        <div key={l.id} className="pb-2 border-b border-slate-800/80 flex items-start gap-3 leading-relaxed">
+                          <span className="text-slate-400 flex-shrink-0 text-[10.5px]">[{new Date(l.timestamp).toLocaleTimeString()}]</span>
+                          <span className={`px-2 py-0.5 rounded border text-[11px] font-extrabold uppercase tracking-wider ${badgeColor}`}>{l.category}</span>
+                          <span className="text-slate-200 text-[11.5px]"><strong className="text-white font-bold tracking-wide">{l.action?.toUpperCase()}</strong>: <span className="text-slate-300">{l.details}</span></span>
                         </div>
                       );
                     });
@@ -10139,7 +10332,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                       {selectedIncident.status || 'Resolved'}
                     </span>
                   </div>
-                  <span className="text-xs text-slate-400 font-mono font-semibold">Incident ID: {selectedIncident.id} • Part #{selectedIncident.part_number || selectedIncident.part_id || '77667'}</span>
+                  <span className="text-xs text-slate-400 font-mono font-semibold">Incident ID: {selectedIncident.id} • Part #{selectedIncident.part_number || selectedIncident.part_id || selectedIncident.parts_list?.[0]?.part_number || 'Unspecified Part'}</span>
                 </div>
               </div>
               
@@ -10176,7 +10369,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   <span className="text-sm font-extrabold text-slate-100 leading-snug">
                     {users.find(u => u.id === selectedIncident.rep_id || u.username === selectedIncident.rep_id)?.name || selectedIncident.rep_name || selectedIncident.rep_id || 'Representative'}
                   </span>
-                  <span className="text-[10px] text-sky-400 font-bold">Field Inspector</span>
+                  <span className="text-[10px] text-sky-400 font-bold">IDS Field Rep</span>
                 </div>
                 <div className="bg-slate-900/90 border border-slate-800 p-3.5 rounded-2xl flex flex-col gap-1">
                   <span className="text-[10.5px] text-slate-400 font-bold uppercase tracking-wider">Plant & Area</span>
@@ -10198,64 +10391,74 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                       let mediaCount = 0;
                       if (Array.isArray(selectedIncident.photos)) mediaCount += selectedIncident.photos.length;
                       if (selectedIncident.capturedPhotos) mediaCount += Object.values(selectedIncident.capturedPhotos).filter(Boolean).length;
-                      if (mediaCount === 0) mediaCount = 3;
-                      return `${mediaCount} Verified Evidence Photo(s)`;
+                      if (selectedIncident.photo_url) mediaCount += 1;
+                      return `${mediaCount} Evidence Photo(s)`;
                     })()}
                   </span>
                 </div>
 
-                <div className="grid grid-cols-3 gap-3">
-                  {(() => {
-                    let photos = [];
-                    if (Array.isArray(selectedIncident.photos)) {
-                      photos.push(...selectedIncident.photos);
-                    }
-                    if (selectedIncident.capturedPhotos && typeof selectedIncident.capturedPhotos === 'object') {
-                      Object.entries(selectedIncident.capturedPhotos).forEach(([key, val]) => {
-                        if (val) photos.push({ type: `${key.toUpperCase()} SHOT`, url: val });
-                      });
-                    }
-                    if (selectedIncident.annotatedPhotos && typeof selectedIncident.annotatedPhotos === 'object') {
-                      Object.entries(selectedIncident.annotatedPhotos).forEach(([key, val]) => {
-                        if (val) photos.push({ type: `ANNOTATED ${key.toUpperCase()}`, url: val });
-                      });
-                    }
-                    if (selectedIncident.photo_url) {
-                      photos.push({ type: 'EVIDENCE PHOTO', url: selectedIncident.photo_url });
-                    }
-                    if (photos.length === 0) {
-                      photos = [
-                        { type: 'WIDE ANGLE SHOT', url: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=800&auto=format&fit=crop&q=80' },
-                        { type: 'MEDIUM COMPONENT VIEW', url: 'https://images.unsplash.com/photo-1581092335397-9583fe92d232?w=800&auto=format&fit=crop&q=80' },
-                        { type: 'CLOSE-UP DEFECT MARKUP', url: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=800&auto=format&fit=crop&q=80' }
-                      ];
-                    }
+                {(() => {
+                  let photos = [];
+                  if (Array.isArray(selectedIncident.photos)) {
+                    photos.push(...selectedIncident.photos);
+                  }
+                  if (selectedIncident.capturedPhotos && typeof selectedIncident.capturedPhotos === 'object') {
+                    Object.entries(selectedIncident.capturedPhotos).forEach(([key, val]) => {
+                      if (val) photos.push({ type: `${key.toUpperCase()} SHOT`, url: val });
+                    });
+                  }
+                  if (selectedIncident.annotatedPhotos && typeof selectedIncident.annotatedPhotos === 'object') {
+                    Object.entries(selectedIncident.annotatedPhotos).forEach(([key, val]) => {
+                      if (val) photos.push({ type: `ANNOTATED ${key.toUpperCase()}`, url: val });
+                    });
+                  }
+                  if (selectedIncident.photo_url) {
+                    photos.push({ type: 'EVIDENCE PHOTO', url: selectedIncident.photo_url });
+                  }
 
-                    return photos.map((photo, idx) => (
-                      <div key={photo.id || idx} className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden flex flex-col group hover:border-blue-500/50 transition-all">
-                        <div className="aspect-video relative overflow-hidden bg-slate-950">
-                          <img 
-                            src={typeof photo === 'string' ? photo : (photo.url || photo.path || photo.media_url)} 
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
-                            alt={photo.type || `Evidence ${idx + 1}`}
-                          />
-                          <span className="absolute bottom-2 right-2 bg-slate-950/90 border border-slate-700/80 text-[10px] px-2 py-0.5 rounded-md text-sky-300 font-bold uppercase tracking-wider">
-                            {photo.type || `Angle ${idx + 1}`}
-                          </span>
+                  if (photos.length === 0) {
+                    return (
+                      <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 text-slate-400 text-xs flex flex-col gap-1.5">
+                        <div className="flex items-center gap-2 text-amber-400 font-bold uppercase tracking-wider">
+                          <AlertTriangle className="w-4 h-4" />
+                          <span>No Defect Photos Attached</span>
                         </div>
-                        <div className="p-2.5 flex flex-col gap-0.5">
-                          <span className="text-xs font-bold text-slate-100">{photo.type || `Evidence Photo ${idx + 1}`}</span>
-                          <span className="text-[10.5px] text-slate-400 leading-tight">Submitted by Rep #{selectedIncident.rep_id || 'Inspector'}</span>
-                        </div>
+                        <p className="text-slate-300 font-medium">
+                          {selectedIncident.media_unavailable_reason || selectedIncident.missing_media_reason
+                            ? `Reason recorded: "${selectedIncident.media_unavailable_reason || selectedIncident.missing_media_reason}"`
+                            : 'No photos were captured during this initial report. Live media capture will be attached upon mobile app deployment.'}
+                        </p>
                       </div>
-                    ));
-                  })()}
-                </div>
+                    );
+                  }
+
+                  return (
+                    <div className="grid grid-cols-3 gap-3">
+                      {photos.map((photo, idx) => (
+                        <div key={photo.id || idx} className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden flex flex-col group hover:border-blue-500/50 transition-all">
+                          <div className="aspect-video relative overflow-hidden bg-slate-950">
+                            <img 
+                              src={typeof photo === 'string' ? photo : (photo.url || photo.path || photo.media_url)} 
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
+                              alt={photo.type || `Evidence ${idx + 1}`}
+                            />
+                            <span className="absolute bottom-2 right-2 bg-slate-950/90 border border-slate-700/80 text-[10px] px-2 py-0.5 rounded-md text-sky-300 font-bold uppercase tracking-wider">
+                              {photo.type || `Angle ${idx + 1}`}
+                            </span>
+                          </div>
+                          <div className="p-2.5 flex flex-col gap-0.5">
+                            <span className="text-xs font-bold text-slate-100">{photo.type || `Evidence Photo ${idx + 1}`}</span>
+                            <span className="text-[10.5px] text-slate-400 leading-tight">Submitted by Rep #{selectedIncident.rep_id || 'Representative'}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
               </div>
 
               {/* Video Walkthrough Inspection Media Section */}
               <div className="grid grid-cols-1 gap-3">
-                {/* Video Walkthrough Inspection Player */}
                 <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 flex flex-col gap-2">
                   <div className="flex justify-between items-center text-xs">
                     <span className="font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
@@ -10263,15 +10466,16 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     </span>
                     <span className="text-slate-400 font-mono text-[10.5px]">MP4 WALKTHROUGH</span>
                   </div>
-                  <p className="text-[11px] text-slate-400 leading-snug">15-second video inspection clip recorded on floor.</p>
-                  {selectedIncident.video_url || selectedIncident.hasVideo || selectedIncident.videoWalkthrough ? (
+                  {selectedIncident.video_url || selectedIncident.videoWalkthrough ? (
                     <div className="relative rounded-xl overflow-hidden border border-slate-800 aspect-video bg-slate-950 flex items-center justify-center mt-1">
                       <video controls className="w-full h-full object-cover">
-                        <source src={selectedIncident.video_url || selectedIncident.videoWalkthrough || "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4"} type="video/mp4" />
+                        <source src={selectedIncident.video_url || selectedIncident.videoWalkthrough} type="video/mp4" />
                       </video>
                     </div>
                   ) : (
-                    <span className="text-[11px] text-slate-500 font-mono italic">No video walkthrough submitted for this incident.</span>
+                    <span className="text-[11px] text-slate-400 font-mono italic bg-slate-950 p-2.5 rounded-xl border border-slate-800/80">
+                      No video walkthrough recorded for this incident. Live video capture will be attached upon mobile app deployment.
+                    </span>
                   )}
                 </div>
               </div>
@@ -10297,7 +10501,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 <div className="pt-3 border-t border-slate-800 flex flex-col gap-1">
                   <span className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Action Taken & Inspection Resolution Narrative</span>
                   <p className="text-xs text-slate-200 leading-relaxed bg-slate-950 p-3 rounded-xl border border-slate-800">
-                    {selectedIncident.notes || selectedIncident.description || "Sorting completed."}
+                    {selectedIncident.notes || selectedIncident.description || selectedIncident.action_taken || "No resolution narrative recorded."}
                   </p>
                 </div>
               </div>
@@ -10411,8 +10615,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
             </div>
 
             <div className="p-3 bg-surface border-b border-border-subtle flex flex-col gap-1 text-[13.5px] text-text-primary">
-              <div>Rep: <span className="font-bold text-text-primary">{users.find(u => u.id === selectedShiftReport.rep_id)?.name}</span></div>
-              <div>Plant Location: <span className="font-bold text-text-primary">GM Oshawa Plant</span></div>
+              <div>Rep: <span className="font-bold text-text-primary">{users.find(u => u.id === selectedShiftReport.rep_id || u.username === selectedShiftReport.rep_id)?.name || selectedShiftReport.rep_id || 'Representative'}</span></div>
+              <div>Plant Location: <span className="font-bold text-text-primary">{plants.find(p => p.id === selectedShiftReport.plant_id || p.name?.toLowerCase() === (selectedShiftReport.plant_id || '').toLowerCase())?.name || (selectedShiftReport.plant_id ? selectedShiftReport.plant_id.replace(/^plant_/, '').replace(/_/g, ' ') : 'Plant Floor')}</span></div>
               <div>Time Compiled: <span className="font-mono text-[11.5px] text-text-secondary">{new Date(selectedShiftReport.sent_at || selectedShiftReport.created_at || new Date()).toLocaleString()}</span></div>
             </div>
 
@@ -11198,62 +11402,62 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
       {/* QUICK ADD REPRESENTATIVE MODAL */}
       {showQuickAddRep && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[999] flex items-center justify-center p-3">
-          <div className="bg-surface-elevated border border-border-subtle p-3 rounded-2xl w-full max-w-sm flex flex-col gap-3 text-left shadow-2xl animate-in fade-in zoom-in duration-200">
-            <div className="flex justify-between items-center border-b border-border-subtle pb-2">
-              <h4 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider flex items-center gap-1.5">
-                <UserPlus className="w-4.5 h-4.5 text-purple-600" /> Quick Add Representative
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-300 p-6 rounded-2xl w-full max-w-sm flex flex-col gap-4 text-left shadow-2xl animate-in fade-in zoom-in duration-200 text-slate-900">
+            <div className="flex justify-between items-center border-b border-slate-200 pb-3">
+              <h4 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                <UserPlus className="w-4.5 h-4.5 text-purple-700" /> Quick Add Representative
               </h4>
-              <button onClick={() => setShowQuickAddRep(false)} className="text-text-secondary hover:text-text-primary text-[14.5px]">✕</button>
+              <button onClick={() => setShowQuickAddRep(false)} className="text-slate-400 hover:text-slate-900 text-lg font-bold">✕</button>
             </div>
-            <form onSubmit={handleQuickAddRepSubmit} className="flex flex-col gap-3">
+            <form onSubmit={handleQuickAddRepSubmit} className="flex flex-col gap-3.5">
               <div className="flex flex-col gap-1">
-                <label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Rep No. (Employee / Rep ID)</label>
+                <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">Rep No. (Employee / Rep ID)</label>
                 <input 
                   type="text" 
                   value={quickRepNo} 
                   onChange={(e) => setQuickRepNo(e.target.value)} 
                   placeholder="e.g. REP-2026-042 (Auto-generated if blank)" 
-                  className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary placeholder-text-secondary focus:outline-none focus:border-purple-500 font-mono"
+                  className="bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-mono font-bold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-purple-600"
                 />
               </div>
               <div className="flex flex-col gap-1">
-                <label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Full Name</label>
+                <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">Full Name *</label>
                 <input 
                   type="text" 
                   value={quickRepName} 
                   onChange={(e) => setQuickRepName(e.target.value)} 
                   placeholder="e.g. Rep full name" 
-                  className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary placeholder-text-secondary focus:outline-none focus:border-purple-500"
+                  className="bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-purple-600"
                   required
                 />
               </div>
               <div className="flex flex-col gap-1">
-                <label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Email Address</label>
+                <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">Email Address</label>
                 <input 
                   type="email" 
                   value={quickRepEmail} 
                   onChange={(e) => setQuickRepEmail(e.target.value)} 
                   placeholder="e.g. hugo.p@integritydriven.com" 
-                  className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary placeholder-text-secondary focus:outline-none focus:border-purple-500"
+                  className="bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-purple-600"
                 />
               </div>
               <div className="flex flex-col gap-1">
-                <label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Phone Contact</label>
+                <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">Phone Contact</label>
                 <input 
                   type="text" 
                   value={quickRepPhone} 
                   onChange={(e) => setQuickRepPhone(e.target.value)} 
                   placeholder="e.g. +1 555-123-4567" 
-                  className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary placeholder-text-secondary focus:outline-none focus:border-purple-500"
+                  className="bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-purple-600"
                 />
               </div>
               <div className="flex flex-col gap-1">
-                <label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Payment Currency</label>
+                <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">Payment Currency</label>
                 <select 
                   value={quickRepPayCurrency} 
                   onChange={(e) => setQuickRepPayCurrency(e.target.value)} 
-                  className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary focus:outline-none"
+                  className="bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-extrabold text-slate-900 focus:outline-none"
                 >
                   <option value="CAD">CAD (C$)</option>
                   <option value="USD">USD (US$)</option>
@@ -11263,14 +11467,14 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 <button 
                   type="button" 
                   onClick={() => setShowQuickAddRep(false)}
-                  className="flex-1 bg-surface border border-border-subtle hover:bg-surface-elevated text-text-secondary hover:text-text-primary py-2 rounded-xl text-[13.5px] font-bold transition-colors cursor-pointer"
+                  className="flex-1 bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 py-2.5 rounded-xl text-xs font-extrabold transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button 
                   type="submit"
                   onClick={handleQuickAddRepSubmit}
-                  className="flex-1 bg-purple-500 hover:bg-purple-600 text-text-primary py-2 rounded-xl text-[13.5px] font-bold transition-colors cursor-pointer"
+                  className="flex-1 bg-purple-600 hover:bg-purple-700 text-white py-2.5 rounded-xl text-xs font-black transition-colors cursor-pointer shadow-sm"
                 >
                   Save Rep
                 </button>
@@ -11282,93 +11486,93 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
       {/* UNIFIED GOOGLE STITCH COMPANY & PROJECT ONBOARDING HUB MODAL */}
       {showQuickAddClient && (
-        <div className="fixed inset-0 bg-slate-950/85 backdrop-blur-xl z-[999] flex items-center justify-center p-3 overflow-y-auto">
-          <div className="bg-slate-900/95 border border-slate-700/80 p-5 rounded-2xl w-full max-w-xl flex flex-col gap-3.5 text-left shadow-2xl animate-in fade-in zoom-in duration-200 my-auto">
-            <div className="flex justify-between items-center border-b border-slate-800 pb-2.5">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[999] flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white border border-slate-300 p-6 sm:p-8 rounded-3xl w-full max-w-3xl flex flex-col gap-5 text-left shadow-2xl animate-in fade-in zoom-in duration-200 my-auto text-slate-900">
+            <div className="flex justify-between items-center border-b border-slate-200 pb-3">
               <div>
-                <h4 className="text-[15px] font-black text-white uppercase tracking-wide flex items-center gap-2">
-                  <UserPlus className="w-4.5 h-4.5 text-[#3B82F6]" /> Fast Company & Project Onboarding Hub
+                <h4 className="text-lg font-black text-slate-900 uppercase tracking-wide flex items-center gap-2">
+                  <UserPlus className="w-5 h-5 text-blue-700" /> Fast Company & Project Onboarding Hub
                 </h4>
-                <p className="text-[11.5px] text-slate-400 mt-0.5">Register new client company & assign field rep in one seamless workflow.</p>
+                <p className="text-xs text-slate-600 mt-0.5 font-semibold">Register new client company & assign field rep in one seamless workflow.</p>
               </div>
-              <button onClick={() => setShowQuickAddClient(false)} className="text-slate-400 hover:text-white text-base font-bold p-1 cursor-pointer">✕</button>
+              <button onClick={() => setShowQuickAddClient(false)} className="text-slate-400 hover:text-slate-900 text-xl font-bold p-1 cursor-pointer">✕</button>
             </div>
 
-            <form onSubmit={handleQuickAddClientSubmit} className="flex flex-col gap-3">
-              {/* SECTION 1: COMPANY & BUDGET DETAILS (FROM IMAGE 1) */}
-              <div className="flex flex-col gap-2.5 bg-slate-950/60 p-3.5 rounded-xl border border-slate-800">
-                <span className="text-[11px] font-black text-[#3B82F6] uppercase tracking-wider flex items-center gap-1.5">
+            <form onSubmit={handleQuickAddClientSubmit} className="flex flex-col gap-5">
+              {/* SECTION 1: COMPANY & BUDGET DETAILS */}
+              <div className="flex flex-col gap-4 bg-slate-50 p-5 rounded-2xl border border-slate-200 shadow-sm">
+                <span className="text-xs font-black text-blue-700 uppercase tracking-wider flex items-center gap-1.5">
                   <span>1. Company & Budget Setup</span>
                 </span>
 
-                <div className="flex flex-col gap-1">
-                  <label className="text-[10.5px] font-bold text-slate-300 uppercase tracking-wider">Company Name *</label>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[11.5px] font-extrabold text-slate-700 uppercase tracking-wider">Company Name *</label>
                   <input 
                     type="text" 
                     value={quickClientName} 
                     onChange={(e) => setQuickClientName(e.target.value)} 
-                    placeholder="e.g. Abc123 Ltd" 
-                    className="stitch-input px-3 py-2 text-[13px] text-white placeholder-slate-500"
+                    placeholder="e.g. Magna Powertrain International" 
+                    className="bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-600 shadow-sm w-full"
                     required
                   />
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                  <div className="flex flex-col gap-1">
-                    <label className="text-[10.5px] font-bold text-slate-300 uppercase tracking-wider">Representative Name *</label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[11.5px] font-extrabold text-slate-700 uppercase tracking-wider">Client Representative Contact *</label>
                     <input 
                       type="text" 
                       value={quickClientContactName} 
                       onChange={(e) => setQuickClientContactName(e.target.value)} 
-                      placeholder="e.g. Mike Johnson" 
-                      className="stitch-input px-3 py-2 text-[13px] text-white placeholder-slate-500"
+                      placeholder="e.g. Robert Sterling" 
+                      className="bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-600 shadow-sm w-full"
                       required
                     />
                   </div>
-                  <div className="flex flex-col gap-1">
-                    <label className="text-[10.5px] font-bold text-slate-300 uppercase tracking-wider">Contact Email *</label>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[11.5px] font-extrabold text-slate-700 uppercase tracking-wider">Contact Email *</label>
                     <input 
                       type="email" 
                       value={quickClientContactEmail} 
                       onChange={(e) => setQuickClientContactEmail(e.target.value)} 
-                      placeholder="mike@abc123.com" 
-                      className="stitch-input px-3 py-2 text-[13px] text-white placeholder-slate-500"
+                      placeholder="rsterling@magnapowertrain.com" 
+                      className="bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-600 shadow-sm w-full"
                       required
                     />
                   </div>
                 </div>
 
-                <div className="flex flex-col gap-1">
-                  <label className="text-[10.5px] font-bold text-slate-300 uppercase tracking-wider">Company / Billing Address *</label>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[11.5px] font-extrabold text-slate-700 uppercase tracking-wider">Company / Billing Address *</label>
                   <input 
                     type="text" 
                     value={quickClientAddress} 
                     onChange={(e) => setQuickClientAddress(e.target.value)} 
-                    placeholder="e.g. 100 Industrial Pkwy, Windsor, ON N9A 6J3" 
-                    className="stitch-input px-3 py-2 text-[13px] text-white placeholder-slate-500"
+                    placeholder="e.g. 50 Casmir Ct, Concord, ON L4K 4H5" 
+                    className="bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-600 shadow-sm w-full"
                     required
                   />
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                  <div className="flex flex-col gap-1">
-                    <label className="text-[10.5px] font-bold text-cyan-400 uppercase tracking-wider">Allotted Hours Budget *</label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[11.5px] font-extrabold text-blue-800 uppercase tracking-wider">Allotted Hours Budget *</label>
                     <input 
                       type="number" 
                       step="0.5"
                       value={quickClientAllottedHours} 
                       onChange={(e) => setQuickClientAllottedHours(e.target.value)} 
                       placeholder="20" 
-                      className="stitch-input px-3 py-2 text-[13px] text-white font-extrabold"
+                      className="bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-black text-slate-900 focus:outline-none focus:border-blue-600 shadow-sm w-full"
                       required
                     />
                   </div>
-                  <div className="flex flex-col gap-1">
-                    <label className="text-[10.5px] font-bold text-slate-300 uppercase tracking-wider">Invoice Schedule *</label>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[11.5px] font-extrabold text-slate-700 uppercase tracking-wider">Invoice Schedule *</label>
                     <select 
                       value={quickClientSchedule} 
                       onChange={(e) => setQuickClientSchedule(e.target.value)} 
-                      className="stitch-input px-3 py-2 text-[13px] text-white"
+                      className="bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-extrabold text-slate-900 focus:outline-none focus:border-blue-600 shadow-sm w-full"
                       required
                     >
                       <option value="on-demand">⚡ On Demand</option>
@@ -11380,189 +11584,216 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 </div>
               </div>
 
-              {/* SECTION 2: REGISTER NEW PROJECT & REP ASSIGNMENT (FROM IMAGE 2) */}
-              <div className="flex flex-col gap-2.5 bg-slate-950/60 p-3.5 rounded-xl border border-slate-800">
-                <span className="text-[11px] font-black text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+              {/* SECTION 2: REGISTER NEW PROJECT & REP ASSIGNMENT */}
+              <div className="flex flex-col gap-4 bg-slate-50 p-5 rounded-2xl border border-slate-200 shadow-sm">
+                <span className="text-xs font-black text-amber-700 uppercase tracking-wider flex items-center gap-1.5">
                   <span>2. Register New Project & Rep Assignment</span>
                 </span>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                  <div className="flex flex-col gap-1">
-                    <div className="flex justify-between items-center">
-                      <label className="text-[10.5px] font-bold text-slate-300 uppercase tracking-wider">Assign Field Rep *</label>
+                {/* ROW 1: ASSIGN FIELD REP */}
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex justify-between items-center">
+                    <label className="text-[11.5px] font-extrabold text-slate-700 uppercase tracking-wider">Assign Field Rep *</label>
+                    <button 
+                      type="button" 
+                      onClick={() => {
+                        const nextState = !isInlineNewRep;
+                        setIsInlineNewRep(nextState);
+                        if (nextState) setNewProjRep('__new__');
+                        else setNewProjRep('rep_clarence');
+                      }} 
+                      className="text-[11px] font-black text-blue-700 hover:text-blue-800 underline cursor-pointer"
+                    >
+                      {isInlineNewRep ? '← Choose Existing Rep' : '+ Create New Rep'}
+                    </button>
+                  </div>
+
+                  {!(isInlineNewRep || newProjRep === '__new__') && (
+                    <select 
+                      value={newProjRep} 
+                      onChange={(e) => {
+                        if (e.target.value === '__new__') {
+                          setIsInlineNewRep(true);
+                        } else {
+                          setIsInlineNewRep(false);
+                        }
+                        setNewProjRep(e.target.value);
+                      }}
+                      className="bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-extrabold text-slate-900 focus:outline-none focus:border-blue-600 shadow-sm w-full"
+                      required
+                    >
+                      <option value="__new__">➕ Register New IDS Field Rep...</option>
+                      {users && users.filter(isFieldRep).length > 0 ? (
+                        users.filter(isFieldRep).map(u => (
+                          <option key={u.id} value={u.id}>{u.name} (IDS Field Rep)</option>
+                        ))
+                      ) : (
+                        <>
+                          <option value="rep_clarence">Clarence Kuiken (IDS Senior Field Rep)</option>
+                          <option value="lead_diana">Diana (IDS Field Rep)</option>
+                        </>
+                      )}
+                    </select>
+                  )}
+                </div>
+
+                {/* INLINE NEW FIELD REP EXPANDABLE CARD */}
+                {(isInlineNewRep || newProjRep === '__new__') && (
+                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-2xl flex flex-col gap-3 shadow-inner text-slate-900">
+                    <div className="flex justify-between items-center border-b border-blue-200 pb-2">
+                      <span className="text-xs font-black text-blue-800 uppercase tracking-wider flex items-center gap-1.5">
+                        <UserPlus className="w-4 h-4 text-blue-700" /> 👤 New IDS Field Rep Details
+                      </span>
                       <button 
                         type="button" 
-                        onClick={() => {
-                          const nextState = !isInlineNewRep;
-                          setIsInlineNewRep(nextState);
-                          if (nextState) setNewProjRep('__new__');
-                          else setNewProjRep('rep_clarence');
-                        }} 
-                        className="text-[10px] font-extrabold text-[#3B82F6] hover:text-blue-300 underline cursor-pointer"
+                        onClick={() => { setIsInlineNewRep(false); setNewProjRep('rep_clarence'); }}
+                        className="text-xs font-bold text-slate-600 hover:text-slate-900"
                       >
-                        {isInlineNewRep ? '← Choose Existing Rep' : '+ Create New Rep'}
+                        ✕ Cancel Inline Rep
                       </button>
                     </div>
 
-                    {!(isInlineNewRep || newProjRep === '__new__') && (
-                      <select 
-                        value={newProjRep} 
-                        onChange={(e) => {
-                          if (e.target.value === '__new__') {
-                            setIsInlineNewRep(true);
-                          } else {
-                            setIsInlineNewRep(false);
-                          }
-                          setNewProjRep(e.target.value);
-                        }}
-                        className="stitch-input px-3 py-2 text-[13px] text-white"
-                        required
-                      >
-                        <option value="__new__">➕ Create New Field Inspector...</option>
-                        {users && users.filter(isFieldRep).length > 0 ? (
-                          users.filter(isFieldRep).map(u => (
-                            <option key={u.id} value={u.id}>{u.name} ({u.title || 'Field Rep'})</option>
-                          ))
-                        ) : (
-                          <>
-                            <option value="rep_clarence">Clarence Kuiken (Lead Senior Inspector)</option>
-                            <option value="lead_diana">Diana Operations Lead</option>
-                          </>
-                        )}
-                      </select>
-                    )}
-                  </div>
-
-                  {/* INLINE NEW FIELD REP EXPANDABLE CARD */}
-                  {(isInlineNewRep || newProjRep === '__new__') && (
-                    <div className="p-3 bg-blue-950/60 border border-blue-500/50 rounded-xl flex flex-col gap-2.5 col-span-1 sm:col-span-2 shadow-inner">
-                      <div className="flex justify-between items-center border-b border-blue-800/60 pb-1.5">
-                        <span className="text-[11px] font-black text-sky-300 uppercase tracking-wider flex items-center gap-1.5">
-                          <UserPlus className="w-3.5 h-3.5 text-sky-400" /> 👤 New Field Inspector Details
-                        </span>
-                        <button 
-                          type="button" 
-                          onClick={() => { setIsInlineNewRep(false); setNewProjRep('rep_clarence'); }}
-                          className="text-[10px] font-bold text-slate-400 hover:text-white"
-                        >
-                          ✕ Cancel Inline Rep
-                        </button>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[10.5px] font-extrabold text-slate-700 uppercase">Rep Full Name (Optional)</label>
+                        <input 
+                          type="text" 
+                          value={inlineRepName} 
+                          onChange={(e) => setInlineRepName(e.target.value)} 
+                          placeholder="e.g. Alex Tremblay" 
+                          className="bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-900"
+                        />
                       </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        <div className="flex flex-col gap-1">
-                          <label className="text-[10px] font-bold text-slate-300 uppercase">Inspector Name (Optional)</label>
-                          <input 
-                            type="text" 
-                            value={inlineRepName} 
-                            onChange={(e) => setInlineRepName(e.target.value)} 
-                            placeholder="e.g. Alex Tremblay" 
-                            className="stitch-input px-2.5 py-1.5 text-xs text-white"
-                          />
-                        </div>
-                        <div className="flex flex-col gap-1">
-                          <label className="text-[10px] font-bold text-slate-300 uppercase">Email Address (Optional)</label>
-                          <input 
-                            type="email" 
-                            value={inlineRepEmail} 
-                            onChange={(e) => setInlineRepEmail(e.target.value)} 
-                            placeholder="alex.t@integritydriven.com" 
-                            className="stitch-input px-2.5 py-1.5 text-xs text-white"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        <div className="flex flex-col gap-1">
-                          <label className="text-[10px] font-bold text-slate-300 uppercase">Phone Number (Optional)</label>
-                          <input 
-                            type="text" 
-                            value={inlineRepPhone} 
-                            onChange={(e) => setInlineRepPhone(e.target.value)} 
-                            placeholder="+1 905-555-0199" 
-                            className="stitch-input px-2.5 py-1.5 text-xs text-white"
-                          />
-                        </div>
-                        <div className="flex flex-col gap-1">
-                          <label className="text-[10px] font-bold text-slate-300 uppercase">Title / Role (Optional)</label>
-                          <select 
-                            value={inlineRepTitle} 
-                            onChange={(e) => setInlineRepTitle(e.target.value)} 
-                            className="stitch-input px-2.5 py-1.5 text-xs text-white"
-                          >
-                            <option value="Quality Liaison Rep">Quality Liaison Rep</option>
-                            <option value="Quality Resident Engineer">Quality Resident Engineer</option>
-                            <option value="Lead Senior Inspector">Lead Senior Inspector</option>
-                          </select>
-                        </div>
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[10.5px] font-extrabold text-slate-700 uppercase">Email Address (Optional)</label>
+                        <input 
+                          type="email" 
+                          value={inlineRepEmail} 
+                          onChange={(e) => setInlineRepEmail(e.target.value)} 
+                          placeholder="alex.t@integritydriven.com" 
+                          className="bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-900"
+                        />
                       </div>
                     </div>
-                  )}
 
-                  <div className="flex flex-col gap-1">
-                    <label className="text-[10.5px] font-bold text-slate-300 uppercase tracking-wider">Plant Location *</label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[10.5px] font-extrabold text-slate-700 uppercase">Contact Phone (Optional)</label>
+                        <input 
+                          type="text" 
+                          value={inlineRepPhone} 
+                          onChange={(e) => setInlineRepPhone(e.target.value)} 
+                          placeholder="+1 905-555-0199" 
+                          className="bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-900"
+                        />
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[10.5px] font-extrabold text-slate-700 uppercase">Billing Currency *</label>
+                        <select
+                          value={newProjCurrency || 'CAD'}
+                          onChange={(e) => setNewProjCurrency(e.target.value)}
+                          className="bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-extrabold text-slate-900"
+                        >
+                          <option value="CAD">CAD ($) — Canadian Dollars</option>
+                          <option value="USD">USD ($) — US Dollars</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* ROW 2: PO NUMBER & SUSPECT PART NUMBER */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[11.5px] font-extrabold text-slate-700 uppercase tracking-wider">Purchase Order (PO Number) *</label>
+                    <input 
+                      type="text" 
+                      value={newProjPoNumber || ''} 
+                      onChange={(e) => setNewProjPoNumber(e.target.value)} 
+                      placeholder="e.g. PO-GM-CAMI-2026-88" 
+                      className="bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-mono font-bold text-slate-900 placeholder:text-slate-400 w-full focus:outline-none focus:border-blue-600 shadow-sm"
+                      required
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[11.5px] font-extrabold text-slate-700 uppercase tracking-wider">Suspect Part Number / Component *</label>
+                    <input 
+                      type="text" 
+                      value={newProjPartNumber || ''} 
+                      onChange={(e) => setNewProjPartNumber(e.target.value)} 
+                      placeholder="e.g. PN 84920194" 
+                      className="bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-mono font-bold text-slate-900 placeholder:text-slate-400 w-full focus:outline-none focus:border-blue-600 shadow-sm"
+                      required
+                    />
+                  </div>
+                </div>
+
+                {/* ROW 3: PLANT LOCATION & START DATE */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[11.5px] font-extrabold text-slate-700 uppercase tracking-wider">Assembly Plant Location *</label>
                     <input 
                       type="text" 
                       value={newProjPlant} 
                       onChange={(e) => setNewProjPlant(e.target.value)} 
                       placeholder="e.g. Magna Oshawa Plant 4" 
-                      className="stitch-input px-3 py-2 text-[13px] text-white placeholder-slate-500"
+                      className="bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-600 shadow-sm w-full"
                       required
                     />
                   </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                  <div className="flex flex-col gap-1">
-                    <label className="text-[10.5px] font-bold text-slate-300 uppercase tracking-wider">Description / Scope *</label>
-                    <input 
-                      type="text" 
-                      value={newProjDesc} 
-                      onChange={(e) => setNewProjDesc(e.target.value)} 
-                      placeholder="e.g. Line Quality Audit" 
-                      className="stitch-input px-3 py-2 text-[13px] text-white placeholder-slate-500"
-                      required
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <label className="text-[10.5px] font-bold text-slate-300 uppercase tracking-wider">Start Date *</label>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[11.5px] font-extrabold text-slate-700 uppercase tracking-wider">Start Date *</label>
                     <input 
                       type="date" 
                       value={newProjStartDate} 
                       onChange={(e) => setNewProjStartDate(e.target.value)} 
-                      className="stitch-input px-3 py-2 text-[13px] text-white"
+                      className="bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-mono font-bold text-slate-900 focus:outline-none focus:border-blue-600 shadow-sm w-full"
                       required
                     />
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2.5">
-                  <div className="flex flex-col gap-1">
-                    <label className="text-[10.5px] font-bold text-slate-300 uppercase tracking-wider">Billing Rate / HR *</label>
+                {/* ROW 4: DESCRIPTION / SCOPE */}
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[11.5px] font-extrabold text-slate-700 uppercase tracking-wider">Description / Scope *</label>
+                  <input 
+                    type="text" 
+                    value={newProjDesc} 
+                    onChange={(e) => setNewProjDesc(e.target.value)} 
+                    placeholder="e.g. Full Floor Sorting & Rework Audit" 
+                    className="bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-600 shadow-sm w-full"
+                    required
+                  />
+                </div>
+
+                {/* ROW 5: BILLING RATE & PAY RATE */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[11.5px] font-extrabold text-slate-700 uppercase tracking-wider">Billing Rate / HR ({newProjCurrency || 'CAD'}) *</label>
                     <div className="relative">
-                      <span className="absolute left-3 top-2 text-slate-400 text-xs font-mono">$</span>
+                      <span className="absolute left-3.5 top-2.5 text-slate-500 text-xs font-mono font-black">$</span>
                       <input 
                         type="number" 
                         step="0.01" 
                         value={newProjBilling} 
                         onChange={(e) => setNewProjBilling(e.target.value)} 
                         placeholder="85.00" 
-                        className="stitch-input pl-7 pr-3 py-1.5 text-[13px] text-white"
+                        className="bg-white border border-slate-300 rounded-xl pl-8 pr-3.5 py-2.5 text-xs font-black text-slate-900 focus:outline-none focus:border-blue-600 shadow-sm w-full"
                         required
                       />
                     </div>
                   </div>
-                  <div className="flex flex-col gap-1">
-                    <label className="text-[10.5px] font-bold text-slate-300 uppercase tracking-wider">Pay Rate / HR *</label>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[11.5px] font-extrabold text-slate-700 uppercase tracking-wider">Pay Rate / HR ({newProjCurrency || 'CAD'}) *</label>
                     <div className="relative">
-                      <span className="absolute left-3 top-2 text-slate-400 text-xs font-mono">$</span>
+                      <span className="absolute left-3.5 top-2.5 text-slate-500 text-xs font-mono font-black">$</span>
                       <input 
                         type="number" 
                         step="0.01" 
                         value={newProjPay} 
                         onChange={(e) => setNewProjPay(e.target.value)} 
                         placeholder="45.00" 
-                        className="stitch-input pl-7 pr-3 py-1.5 text-[13px] text-white"
+                        className="bg-white border border-slate-300 rounded-xl pl-8 pr-3.5 py-2.5 text-xs font-black text-slate-900 focus:outline-none focus:border-blue-600 shadow-sm w-full"
                         required
                       />
                     </div>
@@ -11570,25 +11801,25 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 </div>
               </div>
 
-              {/* ACTION BUTTON MOVED TO THE BOTTOM BELOW ALL FIELDS WITH PROPER PADDING & GOOGLE STITCH STYLING */}
-              <div className="flex items-center gap-3 pt-1">
+              {/* ACTION BUTTONS */}
+              <div className="flex items-center gap-3 pt-2">
                 <button 
                   type="button" 
                   onClick={() => setShowQuickAddClient(false)}
-                  className="px-4 py-2.5 rounded-xl border border-slate-700 hover:border-slate-500 text-slate-300 hover:text-white font-bold text-xs transition-colors cursor-pointer"
+                  className="px-5 py-3 rounded-xl border border-slate-300 hover:bg-slate-100 text-slate-700 font-extrabold text-xs transition-colors cursor-pointer shadow-sm"
                 >
                   Cancel
                 </button>
                 <button 
                   type="submit"
                   disabled={isOnboardingSubmitting}
-                  className="stitch-btn flex-1 h-11 text-xs font-extrabold uppercase tracking-wide cursor-pointer flex items-center justify-center gap-2 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white flex-1 h-12 rounded-xl text-xs font-black uppercase tracking-wider cursor-pointer flex items-center justify-center gap-2 shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isOnboardingSubmitting ? (
                     <span>Submitting Onboarding...</span>
                   ) : (
                     <>
-                      <PlusCircle className="w-4 h-4 text-white" />
+                      <PlusCircle className="w-4.5 h-4.5 text-white" />
                       <span>Onboard Company & Register Project Assignment</span>
                     </>
                   )}
@@ -11601,42 +11832,42 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
       {/* QUICK ADD PLANT / LOCATION MODAL */}
       {showQuickAddPlant && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[999] flex items-center justify-center p-3">
-          <div className="bg-surface-elevated border border-border-subtle p-3 rounded-2xl w-full max-w-sm flex flex-col gap-3 text-left shadow-2xl animate-in fade-in zoom-in duration-200">
-            <div className="flex justify-between items-center border-b border-border-subtle pb-2">
-              <h4 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider flex items-center gap-1.5">
-                <MapPin className="w-4.5 h-4.5 text-emerald-600" /> Quick Add Plant Location
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-300 p-6 rounded-2xl w-full max-w-sm flex flex-col gap-4 text-left shadow-2xl animate-in fade-in zoom-in duration-200 text-slate-900">
+            <div className="flex justify-between items-center border-b border-slate-200 pb-3">
+              <h4 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                <MapPin className="w-4.5 h-4.5 text-emerald-700" /> Quick Add Plant Location
               </h4>
-              <button onClick={() => setShowQuickAddPlant(false)} className="text-text-secondary hover:text-text-primary text-[14.5px]">✕</button>
+              <button onClick={() => setShowQuickAddPlant(false)} className="text-slate-400 hover:text-slate-900 text-lg font-bold">✕</button>
             </div>
-            <form onSubmit={handleQuickAddPlantSubmit} className="flex flex-col gap-3">
+            <form onSubmit={handleQuickAddPlantSubmit} className="flex flex-col gap-3.5">
               <div className="flex flex-col gap-1">
-                <label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Plant Name</label>
+                <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">Plant Name *</label>
                 <input 
                   type="text" 
                   value={quickPlantName} 
                   onChange={(e) => setQuickPlantName(e.target.value)} 
                   placeholder="e.g. Magna Belleville" 
-                  className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary placeholder-text-secondary focus:outline-none focus:border-emerald-500"
+                  className="bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-600"
                   required
                 />
               </div>
               <div className="flex flex-col gap-1">
-                <label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Address / Details</label>
+                <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">Address / Details</label>
                 <input 
                   type="text" 
                   value={quickPlantAddress} 
                   onChange={(e) => setQuickPlantAddress(e.target.value)} 
                   placeholder="e.g. 100 University Ave, Belleville, ON" 
-                  className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary placeholder-text-secondary focus:outline-none focus:border-emerald-500"
+                  className="bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-600"
                 />
               </div>
               <div className="flex flex-col gap-1">
-                <label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Map to Client / Supplier</label>
+                <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">Map to Client / Supplier</label>
                 <select 
                   value={quickPlantSupplierId} 
                   onChange={(e) => setQuickPlantSupplierId(e.target.value)} 
-                  className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary focus:outline-none"
+                  className="bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-extrabold text-slate-900 focus:outline-none"
                 >
                   <option value="">Select Client...</option>
                   {suppliers.map(s => (
@@ -11648,13 +11879,13 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 <button 
                   type="button" 
                   onClick={() => setShowQuickAddPlant(false)}
-                  className="flex-1 bg-surface border border-border-subtle hover:bg-surface-elevated text-text-secondary hover:text-text-primary py-2 rounded-xl text-[13.5px] font-bold transition-colors cursor-pointer"
+                  className="flex-1 bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 py-2.5 rounded-xl text-xs font-extrabold transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button 
                   type="submit"
-                  className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-slate-950 py-2 rounded-xl text-[13.5px] font-bold transition-colors cursor-pointer"
+                  className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl text-xs font-black transition-colors cursor-pointer shadow-sm"
                 >
                   Save Plant
                 </button>
@@ -11675,39 +11906,39 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
       {/* Reset Rep Login Password Modal */}
       {resetPasswordUser && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-amber-500/40 rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <div className="flex items-center gap-2 text-amber-400">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-300 rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4 text-slate-900">
+            <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+              <div className="flex items-center gap-2 text-amber-700">
                 <Lock className="w-5 h-5" />
-                <h3 className="text-base font-extrabold text-white">Reset Rep Login Password</h3>
+                <h3 className="text-base font-black text-slate-900 uppercase tracking-wide">Reset Rep Login Password</h3>
               </div>
-              <button onClick={() => setResetPasswordUser(null)} className="text-slate-400 hover:text-white text-lg font-bold cursor-pointer">✕</button>
+              <button onClick={() => setResetPasswordUser(null)} className="text-slate-400 hover:text-slate-900 text-lg font-bold cursor-pointer">✕</button>
             </div>
 
-            <div className="space-y-3 text-left">
+            <div className="space-y-3.5 text-left">
               <div>
-                <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Rep Name</label>
-                <input type="text" readOnly value={resetPasswordUser.name} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-300 font-bold" />
+                <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider block mb-1">Rep Name</label>
+                <input type="text" readOnly value={resetPasswordUser.name} className="w-full bg-slate-100 border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 font-extrabold" />
               </div>
               <div>
-                <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Login Username / Email</label>
-                <input type="text" readOnly value={resetPasswordUser.username || resetPasswordUser.email?.split('@')[0] || resetPasswordUser.name?.toLowerCase().replace(/\s+/g, '')} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs font-mono text-cyan-400" />
+                <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider block mb-1">Login Username / Email</label>
+                <input type="text" readOnly value={resetPasswordUser.username || resetPasswordUser.email?.split('@')[0] || resetPasswordUser.name?.toLowerCase().replace(/\s+/g, '')} className="w-full bg-slate-100 border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-mono text-blue-700 font-bold" />
               </div>
               <div>
-                <label className="text-[11px] font-bold text-amber-400 uppercase tracking-wider block mb-1">New Login Password *</label>
+                <label className="text-[11px] font-extrabold text-amber-800 uppercase tracking-wider block mb-1">New Login Password *</label>
                 <div className="relative flex items-center">
                   <input 
                     type={showResetPasswordToggle ? "text" : "password"} 
                     value={newPasswordInput} 
                     onChange={(e) => setNewPasswordInput(e.target.value)} 
                     placeholder="Enter new secure password..." 
-                    className="w-full bg-slate-950 border border-amber-500/50 rounded-xl pl-3 pr-10 py-2 text-xs text-white focus:outline-none focus:border-amber-400 font-mono"
+                    className="w-full bg-white border border-amber-400 rounded-xl pl-3.5 pr-10 py-2.5 text-xs text-slate-900 font-mono font-bold focus:outline-none focus:ring-2 focus:ring-amber-500/30"
                   />
                   <button
                     type="button"
                     onClick={() => setShowResetPasswordToggle(!showResetPasswordToggle)}
-                    className="absolute right-2.5 text-slate-400 hover:text-amber-400 p-1 cursor-pointer transition-colors"
+                    className="absolute right-2.5 text-slate-500 hover:text-amber-700 p-1 cursor-pointer transition-colors"
                     title={showResetPasswordToggle ? "Hide Password" : "View Password"}
                     aria-label={showResetPasswordToggle ? "Hide password text" : "View password text"}
                   >
@@ -11717,13 +11948,13 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
               </div>
             </div>
 
-            <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">
+            <div className="flex justify-end gap-2.5 pt-3 border-t border-slate-200">
               <button 
                 onClick={() => {
                   setResetPasswordUser(null);
                   setShowResetPasswordToggle(false);
                 }} 
-                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-xl cursor-pointer"
+                className="px-4 py-2.5 bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 text-xs font-extrabold rounded-xl cursor-pointer"
               >
                 Cancel
               </button>
@@ -11738,18 +11969,103 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   if (userIdx >= 0) {
                     dbUsers[userIdx].password = newPasswordInput.trim();
                     saveEntity('users', dbUsers[userIdx]);
-                    Promise.resolve(supabase.from('users').upsert(dbUsers[userIdx])).catch(err => console.warn("[User Password Upsert Warning]:", err));
                   }
-                  showToast(`Password updated successfully for ${resetPasswordUser.name}!`, "success");
+                  showToast(`Password successfully updated for ${resetPasswordUser.name}!`, "success");
+                  setResetPasswordUser(null);
                   setNewPasswordInput('');
                   setShowResetPasswordToggle(false);
-                  setResetPasswordUser(null);
-                }}
-                className="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white text-xs font-extrabold rounded-xl cursor-pointer shadow-lg shadow-amber-600/20"
+                }} 
+                className="px-5 py-2.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-black rounded-xl cursor-pointer shadow-md"
               >
-                Save New Password
+                Reset Password
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* QUICK ADD CLIENT CONTACT / REP MODAL */}
+      {addContactSupplier && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-300 p-6 rounded-2xl w-full max-w-md flex flex-col gap-4 text-left shadow-2xl animate-in fade-in zoom-in duration-200 text-slate-900">
+            <div className="flex justify-between items-center border-b border-slate-200 pb-3">
+              <div>
+                <h4 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                  <UserPlus className="w-4.5 h-4.5 text-blue-600" /> Add Client Representative
+                </h4>
+                <span className="text-xs text-slate-500 font-semibold">{addContactSupplier.name}</span>
+              </div>
+              <button onClick={() => setAddContactSupplier(null)} className="text-slate-400 hover:text-slate-900 text-lg font-bold cursor-pointer">✕</button>
+            </div>
+
+            <form onSubmit={handleSaveContactToSupplier} className="flex flex-col gap-3.5">
+              <div className="flex flex-col gap-1">
+                <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">Contact Full Name *</label>
+                <input 
+                  type="text" 
+                  value={newContactName} 
+                  onChange={(e) => setNewContactName(e.target.value)} 
+                  placeholder="e.g. Robert Sterling" 
+                  className="bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-600"
+                  required
+                />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">Contact Email *</label>
+                <input 
+                  type="email" 
+                  value={newContactEmail} 
+                  onChange={(e) => setNewContactEmail(e.target.value)} 
+                  placeholder="e.g. rsterling@magnapowertrain.com" 
+                  className="bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-600"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex flex-col gap-1">
+                  <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">Role / Title</label>
+                  <input 
+                    type="text" 
+                    value={newContactRole} 
+                    onChange={(e) => setNewContactRole(e.target.value)} 
+                    placeholder="e.g. Quality Director" 
+                    className="bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-600"
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">Phone Contact</label>
+                  <input 
+                    type="text" 
+                    value={newContactPhone} 
+                    onChange={(e) => setNewContactPhone(e.target.value)} 
+                    placeholder="e.g. +1 555-0199" 
+                    className="bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-600"
+                  />
+                </div>
+              </div>
+
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl text-[11px] text-blue-900 font-medium">
+                💡 <strong>Client Portal Access:</strong> Saving this contact will automatically provision a Customer Contact account (`role: customer`) so they can log in to approve timesheets.
+              </div>
+
+              <div className="flex gap-3 mt-2">
+                <button 
+                  type="button" 
+                  onClick={() => setAddContactSupplier(null)}
+                  className="flex-1 bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 py-2.5 rounded-xl text-xs font-extrabold transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit"
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-xl text-xs font-black transition-colors cursor-pointer shadow-sm"
+                >
+                  Save Contact
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

@@ -55,10 +55,17 @@ export default function SecurityDashboard() {
     return () => clearInterval(interval);
   }, [agentStatus]);
 
+  // Dynamic Base API Host Resolution to prevent live production deployment crashes
+  const getSecurityApiUrl = (endpoint) => {
+    const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+    const baseUrl = isLocalhost ? 'http://127.0.0.1:8000' : '';
+    return `${baseUrl}${endpoint}`;
+  };
+
   // Check Agent Status & Auto Mode
   const checkAgent = async () => {
     try {
-      const res = await fetch('http://127.0.0.1:8000/api/status');
+      const res = await fetch(getSecurityApiUrl('/api/status'));
       if (res.ok) {
         setAgentStatus('connected');
         const data = await res.json();
@@ -75,9 +82,9 @@ export default function SecurityDashboard() {
     if (agentStatus !== 'connected') return;
     try {
       const [connRes, logRes, ruleRes] = await Promise.all([
-        fetch('http://127.0.0.1:8000/api/connections'),
-        fetch('http://127.0.0.1:8000/api/logs'),
-        fetch('http://127.0.0.1:8000/api/rules')
+        fetch(getSecurityApiUrl('/api/connections')),
+        fetch(getSecurityApiUrl('/api/logs')),
+        fetch(getSecurityApiUrl('/api/rules'))
       ]);
 
       if (connRes.ok) setConnections(await connRes.json());
@@ -109,7 +116,7 @@ export default function SecurityDashboard() {
   const runForensicAudit = async () => {
     setIsAuditing(true);
     try {
-      const res = await fetch('http://127.0.0.1:8000/api/audit');
+      const res = await fetch(getSecurityApiUrl('/api/audit'));
       if (res.ok) {
         setAuditReport(await res.json());
         loadData();
@@ -123,7 +130,7 @@ export default function SecurityDashboard() {
 
   const toggleAutoMode = async () => {
     try {
-      const res = await fetch('http://127.0.0.1:8000/api/toggle_auto_mode', { method: 'POST' });
+      const res = await fetch(getSecurityApiUrl('/api/toggle_auto_mode'), { method: 'POST' });
       if (res.ok) {
         const data = await res.json();
         setAutoMode(data.auto_mode);
@@ -137,7 +144,7 @@ export default function SecurityDashboard() {
   const handleBlock = async (type, target) => {
     setIsActionLoading(true);
     try {
-      const res = await fetch('http://127.0.0.1:8000/api/block', {
+      const res = await fetch(getSecurityApiUrl('/api/block'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type, target })
@@ -154,7 +161,7 @@ export default function SecurityDashboard() {
   const handleAllow = async (type, target) => {
     setIsActionLoading(true);
     try {
-      const res = await fetch('http://127.0.0.1:8000/api/allow', {
+      const res = await fetch(getSecurityApiUrl('/api/allow'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type, target })
@@ -172,7 +179,7 @@ export default function SecurityDashboard() {
     if (!confirm("Reset all firewall blocks?")) return;
     setIsActionLoading(true);
     try {
-      const res = await fetch('http://127.0.0.1:8000/api/clear_rules', { method: 'POST' });
+      const res = await fetch(getSecurityApiUrl('/api/clear_rules'), { method: 'POST' });
       if (res.ok) loadData();
     } catch (e) {
       console.error(e);

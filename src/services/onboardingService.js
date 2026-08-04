@@ -24,7 +24,8 @@ export function validateOnboardingPayload(payload) {
     throw new Error("Validation Error: Pay rate must be a valid non-negative number.");
   }
 
-  const repId = payload.rep_id || 'rep_clarence';
+  const dbUsers = getDB()?.users || [];
+  const repId = payload.rep_id || (dbUsers.find(u => u.role === 'rep')?.id || (dbUsers[0]?.id || 'rep_default'));
 
   return {
     supplier_name: supplierName.trim(),
@@ -95,8 +96,8 @@ export async function performAtomicClientOnboarding(rawPayload) {
     const matchedRep = (dbDataPre.users || []).find(u => String(u.id) === String(validated.rep_id) || u.username === validated.rep_id);
     if (matchedRep) {
       resolvedRepName = matchedRep.name;
-    } else if (validated.rep_id === 'rep_clarence' || validated.rep_id === '1') {
-      resolvedRepName = 'Clarence Kuiken';
+    } else {
+      resolvedRepName = matchedRep?.name || 'IDS Field Rep';
     }
   }
 

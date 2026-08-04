@@ -283,8 +283,11 @@ function App() {
           clarence: { id: 'rep_clarence', name: 'Clarence Kuiken', email: 'clarence.k@goto-ids.com', username: 'clarence', role: 'rep', title: 'Quality Liaison Rep', isDemoSession: true },
           donna: { id: '24', name: 'Donna Cabral', email: 'donna@goto-ids.com', username: 'donna', role: 'lead', title: 'Operations Lead', isDemoSession: true },
           colleen: { id: 'acct_1', name: 'Colleen Boyd', email: 'colleen@goto-ids.com', username: 'colleen', role: 'accountant', title: 'Accountant', isDemoSession: true },
-          autokabel: { id: 'autokabel', name: 'AutoKabel Quality Manager', email: 'quality@autokabel.com', username: 'autokabel', role: 'customer', title: 'Autokabel Client Partner', supplier_id: 'autokabel', isDemoSession: true },
-          customer: { id: 'cust_1', name: 'Client Partner', email: 'client@fictionalclient.com', username: 'customer', role: 'customer', title: 'Client Quality Manager', supplier_id: 'supplier_fictional_101', isDemoSession: true }
+          magna_client: { id: 'user_cust_magna_robert', name: 'Robert Sterling (Magna)', email: 'robert.sterling@magna.com', username: 'magna_client', role: 'customer', title: 'Magna Primary Quality Director', supplier_id: 'sup_magna', customer_id: 'sup_magna', client_id: 'sup_magna', isDemoSession: true },
+          robert: { id: 'user_cust_magna_robert', name: 'Robert Sterling (Magna)', email: 'robert.sterling@magna.com', username: 'magna_client', role: 'customer', title: 'Magna Primary Quality Director', supplier_id: 'sup_magna', customer_id: 'sup_magna', client_id: 'sup_magna', isDemoSession: true },
+          stellantis_client: { id: 'user_cust_stellantis_mark', name: 'Mark Vance (Stellantis)', email: 'mark.vance@stellantis.com', username: 'stellantis_client', role: 'customer', title: 'Stellantis Quality Manager', supplier_id: 'sup_stellantis', isDemoSession: true },
+          autokabel: { id: 'user_cust_stellantis_mark', name: 'Mark Vance (Stellantis)', email: 'mark.vance@stellantis.com', username: 'stellantis_client', role: 'customer', title: 'Stellantis Quality Manager', supplier_id: 'sup_stellantis', isDemoSession: true },
+          customer: { id: 'user_cust_stellantis_mark', name: 'Mark Vance (Stellantis)', email: 'mark.vance@stellantis.com', username: 'stellantis_client', role: 'customer', title: 'Stellantis Quality Manager', supplier_id: 'sup_stellantis', isDemoSession: true }
         };
 
         const demoUser = demoUsers[inputUser];
@@ -298,13 +301,21 @@ function App() {
         setAuthError(false);
         setUserRole(demoUser.role);
         setCurrentUser(demoUser);
-        if (demoUser.role === 'rep') {
+
+        sessionStorage.setItem('ids_pulse_role', demoUser.role);
+        sessionStorage.setItem('ids_pulse_username', demoUser.username || '');
+        if (demoUser.role === 'customer') {
+          const custId = demoUser.supplier_id || demoUser.customer_id || demoUser.id;
+          sessionStorage.setItem('ids_pulse_customer_id', custId);
+          setCurrentUserCustomerId(custId);
+          setLayoutMode('dashboard-only');
+        } else if (demoUser.role === 'rep') {
+          sessionStorage.setItem('ids_pulse_rep_id', demoUser.id);
           setCurrentUserRepId(demoUser.id);
           setLayoutMode('phone-only');
-        } else if (demoUser.role === 'customer') {
-          setCurrentUserCustomerId(demoUser.supplier_id || demoUser.id);
-          setLayoutMode('dashboard-only');
         } else {
+          sessionStorage.removeItem('ids_pulse_customer_id');
+          sessionStorage.removeItem('ids_pulse_rep_id');
           setLayoutMode('dashboard-only');
         }
         return true;
@@ -319,8 +330,8 @@ function App() {
         { id: 'lead_diana', name: 'Diana Operations Lead', email: 'diana@goto-ids.com', username: 'diana', role: 'lead' },
         { id: 'owner_1', name: 'Greg Phillippe', email: 'greg@goto-ids.com', username: 'greg', role: 'owner' },
         { id: 'acct_1', name: 'Colleen Boyd', email: 'colleen@goto-ids.com', username: 'colleen', role: 'accountant' },
-        { id: 'rep_clarence', name: 'Clarence Kuiken', email: 'clarence.k@goto-ids.com', username: 'clarence', role: 'rep', title: 'Quality Inspector' },
-        { id: 'rep_test', name: 'Rep Test Inspector', email: 'rep_test@integritydriven.com', username: 'rep_test', password: 'password123', role: 'rep', title: 'Quality Inspector' },
+        { id: 'rep_clarence', name: 'Clarence Kuiken', email: 'clarence.k@goto-ids.com', username: 'clarence', role: 'rep', title: 'IDS Field Rep' },
+        { id: 'rep_test', name: 'Rep Test Inspector', email: 'rep_test@integritydriven.com', username: 'rep_test', password: 'password123', role: 'rep', title: 'IDS Field Rep' },
         { id: 'cust_1', name: 'Client Partner', email: 'client@fictionalclient.com', username: 'customer', role: 'customer', title: 'Client Quality Manager' },
         { id: 'autokabel', name: 'AutoKabel Quality Manager', email: 'quality@autokabel.com', username: 'autokabel', password: 'password123', role: 'customer', title: 'Autokabel Client Partner', supplier_id: 'autokabel' },
         ...localUsers
@@ -433,7 +444,7 @@ function App() {
             setAuthError(true);
             return false;
           }
-        } else if (matchedUser.password && matchedUser.password !== rawPw && rawPw !== 'password123') {
+        } else if (matchedUser.password && matchedUser.password !== rawPw) {
           console.warn("[Auth Security]: Incorrect password for local user:", inputUser);
           setAuthError(true);
           return false;
@@ -444,14 +455,21 @@ function App() {
         setAuthError(false);
         setUserRole(normRole);
         setCurrentUser(matchedUser);
+
+        sessionStorage.setItem('ids_pulse_role', normRole);
+        sessionStorage.setItem('ids_pulse_username', matchedUser.username || '');
         if (normRole === 'rep' || matchedUser.id?.startsWith('rep_')) {
+          sessionStorage.setItem('ids_pulse_rep_id', matchedUser.id);
           setCurrentUserRepId(matchedUser.id);
           setLayoutMode('phone-only');
         } else if (normRole === 'customer') {
           const targetCustId = matchedUser.supplier_id || matchedUser.customer_id || matchedUser.id;
+          sessionStorage.setItem('ids_pulse_customer_id', targetCustId);
           setCurrentUserCustomerId(targetCustId);
           setLayoutMode('dashboard-only');
         } else {
+          sessionStorage.removeItem('ids_pulse_customer_id');
+          sessionStorage.removeItem('ids_pulse_rep_id');
           setLayoutMode('dashboard-only');
         }
         syncWithSupabase(true, normRole, normRole === 'rep' ? matchedUser.id : '', normRole === 'customer' ? (matchedUser.supplier_id || matchedUser.customer_id || matchedUser.id) : '');
@@ -687,7 +705,7 @@ function App() {
             <div className={isMobileDevice ? "w-full h-full min-h-screen" : "flex-shrink-0 flex items-center justify-center py-4 mx-auto lg:mx-0"}>
               <div className={isMobileDevice ? "w-full h-full min-h-screen flex flex-col" : "flex flex-col items-center"}>
                 {!isMobileDevice && (
-                  <span className="text-[10px] text-text-secondary font-bold uppercase tracking-wider mb-2">Field Inspector App</span>
+                  <span className="text-[10px] text-text-secondary font-bold uppercase tracking-wider mb-2">IDS Rep Mobile App</span>
                 )}
                 <ErrorBoundary>
                   <PhoneSimulator 

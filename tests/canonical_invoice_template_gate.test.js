@@ -1,29 +1,13 @@
-/**
- * Real Automated Test Gate — Canonical Invoice Template & Multi-Path Reconciliation
- * Integrity Driven Solutions Inc. (IDS)
- * Run via: node tests/canonical_invoice_template_gate.test.js
- */
-
+import { describe, it, expect } from 'vitest';
 import assert from 'assert';
 import { generateIntegrityInvoicePDF } from '../src/utils/generateInvoicePdf.js';
 
-console.log('===========================================================');
-console.log('  IDS PULSE CANONICAL INVOICE TEMPLATE RELEASE GATE (REAL)');
-console.log('===========================================================\n');
-
-let totalTests = 0;
-let passedTests = 0;
+describe('Canonical Invoice Template Release Gate Suite', () => {
 
 function runTest(name, fn) {
-  totalTests++;
-  try {
+  it(name, () => {
     fn();
-    console.log(`  ✅ [PASS] ${name}`);
-    passedTests++;
-  } catch (err) {
-    console.error(`  ❌ [FAIL] ${name}`);
-    console.error(`     Error: ${err.message}`);
-  }
+  });
 }
 
 // ----------------------------------------------------
@@ -187,13 +171,4 @@ runTest('Single vs Batch Invoice Parity Gate', () => {
   assert.strictEqual(singleDoc.output('arraybuffer').byteLength, batchDoc.output('arraybuffer').byteLength, 'Single and Batch PDF outputs must have identical byte sizes for identical input data');
 });
 
-// ----------------------------------------------------
-// Summary Output
-// ----------------------------------------------------
-console.log('\n===========================================================');
-console.log(`  RESULTS: ${passedTests} / ${totalTests} INVOICE GATE TESTS PASSED`);
-console.log('===========================================================\n');
-
-if (passedTests !== totalTests) {
-  process.exit(1);
-}
+});

@@ -1,5 +1,6 @@
 import { jsPDF } from 'jspdf';
 import { LOGO_BASE64 } from '../components/LogoBase64.js';
+import { BRANDING_CONFIG } from '../config/brandingConfig.js';
 
 /**
  * Generates an exact, perfectly aligned PDF invoice matching the Integrity Driven Solutions Inc. golden template (Invoice_INV-TC-8002.pdf).
@@ -21,7 +22,7 @@ export const generateIntegrityInvoicePDF = ({
   items = [],
   taxAmount = 0.00,
   currency = 'USD',
-  gstHstNo = '853120236'
+  gstHstNo = BRANDING_CONFIG.taxRegistrationNumber
 }) => {
   // 1. Mandatory Data Completeness Gate
   const missingData = [];

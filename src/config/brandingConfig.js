@@ -10,6 +10,7 @@ export const BRANDING_CONFIG = {
   organizationShort: 'IDS',
   productName: 'IDS Pulse',
   version: 'v3.0.0',
+  taxRegistrationNumber: '853120236 RT0001',
   logo: {
     canonical: LOGO_BASE64,
     darkText: LOGO_BASE64_DARK_TEXT,

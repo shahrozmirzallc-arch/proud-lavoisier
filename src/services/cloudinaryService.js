@@ -1,7 +1,7 @@
 // src/services/cloudinaryService.js
 // Enterprise Cloudinary Upload Service for IDS Pulse Media Plane (Images, Videos, Audio & PDFs)
 
-const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || 'olbzwhrw';
+const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || 'ids_pulse_vault';
 const UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || 'unsigned_uploads';
 
 /**
@@ -93,8 +93,8 @@ export async function uploadToCloudinary(fileOrBase64, folder = 'incidents') {
     // 1. Fetch server-signed upload parameters from reserve-media-upload Edge Function
     let signedParams = null;
     try {
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://wuqqrcowznrmmuokfxlk.supabase.co';
-      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_S7Qpf1lJ6OCYbYrE-_5iLQ_lN9iEdNe';
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
       const reserveRes = await fetch(`${supabaseUrl}/functions/v1/reserve-media-upload`, {
         method: 'POST',

@@ -1,9 +1,4 @@
-/**
- * Automated Release Gate — IDS Pulse Report Branding & Layout Verification
- * Integrity Driven Solutions Inc. (IDS)
- * Run via: node tests/report_branding_and_layout_gate.test.js
- */
-
+import { describe, it, expect } from 'vitest';
 import assert from 'assert';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -11,23 +6,12 @@ import { BRANDING_CONFIG } from '../src/config/brandingConfig.js';
 import { SharedReportShell } from '../src/utils/sharedReportShell.js';
 import { LOGO_BASE64 } from '../src/components/LogoBase64.js';
 
-console.log('====================================================');
-console.log('  IDS PULSE AUTOMATED REPORT & BRANDING RELEASE GATE');
-console.log('====================================================\n');
-
-let totalTests = 0;
-let passedTests = 0;
+describe('IDS Pulse Report Branding & Layout Verification Suite', () => {
 
 function runTest(name, fn) {
-  totalTests++;
-  try {
+  it(name, () => {
     fn();
-    console.log(`  ✅ [PASS] ${name}`);
-    passedTests++;
-  } catch (err) {
-    console.error(`  ❌ [FAIL] ${name}`);
-    console.error(`     Error: ${err.message}`);
-  }
+  });
 }
 
 // ----------------------------------------------------
@@ -158,13 +142,4 @@ runTest('Shared Report Shell Multi-Page Footer & Logo Gate', () => {
   assert.ok(pages >= 2, 'Table should span across at least 2 pages');
 });
 
-// ----------------------------------------------------
-// Summary Output
-// ----------------------------------------------------
-console.log('\n====================================================');
-console.log(`  RESULTS: ${passedTests} / ${totalTests} TESTS PASSED`);
-console.log('====================================================\n');
-
-if (passedTests !== totalTests) {
-  process.exit(1);
-}
+});

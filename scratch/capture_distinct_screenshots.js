@@ -1,233 +1,186 @@
-import puppeteer from 'puppeteer';
-import { createServer } from 'http';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
+// scratch/capture_distinct_screenshots.js
+// Capture 8 distinct, authentic live DOM screenshots using Puppeteer
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const distDir = path.join(__dirname, '../dist');
+const puppeteer = require('puppeteer');
+const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
+const { spawn } = require('child_process');
 
-const mimeTypes = {
-  '.html': 'text/html',
-  '.js': 'text/javascript',
-  '.css': 'text/css',
-  '.json': 'application/json',
-  '.png': 'image/png',
-  '.jpg': 'image/jpg',
-  '.svg': 'image/svg+xml'
-};
+const ARTIFACT_DIR = 'C:/Users/Sharoz/.gemini/antigravity/brain/89428d1a-6335-42dd-8036-39f9c953213b';
 
-const server = createServer((req, res) => {
-  let filePath = path.join(distDir, req.url === '/' ? 'index.html' : req.url);
-  if (!fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) {
-    filePath = path.join(distDir, 'index.html');
-  }
-  const ext = path.extname(filePath).toLowerCase();
-  const contentType = mimeTypes[ext] || 'application/octet-stream';
-  fs.readFile(filePath, (err, content) => {
-    if (err) {
-      res.writeHead(500);
-      res.end('Error loading file');
-    } else {
-      res.writeHead(200, { 'Content-Type': contentType });
-      res.end(content, 'utf-8');
-    }
+async function run() {
+  console.log('[Puppeteer] Building app for preview...');
+  
+  // Start preview server
+  const previewProcess = spawn('npx.cmd', ['vite', 'preview', '--port', '4179'], {
+    cwd: 'C:/Users/Sharoz/Documents/antigravity/proud-lavoisier',
+    stdio: 'inherit',
+    shell: true
   });
-});
 
-server.listen(4199, async () => {
-  console.log('Static preview server running at http://localhost:4199');
+  // Wait 3 seconds for preview server
+  await new Promise(r => setTimeout(r, 3000));
 
+  console.log('[Puppeteer] Launching browser...');
   const browser = await puppeteer.launch({
-    headless: true,
+    headless: 'new',
     args: ['--no-sandbox', '--disable-setuid-sandbox']
   });
 
   const page = await browser.newPage();
-  await page.setViewport({ width: 390, height: 844 });
-
-  const outputDir = path.join(__dirname, '../refactored_screenshots');
-  if (!fs.existsSync(outputDir)) {
-    fs.mkdirSync(outputDir, { recursive: true });
-  }
+  await page.setViewport({ width: 390, height: 844, deviceScaleFactor: 2 });
 
   try {
-    await page.goto('http://localhost:4199', { waitUntil: 'networkidle2' });
+    console.log('[Puppeteer] Navigating to http://localhost:4179...');
+    await page.goto('http://localhost:4179', { waitUntil: 'networkidle0' });
 
-    // 12. Login View
-    await page.screenshot({ path: path.join(outputDir, '12_login.png') });
-    console.log('Captured 12_login.png');
+    // 01: Rep Home Dashboard
+    await page.screenshot({ path: path.join(ARTIFACT_DIR, '01_rep_home_dashboard.png') });
+    console.log('Saved 01_rep_home_dashboard.png');
 
-    // Login as Clarence
+    // Click "Log Incident" or navigate into Incident workflow
+    const logIncBtn = await page.$('button::-p-text("Log Incident"), button::-p-text("Report Defect"), [data-testid="log-incident-btn"]');
+    if (logIncBtn) {
+      await logIncBtn.click();
+    } else {
+      // Find any button containing "Incident" or navigate
+      await page.evaluate(() => {
+        const btns = Array.from(document.querySelectorAll('button'));
+        const incBtn = btns.find(b => b.textContent.includes('Incident') || b.textContent.includes('Defect'));
+        if (incBtn) incBtn.click();
+      });
+    }
+    await page.evaluate(() => new Promise(r => setTimeout(r, 600)));
+
+    // 02: Step 1 Assignment
+    await page.screenshot({ path: path.join(ARTIFACT_DIR, '02_incident_step1_assignment.png') });
+    console.log('Saved 02_incident_step1_assignment.png');
+
+    // Navigate to Step 2 then Step 3
     await page.evaluate(() => {
       const btns = Array.from(document.querySelectorAll('button'));
-      const clarence = btns.find(b => b.textContent.includes('Clarence'));
-      if (clarence) clarence.click();
+      const nextBtn = btns.find(b => b.textContent.includes('Continue') || b.textContent.includes('Next') || b.textContent.includes('Step 2'));
+      if (nextBtn) nextBtn.click();
     });
-    await new Promise(r => setTimeout(r, 2000));
+    await page.evaluate(() => new Promise(r => setTimeout(r, 600)));
 
-    // 01. Rep Home
-    await page.screenshot({ path: path.join(outputDir, '01_home.png') });
-    await page.screenshot({ path: path.join(outputDir, '01_rep_home_emerald_refactored.png') });
-    console.log('Captured 01_home.png');
-
-    // 09. Add Hours Modal
     await page.evaluate(() => {
       const btns = Array.from(document.querySelectorAll('button'));
-      const addHrs = btns.find(b => b.textContent.includes("Add Today's Hours"));
-      if (addHrs) addHrs.click();
+      const nextBtn = btns.find(b => b.textContent.includes('Continue') || b.textContent.includes('Next') || b.textContent.includes('Step 3'));
+      if (nextBtn) nextBtn.click();
     });
-    await new Promise(r => setTimeout(r, 600));
-    await page.screenshot({ path: path.join(outputDir, '09_add_hours_modal.png') });
-    console.log('Captured 09_add_hours_modal.png');
+    await page.evaluate(() => new Promise(r => setTimeout(r, 600)));
 
-    // Close Modal
+    // 03: Step 3 Describe Defect
+    await page.screenshot({ path: path.join(ARTIFACT_DIR, '03_incident_step3_describe.png') });
+    console.log('Saved 03_incident_step3_describe.png');
+
+    // Fill Step 3 narrative
+    await page.evaluate(() => {
+      const textareas = document.querySelectorAll('textarea');
+      if (textareas.length >= 1) textareas[0].value = 'Light on scrap table at sequence area for rattle. Spare bulb in housing.';
+      if (textareas.length >= 2) textareas[1].value = 'Removed bulb, returned light to sequence area.';
+      
+      const inputs = document.querySelectorAll('input[type="text"]');
+      if (inputs.length > 0) inputs[0].value = 'Assembly Line 4';
+
+      // Trigger change events
+      textareas.forEach(t => t.dispatchEvent(new Event('input', { bubbles: true })));
+      inputs.forEach(i => i.dispatchEvent(new Event('input', { bubbles: true })));
+    });
+    await page.evaluate(() => new Promise(r => setTimeout(r, 400)));
+
+    // 04: Step 3 Filled
+    await page.screenshot({ path: path.join(ARTIFACT_DIR, '04_incident_step3_filled.png') });
+    console.log('Saved 04_incident_step3_filled.png');
+
+    // Advance to Step 4 Audit
     await page.evaluate(() => {
       const btns = Array.from(document.querySelectorAll('button'));
-      const cancel = btns.find(b => b.textContent.includes("Cancel"));
-      if (cancel) cancel.click();
+      const reviewBtn = btns.find(b => b.textContent.includes('Review') || b.textContent.includes('Step 4') || b.textContent.includes('Proceed'));
+      if (reviewBtn) reviewBtn.click();
     });
-    await new Promise(r => setTimeout(r, 500));
+    await page.evaluate(() => new Promise(r => setTimeout(r, 600)));
 
-    // 02. WORK Screen
+    // 05: Step 4 Audit
+    await page.screenshot({ path: path.join(ARTIFACT_DIR, '05_incident_step4_audit.png') });
+    console.log('Saved 05_incident_step4_audit.png');
+
+    // Click "Preview Email" button to open email preview modal
     await page.evaluate(() => {
       const btns = Array.from(document.querySelectorAll('button'));
-      const work = btns.find(b => b.textContent.trim() === 'Work');
-      if (work) work.click();
+      const emailBtn = btns.find(b => b.textContent.toLowerCase().includes('email') || b.textContent.toLowerCase().includes('preview'));
+      if (emailBtn) emailBtn.click();
     });
-    await new Promise(r => setTimeout(r, 1000));
-    await page.screenshot({ path: path.join(outputDir, '02_work.png') });
-    console.log('Captured 02_work.png');
+    await page.evaluate(() => new Promise(r => setTimeout(r, 600)));
 
-    // 03. ALERT / INCIDENT Screen
-    await page.evaluate(() => {
-      const btns = Array.from(document.querySelectorAll('button'));
-      const alertBtn = btns.find(b => b.textContent.trim() === 'Alert');
-      if (alertBtn) alertBtn.click();
-    });
-    await new Promise(r => setTimeout(r, 1000));
-    await page.screenshot({ path: path.join(outputDir, '03_alert.png') });
-    console.log('Captured 03_alert.png');
+    // 06: Step 4 Email Preview Modal
+    await page.screenshot({ path: path.join(ARTIFACT_DIR, '06_incident_step4_email_preview.png') });
+    console.log('Saved 06_incident_step4_email_preview.png');
 
-    // Cancel Incident
+    // Close Email Preview Modal if open
     await page.evaluate(() => {
-      const btns = Array.from(document.querySelectorAll('button'));
-      const cancel = btns.find(b => b.textContent.includes("Cancel"));
-      if (cancel) cancel.click();
-    });
-    await new Promise(r => setTimeout(r, 500));
-
-    // 04. REPORTS Screen
-    await page.evaluate(() => {
-      const btns = Array.from(document.querySelectorAll('button'));
-      const rpt = btns.find(b => b.textContent.trim() === 'Reports');
-      if (rpt) rpt.click();
-    });
-    await new Promise(r => setTimeout(r, 1000));
-    await page.screenshot({ path: path.join(outputDir, '04_reports.png') });
-    console.log('Captured 04_reports.png');
-
-    // 05. MORE Screen
-    await page.evaluate(() => {
-      const btns = Array.from(document.querySelectorAll('button'));
-      const more = btns.find(b => b.textContent.trim() === 'More');
-      if (more) more.click();
-    });
-    await new Promise(r => setTimeout(r, 1000));
-    await page.screenshot({ path: path.join(outputDir, '05_more.png') });
-    console.log('Captured 05_more.png');
-
-    // 06. EXPENSE Screen
-    await page.evaluate(() => {
-      const btns = Array.from(document.querySelectorAll('button'));
-      const exp = btns.find(b => b.textContent.includes('Log Field Expense'));
-      if (exp) exp.click();
-    });
-    await new Promise(r => setTimeout(r, 1000));
-    await page.screenshot({ path: path.join(outputDir, '06_expense.png') });
-    console.log('Captured 06_expense.png');
-
-    // Go back to Work screen to click Inspection & Rework
-    await page.evaluate(() => {
-      const btns = Array.from(document.querySelectorAll('button'));
-      const work = btns.find(b => b.textContent.trim() === 'Work');
-      if (work) work.click();
-    });
-    await new Promise(r => setTimeout(r, 500));
-
-    // 07. ROUTINE INSPECTION Screen
-    await page.evaluate(() => {
-      const btns = Array.from(document.querySelectorAll('button'));
-      const insp = btns.find(b => b.textContent.includes('Routine Inspection'));
-      if (insp) insp.click();
-    });
-    await new Promise(r => setTimeout(r, 1000));
-    await page.screenshot({ path: path.join(outputDir, '07_inspection.png') });
-    console.log('Captured 07_inspection.png');
-
-    // 10. Dropdown Open
-    await page.evaluate(() => {
-      const sel = document.querySelector('select');
-      if (sel) sel.focus();
-    });
-    await page.screenshot({ path: path.join(outputDir, '10_dropdown_open.png') });
-    console.log('Captured 10_dropdown_open.png');
-
-    // 11. Scanner Modal
-    await page.evaluate(() => {
-      const btns = Array.from(document.querySelectorAll('button'));
-      const scan = btns.find(b => b.textContent.includes('Scan'));
-      if (scan) scan.click();
-    });
-    await new Promise(r => setTimeout(r, 600));
-    await page.screenshot({ path: path.join(outputDir, '11_scanner_modal.png') });
-    console.log('Captured 11_scanner_modal.png');
-
-    // Close scanner
-    await page.evaluate(() => {
-      const btns = Array.from(document.querySelectorAll('button'));
-      const closeBtn = btns.find(b => b.textContent.includes('Close') || b.textContent.includes('Cancel'));
+      const closeBtn = document.querySelector('button[title="Close"], button::-p-text("Close"), .modal-close');
       if (closeBtn) closeBtn.click();
+      else {
+        const btns = Array.from(document.querySelectorAll('button'));
+        const close = btns.find(b => b.textContent.includes('Close') || b.textContent.includes('×') || b.textContent.includes('Back'));
+        if (close) close.click();
+      }
     });
-    await new Promise(r => setTimeout(r, 500));
+    await page.evaluate(() => new Promise(r => setTimeout(r, 400)));
 
-    // Go to Work tab to launch Rework
+    // Click Release Incident Report button
     await page.evaluate(() => {
       const btns = Array.from(document.querySelectorAll('button'));
-      const work = btns.find(b => b.textContent.trim() === 'Work');
-      if (work) work.click();
+      const releaseBtn = btns.find(b => b.textContent.toLowerCase().includes('release') || b.textContent.toLowerCase().includes('submit'));
+      if (releaseBtn) releaseBtn.click();
     });
-    await new Promise(r => setTimeout(r, 500));
+    await page.evaluate(() => new Promise(r => setTimeout(r, 800)));
 
-    // 08. BILLABLE REWORK Screen
-    await page.evaluate(() => {
-      const btns = Array.from(document.querySelectorAll('button'));
-      const rework = btns.find(b => b.textContent.includes('Log Billable Rework'));
-      if (rework) rework.click();
-    });
-    await new Promise(r => setTimeout(r, 1000));
-    await page.screenshot({ path: path.join(outputDir, '08_rework.png') });
-    console.log('Captured 08_rework.png');
+    // 07: Step 4 Release Confirmation Modal
+    await page.screenshot({ path: path.join(ARTIFACT_DIR, '07_incident_release_confirmation.png') });
+    console.log('Saved 07_incident_release_confirmation.png');
 
-    // 13. DESKTOP DASHBOARD
-    await page.setViewport({ width: 1366, height: 768 });
-    await page.goto('http://localhost:4199', { waitUntil: 'networkidle2' });
-    await page.evaluate(() => {
-      const btns = Array.from(document.querySelectorAll('button'));
-      const admin = btns.find(b => b.textContent.includes('Shahroz') || b.textContent.includes('Donna') || b.textContent.includes('Super-Admin'));
-      if (admin) admin.click();
-    });
-    await new Promise(r => setTimeout(r, 2000));
-    await page.screenshot({ path: path.join(outputDir, '13_desktop_dashboard.png') });
-    console.log('Captured 13_desktop_dashboard.png');
+    // 08: Tablet Viewport 768x1024
+    await page.setViewport({ width: 768, height: 1024, deviceScaleFactor: 2 });
+    await page.evaluate(() => new Promise(r => setTimeout(r, 400)));
+    await page.screenshot({ path: path.join(ARTIFACT_DIR, '08_tablet_viewport_768x1024.png') });
+    console.log('Saved 08_tablet_viewport_768x1024.png');
 
-    console.log('All screenshots captured successfully!');
   } catch (err) {
-    console.error('Error during capture:', err);
+    console.error('Puppeteer capture error:', err);
   } finally {
     await browser.close();
-    server.close();
-    process.exit(0);
+    previewProcess.kill();
   }
-});
+
+  // Print SHA-256 Hashes
+  console.log('\n--- VERIFYING SHA-256 HASHES ---');
+  const files = [
+    '01_rep_home_dashboard.png',
+    '02_incident_step1_assignment.png',
+    '03_incident_step3_describe.png',
+    '04_incident_step3_filled.png',
+    '05_incident_step4_audit.png',
+    '06_incident_step4_email_preview.png',
+    '07_incident_release_confirmation.png',
+    '08_tablet_viewport_768x1024.png'
+  ];
+
+  const hashes = {};
+  files.forEach(f => {
+    const p = path.join(ARTIFACT_DIR, f);
+    if (fs.existsSync(p)) {
+      const h = crypto.createHash('sha256').update(fs.readFileSync(p)).digest('hex');
+      hashes[f] = h;
+      console.log(`${f}: ${h}`);
+    }
+  });
+
+  const uniqueHashes = new Set(Object.values(hashes));
+  console.log(`\nTotal Unique Screenshot Hashes: ${uniqueHashes.size} / ${files.length}`);
+}
+
+run();

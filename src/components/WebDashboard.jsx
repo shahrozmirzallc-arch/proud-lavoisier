@@ -5254,57 +5254,57 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
             {/* CUSTOMER SIDEBAR BUTTONS */}
             {userRole === 'customer' && (
               <div className="flex flex-col gap-3">
-                <div className="p-2.5 rounded-2xl bg-amber-950/20 border border-amber-500/30 shadow-sm flex flex-col gap-1.5">
-                  <div className="text-[11px] font-extrabold text-amber-400 uppercase tracking-wider px-2 py-0.5 flex items-center gap-2">
-                    <Shield className="w-3.5 h-3.5 text-amber-400" />
+                <div className="p-2.5 rounded-2xl bg-amber-50 border border-amber-200 shadow-sm flex flex-col gap-1.5">
+                  <div className="text-[11px] font-extrabold text-amber-900 uppercase tracking-wider px-2 py-0.5 flex items-center gap-2">
+                    <Shield className="w-3.5 h-3.5 text-amber-700" />
                     <span>Customer Workspace</span>
                   </div>
                   <button 
                     onClick={() => setActiveTab('customer-portal')}
-                    className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14.5px] transition-all cursor-pointer flex items-center justify-between border ${
+                    className={`w-full h-11 px-3.5 rounded-xl font-extrabold text-[14.5px] transition-all cursor-pointer flex items-center justify-between border ${
                       activeTab === 'customer-portal' 
-                        ? 'bg-amber-950/60 text-amber-300 border-amber-500/50 shadow-md shadow-amber-500/20' 
-                        : 'bg-surface-elevated text-text-secondary hover:bg-surface hover:text-text-primary border-border-subtle/70'
+                        ? 'bg-amber-600 text-white border-amber-700 shadow-md shadow-amber-600/20' 
+                        : 'bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900 border-slate-200'
                     }`}
                   >
                     <div className="flex items-center gap-2.5">
-                      <Shield className="w-4.5 h-4.5 text-amber-400" />
+                      <Shield className={`w-4.5 h-4.5 ${activeTab === 'customer-portal' ? 'text-white' : 'text-amber-700'}`} />
                       <span>Customer Dashboard</span>
                     </div>
-                    {activeTab === 'customer-portal' && <div className="w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_6px_#fbbf24]"></div>}
+                    {activeTab === 'customer-portal' && <div className="w-2 h-2 rounded-full bg-white shadow-[0_0_6px_#ffffff]"></div>}
                   </button>
 
                   <button 
                     onClick={() => setActiveTab('shift-logs')}
-                    className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14.5px] transition-all cursor-pointer flex items-center justify-between border ${
+                    className={`w-full h-11 px-3.5 rounded-xl font-extrabold text-[14.5px] transition-all cursor-pointer flex items-center justify-between border ${
                       activeTab === 'shift-logs' 
-                        ? 'bg-amber-950/60 text-amber-300 border-amber-500/50 shadow-md shadow-amber-500/20' 
-                        : 'bg-surface-elevated text-text-secondary hover:bg-surface hover:text-text-primary border-border-subtle/70'
+                        ? 'bg-amber-600 text-white border-amber-700 shadow-md shadow-amber-600/20' 
+                        : 'bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900 border-slate-200'
                     }`}
                   >
                     <div className="flex items-center gap-2.5">
-                      <Calendar className="w-4.5 h-4.5 text-amber-400" />
+                      <Calendar className={`w-4.5 h-4.5 ${activeTab === 'shift-logs' ? 'text-white' : 'text-amber-700'}`} />
                       <span>Published Reports</span>
                     </div>
-                    {activeTab === 'shift-logs' && <div className="w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_6px_#fbbf24]"></div>}
+                    {activeTab === 'shift-logs' && <div className="w-2 h-2 rounded-full bg-white shadow-[0_0_6px_#ffffff]"></div>}
                   </button>
                 </div>
 
-                <div className="p-2.5 rounded-2xl bg-amber-950/20 border border-amber-500/30 shadow-sm flex flex-col gap-1.5">
-                  <div className="text-[11px] font-extrabold text-amber-400 uppercase tracking-wider px-2 py-0.5 flex items-center gap-2">
-                    <Clock className="w-3.5 h-3.5 text-amber-400" />
+                <div className="p-2.5 rounded-2xl bg-amber-50 border border-amber-200 shadow-sm flex flex-col gap-1.5">
+                  <div className="text-[11px] font-extrabold text-amber-900 uppercase tracking-wider px-2 py-0.5 flex items-center gap-2">
+                    <Clock className="w-3.5 h-3.5 text-amber-700" />
                     <span>Approvals</span>
                   </div>
                   <button 
                     onClick={() => setActiveTab('approvals')}
-                    className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14.5px] transition-all cursor-pointer flex items-center justify-between border ${
+                    className={`w-full h-11 px-3.5 rounded-xl font-extrabold text-[14.5px] transition-all cursor-pointer flex items-center justify-between border ${
                       activeTab === 'approvals' 
-                        ? 'bg-amber-950/60 text-amber-300 border-amber-500/50 shadow-md shadow-amber-500/20' 
-                        : 'bg-surface-elevated text-text-secondary hover:bg-surface hover:text-text-primary border-border-subtle/70'
+                        ? 'bg-amber-600 text-white border-amber-700 shadow-md shadow-amber-600/20' 
+                        : 'bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900 border-slate-200'
                     }`}
                   >
                     <div className="flex items-center gap-2.5">
-                      <Clock className="w-4.5 h-4.5 text-amber-400" />
+                      <Clock className={`w-4.5 h-4.5 ${activeTab === 'approvals' ? 'text-white' : 'text-amber-700'}`} />
                       <span>Time & Approvals</span>
                     </div>
                     {expenseEntries.filter(e => e.status === 'pending_customer').length > 0 && (
@@ -5825,17 +5825,23 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
                   <div className="space-y-3 flex-1 overflow-y-auto">
                     {(incidents || []).length === 0 ? (
-                      <div className="p-4 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-300 dark:border-slate-800 text-center text-slate-800 dark:text-slate-200 font-bold italic text-xs">
+                      <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-center text-slate-700 font-extrabold italic text-xs">
                         No active quality containment holds reported today.
                       </div>
                     ) : (
                       (incidents || []).slice(0, 3).map((inc) => (
-                        <div key={inc.id} className="p-3 rounded-xl bg-amber-950/30 border border-amber-500/30 flex items-start gap-2.5">
-                          <div className="w-2 h-2 rounded-full bg-amber-400 mt-1.5 flex-shrink-0 animate-ping"></div>
+                        <div key={inc.id} className="p-3.5 rounded-xl bg-amber-50 border border-amber-300 flex items-start gap-2.5 shadow-sm">
+                          <div className="w-2.5 h-2.5 rounded-full bg-amber-600 mt-1 flex-shrink-0 animate-ping"></div>
                           <div>
-                            <strong className="text-xs font-bold text-amber-200 block">{suppliers.find(s => s.id === inc.supplier_id || s.name?.toLowerCase() === (inc.supplier_id || '').toLowerCase())?.name || inc.supplier_name || (inc.supplier_id ? inc.supplier_id.replace(/^sup_/, '').replace(/_/g, ' ') : 'Client Company')} — PN {inc.part_number || inc.partNumber || 'Hold'}</strong>
-                            <p className="text-[11.5px] text-slate-300 mt-0.5">{inc.description || inc.notes || 'Defect logged.'}</p>
-                            <span className="text-[10px] text-slate-400 font-semibold mt-1 block">{inc.date || inc.created_at?.substring(0, 10)}</span>
+                            <strong className="text-[12.5px] font-extrabold text-amber-950 block">
+                              {suppliers.find(s => s.id === inc.supplier_id || s.name?.toLowerCase() === (inc.supplier_id || '').toLowerCase())?.name || inc.supplier_name || (inc.supplier_id ? inc.supplier_id.replace(/^sup_/, '').replace(/_/g, ' ') : 'Client Company')} — PN {inc.part_number || inc.partNumber || 'Hold'}
+                            </strong>
+                            <p className="text-[12px] font-semibold text-slate-900 mt-1 leading-normal">
+                              {inc.description || inc.notes || 'Defect logged.'}
+                            </p>
+                            <span className="text-[11px] font-mono font-extrabold text-slate-700 mt-1.5 block">
+                              {inc.date || inc.created_at?.substring(0, 10)}
+                            </span>
                           </div>
                         </div>
                       ))

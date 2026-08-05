@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef, useDeferredValue, useMemo } from 'react';
 import { 
   Shield, Activity, Server, FileText, Users, Mail, DollarSign, Database, 
-  Search, Filter, ChevronRight, ChevronDown, X, Clock, CheckCircle2, UserCheck, AlertCircle, AlertTriangle, 
-  FileSpreadsheet, Calendar, ArrowRight, UserPlus, MapPin, Printer, Download, Eye, EyeOff, Sparkles,
+  Search, Filter, ChevronRight, ChevronDown, X, Clock, CheckCircle, CheckCircle2, UserCheck, AlertCircle, AlertTriangle, 
+  FileSpreadsheet, Calendar, ArrowRight, UserPlus, MapPin, Printer, Download, Eye, EyeOff, Sparkles, Key,
   Milestone, TrendingUp, FolderKanban, PlusCircle, Plus, ArrowLeft, Camera, ClipboardCheck, Zap, Building2, ShieldAlert, User, Cpu, Mic, Video, Trash2, History, Lock
 } from 'lucide-react';
 import { getEntities, saveEntity, resetDB, logSystemEvent, addProject, deleteRate, isFieldRep, syncWithSupabase, supabase, addUser, isEntryAccountingEligible } from './SharedDatabase';
@@ -466,6 +466,14 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
   // Accounting Sub-tab Navigation
   const [accountingSubTab, setAccountingSubTab] = useState('review-queue');
+  
+  useEffect(() => {
+    window.__openRatesConfigTab = () => {
+      setActiveTab('time-tracking');
+      setAccountingSubTab('rates-config');
+      setAdminCrudTab('customers');
+    };
+  }, []);
 
   // Daily Checklists State
   const [weeklyChecklists, setWeeklyChecklists] = useState({
@@ -787,6 +795,10 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   const [newCustomerContactName, setNewCustomerContactName] = useState('');
   const [newCustomerContactEmail, setNewCustomerContactEmail] = useState('');
   const [newCustomerContactRole, setNewCustomerContactRole] = useState('Quality Manager');
+  const [newCustomerUsername, setNewCustomerUsername] = useState('');
+  const [newCustomerPassword, setNewCustomerPassword] = useState('');
+  const [showNewCustPassword, setShowNewCustPassword] = useState(false);
+  const [createdUserCredentials, setCreatedUserCredentials] = useState(null);
   const [newCustomerInvoiceSchedule, setNewCustomerInvoiceSchedule] = useState('on-demand');
   const [newCustomerAllottedHours, setNewCustomerAllottedHours] = useState('20');
 
@@ -1470,29 +1482,79 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   const handleCreateCustomer = (e) => {
     e.preventDefault();
     if (!newCustomerName) {
-      showToast("Customer name is required.", "error");
+      showToast("Customer company name is required.", "error");
       return;
     }
-    const newId = newCustomerName?.toLowerCase()?.replace(/[^a-z0-9]/g, '_');
+    const newId = (newCustomerName?.toLowerCase()?.replace(/[^a-z0-9]/g, '_') || 'company') + '_' + Date.now().toString().slice(-4);
+    
+    // 1. Create Supplier / Client Company record
     const newCust = {
       id: newId,
       name: newCustomerName,
       invoice_schedule: newCustomerInvoiceSchedule || 'on-demand',
       allotted_hours: Number(newCustomerAllottedHours) || 20,
+      contact_person: newCustomerContactName || `${newCustomerName} Quality Lead`,
+      contact_email: newCustomerContactEmail || `quality@${newId}.com`,
       contacts: [
-        { name: newCustomerContactName, email: newCustomerContactEmail, role: newCustomerContactRole }
+        { name: newCustomerContactName || `${newCustomerName} Representative`, email: newCustomerContactEmail || `quality@${newId}.com`, role: newCustomerContactRole || 'Quality Manager' }
       ],
       plants_served: []
     };
     saveEntity('suppliers', newCust);
     setSuppliers(getEntities('suppliers'));
+
+    // 2. Resolve Client Rep Username & Password selected by Admin
+    const finalUsername = (newCustomerUsername || `${newId}_rep`).toLowerCase().trim().replace(/[^a-z0-9_]/g, '_');
+    const finalPassword = newCustomerPassword ? newCustomerPassword.trim() : 'Password123!';
+
+    // 3. Provision Client Rep User Login in 'users' collection
+    const newUser = {
+      id: `user_cust_${newId}`,
+      name: `${newCustomerContactName || newCustomerName} (${newCustomerName})`,
+      email: newCustomerContactEmail || `${finalUsername}@company.com`,
+      username: finalUsername,
+      password: finalPassword,
+      role: 'customer',
+      title: newCustomerContactRole || `${newCustomerName} Client Quality Director`,
+      supplier_id: newId,
+      customer_id: newId,
+      client_id: newId,
+      isDemoSession: true
+    };
+    saveEntity('users', newUser);
+    setUsers(getEntities('users'));
+
+    // 4. Save to 'contacts' collection for 3-way contact resolution
+    const newContactObj = {
+      id: `c_${newId}_${Date.now()}`,
+      name: newCustomerContactName || `${newCustomerName} Quality Representative`,
+      email: newCustomerContactEmail || `${finalUsername}@company.com`,
+      role: newCustomerContactRole || 'Quality Manager',
+      supplier_id: newId,
+      client_id: newId,
+      status: 'active'
+    };
+    saveEntity('contacts', newContactObj);
+
+    // 5. System event log
     const user = getActiveActorName();
-    logSystemEvent('system', 'create_customer', `${user} onboarded new client/supplier ${newCustomerName} with contact ${newCustomerContactName}.`);
+    logSystemEvent('system', 'create_customer', `${user} onboarded new client/supplier ${newCustomerName} with Client Rep login (${finalUsername}).`);
+    
+    setCreatedUserCredentials({
+      companyName: newCustomerName,
+      contactName: newCustomerContactName || `${newCustomerName} Contact`,
+      username: finalUsername,
+      password: finalPassword,
+      role: 'Client Portal (Customer Role)'
+    });
+
     setNewCustomerName('');
     setNewCustomerAddress('');
     setNewCustomerContactName('');
     setNewCustomerContactEmail('');
-    showToast("Customer created successfully!", "success");
+    setNewCustomerUsername('');
+    setNewCustomerPassword('');
+    showToast(`Client Company & Client Rep Login (${finalUsername}) created successfully!`, "success");
   };
 
   const handleCreateLocation = (e) => {
@@ -9262,28 +9324,99 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                       {adminCrudTab === 'customers' && (
                         <div className="grid grid-cols-3 gap-3">
                           <form onSubmit={handleCreateCustomer} className="bg-surface-elevated border border-border-subtle p-6 sm:p-8 rounded-2xl flex flex-col gap-3">
-                            <h4 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider border-b border-border-subtle pb-2 flex items-center gap-1.5"><UserPlus className="w-4.5 h-4.5 text-[#3B82F6]" /> Add New Customer</h4>
-                            <div className="flex flex-col gap-1"><label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Company Name</label>
-                              <input type="text" value={newCustomerName} onChange={(e) => setNewCustomerName(e.target.value)} placeholder="Auto Kabel" className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary" />
+                            <h4 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider border-b border-border-subtle pb-2 flex items-center gap-1.5"><UserPlus className="w-4.5 h-4.5 text-[#3B82F6]" /> Add New Customer & Provision Rep Login</h4>
+                            
+                            <div className="flex flex-col gap-1"><label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Company Name *</label>
+                              <input type="text" value={newCustomerName} onChange={(e) => setNewCustomerName(e.target.value)} placeholder="e.g. Auto Kabel Canada" required className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary" />
                             </div>
-                            <div className="flex flex-col gap-1"><label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Primary Contact Name</label>
-                              <input type="text" value={newCustomerContactName} onChange={(e) => setNewCustomerContactName(e.target.value)} placeholder="Juan Carlos" className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary" />
+                            
+                            <div className="grid grid-cols-2 gap-2">
+                              <div className="flex flex-col gap-1"><label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Contact Name</label>
+                                <input type="text" value={newCustomerContactName} onChange={(e) => setNewCustomerContactName(e.target.value)} placeholder="Juan Carlos" className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary" />
+                              </div>
+                              <div className="flex flex-col gap-1"><label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Contact Role</label>
+                                <input type="text" value={newCustomerContactRole} onChange={(e) => setNewCustomerContactRole(e.target.value)} placeholder="Quality Manager" className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary" />
+                              </div>
                             </div>
+
                             <div className="flex flex-col gap-1"><label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Contact Email</label>
                               <input type="email" value={newCustomerContactEmail} onChange={(e) => setNewCustomerContactEmail(e.target.value)} placeholder="jc@autokabel.mx" className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary" />
                             </div>
-                            <div className="flex flex-col gap-1"><label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Allotted Project Hours (Budget Limit)</label>
-                              <input type="number" step="0.5" value={newCustomerAllottedHours} onChange={(e) => setNewCustomerAllottedHours(e.target.value)} placeholder="e.g. 20 (Approved Job Hours)" className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary" />
+
+                            {/* CLIENT REP USER LOGIN PROVISIONING FIELDS */}
+                            <div className="bg-blue-950/30 border border-blue-500/30 p-3 rounded-xl flex flex-col gap-2.5 mt-1">
+                              <div className="flex items-center justify-between border-b border-blue-500/20 pb-1.5">
+                                <span className="text-[11px] font-extrabold text-blue-300 uppercase tracking-wider flex items-center gap-1"><Key className="w-3.5 h-3.5 text-blue-400" /> Client Rep Login Account</span>
+                                <span className="text-[9.5px] bg-blue-900/60 text-blue-200 px-2 py-0.5 rounded font-mono">Role: Customer</span>
+                              </div>
+
+                              <div className="flex flex-col gap-1">
+                                <label className="text-[10px] font-bold text-blue-200 uppercase tracking-wider">Client Login Username</label>
+                                <input 
+                                  type="text" 
+                                  value={newCustomerUsername} 
+                                  onChange={(e) => setNewCustomerUsername(e.target.value)} 
+                                  placeholder={newCustomerName ? `${newCustomerName.toLowerCase().replace(/[^a-z0-9]/g, '_')}_rep` : 'autokabel_rep'} 
+                                  className="bg-surface border border-blue-500/40 rounded-xl px-3 py-1.5 text-xs text-text-primary font-mono focus:border-blue-400" 
+                                />
+                              </div>
+
+                              <div className="flex flex-col gap-1">
+                                <label className="text-[10px] font-bold text-blue-200 uppercase tracking-wider">Client Login Password (Selected by Admin)</label>
+                                <div className="relative">
+                                  <input 
+                                    type={showNewCustPassword ? "text" : "password"} 
+                                    value={newCustomerPassword} 
+                                    onChange={(e) => setNewCustomerPassword(e.target.value)} 
+                                    placeholder="Enter custom password..." 
+                                    className="bg-surface border border-blue-500/40 rounded-xl pl-3 pr-10 py-1.5 text-xs text-text-primary font-mono focus:border-blue-400 w-full" 
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => setShowNewCustPassword(!showNewCustPassword)}
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 text-blue-300 hover:text-white p-1 text-[11px] font-bold"
+                                  >
+                                    {showNewCustPassword ? 'Hide' : 'Show'}
+                                  </button>
+                                </div>
+                                <span className="text-[9.5px] text-blue-300/70">Leave blank to use default (Password123!)</span>
+                              </div>
                             </div>
-                            <div className="flex flex-col gap-1"><label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Invoice Schedule</label>
-                              <select value={newCustomerInvoiceSchedule} onChange={(e) => setNewCustomerInvoiceSchedule(e.target.value)} className="bg-surface border border-border-subtle rounded-xl px-3 py-2 text-[13.5px] text-text-primary">
-                                <option value="on-demand">⚡ On Demand / Manual (When Colleen Chooses)</option>
-                                <option value="weekly">📅 Weekly</option>
-                                <option value="bi-weekly">📅 Bi-Weekly</option>
-                                <option value="monthly">📅 Monthly</option>
-                              </select>
+
+                            <div className="grid grid-cols-2 gap-2">
+                              <div className="flex flex-col gap-1"><label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Project Hours Limit</label>
+                                <input type="number" step="0.5" value={newCustomerAllottedHours} onChange={(e) => setNewCustomerAllottedHours(e.target.value)} placeholder="20" className="bg-surface border border-border-subtle rounded-xl px-3 py-1.5 text-xs text-text-primary" />
+                              </div>
+                              <div className="flex flex-col gap-1"><label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Invoice Schedule</label>
+                                <select value={newCustomerInvoiceSchedule} onChange={(e) => setNewCustomerInvoiceSchedule(e.target.value)} className="bg-surface border border-border-subtle rounded-xl px-2 py-1.5 text-xs text-text-primary">
+                                  <option value="on-demand">⚡ On Demand</option>
+                                  <option value="weekly">📅 Weekly</option>
+                                  <option value="bi-weekly">📅 Bi-Weekly</option>
+                                  <option value="monthly">📅 Monthly</option>
+                                </select>
+                              </div>
                             </div>
-                            <button type="submit" className="bg-[#3B82F6] text-text-primary font-bold py-2 rounded-xl text-[13.5px] mt-2">Onboard Customer</button>
+
+                            <button type="submit" className="bg-[#3B82F6] hover:bg-[#2563EB] text-text-primary font-bold py-2 rounded-xl text-[13.5px] mt-1 shadow-md cursor-pointer transition-colors">Onboard Customer & Create Login</button>
+
+                            {/* CREATED CREDENTIALS CONFIRMATION BOX */}
+                            {createdUserCredentials && (
+                              <div className="mt-3 p-3.5 bg-emerald-950/80 border border-emerald-500/50 rounded-xl text-left flex flex-col gap-2 shadow-lg animate-in fade-in">
+                                <div className="flex items-center justify-between border-b border-emerald-500/30 pb-1.5">
+                                  <span className="text-xs font-black text-emerald-300 uppercase tracking-wider flex items-center gap-1.5">
+                                    <CheckCircle className="w-4 h-4 text-emerald-400" /> Client Rep Account Created!
+                                  </span>
+                                  <button type="button" onClick={() => setCreatedUserCredentials(null)} className="text-[10px] text-emerald-400 hover:text-white font-bold">Dismiss</button>
+                                </div>
+                                <div className="bg-slate-900/90 p-2.5 rounded-lg border border-emerald-500/20 text-xs flex flex-col gap-1 font-mono text-emerald-200">
+                                  <div><span className="text-slate-400 font-sans">Company:</span> <strong className="text-white">{createdUserCredentials.companyName}</strong></div>
+                                  <div><span className="text-slate-400 font-sans">Contact:</span> <strong className="text-white">{createdUserCredentials.contactName}</strong></div>
+                                  <div><span className="text-slate-400 font-sans">Username:</span> <strong className="text-amber-300 font-bold bg-amber-950/80 px-1.5 py-0.5 rounded border border-amber-500/40">{createdUserCredentials.username}</strong></div>
+                                  <div><span className="text-slate-400 font-sans">Password:</span> <strong className="text-cyan-300 font-bold bg-cyan-950/80 px-1.5 py-0.5 rounded border border-cyan-500/40">{createdUserCredentials.password}</strong></div>
+                                  <div><span className="text-slate-400 font-sans">Access Role:</span> <span className="text-emerald-300">{createdUserCredentials.role}</span></div>
+                                </div>
+                              </div>
+                            )}
                           </form>
 
                           <div className="bg-surface-elevated border border-border-subtle p-6 sm:p-8 rounded-2xl col-span-2 flex flex-col gap-3">

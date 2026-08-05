@@ -325,9 +325,37 @@ function App() {
           customer: { id: 'user_cust_stellantis_mark', name: 'Mark Vance (Stellantis)', email: 'mark.vance@stellantis.com', username: 'stellantis_client', role: 'customer', title: 'Stellantis Quality Manager', supplier_id: 'sup_stellantis', isDemoSession: true }
         };
 
-        const demoUser = demoUsers[inputUser];
+        let demoUser = demoUsers[inputUser];
+        
+        // If not in static shortcuts, search dynamic users database!
         if (!demoUser) {
-          console.warn("[Auth Security]: Unknown demo username rejected:", inputUser);
+          try {
+            const db = JSON.parse(localStorage.getItem('ids_pulse_db') || '{}');
+            const dbUsers = Array.isArray(db.users) ? db.users : [];
+            const foundUser = dbUsers.find(u => 
+              u && (
+                u.username?.toLowerCase() === inputUser ||
+                u.email?.toLowerCase() === inputUser ||
+                u.id?.toLowerCase() === inputUser
+              )
+            );
+            
+            if (foundUser) {
+              // Validate password if explicitly set by Admin
+              if (foundUser.password && rawPw && foundUser.password !== rawPw) {
+                console.warn("[Auth Security]: Password mismatch for user:", inputUser);
+                setAuthError(true);
+                return false;
+              }
+              demoUser = foundUser;
+            }
+          } catch (e) {
+            console.warn("Could not check dynamic users db:", e);
+          }
+        }
+
+        if (!demoUser) {
+          console.warn("[Auth Security]: Unknown username or user account rejected:", inputUser);
           setAuthError(true);
           return false;
         }

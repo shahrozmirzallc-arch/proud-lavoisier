@@ -508,6 +508,10 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
 
   // Check saved draft on mount
   useEffect(() => {
+    window.__setIncStep = (step) => {
+      setActiveScreen('incident');
+      setIncStep(step);
+    };
     if (currentUser?.id) {
       const draftKey = `ids_incident_draft_${currentUser.id}`;
       try {

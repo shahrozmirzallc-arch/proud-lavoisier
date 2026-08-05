@@ -44,6 +44,11 @@ export default function BusinessDropdown({
     return normalizedOptions.some(o => o.value === val);
   };
 
+  const [isOtherMode, setIsOtherMode] = useState(() => {
+    if (!value) return false;
+    return !isStandardValue(value);
+  });
+
   const [selectedOption, setSelectedOption] = useState(() => {
     if (!value) return '';
     if (isStandardValue(value)) return value;
@@ -61,15 +66,14 @@ export default function BusinessDropdown({
 
   // Synchronize internal state with external value changes
   useEffect(() => {
-    if (selectedOption === OTHER_VALUE) {
+    if (isOtherMode) {
       if (value && isStandardValue(value)) {
+        setIsOtherMode(false);
         setSelectedOption(value);
         setCustomText('');
         setValidationError('');
-      } else {
-        if (value && value !== customText) {
-          setCustomText(value);
-        }
+      } else if (value && value !== customText) {
+        setCustomText(value);
       }
       return;
     }
@@ -83,17 +87,18 @@ export default function BusinessDropdown({
       setCustomText('');
       setValidationError('');
     } else {
+      setIsOtherMode(true);
       setSelectedOption(OTHER_VALUE);
       setCustomText(value);
     }
-  }, [value, options]);
+  }, [value, JSON.stringify(normalizedOptions)]);
 
   // Handle select dropdown change
   const handleSelectChange = (e) => {
     const nextVal = e.target.value;
 
     // If switching from "Other" (with non-empty custom text) to a standard option -> request confirmation
-    if (selectedOption === OTHER_VALUE && customText.trim() !== '' && nextVal !== OTHER_VALUE) {
+    if (isOtherMode && customText.trim() !== '' && nextVal !== OTHER_VALUE) {
       setPendingOption(nextVal);
       setShowConfirmModal(true);
       return;
@@ -103,14 +108,16 @@ export default function BusinessDropdown({
   };
 
   const applySelectChange = (nextVal) => {
-    setSelectedOption(nextVal);
     setValidationError('');
 
     if (nextVal === OTHER_VALUE) {
-      // Trigger onChange with custom text (or empty string if not entered yet)
+      setIsOtherMode(true);
+      setSelectedOption(OTHER_VALUE);
       const trimmedCustom = customText.trim();
       onChange(trimmedCustom, true);
     } else {
+      setIsOtherMode(false);
+      setSelectedOption(nextVal);
       setCustomText('');
       onChange(nextVal, false);
     }
@@ -156,7 +163,7 @@ export default function BusinessDropdown({
         <select
           id={id}
           name={name}
-          value={selectedOption}
+          value={isOtherMode ? OTHER_VALUE : selectedOption}
           onChange={handleSelectChange}
           disabled={disabled}
           className={`min-h-[44px] w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${
@@ -174,7 +181,7 @@ export default function BusinessDropdown({
       </div>
 
       {/* Conditional Custom Text Input when "Other / Not listed" is selected */}
-      {selectedOption === OTHER_VALUE && (
+      {isOtherMode && (
         <div className="flex flex-col gap-1 mt-1 p-2.5 bg-blue-50/60 border border-blue-200 rounded-xl text-left animate-in fade-in duration-150">
           <label className="text-[10.5px] font-extrabold text-blue-950 uppercase tracking-wider block">
             {effectiveCustomInputLabel} <span className="text-rose-500">*</span>

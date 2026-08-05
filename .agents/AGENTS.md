@@ -14,7 +14,7 @@ The following rules govern the agent's behavior and communication style for this
 ## 3. Strict Error Prevention & Anti-Recurrence Guidelines
 To ensure historical mistakes are never repeated, the agent MUST obey the following strict operational rules at all times:
 
-- **Strict Live Vercel Verification**: Target `https://proud-lavoisier.vercel.app` as the single source of truth for live deployments. Never report local preview ports (`localhost:4173`) as live production.
+- **Strict Live Vercel Single Source of Truth**: The user ONLY tests and verifies via `https://proud-lavoisier.vercel.app/`. ALL code modifications MUST be verified, committed, pushed, and deployed live to `https://proud-lavoisier.vercel.app/` with cache invalidation (`--force`). NEVER provide local URLs or local preview links to the user.
 - **Zero Background Task Leaks**: Always terminate temporary server/preview background processes (`manage_task kill`) immediately after use. Confirm `manage_task list` returns 0 running tasks before completing turns.
 - **Dynamic Current Date & Open History Defaults**: Date selectors and incident feeds must default to the live ISO date (`new Date()`) with `showAllDates: true` to prevent empty "No records found" feeds.
 - **Uniform Admin Permissions & Access**: All admin user accounts (`admin`, `donna`, `greg`, `owner`) must maintain 100% equal, unrestricted Super-Admin privileges with 1-click login shortcuts.

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useDeferredValue, useMemo } from 'react';
 import { 
   Shield, Activity, Server, FileText, Users, Mail, DollarSign, Database, 
-  Search, Filter, ChevronRight, ChevronDown, X, Clock, CheckCircle, CheckCircle2, UserCheck, AlertCircle, AlertTriangle, 
+  Search, Filter, ChevronRight, ChevronDown, X, Clock, CheckCircle, CheckCircle2, UserCheck, AlertCircle, AlertTriangle, PhoneCall, 
   FileSpreadsheet, Calendar, ArrowRight, UserPlus, MapPin, Printer, Download, Eye, EyeOff, Sparkles, Key,
   Milestone, TrendingUp, FolderKanban, PlusCircle, Plus, ArrowLeft, Camera, ClipboardCheck, Zap, Building2, ShieldAlert, User, Cpu, Mic, Video, Trash2, History, Lock, BarChart3, Layers
 } from 'lucide-react';
@@ -5282,7 +5282,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       <div className="flex-1 flex gap-6 sm:p-8 mt-5 min-h-0">
         
         {/* Navigation Sidebar with Grouped Categories */}
-        {!forceRoadmapOnly && userRole !== 'customer' && userRole !== 'client' && activeTab !== 'customer-portal' && (
+        {!forceRoadmapOnly && (
           <div className="w-64 flex flex-col gap-3 flex-shrink-0">
             
             {/* QRE SIDEBAR BUTTONS */}
@@ -5504,6 +5504,40 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     )}
                   </button>
                 </div>
+
+                {/* ON-SITE FIELD REPS QUICK WIDGET */}
+                <div className="p-3 rounded-2xl bg-white border border-slate-200 shadow-sm flex flex-col gap-2">
+                  <div className="text-[11px] font-black text-slate-900 uppercase tracking-wider flex items-center justify-between">
+                    <span className="flex items-center gap-1.5 text-blue-600">
+                      <Users className="w-3.5 h-3.5" /> On-Site Field Reps
+                    </span>
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                  </div>
+                  <div className="space-y-1.5 text-xs text-slate-700">
+                    <div className="p-2 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
+                      <div>
+                        <p className="font-extrabold text-slate-900 text-xs">Clarence Kuiken</p>
+                        <p className="text-[10px] text-slate-500 font-semibold">IDS Senior Quality Rep</p>
+                      </div>
+                      <span className="bg-emerald-100 text-emerald-800 text-[9.5px] px-1.5 py-0.5 rounded-md font-black">ON-SITE</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 24/7 IDS QUALITY HOTLINE WIDGET */}
+                <div className="p-3.5 rounded-2xl bg-gradient-to-br from-slate-900 to-slate-800 text-white shadow-md flex flex-col gap-2 border border-slate-700">
+                  <div className="flex items-center gap-2">
+                    <PhoneCall className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span className="text-xs font-black uppercase tracking-wide">24/7 IDS Quality Line</span>
+                  </div>
+                  <p className="text-[11px] text-slate-300 leading-tight">
+                    Direct urgent containment line for floor escalations and rep dispatches.
+                  </p>
+                  <a href="tel:18005554371" className="text-xs font-black text-emerald-400 hover:underline block pt-1">
+                    📞 1-800-555-IDS1
+                  </a>
+                </div>
+
               </div>
             )}
 
@@ -7387,58 +7421,6 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         <FileSpreadsheet className="w-4 h-4" /> Download Weekly Digest
                       </button>
                     </div>
-                  </div>
-
-                  {/* Sub-Navigation Tabs Bar */}
-                  <div className="flex items-center gap-2 sm:gap-3 pt-3 border-t border-slate-200 flex-wrap">
-                    <button 
-                      onClick={() => setClientActiveSubTab('overview')}
-                      className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer border ${
-                        clientActiveSubTab === 'overview'
-                          ? 'bg-blue-600 text-white border-blue-700 shadow-sm'
-                          : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border-slate-300'
-                      }`}
-                    >
-                      <BarChart3 className="w-4 h-4" /> Overview & Analytics
-                    </button>
-
-                    <button 
-                      onClick={() => setClientActiveSubTab('reports')}
-                      className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer border ${
-                        clientActiveSubTab === 'reports'
-                          ? 'bg-blue-600 text-white border-blue-700 shadow-sm'
-                          : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border-slate-300'
-                      }`}
-                    >
-                      <FileText className="w-4 h-4" /> Shift Reports Feed
-                    </button>
-
-                    <button 
-                      onClick={() => setClientActiveSubTab('incidents')}
-                      className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer border ${
-                        clientActiveSubTab === 'incidents'
-                          ? 'bg-blue-600 text-white border-blue-700 shadow-sm'
-                          : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border-slate-300'
-                      }`}
-                    >
-                      <AlertCircle className="w-4 h-4 text-rose-500" /> Containments & 8D Alerts
-                    </button>
-
-                    <button 
-                      onClick={() => setClientActiveSubTab('budget')}
-                      className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer border ${
-                        clientActiveSubTab === 'budget'
-                          ? 'bg-blue-600 text-white border-blue-700 shadow-sm'
-                          : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border-slate-300'
-                      }`}
-                    >
-                      <Clock className="w-4 h-4 text-amber-500" /> PO Budget & OT Queue
-                      {expenseEntries.filter(e => e.status === 'pending_customer').length > 0 && (
-                        <span className="bg-amber-500 text-slate-950 text-[10px] px-1.5 py-0.5 rounded-full font-black ml-1">
-                          {expenseEntries.filter(e => e.status === 'pending_customer').length}
-                        </span>
-                      )}
-                    </button>
                   </div>
                 </div>
 

@@ -7350,13 +7350,16 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 {/* Header & Controls Bar */}
                 <div className="flex flex-col gap-3 sm:gap-4 pb-4 border-b border-slate-200 flex-shrink-0 bg-white p-4 sm:p-5 rounded-2xl shadow-sm">
                   <div className="flex justify-between items-center flex-wrap gap-3">
-                    <div>
-                      <h3 className="text-base font-black text-slate-900 uppercase tracking-tight flex items-center gap-2">
-                        <Shield className="w-5 h-5 text-blue-600" /> Client Quality Executive Workspace — {clientCompany.name}
-                      </h3>
-                      <span className="text-xs text-slate-600 font-semibold">
-                        Authoritative Quality Intelligence & Live Assembly Containment Operations
-                      </span>
+                    <div className="flex items-center gap-3">
+                      <img src={LOGO_BASE64} alt="IDS Logo" className="h-8 w-auto object-contain shrink-0" />
+                      <div>
+                        <h3 className="text-base font-black text-slate-900 uppercase tracking-tight flex items-center gap-2">
+                          <Shield className="w-4 h-4 text-blue-600 shrink-0" /> Client Quality Executive Workspace — {clientCompany.name}
+                        </h3>
+                        <span className="text-xs text-slate-600 font-semibold block mt-0.5">
+                          Authoritative Quality Intelligence & Live Assembly Containment Operations
+                        </span>
+                      </div>
                     </div>
 
                     {/* Controls: Plant Location Switcher & 1-Click Digest Export */}

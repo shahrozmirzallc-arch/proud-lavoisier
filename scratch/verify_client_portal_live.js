@@ -22,20 +22,11 @@ import puppeteer from 'puppeteer';
 
   await new Promise(r => setTimeout(r, 4000));
 
-  console.log('Clicking Shift Reports Feed sub-tab...');
-  await page.evaluate(() => {
-    const btns = Array.from(document.querySelectorAll('button'));
-    const reportsTab = btns.find(b => b.textContent && b.textContent.includes('Shift Reports Feed'));
-    if (reportsTab) reportsTab.click();
-  });
-
-  await new Promise(r => setTimeout(r, 3000));
-
   await page.screenshot({
-    path: 'C:/Users/Sharoz/.gemini/antigravity/brain/1385a5c7-aa55-420f-8ba0-3717a40bdfcd/live_client_subtab_reports.png',
+    path: 'C:/Users/Sharoz/.gemini/antigravity/brain/1385a5c7-aa55-420f-8ba0-3717a40bdfcd/live_upgraded_client_portal_spaced.png',
     fullPage: true
   });
 
-  console.log('Sub-tab reports screenshot captured successfully.');
+  console.log('Overview spaced screenshot captured successfully.');
   await browser.close();
 })();

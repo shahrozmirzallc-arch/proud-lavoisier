@@ -7448,46 +7448,46 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   {/* SUB-TAB 1: OVERVIEW & ANALYTICS */}
                   {clientActiveSubTab === 'overview' && (
                     <div className="flex flex-col gap-5">
-                      {/* Top Floor Summary Banner */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <div className="bg-white border border-slate-200/90 shadow-2xs p-4 sm:p-5 rounded-2xl flex flex-col justify-between">
+                      {/* Top Floor Summary Banner - 4 Perfectly Aligned KPI Cards */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                        <div className="bg-white border border-slate-200/90 shadow-2xs p-5 rounded-2xl flex flex-col justify-between h-full transition-all hover:border-blue-300">
                           <div className="flex justify-between items-center text-slate-600 text-[11px] font-extrabold uppercase tracking-wider">
                             <span>Active Inspectors</span>
-                            <UserCheck className="w-4 h-4 text-emerald-600" />
+                            <UserCheck className="w-4 h-4 text-emerald-600 shrink-0" />
                           </div>
                           <div className="text-2xl font-black text-slate-900 mt-3">{activeOnSiteReps.length || 2} Reps</div>
-                          <span className="text-[11px] text-emerald-700 font-extrabold mt-1.5 flex items-center gap-1">
+                          <span className="text-[11px] text-emerald-700 font-extrabold mt-2 flex items-center gap-1.5">
                             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> On-Site Floor Coverage
                           </span>
                         </div>
 
-                        <div className="bg-white border border-slate-200/90 shadow-2xs p-4 sm:p-5 rounded-2xl flex flex-col justify-between">
+                        <div className="bg-white border border-slate-200/90 shadow-2xs p-5 rounded-2xl flex flex-col justify-between h-full transition-all hover:border-blue-300">
                           <div className="flex justify-between items-center text-slate-600 text-[11px] font-extrabold uppercase tracking-wider">
                             <span>Inspected Volume</span>
-                            <CheckCircle2 className="w-4 h-4 text-blue-600" />
+                            <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
                           </div>
                           <div className="text-2xl font-black text-slate-900 mt-3">{totalShiftPiecesToday || 4850} Pcs</div>
-                          <span className="text-[11px] text-blue-700 font-extrabold mt-1.5">📊 Authoritative Piece Count</span>
+                          <span className="text-[11px] text-blue-700 font-extrabold mt-2">📊 Authoritative Piece Count</span>
                         </div>
 
-                        <div className="bg-white border border-slate-200/90 shadow-2xs p-4 sm:p-5 rounded-2xl flex flex-col justify-between">
+                        <div className="bg-white border border-slate-200/90 shadow-2xs p-5 rounded-2xl flex flex-col justify-between h-full transition-all hover:border-blue-300">
                           <div className="flex justify-between items-center text-slate-600 text-[11px] font-extrabold uppercase tracking-wider">
                             <span>Defect-Free Yield</span>
-                            <Zap className="w-4 h-4 text-amber-600" />
+                            <Zap className="w-4 h-4 text-amber-600 shrink-0" />
                           </div>
                           <div className="text-2xl font-black text-emerald-600 mt-3">{yieldRate}%</div>
-                          <span className="text-[11px] text-slate-600 font-bold mt-1.5">Shielded Assembly Line Yield</span>
+                          <span className="text-[11px] text-slate-600 font-bold mt-2">Shielded Assembly Line Yield</span>
                         </div>
 
-                        <div className="bg-white border border-slate-200/90 shadow-2xs p-4 sm:p-5 rounded-2xl flex flex-col justify-between">
+                        <div className="bg-white border border-slate-200/90 shadow-2xs p-5 rounded-2xl flex flex-col justify-between h-full transition-all hover:border-blue-300">
                           <div className="flex justify-between items-center text-slate-600 text-[11px] font-extrabold uppercase tracking-wider">
                             <span>Active Containments</span>
-                            <AlertCircle className="w-4 h-4 text-rose-600" />
+                            <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
                           </div>
                           <div className="text-2xl font-black text-rose-600 mt-3">
                             {(incidents || []).filter(i => (i.supplier_id === currentUserCustomerId || i.customer_id === currentUserCustomerId || i.client_id === currentUserCustomerId)).length} Incidents
                           </div>
-                          <span className="text-[11px] text-rose-700 font-extrabold mt-1.5">Quality Containment Alerts</span>
+                          <span className="text-[11px] text-rose-700 font-extrabold mt-2">Quality Containment Alerts</span>
                         </div>
                       </div>
 
@@ -7496,7 +7496,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         <div className="flex justify-between items-center flex-wrap gap-2">
                           <div>
                             <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                              <DollarSign className="w-4 h-4 text-emerald-600" /> Purchase Order (PO) Budget Consumption Tracker
+                              <DollarSign className="w-4 h-4 text-emerald-600 shrink-0" /> Purchase Order (PO) Budget Consumption Tracker
                             </h4>
                             <span className="text-[11px] text-slate-500 font-medium">Authoritative sort budget monitoring for active PO allocations</span>
                           </div>
@@ -7518,14 +7518,14 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         </div>
                       </div>
 
-                      {/* Quality Pareto & Daily Yield Trend Card */}
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                      {/* Quality Pareto & Daily Yield Trend Cards - Equal Height Grid */}
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-stretch">
                         {/* Daily Inspection Trend Card */}
-                        <div className="bg-white border border-slate-200/90 shadow-2xs p-5 sm:p-6 rounded-2xl flex flex-col gap-4">
+                        <div className="bg-white border border-slate-200/90 shadow-2xs p-5 sm:p-6 rounded-2xl flex flex-col justify-between h-full gap-4">
                           <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                            <TrendingUp className="w-4 h-4 text-blue-600" /> Daily Inspection Volume & Defect Trend (7 Days)
+                            <TrendingUp className="w-4 h-4 text-blue-600 shrink-0" /> Daily Inspection Volume & Defect Trend (7 Days)
                           </h4>
-                          <div className="space-y-3 pt-1">
+                          <div className="space-y-3 pt-1 flex-1 flex flex-col justify-between">
                             {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, idx) => {
                               const vol = 400 + (idx * 60) + (idx % 2 === 0 ? 30 : -20);
                               const def = (idx === 2 || idx === 5) ? 3 : 1;
@@ -7546,17 +7546,18 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         </div>
 
                         {/* Part Number Quality Pareto Table */}
-                        <div className="bg-white border border-slate-200/90 shadow-2xs p-5 sm:p-6 rounded-2xl flex flex-col gap-4">
+                        <div className="bg-white border border-slate-200/90 shadow-2xs p-5 sm:p-6 rounded-2xl flex flex-col justify-between h-full gap-4">
                           <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                            <Layers className="w-4 h-4 text-purple-600" /> Part Number Quality Pareto Breakdown
+                            <Layers className="w-4 h-4 text-purple-600 shrink-0" /> Part Number Quality Pareto Breakdown
                           </h4>
-                          <div className="space-y-2.5">
+                          <div className="space-y-3 pt-1 flex-1 flex flex-col justify-between">
                             {[
                               { pn: '84920194', name: 'Engine Bracket Module', qty: 2400, defects: 4, yield: '99.8%' },
                               { pn: '86394644', name: 'HV Battery Casing Shield', qty: 1650, defects: 2, yield: '99.8%' },
-                              { pn: '77491023', name: 'Steering Column Support', qty: 800, defects: 1, yield: '99.9%' }
+                              { pn: '77491023', name: 'Steering Column Support', qty: 800, defects: 1, yield: '99.9%' },
+                              { pn: '66102941', name: 'Front Axle Housing Cap', qty: 620, defects: 0, yield: '100.0%' }
                             ].map((item) => (
-                              <div key={item.pn} className="p-3.5 bg-slate-50 rounded-xl border border-slate-200/80 flex justify-between items-center gap-3">
+                              <div key={item.pn} className="p-3.5 bg-slate-50 rounded-xl border border-slate-200/80 flex justify-between items-center gap-3 transition-all hover:bg-white hover:border-blue-300">
                                 <div>
                                   <div className="text-xs font-black text-slate-900">PN {item.pn} — {item.name}</div>
                                   <div className="text-[11px] text-slate-500 font-medium mt-0.5">{item.qty} Inspected • {item.defects} Defect Concerns</div>

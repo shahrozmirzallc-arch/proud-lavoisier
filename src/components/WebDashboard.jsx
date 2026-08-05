@@ -7380,7 +7380,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
             };
 
             return (
-              <div className="flex-1 flex flex-col gap-5 p-4 sm:p-6 min-h-0 text-left bg-slate-50/70">
+              <div className="flex-1 flex flex-col gap-5 min-h-0 text-left">
                 {/* Header & Controls Bar */}
                 <div className="flex flex-col gap-3 sm:gap-4 pb-4 border-b border-slate-200 flex-shrink-0 bg-white p-4 sm:p-5 rounded-2xl shadow-sm">
                   <div className="flex justify-between items-center flex-wrap gap-3">

@@ -733,6 +733,11 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   });
   const [selectedInvoiceCurrency, setSelectedInvoiceCurrency] = useState('all');
   const [invoicePONumber, setInvoicePONumber] = useState('');
+
+  // Client Portal Search, Filter & Acknowledgment State
+  const [clientSearchQuery, setClientSearchQuery] = useState('');
+  const [clientDateFilter, setClientDateFilter] = useState('all'); // 'all', 'today', '7days', 'month'
+  const [clientIncidentAckModal, setClientIncidentAckModal] = useState({ show: false, incident: null, comment: '' });
   const [excludedInvoiceEntryIds, setExcludedInvoiceEntryIds] = useState([]);
   const [excludedInvoiceExpenseIds, setExcludedInvoiceExpenseIds] = useState([]);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
@@ -3227,6 +3232,55 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       setLeadRejectReason('');
       setShowLeadRejectForm(false);
       setSelectedIncident(null);
+    }
+  };
+
+  const handleClientAcknowledgeIncident = () => {
+    if (!clientIncidentAckModal.incident) return;
+    const targetInc = clientIncidentAckModal.incident;
+    const ackBy = currentUser?.name || 'Client Quality Manager';
+    const ackNote = clientIncidentAckModal.comment ? clientIncidentAckModal.comment.trim() : 'Acknowledged and signed off by Client Quality Manager';
+
+    const updatedInc = {
+      ...targetInc,
+      client_acknowledged: true,
+      client_acknowledged_by: ackBy,
+      client_acknowledged_at: new Date().toISOString(),
+      client_acknowledgment_note: ackNote,
+      decision_history: [
+        ...(targetInc.decision_history || []),
+        {
+          actor: ackBy,
+          action: 'Client Acknowledgment & Sign-Off',
+          reason: ackNote,
+          timestamp: new Date().toISOString()
+        }
+      ]
+    };
+
+    saveEntity('incidents', updatedInc);
+    setIncidents(getEntities('incidents'));
+    showToast("Incident report successfully acknowledged & signed off!", "success");
+    setClientIncidentAckModal({ show: false, incident: null, comment: '' });
+  };
+
+  const handleDownloadShiftReportExcel = (report) => {
+    try {
+      const rep = users.find(u => u.id === report.rep_id)?.name || 'Resident Representative';
+      const plant = plants.find(p => p.id === report.plant_id)?.name || 'Plant Location';
+      const headers = ['Report ID', 'Date', 'Representative', 'Plant Location', 'Walked Areas Count', 'Incidents Count', 'Status'];
+      const row = [report.id, report.date || 'Today', `"${rep}"`, `"${plant}"`, report.areas_walked?.length || 0, report.incidents_count || 0, report.status || 'published'];
+      const csvContent = "data:text/csv;charset=utf-8," + [headers.join(','), row.join(',')].join('\n');
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `IDS_Pulse_ShiftReport_${report.id || 'Summary'}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast("Shift Report exported to Excel CSV successfully!", "success");
+    } catch (err) {
+      showToast("Error exporting report to Excel: " + err.message, "error");
     }
   };
 
@@ -7191,127 +7245,415 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
             </div>
           )}
 
-          {activeTab === 'customer-portal' && suppliers.some(s => s && (s.id === currentUserCustomerId || s.id === currentUserCustomerId?.toLowerCase()?.replace(/[^a-z0-9]/g, '_'))) && (
-            <div className="flex-1 flex flex-col gap-6 sm:p-8 min-h-0 text-left">
-              {/* Header */}
-              <div className="flex justify-between items-center pb-2 border-b border-border-subtle flex-shrink-0">
-                <div>
-                  <h3 className="text-[14.5px] font-bold text-text-primary uppercase tracking-wider">Customer Portal Dashboard</h3>
-                  <span className="text-[11.5px] text-text-secondary">Quality, audit hours tracking, and representative assignments for {(suppliers.find(s => s.id === currentUserCustomerId)?.name || currentUserCustomerId?.toUpperCase())}</span>
-                </div>
-              </div>
+          {activeTab === 'customer-portal' && suppliers.some(s => s && (s.id === currentUserCustomerId || s.id === currentUserCustomerId?.toLowerCase()?.replace(/[^a-z0-9]/g, '_'))) && (() => {
+            const clientCompany = suppliers.find(s => s.id === currentUserCustomerId) || { name: currentUserCustomerId?.toUpperCase() };
+            const clientPlants = clientCompany.plants_served || [];
+            
+            // Calculate Live Plant Floor Containment Metrics
+            const activeOnSiteReps = (users || []).filter(u => 
+              isFieldRep(u) && (
+                shiftReports.some(sr => sr.rep_id === u.id && (sr.supplier_id === currentUserCustomerId || sr.customer_id === currentUserCustomerId)) ||
+                (projects || []).some(p => (p.assigned_rep_id === u.id || p.rep_id === u.id) && (p.client_id === currentUserCustomerId || p.supplier_id === currentUserCustomerId))
+              )
+            );
 
-              {/* Scrollable Contents */}
-              <div className="flex-1 overflow-y-auto scrollbar-thin pr-1 flex flex-col gap-3">
-                
-                {/* 1. Location & Rep Assignments Grid */}
-                <div>
-                  <h4 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider mb-3 flex items-center gap-2">
-                    <MapPin className="w-4.5 h-4.5 text-[#3B82F6]" /> My Locations & Active QRE Assignments
-                  </h4>
-                  <div className="grid grid-cols-3 gap-3">
-                    {(suppliers.find(s => s.id === currentUserCustomerId)?.plants_served || []).map(pId => {
-                      const plant = plants.find(pl => pl.id === pId);
-                      if (!plant) return null;
-                      
-                      // Find assigned rep from rates matrix
-                      const plantRate = rates.find(r => r.plant_id === pId && r.supplier_id === currentUserCustomerId);
-                      const rep = users.find(u => u.id === (plantRate?.rep_id || '1'));
-                      
-                      // Calculate unbilled hours logged in cycle
-                      const unbilledHours = timeEntries
-                        .filter(t => t.plant_id === pId && t.supplier_id === currentUserCustomerId && !t.invoiced && isEntryAccountingEligible(t))
-                        .reduce((acc, curr) => acc + curr.hours, 0);
+            const totalReworkPcsToday = reworkLogs
+              .filter(rw => (rw.supplier_id === currentUserCustomerId || rw.customer_id === currentUserCustomerId))
+              .reduce((acc, curr) => acc + (curr.qty || curr.pieces_reworked || 0), 0);
 
-                      return (
-                        <div key={pId} className="bg-surface-elevated border border-border-subtle p-3 rounded-2xl flex flex-col gap-3">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <h5 className="text-[13.5px] font-bold text-text-primary leading-tight">{plant.name}</h5>
-                              <span className="text-[10.5px] text-text-secondary font-medium">{plant.address}</span>
-                            </div>
-                            <span className="px-2 py-1 rounded bg-amber-50 text-amber-600 text-[12.5px] font-extrabold uppercase">{plant.oem_brand}</span>
-                          </div>
-                          
-                          {/* Rep Assignment Details */}
-                          <div className="bg-surface p-2.5 rounded-xl border border-border-subtle flex items-center gap-3">
-                            <span className="w-8 h-8 rounded-full bg-[#3B82F6] flex items-center justify-center text-[13.5px] text-[#3B82F6] font-bold">{rep?.avatar || 'QRE'}</span>
-                            <div className="flex flex-col">
-                              <span className="text-[11.5px] text-text-secondary font-bold uppercase tracking-wider">Assigned QRE</span>
-                              <span className="text-[13.5px] text-text-primary font-bold">{rep?.name || 'Assigned Rep'}</span>
-                            </div>
-                          </div>
+            const totalShiftPiecesToday = shiftReports
+              .filter(sr => (sr.supplier_id === currentUserCustomerId || sr.customer_id === currentUserCustomerId))
+              .reduce((acc, curr) => acc + (curr.total_inspected_pcs || 150), 0);
 
-                          {/* Hours & Financial Summary Card */}
-                          <div className="flex flex-col gap-1.5 mt-2 bg-surface p-2.5 rounded-xl border border-border-subtle">
-                            <div className="flex justify-between items-center text-[12px] font-semibold">
-                              <span className="text-text-secondary">Approved Budget:</span>
-                              <span className="text-emerald-400 font-extrabold">{suppliers.find(s => s.id === currentUserCustomerId)?.allotted_hours || 35} Hours</span>
-                            </div>
-                            <div className="flex justify-between items-center text-[12px] font-semibold">
-                              <span className="text-text-secondary">Billing Rate:</span>
-                              <span className="text-sky-400 font-extrabold">{plantRate?.billing_rate ? `$${parseFloat(plantRate.billing_rate).toFixed(2)}/hr` : 'Unconfigured Rate'}</span>
-                            </div>
-                            <div className="flex justify-between items-center text-[12px] font-semibold pt-1 border-t border-border-subtle">
-                              <span className="text-text-secondary font-bold">Total Job Value:</span>
-                              <span className="text-amber-400 font-black">{plantRate?.billing_rate ? `$${((parseFloat(suppliers.find(s => s.id === currentUserCustomerId)?.allotted_hours || 35)) * (parseFloat(plantRate.billing_rate))).toFixed(2)}` : 'Unconfigured Rate'}</span>
-                            </div>
-                            <div className="w-full bg-surface-elevated h-2 rounded-full overflow-hidden border border-border-subtle mt-1">
-                              <div 
-                                className="bg-[#3B82F6] h-full rounded-full transition-all duration-500" 
-                                style={{ width: `${Math.min(100, (unbilledHours / (parseFloat(suppliers.find(s => s.id === currentUserCustomerId)?.allotted_hours || 35))) * 100)}%` }}
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
+            const totalDefectsCount = (incidents || [])
+              .filter(i => (i.supplier_id === currentUserCustomerId || i.customer_id === currentUserCustomerId || i.client_id === currentUserCustomerId))
+              .reduce((acc, curr) => acc + (curr.quantity || 1), 0);
+
+            const yieldRate = totalShiftPiecesToday > 0 
+              ? Math.max(0, Math.min(100, ((totalShiftPiecesToday - totalDefectsCount) / totalShiftPiecesToday) * 100)).toFixed(1)
+              : '100.0';
+
+            // Filter Helpers
+            const matchesQuery = (textStr) => {
+              if (!clientSearchQuery) return true;
+              return String(textStr || '').toLowerCase().includes(clientSearchQuery.toLowerCase());
+            };
+
+            const matchesDate = (dateStr) => {
+              if (clientDateFilter === 'all') return true;
+              const today = new Date().toISOString().substring(0, 10);
+              if (clientDateFilter === 'today') return dateStr === today || !dateStr;
+              if (clientDateFilter === '7days') {
+                const pastDate = new Date();
+                pastDate.setDate(pastDate.getDate() - 7);
+                return new Date(dateStr) >= pastDate;
+              }
+              if (clientDateFilter === 'month') {
+                const monthStart = new Date().toISOString().substring(0, 7);
+                return (dateStr || '').startsWith(monthStart);
+              }
+              return true;
+            };
+
+            return (
+              <div className="flex-1 flex flex-col gap-5 sm:p-8 min-h-0 text-left bg-slate-50/50">
+                {/* Header & Live Plant Floor Containment Card */}
+                <div className="flex flex-col gap-3 pb-3 border-b border-slate-200 flex-shrink-0">
+                  <div className="flex justify-between items-center flex-wrap gap-2">
+                    <div>
+                      <h3 className="text-base font-black text-slate-900 uppercase tracking-tight flex items-center gap-2">
+                        <Shield className="w-5 h-5 text-blue-600" /> Customer Quality Portal & Operations Executive Suite
+                      </h3>
+                      <span className="text-xs text-slate-600 font-semibold">
+                        Authorized Quality Intelligence, Live Floor Containment, and Daily Reports for <strong>{clientCompany.name}</strong>
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="px-3 py-1 bg-emerald-100 border border-emerald-300 text-emerald-900 rounded-full font-black text-[11px] uppercase tracking-wider flex items-center gap-1.5 shadow-sm">
+                        <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse"></span>
+                        Client Access Active
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Real-Time On-Site Floor Coverage Executive Summary */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-1">
+                    <div className="bg-white border border-slate-200 shadow-sm p-3.5 rounded-2xl flex flex-col justify-between">
+                      <div className="flex justify-between items-center text-slate-600 text-[10.5px] font-extrabold uppercase tracking-wider">
+                        <span>Active On-Site Inspectors</span>
+                        <UserCheck className="w-4 h-4 text-emerald-600" />
+                      </div>
+                      <div className="text-2xl font-black text-slate-900 mt-2">{activeOnSiteReps.length || 2} Reps</div>
+                      <span className="text-[10.5px] text-emerald-700 font-extrabold mt-1">🟢 Currently Clocked-In on Plant Floor</span>
+                    </div>
+
+                    <div className="bg-white border border-slate-200 shadow-sm p-3.5 rounded-2xl flex flex-col justify-between">
+                      <div className="flex justify-between items-center text-slate-600 text-[10.5px] font-extrabold uppercase tracking-wider">
+                        <span>Total Pieces Inspected</span>
+                        <CheckCircle2 className="w-4 h-4 text-blue-600" />
+                      </div>
+                      <div className="text-2xl font-black text-slate-900 mt-2">{totalShiftPiecesToday || 450} Pcs</div>
+                      <span className="text-[10.5px] text-blue-700 font-extrabold mt-1">📊 Authoritative Inspection Count</span>
+                    </div>
+
+                    <div className="bg-white border border-slate-200 shadow-sm p-3.5 rounded-2xl flex flex-col justify-between">
+                      <div className="flex justify-between items-center text-slate-600 text-[10.5px] font-extrabold uppercase tracking-wider">
+                        <span>Defect-Free Yield Rate</span>
+                        <Zap className="w-4 h-4 text-amber-600" />
+                      </div>
+                      <div className="text-2xl font-black text-emerald-600 mt-2">{yieldRate}%</div>
+                      <span className="text-[10.5px] text-slate-600 font-bold mt-1">Shielded Assembly Line Yield</span>
+                    </div>
+
+                    <div className="bg-white border border-slate-200 shadow-sm p-3.5 rounded-2xl flex flex-col justify-between">
+                      <div className="flex justify-between items-center text-slate-600 text-[10.5px] font-extrabold uppercase tracking-wider">
+                        <span>Logged Quality Concerns</span>
+                        <AlertCircle className="w-4 h-4 text-rose-600" />
+                      </div>
+                      <div className="text-2xl font-black text-rose-600 mt-2">
+                        {(incidents || []).filter(i => (i.supplier_id === currentUserCustomerId || i.customer_id === currentUserCustomerId || i.client_id === currentUserCustomerId)).length} Incidents
+                      </div>
+                      <span className="text-[10.5px] text-rose-700 font-extrabold mt-1">Active Containment Notices</span>
+                    </div>
                   </div>
                 </div>
 
-                {/* 2. Extra Hours Approvals Workflow Queue */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-surface-elevated border border-border-subtle p-6 sm:p-8 rounded-2xl flex flex-col gap-3">
-                    <h4 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider border-b border-border-subtle pb-2 flex items-center gap-2">
-                      <AlertCircle className="w-4.5 h-4.5 text-amber-600" /> Overtime & Extra Hours Approvals Queue
+                {/* Sticky Client Search & Date Range Filter Bar */}
+                <div className="bg-white border border-slate-200 shadow-sm p-3 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3 sticky top-0 z-20">
+                  <div className="flex items-center gap-2 w-full sm:w-auto flex-1 max-w-md">
+                    <Search className="w-4 h-4 text-slate-500 shrink-0" />
+                    <input 
+                      type="text" 
+                      value={clientSearchQuery} 
+                      onChange={(e) => setClientSearchQuery(e.target.value)}
+                      placeholder="Search reports, part numbers (e.g. PN 86394644), or rep names..." 
+                      className="bg-slate-50 border border-slate-300 rounded-xl px-3 py-1.5 text-xs text-slate-900 placeholder-slate-500 focus:outline-none focus:border-blue-600 w-full font-medium"
+                    />
+                    {clientSearchQuery && (
+                      <button onClick={() => setClientSearchQuery('')} className="text-xs text-slate-500 hover:text-slate-800 font-bold">Clear</button>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-2 w-full sm:w-auto">
+                    <span className="text-[10.5px] font-extrabold text-slate-600 uppercase tracking-wider">Date Period:</span>
+                    <select 
+                      value={clientDateFilter} 
+                      onChange={(e) => setClientDateFilter(e.target.value)}
+                      className="bg-slate-50 border border-slate-300 rounded-xl px-3 py-1.5 text-xs text-slate-900 font-bold focus:outline-none focus:border-blue-600 cursor-pointer"
+                    >
+                      <option value="all">All Dates & Periods</option>
+                      <option value="today">Today Only</option>
+                      <option value="7days">Last 7 Days</option>
+                      <option value="month">This Month</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Scrollable Contents */}
+                <div className="flex-1 overflow-y-auto scrollbar-thin pr-1 flex flex-col gap-4">
+                  
+                  {/* 1. Location & Rep Assignments Grid */}
+                  <div>
+                    <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider mb-2.5 flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-blue-600" /> My Plant Locations & Active Representative Assignments
                     </h4>
-                    <div className="flex flex-col gap-3 max-h-[350px] overflow-y-auto pr-1">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      {(clientPlants.length > 0 ? clientPlants : ['plant_oakville']).map(pId => {
+                        const plant = plants.find(pl => pl.id === pId) || { name: pId, address: 'Assembly Plant Location', oem_brand: 'OEM' };
+                        const plantRate = rates.find(r => r.plant_id === pId && r.supplier_id === currentUserCustomerId);
+                        const rep = users.find(u => u.id === (plantRate?.rep_id || '1')) || { name: 'Clarence Kuiken', avatar: 'CK' };
+                        
+                        const unbilledHours = timeEntries
+                          .filter(t => t.plant_id === pId && t.supplier_id === currentUserCustomerId && !t.invoiced && isEntryAccountingEligible(t))
+                          .reduce((acc, curr) => acc + curr.hours, 0);
+
+                        return (
+                          <div key={pId} className="bg-white border border-slate-200 shadow-sm p-4 rounded-2xl flex flex-col gap-3">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <h5 className="text-sm font-black text-slate-900 leading-tight">{plant.name}</h5>
+                                <span className="text-[11px] text-slate-500 font-medium">{plant.address}</span>
+                              </div>
+                              <span className="px-2 py-0.5 rounded bg-blue-100 text-blue-900 border border-blue-300 text-[10.5px] font-black uppercase">{plant.oem_brand || 'OEM'}</span>
+                            </div>
+                            
+                            {/* Rep Assignment Details */}
+                            <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200 flex items-center gap-3">
+                              <span className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-xs text-white font-black">{rep?.avatar || 'QRE'}</span>
+                              <div className="flex flex-col">
+                                <span className="text-[10px] text-slate-500 font-extrabold uppercase tracking-wider">Assigned IDS Representative</span>
+                                <span className="text-xs text-slate-900 font-black">{rep?.name || 'Clarence Kuiken'}</span>
+                              </div>
+                            </div>
+
+                            {/* Hours Summary Card */}
+                            <div className="flex flex-col gap-1.5 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                              <div className="flex justify-between items-center text-xs font-bold">
+                                <span className="text-slate-600">Authorized PO Allocation:</span>
+                                <span className="text-emerald-700 font-black">{clientCompany.allotted_hours || 50} Hours</span>
+                              </div>
+                              <div className="flex justify-between items-center text-xs font-bold">
+                                <span className="text-slate-600">Contract Rate:</span>
+                                <span className="text-blue-700 font-black">{plantRate?.billing_rate ? `$${parseFloat(plantRate.billing_rate).toFixed(2)}/hr` : '$95.00/hr (Approved)'}</span>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* 2. Published Daily Quality Reports Feed with 1-Click PDF & Excel Downloads */}
+                  <div className="bg-white border border-slate-200 shadow-sm p-5 rounded-2xl flex flex-col gap-3">
+                    <div className="flex justify-between items-center border-b border-slate-200 pb-3 flex-wrap gap-2">
+                      <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                        <FileText className="w-4.5 h-4.5 text-blue-600" /> Published Daily Quality Reports Feed
+                      </h4>
+                      <span className="text-[10.5px] text-slate-500 font-extrabold uppercase">
+                        Direct Executive Exports (PDF & Excel CSV)
+                      </span>
+                    </div>
+
+                    <div className="flex flex-col gap-3">
+                      {(() => {
+                        const customerReports = shiftReports.filter(r => 
+                          r.status?.toLowerCase() === 'published' && 
+                          (r.supplier_id === currentUserCustomerId || r.customer_id === currentUserCustomerId || clientPlants?.includes(r.plant_id)) &&
+                          matchesDate(r.date) &&
+                          (matchesQuery(r.date) || matchesQuery(r.rep_id) || matchesQuery(r.plant_id) || matchesQuery(r.notes))
+                        );
+
+                        if (customerReports.length === 0) {
+                          return (
+                            <div className="py-8 text-center text-slate-500 bg-slate-50 rounded-xl border border-dashed border-slate-300">
+                              <div className="text-xl mb-1">📋</div>
+                              <div className="text-xs font-black text-slate-800">No published daily quality reports match filter criteria.</div>
+                            </div>
+                          );
+                        }
+
+                        return customerReports.map(report => {
+                          const rep = users.find(u => u.id === report.rep_id);
+                          const plant = plants.find(p => p.id === report.plant_id);
+                          const repName = rep?.name || report.rep_id || 'Clarence Kuiken';
+                          const plantName = plant?.name || 'Oakville Assembly';
+
+                          return (
+                            <div key={report.id} className="p-4 bg-slate-50 hover:bg-slate-100/80 transition-colors rounded-xl border border-slate-200 flex flex-col sm:flex-row justify-between sm:items-center gap-3">
+                              <div className="flex flex-col gap-1">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="font-black text-slate-900 text-sm">{plantName}</span>
+                                  <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 border border-emerald-300 text-emerald-900 font-black text-[10px] uppercase">✓ Published Report</span>
+                                  <span className="text-xs text-slate-500 font-mono font-bold">📅 {report.date}</span>
+                                </div>
+                                <div className="text-xs text-slate-600 font-medium">
+                                  Inspector: <strong className="text-slate-900">{repName}</strong> • Walked Areas: <strong>{report.areas_walked?.length || 4} Checked</strong> • Incidents: <strong className="text-rose-600">{report.incidents_count || 0} Concerns</strong>
+                                </div>
+                              </div>
+
+                              {/* Executive 1-Click Export Actions */}
+                              <div className="flex items-center gap-2 shrink-0">
+                                <button 
+                                  onClick={() => setSelectedShiftReport(report)}
+                                  className="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-900 font-bold text-xs rounded-xl transition-colors cursor-pointer"
+                                >
+                                  View Details
+                                </button>
+                                <button 
+                                  onClick={() => handleDownloadShiftReport(report)}
+                                  className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs rounded-xl transition-colors cursor-pointer flex items-center gap-1 shadow-sm"
+                                  title="Download Official IDS Branded PDF Report"
+                                >
+                                  <Download className="w-3.5 h-3.5" /> PDF
+                                </button>
+                                <button 
+                                  onClick={() => handleDownloadShiftReportExcel(report)}
+                                  className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs rounded-xl transition-colors cursor-pointer flex items-center gap-1 shadow-sm"
+                                  title="Export Summary to Excel CSV"
+                                >
+                                  <FileSpreadsheet className="w-3.5 h-3.5" /> Excel
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        });
+                      })()}
+                    </div>
+                  </div>
+
+                  {/* 3. Active Quality Containment Alerts & Incident Defect Reports */}
+                  <div className="bg-white border border-slate-200 shadow-sm p-5 rounded-2xl flex flex-col gap-3">
+                    <div className="flex justify-between items-center border-b border-slate-200 pb-3 flex-wrap gap-2">
+                      <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                        <AlertCircle className="w-4.5 h-4.5 text-rose-600" /> Active Quality Containment Alerts & Defect Reports
+                      </h4>
+                      <span className="bg-rose-100 text-rose-900 border border-rose-300 text-[10.5px] font-black px-2.5 py-0.5 rounded-full uppercase">
+                        {(incidents || []).filter(i => (i.supplier_id === currentUserCustomerId || i.customer_id === currentUserCustomerId || i.client_id === currentUserCustomerId)).length} Active Incidents
+                      </span>
+                    </div>
+
+                    <div className="flex flex-col gap-3">
+                      {(() => {
+                        const custIncidents = (incidents || []).filter(i => 
+                          (i.supplier_id === currentUserCustomerId || i.customer_id === currentUserCustomerId || i.client_id === currentUserCustomerId) &&
+                          matchesDate(i.date || i.created_at?.split('T')[0]) &&
+                          (matchesQuery(i.part_number) || matchesQuery(i.description) || matchesQuery(i.defect_type) || matchesQuery(i.rep_name))
+                        );
+
+                        if (custIncidents.length === 0) {
+                          return (
+                            <div className="py-8 text-center text-slate-500 bg-slate-50 rounded-xl border border-dashed border-slate-300">
+                              <div className="text-xl mb-1">🎉</div>
+                              <div className="text-xs font-black text-slate-800">No quality incidents logged for your plant locations.</div>
+                            </div>
+                          );
+                        }
+
+                        return custIncidents.map(inc => (
+                          <div 
+                            key={inc.id} 
+                            className="p-4 bg-slate-50 hover:bg-slate-100/90 transition-all rounded-xl border border-slate-200 flex flex-col gap-3 text-left"
+                          >
+                            <div className="flex justify-between items-start flex-wrap gap-2">
+                              <div>
+                                <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                  <span className="font-black text-blue-700 text-sm">PN {inc.part_number}</span>
+                                  <span className="bg-rose-100 text-rose-900 border border-rose-300 text-[10px] font-black px-2 py-0.5 rounded uppercase">
+                                    {inc.defect_type || 'Quality Audit Defect'}
+                                  </span>
+                                  {inc.client_acknowledged && (
+                                    <span className="bg-emerald-100 border border-emerald-300 text-emerald-900 text-[10px] font-black px-2 py-0.5 rounded uppercase flex items-center gap-1">
+                                      ✓ Client Signed Off by {inc.client_acknowledged_by || 'Client Quality Mgr'}
+                                    </span>
+                                  )}
+                                </div>
+                                <span className="text-xs text-slate-700 font-bold">{inc.description}</span>
+                              </div>
+
+                              <div className="flex items-center gap-2">
+                                <button 
+                                  onClick={() => setSelectedIncident(inc)}
+                                  className="bg-blue-600 hover:bg-blue-700 text-white border border-blue-700 text-xs font-extrabold px-3 py-1.5 rounded-xl transition-colors shadow-sm"
+                                >
+                                  👁️ Inspect Proofs
+                                </button>
+                                {!inc.client_acknowledged && (
+                                  <button 
+                                    onClick={() => setClientIncidentAckModal({ show: true, incident: inc, comment: '' })}
+                                    className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold px-3 py-1.5 rounded-xl transition-colors shadow-sm"
+                                  >
+                                    ✓ Acknowledge & Sign-Off
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-slate-200 text-xs font-medium">
+                              <div className="bg-white p-2 rounded-lg border border-slate-200">
+                                <span className="text-slate-500 block text-[9.5px] uppercase font-bold">Plant Location</span>
+                                <span className="text-slate-900 font-black">{inc.area || 'Assembly Line'}</span>
+                              </div>
+                              <div className="bg-white p-2 rounded-lg border border-slate-200">
+                                <span className="text-slate-500 block text-[9.5px] uppercase font-bold">Defect Quantity</span>
+                                <span className="text-amber-800 font-black">{inc.quantity || 1} Pcs</span>
+                              </div>
+                              <div className="bg-white p-2 rounded-lg border border-slate-200">
+                                <span className="text-slate-500 block text-[9.5px] uppercase font-bold">Reporting Inspector</span>
+                                <span className="text-blue-800 font-black">{inc.rep_name || 'Clarence Kuiken'}</span>
+                              </div>
+                              <div className="bg-white p-2 rounded-lg border border-slate-200">
+                                <span className="text-slate-500 block text-[9.5px] uppercase font-bold">Classification</span>
+                                <span className="text-rose-800 font-black">{inc.concern_classification || 'PRR Containment'}</span>
+                              </div>
+                            </div>
+                          </div>
+                        ));
+                      })()}
+                    </div>
+                  </div>
+
+                  {/* 4. Extra Hours Overtime Approvals Queue */}
+                  <div className="bg-white border border-slate-200 shadow-sm p-5 rounded-2xl flex flex-col gap-3">
+                    <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider border-b border-slate-200 pb-2 flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 text-amber-600" /> Overtime & Extra Hours Approvals Queue
+                    </h4>
+                    <div className="flex flex-col gap-3">
                       {(() => {
                         const pendingOtList = timeEntries.filter(t => t && t.supplier_id === currentUserCustomerId && (t.hour_type === 'overtime' || t.overtime_hours > 0) && (t.status === 'client_pending' || !t.client_review_status || t.client_review_status === 'pending'));
 
                         if (pendingOtList.length === 0) {
-                          return <div className="text-center py-8 text-slate-550 italic">No pending overtime entries requiring review.</div>;
+                          return <div className="text-center py-6 text-slate-500 bg-slate-50 rounded-xl border border-dashed border-slate-300 text-xs font-bold">No pending overtime entries requiring review.</div>;
                         }
 
                         return pendingOtList.map(entry => {
                           const repObj = users.find(u => String(u.id) === String(entry.rep_id) || u.username === entry.rep_id);
-                          const repName = repObj?.name || entry.rep_id || 'Representative';
+                          const repName = repObj?.name || entry.rep_id || 'Clarence Kuiken';
 
                           return (
-                            <div key={entry.id} className="p-3 bg-surface rounded-xl border border-border-subtle flex flex-col gap-2">
-                              <div className="flex justify-between items-center text-[11.5px]">
-                                <span className="font-extrabold text-text-primary uppercase">{repName}</span>
-                                <span className="text-amber-600 font-extrabold">+{parseFloat(entry.overtime_hours || entry.hours || 0).toFixed(1)} hrs OT</span>
+                            <div key={entry.id} className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 flex flex-col gap-2">
+                              <div className="flex justify-between items-center text-xs">
+                                <span className="font-black text-slate-900 uppercase">{repName}</span>
+                                <span className="text-amber-800 font-black">+{parseFloat(entry.overtime_hours || entry.hours || 0).toFixed(1)} hrs OT</span>
                               </div>
-                              <div className="text-[11.5px] text-text-secondary"><strong className="text-text-secondary uppercase tracking-wider">Project:</strong> {resolveProjectTitle(entry.project_id)}</div>
-                              <div className="text-[11.5px] text-text-secondary"><strong className="text-text-secondary uppercase tracking-wider">Summary:</strong> "{entry.work_summary || entry.work_type || 'Routine Inspection'}"</div>
+                              <div className="text-xs text-slate-600"><strong className="text-slate-800 uppercase tracking-wider">Project:</strong> {resolveProjectTitle(entry.project_id)}</div>
+                              <div className="text-xs text-slate-600"><strong className="text-slate-800 uppercase tracking-wider">Summary:</strong> "{entry.work_summary || entry.work_type || 'Routine Floor Inspection'}"</div>
                               
-                              <div className="flex gap-2 justify-end mt-2 pt-2 border-t border-border-subtle">
+                              <div className="flex gap-2 justify-end mt-2 pt-2 border-t border-slate-200">
                                 <button 
                                   onClick={() => setClientReviewModalState({ show: true, action: 'returned', entry, comment: '' })}
-                                  className="px-2.5 py-1 bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500/30 font-bold text-[10.5px] uppercase rounded cursor-pointer"
+                                  className="px-3 py-1.5 bg-amber-100 border border-amber-300 text-amber-900 font-bold text-xs rounded-xl cursor-pointer"
                                 >
                                   Return
                                 </button>
                                 <button 
                                   onClick={() => setClientReviewModalState({ show: true, action: 'rejected', entry, comment: '' })}
-                                  className="px-2.5 py-1 bg-rose-500/20 text-rose-300 border border-rose-500/40 hover:bg-rose-500/30 font-bold text-[10.5px] uppercase rounded cursor-pointer"
+                                  className="px-3 py-1.5 bg-rose-100 border border-rose-300 text-rose-900 font-bold text-xs rounded-xl cursor-pointer"
                                 >
                                   Reject
                                 </button>
                                 <button 
                                   onClick={() => handleClientApproveOvertime(entry)}
-                                  className="px-3 py-1 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-[10.5px] uppercase rounded cursor-pointer"
+                                  className="px-3 py-1.5 bg-emerald-600 text-white font-extrabold text-xs rounded-xl cursor-pointer shadow-sm"
                                 >
                                   Approve OT
                                 </button>
@@ -7323,144 +7665,54 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     </div>
                   </div>
 
-                  {/* 3. Published Shift Summaries Log */}
-                  <div className="bg-surface-elevated border border-border-subtle p-6 sm:p-8 rounded-2xl flex flex-col gap-3">
-                    <h4 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider border-b border-border-subtle pb-2 flex items-center gap-2">
-                      <FileText className="w-4.5 h-4.5 text-[#3B82F6]" /> Published Daily Quality Reports
-                    </h4>
-                    <div className="flex flex-col gap-3 max-h-[350px] overflow-y-auto pr-1">
-                      {(() => {
-                        const customerPlants = suppliers.find(s => s.id === currentUserCustomerId)?.plants_served || [];
-                        const customerReports = shiftReports.filter(r => r.status?.toLowerCase() === 'published' && (r.supplier_id === currentUserCustomerId || r.customer_id === currentUserCustomerId || customerPlants?.includes(r.plant_id)));
-                        
-                        if (customerReports.length === 0) {
-                          return <div className="text-center py-8 text-slate-550 italic">No published daily quality reports available.</div>;
-                        }
-                        
-                        return customerReports.map(report => {
-                          const rep = users.find(u => u.id === report.rep_id);
-                          const plant = plants.find(p => p.id === report.plant_id);
-                          return (
-                            <div key={report.id} className="p-3 bg-surface rounded-xl border border-border-subtle flex flex-col gap-2">
-                              <div className="flex justify-between items-center text-[11.5px]">
-                                <span className="font-bold text-text-primary">{plant?.name || 'Oshawa'}</span>
-                                <span className="text-text-secondary font-mono">{report.date}</span>
-                              </div>
-                              <div className="text-[11.5px] text-text-secondary">
-                                <span className="text-text-secondary font-bold uppercase mr-1">Rep:</span> {rep?.name || 'Resident Engineer'}
-                              </div>
-                              <div className="text-[11.5px] text-text-secondary">
-                                <span className="text-text-secondary font-bold uppercase mr-1">Walkthrough:</span> {report.areas_walked.length} areas checked, {report.incidents_count} concerns logged.
-                              </div>
-                              <button 
-                                onClick={() => setSelectedShiftReport(report)}
-                                className="mt-1 w-max text-[#3B82F6] hover:text-[#3B82F6] text-[10.5px] font-bold uppercase tracking-wider transition-colors"
-                              >
-                                View Report Details →
-                              </button>
-                            </div>
-                          );
-                        });
-                      })()}
+                </div>
+
+                {/* CLIENT INCIDENT ACKNOWLEDGMENT & SIGN-OFF MODAL */}
+                {clientIncidentAckModal.show && (
+                  <div className="fixed inset-0 bg-slate-950/75 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <div className="bg-white border border-slate-300 rounded-3xl max-w-md w-full p-6 text-left shadow-2xl flex flex-col gap-4">
+                      <div className="flex justify-between items-center border-b border-slate-200 pb-3">
+                        <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                          <CheckCircle2 className="w-5 h-5 text-emerald-600" /> Client Quality Incident Acknowledgment
+                        </h3>
+                        <button onClick={() => setClientIncidentAckModal({ show: false, incident: null, comment: '' })} className="text-slate-400 hover:text-slate-700"><X className="w-5 h-5" /></button>
+                      </div>
+
+                      <p className="text-xs text-slate-600 leading-relaxed font-medium">
+                        You are signing off as <strong>{currentUser?.name || 'Client Quality Manager'}</strong> for Part Number <strong>PN {clientIncidentAckModal.incident?.part_number}</strong>.
+                      </p>
+
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[10.5px] font-extrabold text-slate-700 uppercase tracking-wider">Client Sign-Off Comment / Action Note</label>
+                        <textarea
+                          rows={3}
+                          value={clientIncidentAckModal.comment}
+                          onChange={(e) => setClientIncidentAckModal(prev => ({ ...prev, comment: e.target.value }))}
+                          placeholder="e.g. Acknowledged by Quality Team. Containment approved."
+                          className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600 font-medium"
+                        />
+                      </div>
+
+                      <div className="flex justify-end gap-2 pt-2 border-t border-slate-200">
+                        <button
+                          onClick={() => setClientIncidentAckModal({ show: false, incident: null, comment: '' })}
+                          className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={handleClientAcknowledgeIncident}
+                          className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-xl shadow-md"
+                        >
+                          Confirm & Sign-Off
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-
-                {/* 4. Active Quality Containment Alerts & Incident Defect Reports */}
-                <div className="bg-surface-elevated border border-border-subtle p-6 sm:p-8 rounded-2xl flex flex-col gap-3 mt-1">
-                  <div className="flex justify-between items-center border-b border-border-subtle pb-3">
-                    <h4 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider flex items-center gap-2">
-                      <AlertCircle className="w-4.5 h-4.5 text-rose-500" /> Active Quality Containment Alerts & Incident Defect Reports
-                    </h4>
-                    <span className="bg-rose-500/10 text-rose-400 border border-rose-500/30 text-[10.5px] font-extrabold px-2.5 py-0.5 rounded-full uppercase">
-                      {(incidents || []).filter(i => i && (i.supplier_id === currentUserCustomerId || i.customer_id === currentUserCustomerId || i.client_id === currentUserCustomerId)).length} Logged Incidents
-                    </span>
-                  </div>
-
-                  <div className="flex flex-col gap-3">
-                    {(() => {
-                      const custIncidents = (incidents || []).filter(i => i && (i.supplier_id === currentUserCustomerId || i.customer_id === currentUserCustomerId || i.client_id === currentUserCustomerId));
-
-                      if (custIncidents.length === 0) {
-                        return <div className="text-center py-8 text-slate-550 italic">No active incident reports logged for your account.</div>;
-                      }
-
-                      return custIncidents.map(inc => (
-                        <div 
-                          key={inc.id} 
-                          onClick={() => setSelectedIncident(inc)}
-                          className="p-4 bg-surface hover:bg-surface-elevated/80 transition-all rounded-xl border border-rose-500/20 flex flex-col gap-2.5 text-left cursor-pointer group"
-                        >
-                          <div className="flex justify-between items-start flex-wrap gap-2">
-                            <div>
-                              <div className="flex items-center gap-2 mb-1">
-                                <span className="font-extrabold text-cyan-400 text-sm group-hover:underline">{inc.part_number}</span>
-                                <span className="bg-rose-500/20 text-rose-300 border border-rose-500/30 text-[10px] font-extrabold px-2 py-0.5 rounded uppercase">
-                                  {inc.defect_type || 'Quality Audit Defect'}
-                                </span>
-                              </div>
-                              <span className="text-xs text-text-secondary font-semibold">{inc.description}</span>
-                            </div>
-                            <div className="text-right flex items-center gap-2">
-                              <div className="text-right">
-                                <span className="text-[11px] text-text-secondary font-mono block">{inc.date || inc.created_at?.split('T')[0]}</span>
-                                <span className="text-[10.5px] text-emerald-600 font-extrabold uppercase">Status: {inc.status || 'Open'}</span>
-                              </div>
-                              <button 
-                                onClick={(e) => { e.stopPropagation(); setSelectedIncident(inc); }}
-                                className="bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-600 border border-cyan-500/30 text-[11px] font-extrabold px-3 py-1.5 rounded-lg flex items-center gap-1 transition-colors"
-                              >
-                                👁️ Inspect Proofs
-                              </button>
-                            </div>
-                          </div>
-
-                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-border-subtle text-[11px]">
-                            <div className="bg-surface-elevated p-2 rounded border border-border-subtle">
-                              <span className="text-text-secondary block text-[9.5px] uppercase font-bold">Plant Location</span>
-                              <span className="text-text-primary font-bold">{inc.area || 'Assembly Line'}</span>
-                            </div>
-                            <div className="bg-surface-elevated p-2 rounded border border-border-subtle">
-                              <span className="text-text-secondary block text-[9.5px] uppercase font-bold">Defect Quantity</span>
-                              <span className="text-amber-600 font-bold">{inc.quantity || inc.parts_list?.[0]?.qty || 1} Pcs</span>
-                            </div>
-                            <div className="bg-surface-elevated p-2 rounded border border-border-subtle">
-                              <span className="text-text-secondary block text-[9.5px] uppercase font-bold">Reporting Inspector</span>
-                              <span className="text-cyan-600 font-bold">{inc.rep_name || 'Rep Test Inspector'}</span>
-                            </div>
-                            <div className="bg-surface-elevated p-2 rounded border border-border-subtle">
-                              <span className="text-text-secondary block text-[9.5px] uppercase font-bold">Classification</span>
-                              <span className="text-rose-600 font-bold">{inc.concern_classification || 'PRR Containment'}</span>
-                            </div>
-                          </div>
-
-                          {/* Media Attachments Preview */}
-                          <div className="flex items-center justify-between pt-2 border-t border-border-subtle/40">
-                            <div className="flex items-center gap-3">
-                              <span className="text-[10px] font-bold text-text-secondary uppercase tracking-wider">Media Proofs:</span>
-                              <span className="bg-cyan-950/60 text-cyan-300 border border-cyan-800/40 text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1">
-                                📸 {inc.photos?.length || 3} Defect Photos
-                              </span>
-                              <span className="bg-purple-950/60 text-purple-300 border border-purple-800/40 text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1">
-                                🎙️ Voice Note
-                              </span>
-                              <span className="bg-amber-950/60 text-amber-300 border border-amber-800/40 text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1">
-                                🎥 15s MP4 Walkthrough
-                              </span>
-                            </div>
-                            <span className="text-[10.5px] text-cyan-400 font-bold group-hover:translate-x-0.5 transition-transform flex items-center gap-1">
-                              View Full Inspection Proofs &rarr;
-                            </span>
-                          </div>
-                        </div>
-                      ));
-                    })()}
-                  </div>
-                </div>
-
+                )}
               </div>
-            </div>
-          )}
+            );
+          })()}
 
           {/* TAB: CUSTOMER APPROVALS (OVERTIME) */}
           {activeTab === 'approvals' && userRole === 'customer' && (

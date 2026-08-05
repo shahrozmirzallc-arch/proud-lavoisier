@@ -95,12 +95,12 @@ export function initializeDB() {
 
   // Seed Brand New Magna Powertrain International & Stellantis Master Datasets
   const brandNewSuppliers = [
-    { id: 'sup_magna', name: 'Magna Powertrain International', code: 'MAGNA-PT', contact_person: 'Robert Sterling', contact_email: 'robert.sterling@magna.com', status: 'active' },
-    { id: 'sup_stellantis', name: 'Stellantis Powertrain Systems', code: 'STELLANTIS-PW', contact_person: 'Mark Vance', contact_email: 'mark.vance@stellantis.com', status: 'active' }
+    { id: 'sup_magna', name: 'Magna Powertrain International', code: 'MAGNA-PT', contact_person: 'Robert Sterling', contact_email: 'robert.sterling@magna.com', status: 'active', plants_served: ['plant_oakville'] },
+    { id: 'sup_stellantis', name: 'Stellantis Powertrain Systems', code: 'STELLANTIS-PW', contact_person: 'Mark Vance', contact_email: 'mark.vance@stellantis.com', status: 'active', plants_served: ['plant_windsor'] }
   ];
   const brandNewPlants = [
-    { id: 'plant_oakville', name: 'Ford Oakville EV Complex', code: 'PLANT-OAK-90', location: 'Oakville, ON', supplier_id: 'sup_magna', status: 'active' },
-    { id: 'plant_windsor', name: 'Windsor Assembly Plant', code: 'PLANT-202', location: 'Windsor, ON', supplier_id: 'sup_stellantis', status: 'active' }
+    { id: 'plant_oakville', name: 'Ford Oakville EV Complex', code: 'PLANT-OAK-90', location: 'Oakville, ON', supplier_id: 'sup_magna', supplier_ids: ['sup_magna'], status: 'active' },
+    { id: 'plant_windsor', name: 'Windsor Assembly Plant', code: 'PLANT-202', location: 'Windsor, ON', supplier_id: 'sup_stellantis', supplier_ids: ['sup_stellantis'], status: 'active' }
   ];
   const brandNewProjects = [
     { id: 'proj_oakville_900', name: 'Ford F-150 Lightning E-Motor Stator Containment', code: 'PRJ-OAKVILLE-900', client_id: 'sup_magna', billing_customer_id: 'sup_magna', supplier_id: 'sup_magna', plant_id: 'plant_oakville', rep_id: 'rep_clarence', po_hours: 10.0, currency: 'CAD', status: 'active' },
@@ -146,12 +146,14 @@ export function initializeDB() {
       rma_number: 'CK062026',
       supplier_id: 'sup_magna',
       client_id: 'sup_magna',
+      customer_id: 'sup_magna',
       plant_id: 'plant_oakville',
       rep_id: 'rep_clarence',
       rep_name: 'Clarence Kuiken',
       date: '2026-06-20',
       created_at: '2026-06-20T15:39:22Z',
       status: 'Released',
+      released_to_client: true,
       area: 'GM SAC / Red X Line (GCA Audit)',
       severity: 'Critical',
       action_taken: 'Issued RMA CK062026; handed suspect part to Aaron Repar for return to Magna facility. Conducted ABA swap test and water/bump test; Terry Jennings noted water in harness & flashover at pin 12 cavity.',
@@ -666,12 +668,15 @@ export function getEntities(type) {
       }
       if (type === 'shiftReports') {
         const validPlants = (db.plants || []).filter(p => (p.supplier_ids || [])?.includes(customerId)).map(p => p.id);
-        return entities.filter(r => validPlants?.includes(r.plant_id) && r.status === 'published');
+        return entities.filter(r => 
+          (r.status?.toLowerCase() === 'published') && 
+          (r.supplier_id === customerId || r.customer_id === customerId || r.client_id === customerId || validPlants?.includes(r.plant_id))
+        );
       }
       if (type === 'plants') {
         const supplier = (db.suppliers || []).find(s => s.id === customerId);
         const served = supplier?.plants_served || [];
-        return entities.filter(p => served?.includes(p.id));
+        return entities.filter(p => p.supplier_id === customerId || (p.supplier_ids || [])?.includes(customerId) || served?.includes(p.id));
       }
       if (type === 'suppliers') {
         return entities.filter(s => s.id === customerId);
@@ -679,8 +684,9 @@ export function getEntities(type) {
       if (type === 'incidents') {
         return entities.filter(inc => {
           if (!inc) return false;
-          const matchesCust = (inc.customer_id === customerId || inc.client_id === customerId);
-          return matchesCust && inc.released_to_client === true && String(inc.status) === 'Released';
+          const matchesCust = (inc.supplier_id === customerId || inc.customer_id === customerId || inc.client_id === customerId);
+          const isReleased = (String(inc.status) === 'Released' || inc.released_to_client === true);
+          return matchesCust && isReleased;
         });
       }
     }
@@ -714,6 +720,21 @@ export function saveEntity(type, entity) {
   if (!db[type]) db[type] = [];
 
   let normalizedEntity = { ...entity };
+
+  if (type === 'shiftReports') {
+    if (!normalizedEntity.supplier_id) {
+      const projects = db.projects || [];
+      const matchedProject = projects.find(p => 
+        (p.plant_id === normalizedEntity.plant_id && (p.rep_id === normalizedEntity.rep_id || (p.assigned_reps || []).includes(normalizedEntity.rep_id))) ||
+        p.rep_id === normalizedEntity.rep_id ||
+        (p.assigned_reps || []).includes(normalizedEntity.rep_id)
+      );
+      if (matchedProject && matchedProject.supplier_id) {
+        normalizedEntity.supplier_id = matchedProject.supplier_id;
+        normalizedEntity.customer_id = matchedProject.supplier_id;
+      }
+    }
+  }
   if (type === 'users') {
     if (entity.username === 'shahroz' || entity.id === 'admin_1' || entity.email === 'shahrozmirzallc@gmail.com') {
       normalizedEntity = {

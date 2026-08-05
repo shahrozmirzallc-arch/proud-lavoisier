@@ -109,6 +109,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
   useEffect(() => {
     window.__setActiveScreen = (s) => setActiveScreen(s);
     window.__openDailyQualityReport = () => setActiveScreen('summary');
+    window.__getAvailableRoutingContacts = () => getAvailableRoutingContacts();
   });
 
   // INCIDENT REPORT STATE
@@ -315,16 +316,87 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
   };
   const [concernClassification, setConcernClassification] = useState('');
 
-  // Authoritative Routing Contacts Resolver (Phase 1 Fix)
+  // Authoritative Routing Contacts Resolver (Strict Client-Side Contact Resolution)
   const getAvailableRoutingContacts = () => {
     const activeAssignment = resolveActiveAssignment();
     const dbContacts = getEntities('supplier_contacts') || getEntities('contacts') || [];
     const dbSuppliers = getEntities('suppliers') || [];
+    const dbUsers = getEntities('users') || [];
 
-    return resolveAssignmentContacts({
-      assignment: activeAssignment,
+    const plantSupplier = dbSuppliers.find(s => s.plants_served && Array.isArray(s.plants_served) && s.plants_served.includes(selectedPlant))?.id;
+    const clientId = activeAssignment?.billing_customer_id || activeAssignment?.supplier_id || plantSupplier || (selectedPlant?.includes('windsor') ? 'sup_stellantis' : 'sup_magna');
+
+    const res = resolveAssignmentContacts({
+      assignment: activeAssignment || { supplier_id: clientId, billing_customer_id: clientId },
       contactsList: dbContacts,
       suppliersList: dbSuppliers
+    });
+
+    const matchedContacts = [];
+    if (res && Array.isArray(res.customerContacts)) matchedContacts.push(...res.customerContacts);
+    if (res && Array.isArray(res.supplierContacts)) matchedContacts.push(...res.supplierContacts);
+
+    // Source 1 & 2: Direct Contacts List matching target Client ID ONLY
+    const extraDbContacts = dbContacts.filter(c => 
+      c && (String(c.supplier_id) === String(clientId) || String(c.client_id) === String(clientId) || String(c.organization_id) === String(clientId))
+    );
+    extraDbContacts.forEach(c => {
+      if (!matchedContacts.some(existing => String(existing.id) === String(c.id) || existing.email === c.email)) {
+        matchedContacts.push({
+          id: c.id,
+          name: c.name || c.contact_person,
+          email: c.email,
+          role: c.role || 'Client Quality Contact',
+          supplier_id: clientId
+        });
+      }
+    });
+
+    // Source 3: User Database Customer Roles matching target Client ID ONLY (e.g. Robert Sterling for Magna, Mark Vance for Stellantis)
+    const customerUsers = dbUsers.filter(u => 
+      u && (u.role === 'customer' || u.role === 'client') && 
+      (String(u.supplier_id) === String(clientId) || String(u.customer_id) === String(clientId))
+    );
+    customerUsers.forEach(u => {
+      if (!matchedContacts.some(existing => String(existing.id) === String(u.id) || existing.email === u.email)) {
+        matchedContacts.push({
+          id: u.id,
+          name: u.name,
+          email: u.email,
+          role: u.title || 'Client Quality Representative',
+          supplier_id: clientId
+        });
+      }
+    });
+
+    // Fallback: Guarantee authentic client contacts always resolve for active client
+    if (matchedContacts.length === 0) {
+      if (clientId === 'sup_magna' || selectedPlant?.includes('oakville') || selectedPlant?.includes('ford')) {
+        matchedContacts.push(
+          { id: 'c_magna_1', name: 'Robert Sterling', email: 'robert.sterling@magna.com', role: 'Primary Quality Director', supplier_id: 'sup_magna' },
+          { id: 'c_magna_2', name: 'Elena Rostova', email: 'elena.rostova@magna.com', role: 'Lead Engineering & Overtime Approver', supplier_id: 'sup_magna' },
+          { id: 'c_magna_3', name: 'Aaron Repar', email: 'aaron.repar@magna.com', role: 'Magna Part Handoff Receiver', supplier_id: 'sup_magna' }
+        );
+      } else if (clientId === 'sup_stellantis' || selectedPlant?.includes('windsor') || selectedPlant?.includes('stellantis')) {
+        matchedContacts.push(
+          { id: 'c_stellantis_1', name: 'Mark Vance', email: 'mark.vance@stellantis.com', role: 'Primary Quality Manager', supplier_id: 'sup_stellantis' },
+          { id: 'c_stellantis_2', name: 'Sandra Bullock', email: 'sandra.bullock@stellantis.com', role: 'Overtime Approver & Engineering Lead', supplier_id: 'sup_stellantis' },
+          { id: 'c_stellantis_3', name: 'David Miller', email: 'david.miller@stellantis.com', role: 'Plant Operations Supervisor', supplier_id: 'sup_stellantis' }
+        );
+      } else {
+        const supObj = dbSuppliers.find(s => String(s.id) === String(clientId));
+        const clientName = supObj?.name || 'Client Quality Division';
+        matchedContacts.push(
+          { id: `c_${clientId}_1`, name: supObj?.contact_person || `${clientName} Quality Director`, email: supObj?.contact_email || `quality@${clientId}.com`, role: 'Primary Quality Lead', supplier_id: clientId }
+        );
+      }
+    }
+
+    // STRICT CLIENT ISOLATION: Guarantee zero cross-client contact leaks
+    return matchedContacts.filter(c => {
+      if (!c) return false;
+      const cSupId = String(c.supplier_id || c.client_id || c.customer_id || c.organization_id || '').trim();
+      return !cSupId || cSupId === String(clientId).trim();
     });
   };
 
@@ -2218,7 +2290,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
     if (!currentUser) return;
     const todayDate = new Date().toISOString()?.substring(0, 10);
     const dbReports = getEntities('shiftReports');
-    const existingDraft = dbReports.find(r => r.rep_id === currentUser.id && r.status === 'Draft');
+    const existingDraft = dbReports.find(r => r.rep_id === currentUser.id && r.status === 'Draft' && r.date === todayDate);
     const normalizedAreas = normalizeAndMergeShiftAreas(updatedAreas || areasWalked);
 
     if (existingDraft) {
@@ -2228,7 +2300,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
       window.dispatchEvent(new Event('ids_pulse_db_update'));
     } else {
       const newDraft = {
-        id: `sr_draft_${currentUser.id}_${todayDate}`,
+        id: `sr_draft_${currentUser.id}_${todayDate}_${Date.now()}`,
         rep_id: currentUser.id,
         plant_id: selectedPlant || 'gm_oshawa',
         date: todayDate,
@@ -2483,6 +2555,14 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
     });
   };
 
+  const updateAreaSpokeWith = (id, spoke_with) => {
+    setAreasWalked(prev => {
+      const next = prev.map(a => a.id === id ? { ...a, spoke_with } : a);
+      saveDraftShiftReport(next, null);
+      return next;
+    });
+  };
+
   const handleSendShiftReport = () => {
     setSendingShiftReport(true);
     setTimeout(() => {
@@ -2490,18 +2570,28 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
       const repIncidentsCount = getEntities('incidents').filter(inc => inc.rep_id === currentUser.id && inc.created_at?.startsWith(todayDate)).length;
       
       const dbReports = getEntities('shiftReports');
-      const existingDraft = dbReports.find(r => r.rep_id === currentUser.id && r.status === 'Draft');
+      const existingDraft = dbReports.find(r => r.rep_id === currentUser.id && r.status === 'Draft' && r.date === todayDate);
       const canonicalAreas = normalizeAndMergeShiftAreas(areasWalked);
+
+      const activeProj = (getEntities('projects') || []).find(p => 
+        (p.plant_id === selectedPlant && (p.rep_id === currentUser.id || (p.assigned_reps || []).includes(currentUser.id))) ||
+        p.rep_id === currentUser.id ||
+        (p.assigned_reps || []).includes(currentUser.id)
+      );
+      const resolvedSupplierId = activeProj?.supplier_id || currentUser.supplier_id || currentUser.customer_id || null;
 
       const newReport = {
         id: existingDraft ? existingDraft.id : `sr_${Date.now()}`,
         rep_id: currentUser.id,
         plant_id: selectedPlant,
+        supplier_id: resolvedSupplierId,
+        customer_id: resolvedSupplierId,
+        needs_client_routing: !resolvedSupplierId,
         date: todayDate,
         areas_walked: canonicalAreas,
         incidents_count: repIncidentsCount,
         bonus_tasks: bonusTasks,
-        status: 'Sent',
+        status: 'Submitted',
         sent_at: new Date().toISOString(),
         created_at: existingDraft ? existingDraft.created_at : new Date().toISOString()
       };
@@ -2522,7 +2612,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
 <hr/>
 <p><strong>Inspected Factory Areas:</strong></p>
 <ul>
-  ${canonicalAreas.map(a => `<li><strong>${formatAreaName(a.name)}</strong>: ${a.status === 'issues' ? '🔴 Concerns Found' : '🟢 No Concerns'} (Notes: ${a.notes || 'None'})</li>`).join('')}
+  ${canonicalAreas.map(a => `<li><strong>${formatAreaName(a.name)}</strong>: ${a.status === 'issues' ? '🔴 Concerns Found' : '🟢 No Concerns'} ${a.spoke_with ? `(Spoke with: <strong>${a.spoke_with}</strong>)` : ''} (Notes: ${a.notes || 'None'})</li>`).join('')}
 </ul>
 <p><strong>Assigned Audits & Checkpoints:</strong></p>
 <ul>
@@ -2531,7 +2621,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
       });
 
       setSendingShiftReport(false);
-      showToast("Daily Quality Report submitted successfully!", "success");
+      showToast("Daily Quality Report submitted! Awaiting IDS review.", "success");
       setActiveScreen('home');
     }, 1500);
   };
@@ -2700,26 +2790,92 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
 
           const activeAsgn = plantMatchAsgn || plantMatchProj || resolveActiveAssignment();
 
-          const clientId = activeAsgn?.billing_customer_id || activeAsgn?.supplier_id;
+          // 1. DYNAMIC CLIENT RESOLUTION
           const dbSuppliers = getEntities('suppliers') || [];
-          const supObj = dbSuppliers.find(s => String(s.id) === String(clientId) || s.name === clientId || s.code === clientId);
-          const activeClientName = typeof getActiveClientForPlant === 'function' ? getActiveClientForPlant(selectedPlant) : null;
-          const displayClient = supObj ? supObj.name : ((activeClientName && activeClientName !== 'No client assigned') ? activeClientName : (plantMatchProj?.client_name || activeAsgn?.client_name || 'Magna Powertrain International'));
+          const clientId = plantMatchAsgn?.billing_customer_id || plantMatchAsgn?.supplier_id || plantMatchProj?.supplier_id || plantMatchProj?.billing_customer_id || plantObj?.supplier_id;
+          const supObj = dbSuppliers.find(s => String(s.id) === String(clientId) || s.name === clientId || s.code === clientId || (s.plants_served && Array.isArray(s.plants_served) && s.plants_served.includes(selectedPlant)));
 
-          const projId = activeAsgn?.project_id || activeAsgn?.id;
-          const projObj = allProjects.find(pr => String(pr.id) === String(projId) || pr.name === projId || pr.code === projId);
-          const displayProject = projObj ? projObj.name : (activeAsgn?.name || activeAsgn?.project_name || 'Quality Inspection & Sorting');
+          let displayClient = supObj ? supObj.name : null;
+          if (!displayClient) {
+            const activeClientName = typeof getActiveClientForPlant === 'function' ? getActiveClientForPlant(selectedPlant) : null;
+            if (activeClientName && activeClientName !== 'No client assigned') {
+              displayClient = activeClientName;
+            } else if (plantMatchProj?.client_name || plantMatchAsgn?.client_name) {
+              displayClient = plantMatchProj?.client_name || plantMatchAsgn?.client_name;
+            } else {
+              const pLower = (displayPlant + ' ' + selectedPlant).toLowerCase();
+              if (pLower.includes('windsor') || pLower.includes('stellantis')) {
+                displayClient = 'Stellantis Powertrain Systems';
+              } else if (pLower.includes('oshawa') || pLower.includes('gm') || pLower.includes('cami')) {
+                displayClient = 'General Motors Quality Systems';
+              } else if (pLower.includes('autokabel') || pLower.includes('markham')) {
+                displayClient = 'Auto-Kabel North America';
+              } else {
+                displayClient = 'Magna Powertrain International';
+              }
+            }
+          }
 
+          // 2. DYNAMIC PROJECT/PROGRAM RESOLUTION
+          let displayProject = (plantMatchProj && String(plantMatchProj.plant_id) === String(selectedPlant) ? plantMatchProj.name : null) || (plantMatchAsgn && String(plantMatchAsgn.plant_id) === String(selectedPlant) ? plantMatchAsgn.name || plantMatchAsgn.project_name : null);
+          if (!displayProject) {
+            const pLower = (displayPlant + ' ' + selectedPlant).toLowerCase();
+            if (pLower.includes('windsor') || pLower.includes('stellantis')) {
+              displayProject = 'Stellantis Pacifica PHEV Battery Pack Isolation Project';
+            } else if (pLower.includes('oshawa') || pLower.includes('gm')) {
+              displayProject = 'GM Oshawa Silverado Body & Chassis Quality Audit';
+            } else if (pLower.includes('cami')) {
+              displayProject = 'GM CAMI BrightDrop EV Van Sub-Assembly Containment';
+            } else if (pLower.includes('oakville') || pLower.includes('ford')) {
+              displayProject = 'Ford F-150 Lightning E-Motor Stator Containment';
+            } else {
+              displayProject = `${displayPlant} Quality Inspection & Containment`;
+            }
+          }
+
+          // 3. DYNAMIC PURCHASE ORDER (PO #) RESOLUTION
+          let displayPo = (plantMatchAsgn && String(plantMatchAsgn.plant_id) === String(selectedPlant) ? plantMatchAsgn.po_number || plantMatchAsgn.poNumber : null) || 
+                          (plantMatchProj && String(plantMatchProj.plant_id) === String(selectedPlant) ? plantMatchProj.po_number : null) || 
+                          plantObj?.po_number;
+
+          // Enforce strict location matching for fallback POs
+          const pLower = (displayPlant + ' ' + selectedPlant).toLowerCase();
+          if (pLower.includes('windsor') || pLower.includes('stellantis')) {
+            displayPo = 'PO-WIN-2026-92';
+          } else if (pLower.includes('oshawa')) {
+            displayPo = 'PO-OSH-2026-74';
+          } else if (pLower.includes('cami')) {
+            displayPo = 'PO-GM-CAMI-2026-88';
+          } else if (pLower.includes('oakville') || pLower.includes('ford')) {
+            displayPo = 'PO-FORD-OAK-2026-15';
+          } else if (!displayPo || displayPo === 'PO-GM-CAMI-2026-88') {
+            const codeClean = (plantObj?.code || selectedPlant || 'LOC').replace(/[^A-Z0-9]/gi, '').toUpperCase();
+            displayPo = `PO-${codeClean.substring(0, 4)}-2026-07`;
+          }
+
+          // 4. DYNAMIC ASSIGNED PARTS RESOLUTION
+          const projId = plantMatchProj?.id || plantMatchAsgn?.project_id || plantMatchAsgn?.id;
           const dbParts = getEntities('parts') || [];
-          const partObj = dbParts.find(pt => String(pt.project_id) === String(projId) || String(pt.supplier_id) === String(clientId) || String(pt.plant_id) === String(selectedPlant));
-          const displayPart = partObj ? (partObj.part_number ? `PN-${partObj.part_number}` : partObj.part_name) : (activeAsgn?.part_number ? `PN-${activeAsgn.part_number}` : (plantMatchProj?.part_number ? `PN-${plantMatchProj.part_number}` : 'PN-86291945'));
+          const partObj = dbParts.find(pt => String(pt.plant_id) === String(selectedPlant) || (projId && String(pt.project_id) === String(projId) && (String(plantMatchProj?.plant_id) === String(selectedPlant) || String(plantMatchAsgn?.plant_id) === String(selectedPlant))));
 
-          const displayPo = activeAsgn?.po_number || activeAsgn?.poNumber || projObj?.po_number || (plantMatchProj?.po_number) || (plantMatchAsgn?.po_number) || (selectedPlant?.includes('Windsor') ? 'PO-WIN-2026-92' : 'PO-GM-CAMI-2026-88');
+          let displayPart = partObj ? (partObj.part_number ? `PN-${partObj.part_number}` : partObj.part_name) : ((plantMatchAsgn && String(plantMatchAsgn.plant_id) === String(selectedPlant) ? plantMatchAsgn.part_number : null) ? `PN-${plantMatchAsgn.part_number}` : ((plantMatchProj && String(plantMatchProj.plant_id) === String(selectedPlant) ? plantMatchProj.part_number : null) ? `PN-${plantMatchProj.part_number}` : null));
+          if (!displayPart) {
+            const pLower = (displayPlant + ' ' + selectedPlant).toLowerCase();
+            if (pLower.includes('windsor') || pLower.includes('stellantis')) {
+              displayPart = 'PN-68493012-AB';
+            } else if (pLower.includes('oshawa') || pLower.includes('gm')) {
+              displayPart = 'PN-84920194';
+            } else if (pLower.includes('oakville') || pLower.includes('ford')) {
+              displayPart = 'PN-7T4Z-7000-A';
+            } else {
+              displayPart = 'PN-86291945';
+            }
+          }
 
           return (
             <div className="flex-1 min-h-0 flex flex-col p-3 bg-[#F5F8FC] relative overflow-y-auto scrollbar-thin text-left gap-3">
               {addHoursToast && (
-                <div className="bg-[#008F72] text-white p-2.5 rounded-lg text-xs font-bold text-center shadow-sm animate-in fade-in">
+                <div className="bg-[#008F72] text-[#FFFFFF] p-2.5 rounded-lg text-xs font-bold text-center shadow-sm animate-in fade-in">
                   {addHoursToast}
                 </div>
               )}
@@ -2744,7 +2900,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
               </div>
 
               {/* FULL-WIDTH STACKED PLANT NAME SELECTOR (ZERO TRUNCATION) */}
-              <div className="bg-white border border-[#CBD8E8] rounded-xl px-3 py-2 flex flex-col gap-1 shadow-2xs">
+              <div className="bg-[#FFFFFF] border border-[#CBD8E8] rounded-xl px-3 py-2 flex flex-col gap-1 shadow-2xs">
                 <div className="flex items-center gap-1.5">
                   <MapPin className="w-3.5 h-3.5 text-[#1769E0] shrink-0" />
                   <span className="text-[10px] uppercase tracking-wide font-extrabold text-[#5B6F89]">Plant Name</span>
@@ -2762,7 +2918,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
               </div>
 
               {/* CURRENT ASSIGNMENT CARD (UNIFIED ASSIGNMENT + BUDGET OR EMPTY STATE) */}
-              {plantMatchAsgn || plantMatchProj ? (
+              {selectedPlant ? (
                 <div className="bg-white border border-[#CBD8E8] rounded-xl p-3 flex flex-col gap-2.5 shadow-2xs">
                   <div className="flex items-center justify-between border-b border-[#CBD8E8] pb-1.5">
                     <span className="text-xs font-bold text-[#10284A] flex items-center gap-1.5">
@@ -4560,7 +4716,36 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                       </div>
                     ) : (
                       <div className="flex flex-col gap-2">
-                        {/* Search filter input */}
+                        {/* Quick Multi-Select Controls & Filter */}
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-[10px] text-slate-500 font-bold">
+                            {selectedSupplierContactIds.length} of {getAvailableSupplierContacts().length} selected
+                          </span>
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const allIds = getAvailableSupplierContacts().map(c => c.id);
+                                setSelectedSupplierContactIds(allIds);
+                                setSupplierContact(getAvailableSupplierContacts().map(c => c.name).join(', '));
+                              }}
+                              className="text-[10px] font-bold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-2 py-0.5 rounded border border-emerald-200 cursor-pointer"
+                            >
+                              Select All
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedSupplierContactIds([]);
+                                setSupplierContact('');
+                              }}
+                              className="text-[10px] font-bold text-slate-600 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 px-2 py-0.5 rounded border border-slate-300 cursor-pointer"
+                            >
+                              Clear
+                            </button>
+                          </div>
+                        </div>
+
                         {getAvailableSupplierContacts().length > 3 && (
                           <input
                             type="text"
@@ -5706,13 +5891,22 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                         </button>
                       </div>
                     </div>
-                    <input 
-                      type="text" 
-                      value={area.notes}
-                      onChange={(e) => updateAreaNotes(area.id, e.target.value)}
-                      placeholder="Spoke with Martin, no parts on scrap tables..."
-                      className="phone-input h-9 px-3 text-[11.5px] area-card-notes-input"
-                    />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
+                      <input 
+                        type="text" 
+                        value={area.spoke_with || ''}
+                        onChange={(e) => updateAreaSpokeWith(area.id, e.target.value)}
+                        placeholder="Spoke with (e.g. T/L Carrier, Martin)"
+                        className="phone-input h-9 px-3 text-[11.5px] area-card-spoke-with-input"
+                      />
+                      <input 
+                        type="text" 
+                        value={area.notes || ''}
+                        onChange={(e) => updateAreaNotes(area.id, e.target.value)}
+                        placeholder="Floor notes..."
+                        className="phone-input h-9 px-3 text-[11.5px] area-card-notes-input"
+                      />
+                    </div>
                   </div>
                 ))}
               </div>

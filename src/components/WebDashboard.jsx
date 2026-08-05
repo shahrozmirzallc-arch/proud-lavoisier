@@ -166,13 +166,15 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     // Rule 10: Auto-create Client Portal User login
     if (newContactEmail.trim()) {
       const dbUsers = getEntities('users') || [];
-      const userExists = dbUsers.some(u => u.email === newContactEmail.trim() || u.username === newContactEmail.trim().split('@')[0]);
+      const generatedUsername = newContactEmail.trim().split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
+      const userExists = dbUsers.some(u => u.email === newContactEmail.trim() || u.username === generatedUsername);
       if (!userExists) {
         const newClientUser = {
           id: `user_cust_${Date.now()}`,
           name: newContactName.trim(),
           email: newContactEmail.trim(),
-          username: newContactEmail.trim().split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, ''),
+          username: generatedUsername,
+          password: 'password123',
           role: 'customer',
           title: newContactRole.trim() || 'Customer Quality Manager',
           customer_id: addContactSupplier.id,
@@ -182,10 +184,13 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
         };
         saveEntity('users', newClientUser);
         setUsers(prev => [...prev, newClientUser]);
+        showToast(`Client Contact created! Username: "${generatedUsername}", Temp Password: "password123"`, "success");
+      } else {
+        showToast(`Client Contact "${newContactName.trim()}" added to ${addContactSupplier.name}!`, "success");
       }
+    } else {
+      showToast(`Client Contact "${newContactName.trim()}" added to ${addContactSupplier.name}!`, "success");
     }
-
-    showToast(`Client Contact "${newContactName.trim()}" added to ${addContactSupplier.name}!`, "success");
     setAddContactSupplier(null);
     setNewContactName('');
     setNewContactEmail('');
@@ -1906,8 +1911,22 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     const dbReports = getEntities('shiftReports');
     const match = dbReports.find(r => r.id === reportId);
     if (match) {
+      if (!match.supplier_id) {
+        const activeProj = (getEntities('projects') || []).find(p => 
+          (p.plant_id === match.plant_id && (p.rep_id === match.rep_id || (p.assigned_reps || []).includes(match.rep_id))) ||
+          p.rep_id === match.rep_id ||
+          (p.assigned_reps || []).includes(match.rep_id)
+        );
+        match.supplier_id = activeProj?.supplier_id || null;
+        match.customer_id = match.supplier_id;
+      }
+      if (!match.supplier_id) {
+        showToast("Cannot publish: no client is linked to this report. Assign the correct client first.", "error");
+        return;
+      }
       match.status = 'published';
       match.approved_for_billing = true;
+      match.published_at = new Date().toISOString();
       saveEntity('shiftReports', match);
       setShiftReports(getEntities('shiftReports'));
       const user = getActiveActorName();
@@ -1917,11 +1936,11 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       logSystemEvent('shift', 'publish_report', `${user} published daily quality report ${reportId} to Customer Portal & routed to Colleen Boyd for customer invoicing.`);
       
       addNotification(
-        "💳 Report Approved for Invoicing",
-        `${user} approved daily quality report for ${plantName}. Routed to Colleen Boyd (Accounting) for customer billing.`,
+        "💳 Report Approved & Published",
+        `${user} published daily quality report for ${plantName} to Client Portal and routed to Colleen Boyd (Accounting) for customer billing.`,
         "shift"
       );
-      showToast("Report approved & routed to Colleen for customer billing!", "success");
+      showToast("Report published to Client Portal & routed for billing!", "success");
     }
   };
 
@@ -7246,7 +7265,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     <div className="flex flex-col gap-3 max-h-[350px] overflow-y-auto pr-1">
                       {(() => {
                         const customerPlants = suppliers.find(s => s.id === currentUserCustomerId)?.plants_served || [];
-                        const customerReports = shiftReports.filter(r => r.status?.toLowerCase() === 'published' && customerPlants?.includes(r.plant_id));
+                        const customerReports = shiftReports.filter(r => r.status?.toLowerCase() === 'published' && (r.supplier_id === currentUserCustomerId || r.customer_id === currentUserCustomerId || customerPlants?.includes(r.plant_id)));
                         
                         if (customerReports.length === 0) {
                           return <div className="text-center py-8 text-slate-550 italic">No published daily quality reports available.</div>;
@@ -7288,13 +7307,13 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                       <AlertCircle className="w-4.5 h-4.5 text-rose-500" /> Active Quality Containment Alerts & Incident Defect Reports
                     </h4>
                     <span className="bg-rose-500/10 text-rose-400 border border-rose-500/30 text-[10.5px] font-extrabold px-2.5 py-0.5 rounded-full uppercase">
-                      {(incidents || []).filter(i => i && i.supplier_id === currentUserCustomerId).length} Logged Incidents
+                      {(incidents || []).filter(i => i && (i.supplier_id === currentUserCustomerId || i.customer_id === currentUserCustomerId || i.client_id === currentUserCustomerId)).length} Logged Incidents
                     </span>
                   </div>
 
                   <div className="flex flex-col gap-3">
                     {(() => {
-                      const custIncidents = (incidents || []).filter(i => i && i.supplier_id === currentUserCustomerId);
+                      const custIncidents = (incidents || []).filter(i => i && (i.supplier_id === currentUserCustomerId || i.customer_id === currentUserCustomerId || i.client_id === currentUserCustomerId));
 
                       if (custIncidents.length === 0) {
                         return <div className="text-center py-8 text-slate-550 italic">No active incident reports logged for your account.</div>;
@@ -7568,7 +7587,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   const filteredShifts = shiftReports.filter(sr => {
                     if (userRole === 'customer') {
                       const customerPlants = suppliers.find(s => s.id === currentUserCustomerId)?.plants_served || [];
-                      return sr.status?.toLowerCase() === 'published' && customerPlants?.includes(sr.plant_id);
+                      return sr.status?.toLowerCase() === 'published' && (sr.supplier_id === currentUserCustomerId || sr.customer_id === currentUserCustomerId || customerPlants?.includes(sr.plant_id));
                     }
                     return true;
                   });

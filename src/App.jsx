@@ -180,6 +180,7 @@ function App() {
   // Helper to purge stale session keys from storage (preserving data cache and offline queues)
   const clearStaleSessionStorage = () => {
     try {
+      localStorage.removeItem('ids_pulse_saved_user');
       const protectedKeys = [
         'ids_pulse_db',
         'ids_pulse_db_version',
@@ -206,6 +207,37 @@ function App() {
   useEffect(() => {
     const initAuth = async () => {
       try {
+        const savedUserStr = localStorage.getItem('ids_pulse_saved_user');
+        if (savedUserStr) {
+          try {
+            const savedUser = JSON.parse(savedUserStr);
+            if (savedUser && savedUser.role) {
+              setIsUnlocked(true);
+              setUserRole(savedUser.role);
+              setCurrentUser(savedUser);
+
+              sessionStorage.setItem('ids_pulse_role', savedUser.role);
+              sessionStorage.setItem('ids_pulse_username', savedUser.username || '');
+              if (savedUser.role === 'customer') {
+                const custId = savedUser.supplier_id || savedUser.customer_id || savedUser.id;
+                sessionStorage.setItem('ids_pulse_customer_id', custId);
+                setCurrentUserCustomerId(custId);
+                setLayoutMode('dashboard-only');
+              } else if (savedUser.role === 'rep' || savedUser.id?.startsWith('rep_')) {
+                sessionStorage.setItem('ids_pulse_rep_id', savedUser.id);
+                setCurrentUserRepId(savedUser.id);
+                setLayoutMode('phone-only');
+              } else {
+                setLayoutMode('dashboard-only');
+              }
+              setAuthChecking(false);
+              return;
+            }
+          } catch (e) {
+            console.warn("Failed to parse saved user:", e);
+          }
+        }
+
         const sessionPromise = supabase.auth.getSession();
         const timeoutPromise = new Promise((resolve) => setTimeout(() => resolve({ data: { session: null } }), 2500));
         const res = await Promise.race([sessionPromise, timeoutPromise]);
@@ -218,14 +250,17 @@ function App() {
           const repId = appMeta.rep_id || (targetUser === 'clarence' ? '1' : `rep_${targetUser}`);
           const custId = appMeta.customer_id || targetUser;
 
-          setIsUnlocked(true);
-          setUserRole(role);
-          setCurrentUser({
+          const uObj = {
             id: role === 'rep' ? repId : custId,
             name: appMeta.full_name || targetUser || session.user.email?.split('@')[0] || 'User',
             email: session.user.email,
             role: role
-          });
+          };
+
+          setIsUnlocked(true);
+          setUserRole(role);
+          setCurrentUser(uObj);
+          localStorage.setItem('ids_pulse_saved_user', JSON.stringify(uObj));
         }
       } catch (err) {
         console.error('[App Auth Session Init Error]:', err);
@@ -301,6 +336,7 @@ function App() {
         setAuthError(false);
         setUserRole(demoUser.role);
         setCurrentUser(demoUser);
+        localStorage.setItem('ids_pulse_saved_user', JSON.stringify(demoUser));
 
         sessionStorage.setItem('ids_pulse_role', demoUser.role);
         sessionStorage.setItem('ids_pulse_username', demoUser.username || '');
@@ -455,6 +491,7 @@ function App() {
         setAuthError(false);
         setUserRole(normRole);
         setCurrentUser(matchedUser);
+        localStorage.setItem('ids_pulse_saved_user', JSON.stringify(matchedUser));
 
         sessionStorage.setItem('ids_pulse_role', normRole);
         sessionStorage.setItem('ids_pulse_username', matchedUser.username || '');

@@ -38,9 +38,9 @@ export default function BusinessDropdown({
 
   const OTHER_VALUE = 'Other / Not listed';
 
-  // Determine if initial value is "Other" or custom
+  // Determine if value is a known standard option (empty string is not standard)
   const isStandardValue = (val) => {
-    if (!val) return true;
+    if (val === '' || val === null || val === undefined) return false;
     return normalizedOptions.some(o => o.value === val);
   };
 
@@ -61,6 +61,19 @@ export default function BusinessDropdown({
 
   // Synchronize internal state with external value changes
   useEffect(() => {
+    if (selectedOption === OTHER_VALUE) {
+      if (value && isStandardValue(value)) {
+        setSelectedOption(value);
+        setCustomText('');
+        setValidationError('');
+      } else {
+        if (value && value !== customText) {
+          setCustomText(value);
+        }
+      }
+      return;
+    }
+
     if (!value) {
       setSelectedOption('');
       setCustomText('');

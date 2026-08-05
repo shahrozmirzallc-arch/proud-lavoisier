@@ -7346,9 +7346,9 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
             };
 
             return (
-              <div className="flex-1 flex flex-col gap-4 sm:p-8 min-h-0 text-left bg-slate-50/60">
+              <div className="flex-1 flex flex-col gap-5 p-4 sm:p-6 min-h-0 text-left bg-slate-50/70">
                 {/* Header & Controls Bar */}
-                <div className="flex flex-col gap-3 pb-3 border-b border-slate-200 flex-shrink-0 bg-white p-4 rounded-2xl shadow-sm">
+                <div className="flex flex-col gap-3 sm:gap-4 pb-4 border-b border-slate-200 flex-shrink-0 bg-white p-4 sm:p-5 rounded-2xl shadow-sm">
                   <div className="flex justify-between items-center flex-wrap gap-3">
                     <div>
                       <h3 className="text-base font-black text-slate-900 uppercase tracking-tight flex items-center gap-2">
@@ -7360,8 +7360,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     </div>
 
                     {/* Controls: Plant Location Switcher & 1-Click Digest Export */}
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <div className="flex items-center gap-1.5 bg-slate-100 p-1.5 rounded-xl border border-slate-300">
+                    <div className="flex items-center gap-2.5 flex-wrap">
+                      <div className="flex items-center gap-1.5 bg-slate-100 p-2 rounded-xl border border-slate-300 shadow-2xs">
                         <MapPin className="w-4 h-4 text-blue-600 shrink-0 ml-1" />
                         <select 
                           value={selectedClientPlantFilter}
@@ -7378,7 +7378,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
                       <button 
                         onClick={() => handleDownloadWeeklyQualityDigest(currentUserCustomerId)}
-                        className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-xl transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
+                        className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-xl transition-all shadow-sm flex items-center gap-2 cursor-pointer"
                         title="Download Compiled Weekly Executive Digest in CSV/Excel"
                       >
                         <FileSpreadsheet className="w-4 h-4" /> Download Weekly Digest
@@ -7387,12 +7387,12 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   </div>
 
                   {/* Sub-Navigation Tabs Bar */}
-                  <div className="flex items-center gap-2 pt-2 border-t border-slate-200 flex-wrap">
+                  <div className="flex items-center gap-2 sm:gap-3 pt-3 border-t border-slate-200 flex-wrap">
                     <button 
                       onClick={() => setClientActiveSubTab('overview')}
-                      className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer border ${
+                      className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer border ${
                         clientActiveSubTab === 'overview'
-                          ? 'bg-blue-600 text-white border-blue-700 shadow-md'
+                          ? 'bg-blue-600 text-white border-blue-700 shadow-sm'
                           : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border-slate-300'
                       }`}
                     >
@@ -7401,9 +7401,9 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
                     <button 
                       onClick={() => setClientActiveSubTab('reports')}
-                      className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer border ${
+                      className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer border ${
                         clientActiveSubTab === 'reports'
-                          ? 'bg-blue-600 text-white border-blue-700 shadow-md'
+                          ? 'bg-blue-600 text-white border-blue-700 shadow-sm'
                           : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border-slate-300'
                       }`}
                     >
@@ -7412,9 +7412,9 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
                     <button 
                       onClick={() => setClientActiveSubTab('incidents')}
-                      className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer border ${
+                      className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer border ${
                         clientActiveSubTab === 'incidents'
-                          ? 'bg-blue-600 text-white border-blue-700 shadow-md'
+                          ? 'bg-blue-600 text-white border-blue-700 shadow-sm'
                           : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border-slate-300'
                       }`}
                     >
@@ -7423,9 +7423,9 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
                     <button 
                       onClick={() => setClientActiveSubTab('budget')}
-                      className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer border ${
+                      className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer border ${
                         clientActiveSubTab === 'budget'
-                          ? 'bg-blue-600 text-white border-blue-700 shadow-md'
+                          ? 'bg-blue-600 text-white border-blue-700 shadow-sm'
                           : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border-slate-300'
                       }`}
                     >
@@ -7440,54 +7440,56 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 </div>
 
                 {/* Sub-Tab Content Router */}
-                <div className="flex-1 overflow-y-auto scrollbar-thin pr-1 flex flex-col gap-4">
+                <div className="flex-1 overflow-y-auto scrollbar-thin pr-1 flex flex-col gap-5">
                   
                   {/* SUB-TAB 1: OVERVIEW & ANALYTICS */}
                   {clientActiveSubTab === 'overview' && (
-                    <div className="flex flex-col gap-4">
+                    <div className="flex flex-col gap-5">
                       {/* Top Floor Summary Banner */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                        <div className="bg-white border border-slate-200 shadow-sm p-4 rounded-2xl flex flex-col justify-between">
-                          <div className="flex justify-between items-center text-slate-600 text-[10.5px] font-extrabold uppercase tracking-wider">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div className="bg-white border border-slate-200/90 shadow-2xs p-4 sm:p-5 rounded-2xl flex flex-col justify-between">
+                          <div className="flex justify-between items-center text-slate-600 text-[11px] font-extrabold uppercase tracking-wider">
                             <span>Active Inspectors</span>
                             <UserCheck className="w-4 h-4 text-emerald-600" />
                           </div>
-                          <div className="text-2xl font-black text-slate-900 mt-2">{activeOnSiteReps.length || 2} Reps</div>
-                          <span className="text-[10.5px] text-emerald-700 font-extrabold mt-1">🟢 On-Site Floor Coverage</span>
+                          <div className="text-2xl font-black text-slate-900 mt-3">{activeOnSiteReps.length || 2} Reps</div>
+                          <span className="text-[11px] text-emerald-700 font-extrabold mt-1.5 flex items-center gap-1">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> On-Site Floor Coverage
+                          </span>
                         </div>
 
-                        <div className="bg-white border border-slate-200 shadow-sm p-4 rounded-2xl flex flex-col justify-between">
-                          <div className="flex justify-between items-center text-slate-600 text-[10.5px] font-extrabold uppercase tracking-wider">
+                        <div className="bg-white border border-slate-200/90 shadow-2xs p-4 sm:p-5 rounded-2xl flex flex-col justify-between">
+                          <div className="flex justify-between items-center text-slate-600 text-[11px] font-extrabold uppercase tracking-wider">
                             <span>Inspected Volume</span>
                             <CheckCircle2 className="w-4 h-4 text-blue-600" />
                           </div>
-                          <div className="text-2xl font-black text-slate-900 mt-2">{totalShiftPiecesToday || 4850} Pcs</div>
-                          <span className="text-[10.5px] text-blue-700 font-extrabold mt-1">📊 Authoritative Piece Count</span>
+                          <div className="text-2xl font-black text-slate-900 mt-3">{totalShiftPiecesToday || 4850} Pcs</div>
+                          <span className="text-[11px] text-blue-700 font-extrabold mt-1.5">📊 Authoritative Piece Count</span>
                         </div>
 
-                        <div className="bg-white border border-slate-200 shadow-sm p-4 rounded-2xl flex flex-col justify-between">
-                          <div className="flex justify-between items-center text-slate-600 text-[10.5px] font-extrabold uppercase tracking-wider">
+                        <div className="bg-white border border-slate-200/90 shadow-2xs p-4 sm:p-5 rounded-2xl flex flex-col justify-between">
+                          <div className="flex justify-between items-center text-slate-600 text-[11px] font-extrabold uppercase tracking-wider">
                             <span>Defect-Free Yield</span>
                             <Zap className="w-4 h-4 text-amber-600" />
                           </div>
-                          <div className="text-2xl font-black text-emerald-600 mt-2">{yieldRate}%</div>
-                          <span className="text-[10.5px] text-slate-600 font-bold mt-1">Shielded Assembly Line Yield</span>
+                          <div className="text-2xl font-black text-emerald-600 mt-3">{yieldRate}%</div>
+                          <span className="text-[11px] text-slate-600 font-bold mt-1.5">Shielded Assembly Line Yield</span>
                         </div>
 
-                        <div className="bg-white border border-slate-200 shadow-sm p-4 rounded-2xl flex flex-col justify-between">
-                          <div className="flex justify-between items-center text-slate-600 text-[10.5px] font-extrabold uppercase tracking-wider">
+                        <div className="bg-white border border-slate-200/90 shadow-2xs p-4 sm:p-5 rounded-2xl flex flex-col justify-between">
+                          <div className="flex justify-between items-center text-slate-600 text-[11px] font-extrabold uppercase tracking-wider">
                             <span>Active Containments</span>
                             <AlertCircle className="w-4 h-4 text-rose-600" />
                           </div>
-                          <div className="text-2xl font-black text-rose-600 mt-2">
+                          <div className="text-2xl font-black text-rose-600 mt-3">
                             {(incidents || []).filter(i => (i.supplier_id === currentUserCustomerId || i.customer_id === currentUserCustomerId || i.client_id === currentUserCustomerId)).length} Incidents
                           </div>
-                          <span className="text-[10.5px] text-rose-700 font-extrabold mt-1">Quality Containment Alerts</span>
+                          <span className="text-[11px] text-rose-700 font-extrabold mt-1.5">Quality Containment Alerts</span>
                         </div>
                       </div>
 
                       {/* PO Budget Consumption Meter Card */}
-                      <div className="bg-white border border-slate-200 shadow-sm p-5 rounded-2xl flex flex-col gap-3">
+                      <div className="bg-white border border-slate-200/90 shadow-2xs p-5 sm:p-6 rounded-2xl flex flex-col gap-4">
                         <div className="flex justify-between items-center flex-wrap gap-2">
                           <div>
                             <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
@@ -7500,40 +7502,40 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                           </span>
                         </div>
 
-                        <div className="flex flex-col gap-2 bg-slate-50 p-4 rounded-xl border border-slate-200">
-                          <div className="flex justify-between items-center text-xs font-bold text-slate-700">
-                            <span>Allocated Budget: <strong>$15,000.00</strong></span>
+                        <div className="flex flex-col gap-2.5 bg-slate-50 p-4 rounded-xl border border-slate-200/80">
+                          <div className="flex justify-between items-center text-xs font-bold text-slate-700 flex-wrap gap-2">
+                            <span>Allocated Budget: <strong className="text-slate-900">$15,000.00</strong></span>
                             <span>Consumed: <strong className="text-blue-700">$8,400.00 (56%)</strong></span>
                             <span>Remaining: <strong className="text-emerald-700">$6,600.00 Balance</strong></span>
                           </div>
                           {/* Progress Meter Bar */}
-                          <div className="w-full h-3.5 bg-slate-200 rounded-full overflow-hidden border border-slate-300">
+                          <div className="w-full h-3.5 bg-slate-200 rounded-full overflow-hidden border border-slate-300/80">
                             <div className="h-full bg-gradient-to-r from-blue-600 to-emerald-500 rounded-full transition-all" style={{ width: '56%' }}></div>
                           </div>
                         </div>
                       </div>
 
                       {/* Quality Pareto & Daily Yield Trend Card */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
                         {/* Daily Inspection Trend Card */}
-                        <div className="bg-white border border-slate-200 shadow-sm p-5 rounded-2xl flex flex-col gap-3">
+                        <div className="bg-white border border-slate-200/90 shadow-2xs p-5 sm:p-6 rounded-2xl flex flex-col gap-4">
                           <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
                             <TrendingUp className="w-4 h-4 text-blue-600" /> Daily Inspection Volume & Defect Trend (7 Days)
                           </h4>
-                          <div className="space-y-2.5 pt-1">
+                          <div className="space-y-3 pt-1">
                             {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, idx) => {
                               const vol = 400 + (idx * 60) + (idx % 2 === 0 ? 30 : -20);
                               const def = (idx === 2 || idx === 5) ? 3 : 1;
                               const pct = ((vol - def) / vol * 100).toFixed(1);
                               return (
                                 <div key={day} className="flex items-center gap-3 text-xs font-bold">
-                                  <span className="w-9 text-slate-600 font-mono">{day}</span>
-                                  <div className="flex-1 h-3 bg-slate-100 rounded-full overflow-hidden border border-slate-200 flex">
-                                    <div className="h-full bg-blue-600" style={{ width: `${Math.min(100, vol / 8)}%` }}></div>
+                                  <span className="w-10 text-slate-600 font-mono shrink-0">{day}</span>
+                                  <div className="flex-1 h-3.5 bg-slate-100 rounded-full overflow-hidden border border-slate-200 flex">
+                                    <div className="h-full bg-blue-600 rounded-l-full" style={{ width: `${Math.min(100, vol / 8)}%` }}></div>
                                     {def > 0 && <div className="h-full bg-rose-500" style={{ width: '4%' }}></div>}
                                   </div>
-                                  <span className="w-16 text-right font-mono text-slate-900">{vol} pcs</span>
-                                  <span className="w-16 text-right font-mono text-emerald-600 font-black">{pct}%</span>
+                                  <span className="w-20 text-right font-mono text-slate-900 shrink-0">{vol} pcs</span>
+                                  <span className="w-16 text-right font-mono text-emerald-600 font-black shrink-0">{pct}%</span>
                                 </div>
                               );
                             })}
@@ -7541,22 +7543,22 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         </div>
 
                         {/* Part Number Quality Pareto Table */}
-                        <div className="bg-white border border-slate-200 shadow-sm p-5 rounded-2xl flex flex-col gap-3">
+                        <div className="bg-white border border-slate-200/90 shadow-2xs p-5 sm:p-6 rounded-2xl flex flex-col gap-4">
                           <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
                             <Layers className="w-4 h-4 text-purple-600" /> Part Number Quality Pareto Breakdown
                           </h4>
-                          <div className="space-y-2">
+                          <div className="space-y-2.5">
                             {[
                               { pn: '84920194', name: 'Engine Bracket Module', qty: 2400, defects: 4, yield: '99.8%' },
                               { pn: '86394644', name: 'HV Battery Casing Shield', qty: 1650, defects: 2, yield: '99.8%' },
                               { pn: '77491023', name: 'Steering Column Support', qty: 800, defects: 1, yield: '99.9%' }
                             ].map((item) => (
-                              <div key={item.pn} className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex justify-between items-center">
+                              <div key={item.pn} className="p-3.5 bg-slate-50 rounded-xl border border-slate-200/80 flex justify-between items-center gap-3">
                                 <div>
                                   <div className="text-xs font-black text-slate-900">PN {item.pn} — {item.name}</div>
-                                  <div className="text-[11px] text-slate-500 font-medium">{item.qty} Inspected • {item.defects} Defect Concerns</div>
+                                  <div className="text-[11px] text-slate-500 font-medium mt-0.5">{item.qty} Inspected • {item.defects} Defect Concerns</div>
                                 </div>
-                                <span className="px-2.5 py-1 rounded-lg bg-emerald-100 border border-emerald-300 text-emerald-900 font-black text-xs">
+                                <span className="px-3 py-1 rounded-lg bg-emerald-100 border border-emerald-300 text-emerald-900 font-black text-xs shrink-0">
                                   {item.yield}
                                 </span>
                               </div>

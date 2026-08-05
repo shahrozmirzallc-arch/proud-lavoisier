@@ -2685,7 +2685,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
   const totalReworkPcs = reworkLogs
     .filter(r => showAllDates || r.created_at?.startsWith(selectedDate))
-    .reduce((acc, curr) => acc + curr.qty, 0);
+    .reduce((acc, curr) => acc + (Number(curr.qty || curr.pieces_reworked || curr.rework_qty) || 0), 0);
 
   const activeRepsCount = useMemo(() => {
     if (userRole === 'customer') {
@@ -5185,7 +5185,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       )}
 
       {/* Metrics Cards row */}
-      {!forceRoadmapOnly && (
+      {!forceRoadmapOnly && userRole !== 'customer' && userRole !== 'client' && activeTab !== 'customer-portal' && (
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 mt-5 flex-shrink-0">
           <div className="border border-rose-500/30 hover:border-rose-400/60 rounded-2xl p-3.5 flex flex-col justify-between h-28 transition-all group">
             <div>

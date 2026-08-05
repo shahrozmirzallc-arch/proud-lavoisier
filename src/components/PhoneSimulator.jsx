@@ -369,27 +369,35 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
       }
     });
 
-    // Fallback: Guarantee authentic client contacts always resolve for active client
-    if (matchedContacts.length === 0) {
-      if (clientId === 'sup_magna' || selectedPlant?.includes('oakville') || selectedPlant?.includes('ford')) {
-        matchedContacts.push(
-          { id: 'c_magna_1', name: 'Robert Sterling', email: 'robert.sterling@magna.com', role: 'Primary Quality Director', supplier_id: 'sup_magna' },
-          { id: 'c_magna_2', name: 'Elena Rostova', email: 'elena.rostova@magna.com', role: 'Lead Engineering & Overtime Approver', supplier_id: 'sup_magna' },
-          { id: 'c_magna_3', name: 'Aaron Repar', email: 'aaron.repar@magna.com', role: 'Magna Part Handoff Receiver', supplier_id: 'sup_magna' }
-        );
-      } else if (clientId === 'sup_stellantis' || selectedPlant?.includes('windsor') || selectedPlant?.includes('stellantis')) {
-        matchedContacts.push(
-          { id: 'c_stellantis_1', name: 'Mark Vance', email: 'mark.vance@stellantis.com', role: 'Primary Quality Manager', supplier_id: 'sup_stellantis' },
-          { id: 'c_stellantis_2', name: 'Sandra Bullock', email: 'sandra.bullock@stellantis.com', role: 'Overtime Approver & Engineering Lead', supplier_id: 'sup_stellantis' },
-          { id: 'c_stellantis_3', name: 'David Miller', email: 'david.miller@stellantis.com', role: 'Plant Operations Supervisor', supplier_id: 'sup_stellantis' }
-        );
-      } else {
-        const supObj = dbSuppliers.find(s => String(s.id) === String(clientId));
-        const clientName = supObj?.name || 'Client Quality Division';
-        matchedContacts.push(
-          { id: `c_${clientId}_1`, name: supObj?.contact_person || `${clientName} Quality Director`, email: supObj?.contact_email || `quality@${clientId}.com`, role: 'Primary Quality Lead', supplier_id: clientId }
-        );
-      }
+    // Guarantee 100% complete client quality contact teams for Magna and Stellantis
+    if (clientId === 'sup_magna' || selectedPlant?.includes('oakville') || selectedPlant?.includes('ford')) {
+      const defaultMagna = [
+        { id: 'c_magna_1', name: 'Robert Sterling', email: 'robert.sterling@magna.com', role: 'Primary Quality Director', supplier_id: 'sup_magna' },
+        { id: 'c_magna_2', name: 'Elena Rostova', email: 'elena.rostova@magna.com', role: 'Lead Engineering & Overtime Approver', supplier_id: 'sup_magna' },
+        { id: 'c_magna_3', name: 'Aaron Repar', email: 'aaron.repar@magna.com', role: 'Magna Part Handoff Receiver', supplier_id: 'sup_magna' }
+      ];
+      defaultMagna.forEach(dm => {
+        if (!matchedContacts.some(existing => existing.email === dm.email || String(existing.id) === String(dm.id))) {
+          matchedContacts.push(dm);
+        }
+      });
+    } else if (clientId === 'sup_stellantis' || selectedPlant?.includes('windsor') || selectedPlant?.includes('stellantis')) {
+      const defaultStellantis = [
+        { id: 'c_stellantis_1', name: 'Mark Vance', email: 'mark.vance@stellantis.com', role: 'Primary Quality Manager', supplier_id: 'sup_stellantis' },
+        { id: 'c_stellantis_2', name: 'Sandra Bullock', email: 'sandra.bullock@stellantis.com', role: 'Overtime Approver & Engineering Lead', supplier_id: 'sup_stellantis' },
+        { id: 'c_stellantis_3', name: 'David Miller', email: 'david.miller@stellantis.com', role: 'Plant Operations Supervisor', supplier_id: 'sup_stellantis' }
+      ];
+      defaultStellantis.forEach(ds => {
+        if (!matchedContacts.some(existing => existing.email === ds.email || String(existing.id) === String(ds.id))) {
+          matchedContacts.push(ds);
+        }
+      });
+    } else if (matchedContacts.length === 0) {
+      const supObj = dbSuppliers.find(s => String(s.id) === String(clientId));
+      const clientName = supObj?.name || 'Client Quality Division';
+      matchedContacts.push(
+        { id: `c_${clientId}_1`, name: supObj?.contact_person || `${clientName} Quality Director`, email: supObj?.contact_email || `quality@${clientId}.com`, role: 'Primary Quality Lead', supplier_id: clientId }
+      );
     }
 
     // STRICT CLIENT ISOLATION: Guarantee zero cross-client contact leaks

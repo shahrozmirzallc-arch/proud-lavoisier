@@ -5282,7 +5282,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       <div className="flex-1 flex gap-6 sm:p-8 mt-5 min-h-0">
         
         {/* Navigation Sidebar with Grouped Categories */}
-        {!forceRoadmapOnly && (
+        {!forceRoadmapOnly && userRole !== 'customer' && userRole !== 'client' && activeTab !== 'customer-portal' && (
           <div className="w-64 flex flex-col gap-3 flex-shrink-0">
             
             {/* QRE SIDEBAR BUTTONS */}

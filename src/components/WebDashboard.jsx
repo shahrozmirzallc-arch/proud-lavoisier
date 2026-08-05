@@ -1503,8 +1503,13 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     saveEntity('suppliers', newCust);
     setSuppliers(getEntities('suppliers'));
 
-    // 2. Resolve Client Rep Username & Password selected by Admin
-    const finalUsername = (newCustomerUsername || `${newId}_rep`).toLowerCase().trim().replace(/[^a-z0-9_]/g, '_');
+    // 2. Resolve Client Rep Username & Password in format: CompanyName_Role_Name
+    const cleanComp = (newCustomerName || 'company').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const cleanRole = (newCustomerContactRole || 'rep').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const cleanName = (newCustomerContactName || 'contact').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const suggestedUsernameFormat = `${cleanComp}_${cleanRole}_${cleanName}`;
+
+    const finalUsername = (newCustomerUsername || suggestedUsernameFormat).toLowerCase().trim().replace(/[^a-z0-9_]/g, '_');
     const finalPassword = newCustomerPassword ? newCustomerPassword.trim() : 'Password123!';
 
     // 3. Provision Client Rep User Login in 'users' collection
@@ -9351,12 +9356,19 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                               </div>
 
                               <div className="flex flex-col gap-1">
-                                <label className="text-[10px] font-bold text-blue-200 uppercase tracking-wider">Client Login Username</label>
+                                <div className="flex items-center justify-between">
+                                  <label className="text-[10px] font-bold text-blue-200 uppercase tracking-wider">Client Login Username</label>
+                                  <span className="text-[9px] text-amber-300 font-mono">Format: CompanyName_Role_Name</span>
+                                </div>
                                 <input 
                                   type="text" 
                                   value={newCustomerUsername} 
                                   onChange={(e) => setNewCustomerUsername(e.target.value)} 
-                                  placeholder={newCustomerName ? `${newCustomerName.toLowerCase().replace(/[^a-z0-9]/g, '_')}_rep` : 'autokabel_rep'} 
+                                  placeholder={
+                                    (newCustomerName || newCustomerContactRole || newCustomerContactName) 
+                                      ? `${(newCustomerName || 'Company').toLowerCase().replace(/[^a-z0-9]/g, '')}_${(newCustomerContactRole || 'Role').toLowerCase().replace(/[^a-z0-9]/g, '')}_${(newCustomerContactName || 'Name').toLowerCase().replace(/[^a-z0-9]/g, '')}`
+                                      : 'autokabel_qualitymanager_juancarlos'
+                                  } 
                                   className="bg-surface border border-blue-500/40 rounded-xl px-3 py-1.5 text-xs text-text-primary font-mono focus:border-blue-400" 
                                 />
                               </div>

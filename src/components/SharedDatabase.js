@@ -96,7 +96,8 @@ export function initializeDB() {
   // Seed Brand New Magna Powertrain International & Stellantis Master Datasets
   const brandNewSuppliers = [
     { id: 'sup_magna', name: 'Magna Powertrain International', code: 'MAGNA-PT', contact_person: 'Robert Sterling', contact_email: 'robert.sterling@magna.com', status: 'active', plants_served: ['plant_oakville'] },
-    { id: 'sup_stellantis', name: 'Stellantis Powertrain Systems', code: 'STELLANTIS-PW', contact_person: 'Mark Vance', contact_email: 'mark.vance@stellantis.com', status: 'active', plants_served: ['plant_windsor'] }
+    { id: 'sup_stellantis', name: 'Stellantis Powertrain Systems', code: 'STELLANTIS-PW', contact_person: 'Mark Vance', contact_email: 'mark.vance@stellantis.com', status: 'active', plants_served: ['plant_windsor'] },
+    { id: 'sup_tesla', name: 'Tesla Giga Texas', code: 'TESLA-TX', contact_person: 'Elon Vance', contact_email: 'evance@tesla.com', status: 'active', plants_served: ['plant_spartanburg'] }
   ];
   const brandNewPlants = [
     { id: 'plant_oakville', name: 'Ford Oakville EV Complex', code: 'PLANT-OAK-90', location: 'Oakville, ON', supplier_id: 'sup_magna', supplier_ids: ['sup_magna'], status: 'active' },
@@ -125,11 +126,13 @@ export function initializeDB() {
     { id: 'c_magna_3', name: 'Aaron Repar', email: 'aaron.repar@magna.com', role: 'Magna Part Handoff Receiver', organization_id: 'sup_magna', supplier_id: 'sup_magna', client_id: 'sup_magna', status: 'active' },
     { id: 'c_stellantis_1', name: 'Mark Vance', email: 'mark.vance@stellantis.com', role: 'Primary Quality Manager', organization_id: 'sup_stellantis', supplier_id: 'sup_stellantis', client_id: 'sup_stellantis', status: 'active' },
     { id: 'c_stellantis_2', name: 'Sandra Bullock', email: 'sandra.bullock@stellantis.com', role: 'Overtime Approver & Engineering Lead', organization_id: 'sup_stellantis', supplier_id: 'sup_stellantis', client_id: 'sup_stellantis', status: 'active' },
-    { id: 'c_stellantis_3', name: 'David Miller', email: 'david.miller@stellantis.com', role: 'Plant Operations Supervisor', organization_id: 'sup_stellantis', supplier_id: 'sup_stellantis', client_id: 'sup_stellantis', status: 'active' }
+    { id: 'c_stellantis_3', name: 'David Miller', email: 'david.miller@stellantis.com', role: 'Plant Operations Supervisor', organization_id: 'sup_stellantis', supplier_id: 'sup_stellantis', client_id: 'sup_stellantis', status: 'active' },
+    { id: 'c_tesla_1', name: 'Elon Vance', email: 'evance@tesla.com', role: 'Quality Director', organization_id: 'sup_tesla', supplier_id: 'sup_tesla', client_id: 'sup_tesla', status: 'active' }
   ];
   const brandNewCustomerUsers = [
     { id: 'user_cust_magna_robert', name: 'Robert Sterling (Primary Quality Director)', email: 'robert.sterling@magna.com', username: 'magna_client', password: 'password123', role: 'customer', supplier_id: 'sup_magna', customer_id: 'sup_magna', title: 'Magna Primary Quality Director' },
-    { id: 'user_cust_stellantis_mark', name: 'Mark Vance (Primary Quality Mgr)', email: 'mark.vance@stellantis.com', username: 'stellantis_client', password: 'password123', role: 'customer', supplier_id: 'sup_stellantis', customer_id: 'sup_stellantis', title: 'Stellantis Primary Quality Manager' }
+    { id: 'user_cust_stellantis_mark', name: 'Mark Vance (Primary Quality Mgr)', email: 'mark.vance@stellantis.com', username: 'stellantis_client', password: 'password123', role: 'customer', supplier_id: 'sup_stellantis', customer_id: 'sup_stellantis', title: 'Stellantis Primary Quality Manager' },
+    { id: 'user_cust_tesla_elon', name: 'Elon Vance (Tesla Quality Director)', email: 'evance@tesla.com', username: 'tesla_elon', password: 'TeslaPassword2026!', role: 'customer', supplier_id: 'sup_tesla', customer_id: 'sup_tesla', client_id: 'sup_tesla', title: 'Tesla Quality Director' }
   ];
 
   const brandNewIncidents = [

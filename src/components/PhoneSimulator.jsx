@@ -3,7 +3,7 @@ import {
   Shield, Activity, Wifi, WifiOff, MapPin, Clock, 
   User, Lock, LogOut, CheckCircle, CheckCircle2, AlertTriangle, Play, Square, X, Calendar,
   Camera, Scan, Plus, ChevronRight, Mail, Send, RotateCcw, Volume2, Video, ArrowLeft, Trash2, Edit3,
-  Receipt, DollarSign, FileText, Wrench, QrCode, Home, Briefcase, Menu
+  Receipt, DollarSign, FileText, Wrench, QrCode, Home, Briefcase, Menu, Eye, EyeOff
 } from 'lucide-react';
 import { getEntities, addIncident, addEmailLog, addReworkLog, saveEntity, addExpenseEntry, logSystemEvent, supabase, syncWithSupabase, saveExtraHoursRequest, isEntryAccountingEligible } from './SharedDatabase';
 import { uploadToCloudinary } from '../services/cloudinaryService';
@@ -85,7 +85,16 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
   const [submittingAuth, setSubmittingAuth] = useState(false);
   const [rememberDevice, setRememberDevice] = useState(true);
   const [currentUser, setCurrentUser] = useState(null);
+  const [showSplashOverlay, setShowSplashOverlay] = useState(true);
+  const [showPassword, setShowPassword] = useState(false);
   const [mobileTime, setMobileTime] = useState(new Date());
+
+  useEffect(() => {
+    const splashTimer = setTimeout(() => {
+      setShowSplashOverlay(false);
+    }, 2400);
+    return () => clearTimeout(splashTimer);
+  }, []);
 
   useEffect(() => {
     const timer = setInterval(() => setMobileTime(new Date()), 1000);
@@ -2692,51 +2701,89 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
       {/* Phone Screen Container */}
       <div className={`flex-1 overflow-hidden bg-slate-50 flex flex-col relative text-slate-900 ${isNative ? 'border-none w-full min-h-screen' : 'border-x border-slate-300'}`}>
         
-        {/* SCREEN 1: LOGIN */}
-        {activeScreen === 'login' && (
-          <div className="flex-1 flex flex-col justify-between p-3 bg-white">
-            <div className="flex flex-col items-center mt-12">
-              <img src="/logo.png" alt="IDS Logo" className="h-16 w-auto object-contain mb-4 filter brightness-0" />
-              <h1 className="text-2xl font-black text-slate-900 mb-1 uppercase tracking-tight">IDS Pulse</h1>
-              <p className="text-[13px] text-slate-600 font-bold uppercase tracking-wider">Operations Terminal</p>
+        {/* ANIMATED SPLIT SPLASH SCREEN OVERLAY */}
+        {showSplashOverlay && (
+          <div className="splash-stage">
+            <div className="splash-content">
+              <div className="splash-logo-wrap">
+                <img src="/logo.png" alt="IDS Pulse - Inspect, Track, Analyze, Improve" className="w-full h-auto block" />
+              </div>
+
+              <div className="splash-pulse-line" aria-hidden="true">
+                <svg viewBox="0 0 400 60">
+                  <line className="splash-pulse-base" x1="8" y1="30" x2="392" y2="30"/>
+                  <path className="splash-pulse-path" d="M8 30 H120 L138 30 L150 12 L164 48 L176 22 L186 30 H244 L258 30 L268 18 L280 42 L290 30 H392"/>
+                  <circle className="splash-pulse-dot" cx="392" cy="30" r="4"/>
+                </svg>
+              </div>
             </div>
 
-            <form onSubmit={handleLogin} className="flex flex-col gap-3 my-auto">
+            <div className="splash-footer">
+              <div className="company">Integrity Driven Solutions Inc.</div>
+              <div className="version">v1.0</div>
+            </div>
+
+            <div className="splash-curtain top"></div>
+            <div className="splash-curtain bottom"></div>
+            <div className="splash-seam" aria-hidden="true"></div>
+          </div>
+        )}
+
+        {/* SCREEN 1: LOGIN (Image 1 Spec) */}
+        {activeScreen === 'login' && (
+          <div className="flex-1 flex flex-col justify-between p-6 bg-white overflow-y-auto">
+            <div className="flex flex-col items-center mt-6">
+              <img src="/logo.png" alt="IDS Pulse Logo" className="h-14 sm:h-16 w-auto object-contain mb-6" />
+              <h1 className="text-2xl sm:text-3xl font-black text-slate-900 mb-2 tracking-tight text-center">Welcome back</h1>
+              <p className="text-xs sm:text-sm text-slate-500 font-medium text-center max-w-xs leading-relaxed">
+                Sign in with your authorized credentials to access your workspace.
+              </p>
+            </div>
+
+            <form onSubmit={handleLogin} className="flex flex-col gap-4 my-auto">
               <div className="flex flex-col gap-1.5">
-                <label className="text-[12px] font-bold text-slate-700 uppercase tracking-wide">Operator ID</label>
+                <label className="text-xs font-bold text-slate-900">Username</label>
                 <div className="relative">
-                  <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-slate-600" />
                   <input 
                     type="text" 
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    className="phone-input"
-                    style={{ paddingLeft: '38px' }}
-                    placeholder="clarence or email"
+                    className="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                    placeholder="Enter your username"
                   />
                 </div>
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label className="text-[12px] font-bold text-slate-700 uppercase tracking-wide">Access Code</label>
+                <div className="flex justify-between items-center">
+                  <label className="text-xs font-bold text-slate-900">Password</label>
+                  <button type="button" onClick={() => showToast('Password reset requested', 'info')} className="text-xs font-bold text-teal-600 hover:text-teal-700 cursor-pointer">
+                    Reset My Password
+                  </button>
+                </div>
                 <div className="relative">
-                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-slate-600" />
                   <input 
-                    type="password" 
+                    type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    className="phone-input"
-                    style={{ paddingLeft: '38px' }}
-                    placeholder="••••••••"
+                    className="w-full pl-4 pr-11 py-3 bg-white border border-slate-300 rounded-xl text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                    placeholder="Enter your password"
                   />
+                  <button 
+                    type="button" 
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                  >
+                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
                 </div>
               </div>
 
               {authError && (
-                <div className="p-2.5 bg-red-50 border border-red-200 rounded-md text-[11px] font-bold text-red-600 flex items-center gap-2">
-                  <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+                <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs font-bold text-rose-700 flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 shrink-0" />
                   <span>{authError}</span>
                 </div>
               )}
@@ -2744,9 +2791,10 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
               <button 
                 type="submit" 
                 disabled={submittingAuth}
-                className="phone-btn-primary mt-4 cursor-pointer disabled:opacity-50"
+                className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm rounded-xl transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 mt-2"
               >
-                {submittingAuth ? 'Authenticating…' : 'Authenticate'}
+                <Lock className="w-4 h-4" />
+                {submittingAuth ? 'Signing in…' : 'Sign in to IDS Pulse'}
               </button>
             </form>
           </div>

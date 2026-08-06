@@ -701,3 +701,123 @@ input[type="number"] {
     text-transform: uppercase !important;
   }
 }
+
+/* IDS Pulse Animated Split Splash Screen */
+.splash-stage {
+  position: absolute;
+  inset: 0;
+  background: #ffffff;
+  overflow: hidden;
+  z-index: 99999;
+}
+
+.splash-content {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 7vw;
+}
+
+.splash-logo-wrap {
+  width: min(86vw, 340px);
+  opacity: 0;
+  transform: scale(0.94) translateY(10px);
+  animation: splashLogoIn 700ms cubic-bezier(0.22, 1, 0.36, 1) 520ms forwards;
+}
+
+@keyframes splashLogoIn {
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.splash-pulse-line {
+  width: min(74vw, 300px);
+  margin-top: 3.5vh;
+  opacity: 0;
+  animation: splashFadeIn 300ms ease 1150ms forwards;
+}
+
+.splash-pulse-path {
+  fill: none;
+  stroke: #1fbf6b;
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 560;
+  stroke-dashoffset: 560;
+  animation: splashDrawPulse 900ms cubic-bezier(0.4, 0, 0.2, 1) 1150ms forwards;
+}
+
+.splash-pulse-base {
+  fill: none;
+  stroke: rgba(22, 41, 77, 0.10);
+  stroke-width: 2.6;
+  stroke-linecap: round;
+}
+
+.splash-pulse-dot {
+  fill: #1fbf6b;
+  opacity: 0;
+  animation: splashDotBlink 1.6s ease-in-out 2050ms infinite;
+}
+
+@keyframes splashDrawPulse { to { stroke-dashoffset: 0; } }
+@keyframes splashDotBlink {
+  0%, 100% { opacity: 0.25; }
+  50% { opacity: 1; }
+}
+@keyframes splashFadeIn { to { opacity: 1; } }
+
+.splash-footer {
+  position: absolute;
+  left: 0; right: 0;
+  bottom: 4.5vh;
+  text-align: center;
+  opacity: 0;
+  animation: splashFadeIn 500ms ease 1550ms forwards;
+}
+.splash-footer .company {
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #5c6b7e;
+  font-weight: 700;
+}
+.splash-footer .version {
+  margin-top: 4px;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: rgba(92, 107, 126, 0.55);
+}
+
+.splash-curtain {
+  position: absolute;
+  left: 0; right: 0;
+  height: 50.5%;
+  background: linear-gradient(180deg, #0e1c38, #16294d);
+  z-index: 10;
+}
+.splash-curtain.top { top: 0; animation: splashSplitUp 750ms cubic-bezier(0.65, 0, 0.35, 1) 350ms forwards; }
+.splash-curtain.bottom { bottom: 0; background: linear-gradient(0deg, #0e1c38, #16294d); animation: splashSplitDown 750ms cubic-bezier(0.65, 0, 0.35, 1) 350ms forwards; }
+
+@keyframes splashSplitUp { to { transform: translateY(-101%); } }
+@keyframes splashSplitDown { to { transform: translateY(101%); } }
+
+.splash-seam {
+  position: absolute;
+  left: 8%; right: 8%;
+  top: 50%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #1fbf6b 18%, #26b6a6 50%, #1fbf6b 82%, transparent);
+  z-index: 11;
+  opacity: 0;
+  transform: scaleX(0.15);
+  animation:
+    splashSeamIn 260ms ease-out 120ms forwards,
+    splashSeamOut 420ms ease-in 430ms forwards;
+}
+@keyframes splashSeamIn { to { opacity: 1; transform: scaleX(1); } }
+@keyframes splashSeamOut { to { opacity: 0; transform: scaleX(1.06); } }
+

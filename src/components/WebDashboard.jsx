@@ -464,6 +464,23 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   const [newPasswordInput, setNewPasswordInput] = useState('');
   const [showResetPasswordToggle, setShowResetPasswordToggle] = useState(false);
 
+  // Universal Add User Modal State (User Directory Tab)
+  const [showAddUserModal, setShowAddUserModal] = useState(false);
+  const [userCategoryTab, setUserCategoryTab] = useState('all'); // 'all', 'reps', 'clients', 'staff'
+  const [expandedAlertIds, setExpandedAlertIds] = useState({});
+  const [newUserForm, setNewUserForm] = useState({
+    roleType: 'rep', // 'rep', 'customer', 'lead', 'accountant', 'admin'
+    name: '',
+    email: '',
+    phone: '',
+    username: '',
+    password: '',
+    title: '',
+    supplier_id: '',
+    plant_id: '',
+    pay_currency: 'CAD'
+  });
+
   // Accounting Sub-tab Navigation
   const [accountingSubTab, setAccountingSubTab] = useState('review-queue');
   
@@ -1709,6 +1726,107 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       console.error("[Quick Add Rep Failure]:", err);
       showToast(`Failed to add representative: ${err.message}`, "error");
     }
+  };
+
+  const handleUnifiedCreateUser = (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    const { roleType, name, email, phone, username, password, title, supplier_id, plant_id, pay_currency } = newUserForm;
+
+    if (!name || !name.trim()) {
+      showToast("User Full Name is required.", "error");
+      return;
+    }
+
+    const cleanName = name.trim();
+    const cleanEmail = email ? email.trim() : '';
+    const defaultUsername = username ? username.trim().toLowerCase().replace(/[^a-z0-9_]/g, '') : cleanName.toLowerCase().replace(/[^a-z0-9]/g, '_');
+    const defaultPassword = password ? password.trim() : 'password123';
+
+    let role = roleType;
+    let defaultTitle = title?.trim() || '';
+    if (roleType === 'rep') defaultTitle = defaultTitle || 'Quality Liaison Rep';
+    else if (roleType === 'customer') defaultTitle = defaultTitle || 'Customer Quality Contact';
+    else if (roleType === 'lead') defaultTitle = defaultTitle || 'Quality Lead';
+    else if (roleType === 'accountant') defaultTitle = defaultTitle || 'Senior Accountant';
+    else if (roleType === 'admin') defaultTitle = defaultTitle || 'System Administrator';
+
+    const userId = `usr_${roleType}_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+    const avatar = cleanName.split(' ').map(n => n[0]).join('')?.toUpperCase() || 'U';
+
+    const newUserObj = {
+      id: userId,
+      name: cleanName,
+      email: cleanEmail || `${defaultUsername}@integritydriven.com`,
+      username: defaultUsername,
+      password: defaultPassword,
+      role: role,
+      title: defaultTitle,
+      phone: phone ? phone.trim() : '',
+      avatar: avatar,
+      created_at: new Date().toISOString()
+    };
+
+    if (roleType === 'rep') {
+      newUserObj.pay_currency = pay_currency || 'CAD';
+    } else if (roleType === 'customer') {
+      if (supplier_id) {
+        newUserObj.supplier_id = supplier_id;
+        newUserObj.customer_id = supplier_id;
+        newUserObj.client_id = supplier_id;
+      }
+      if (plant_id) {
+        newUserObj.plant_id = plant_id;
+      }
+
+      if (supplier_id) {
+        const foundSup = suppliers.find(s => s.id === supplier_id);
+        if (foundSup) {
+          const existingContacts = Array.isArray(foundSup.contacts) ? foundSup.contacts : [];
+          const newCnt = {
+            id: `cnt_${Date.now()}`,
+            name: cleanName,
+            email: cleanEmail,
+            role: defaultTitle,
+            phone: phone ? phone.trim() : ''
+          };
+          const updatedSup = {
+            ...foundSup,
+            contacts: [...existingContacts, newCnt]
+          };
+          saveEntity('suppliers', updatedSup);
+          setSuppliers(prev => prev.map(s => s.id === updatedSup.id ? updatedSup : s));
+        }
+      }
+    }
+
+    saveEntity('users', newUserObj);
+    if (typeof addUser === 'function') {
+      addUser(newUserObj);
+    }
+    setUsers(getEntities('users') || []);
+    window.dispatchEvent(new Event('ids_pulse_db_update'));
+
+    try {
+      logSystemEvent('system', 'create_user_unified', `${getActiveActorName()} created ${roleType.toUpperCase()} user ${cleanName} (${defaultUsername}).`);
+    } catch (lErr) {
+      console.warn("[System Log Warning]:", lErr);
+    }
+
+    setNewUserForm({
+      roleType: 'rep',
+      name: '',
+      email: '',
+      phone: '',
+      username: '',
+      password: '',
+      title: '',
+      supplier_id: '',
+      plant_id: '',
+      pay_currency: 'CAD'
+    });
+    setShowAddUserModal(false);
+
+    showToast(`User "${cleanName}" (${roleType.toUpperCase()}) created successfully!`, "success");
   };
 
   const handleQuickAddClientSubmit = async (e) => {
@@ -6053,22 +6171,46 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         No active quality containment holds reported today.
                       </div>
                     ) : (
-                      (incidents || []).slice(0, 3).map((inc) => (
-                        <div key={inc.id} className="p-3.5 rounded-xl bg-amber-50 border border-amber-300 flex items-start gap-2.5 shadow-sm">
-                          <div className="w-2.5 h-2.5 rounded-full bg-amber-600 mt-1 flex-shrink-0 animate-ping"></div>
-                          <div>
-                            <strong className="text-[12.5px] font-extrabold text-amber-950 block">
-                              {suppliers.find(s => s.id === inc.supplier_id || s.name?.toLowerCase() === (inc.supplier_id || '').toLowerCase())?.name || inc.supplier_name || (inc.supplier_id ? inc.supplier_id.replace(/^sup_/, '').replace(/_/g, ' ') : 'Client Company')} — PN {inc.part_number || inc.partNumber || 'Hold'}
-                            </strong>
-                            <p className="text-[12px] font-semibold text-slate-900 mt-1 leading-normal">
-                              {inc.description || inc.notes || 'Defect logged.'}
-                            </p>
-                            <span className="text-[11px] font-mono font-extrabold text-slate-700 mt-1.5 block">
-                              {inc.date || inc.created_at?.substring(0, 10)}
-                            </span>
+                      (incidents || []).map((inc) => {
+                        const narrativeText = inc.description || inc.notes || 'Defect logged.';
+                        const isExpanded = !!expandedAlertIds[inc.id];
+                        const isLongText = narrativeText.length > 90 || narrativeText.includes('\n');
+
+                        return (
+                          <div key={inc.id} className="p-3.5 rounded-xl bg-amber-50 border border-amber-300 flex items-start gap-2.5 shadow-sm text-left">
+                            <div className="w-2.5 h-2.5 rounded-full bg-amber-600 mt-1 flex-shrink-0 animate-ping"></div>
+                            <div className="flex-1 text-left min-w-0">
+                              <strong className="text-[12.5px] font-extrabold text-amber-950 block leading-snug">
+                                {suppliers.find(s => s.id === inc.supplier_id || s.name?.toLowerCase() === (inc.supplier_id || '').toLowerCase())?.name || inc.supplier_name || (inc.supplier_id ? inc.supplier_id.replace(/^sup_/, '').replace(/_/g, ' ') : 'Client Company')} — PN {inc.part_number || inc.partNumber || 'Hold'}
+                              </strong>
+                              <p 
+                                className={`text-[12px] font-semibold text-slate-900 mt-1 leading-normal ${!isExpanded ? 'line-clamp-3' : ''}`}
+                                style={!isExpanded ? { display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' } : {}}
+                              >
+                                {narrativeText}
+                              </p>
+
+                              {isLongText && (
+                                <button
+                                  type="button"
+                                  onClick={() => setExpandedAlertIds(prev => ({ ...prev, [inc.id]: !prev[inc.id] }))}
+                                  className="mt-1 text-[11.5px] font-black text-amber-800 hover:text-amber-950 hover:underline flex items-center gap-1 cursor-pointer"
+                                >
+                                  {isExpanded ? (
+                                    <span className="flex items-center gap-1">👆 Read Less</span>
+                                  ) : (
+                                    <span className="flex items-center gap-1">👇 Read More</span>
+                                  )}
+                                </button>
+                              )}
+
+                              <span className="text-[11px] font-mono font-extrabold text-slate-700 mt-1.5 block">
+                                {inc.date || inc.created_at?.substring(0, 10)}
+                              </span>
+                            </div>
                           </div>
-                        </div>
-                      ))
+                        );
+                      })
                     )}
                   </div>
                 </div>
@@ -10204,142 +10346,254 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
             </div>
           )}
 
-          {/* TAB 5: USER DIRECTORY & QUICK DISPATCH */}
+          {/* TAB 5: UNIFIED USER DIRECTORY & MANAGEMENT HUB */}
           {activeTab === 'users' && (
-            <div className="flex-1 flex flex-col gap-3 min-h-0">
-              <div className="flex justify-between items-center pb-2 border-b border-border-subtle flex-shrink-0">
-                <h3 className="text-[14.5px] font-bold text-text-primary uppercase tracking-wider">Operational Rep Directory & Active Assignments</h3>
-                <div className="flex items-center gap-2">
+            <div className="flex-1 flex flex-col gap-3 min-h-0 text-left">
+              {/* Header Action Bar */}
+              <div className="flex justify-between items-center pb-2.5 border-b border-border-subtle flex-shrink-0 flex-wrap gap-2">
+                <div>
+                  <h3 className="text-[15px] font-black text-text-primary uppercase tracking-wider flex items-center gap-2">
+                    <Users className="w-5 h-5 text-cyan-400" />
+                    <span>User Management & Account Directory</span>
+                  </h3>
+                  <p className="text-xs text-text-secondary">Centralized account provisioning for IDS Field Reps, Client Contacts, Leads & Staff</p>
+                </div>
+                <div className="flex items-center gap-2 flex-wrap">
                   <button 
-                    onClick={() => handleDownloadUserDirectoryReport()}
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-1.5 px-3 rounded-lg text-[13.5px] cursor-pointer flex items-center gap-1"
+                    onClick={() => setShowAddUserModal(true)}
+                    className="bg-[#3B82F6] hover:bg-blue-600 text-white font-extrabold py-2 px-3.5 rounded-xl text-[13px] cursor-pointer flex items-center gap-1.5 shadow-md transition-all border border-blue-400/40"
                   >
-                    <Download className="w-3.5 h-3.5" />
-                    <span>Download PDF</span>
+                    <UserPlus className="w-4 h-4 text-white" />
+                    <span>+ Create New User</span>
                   </button>
 
                   <button 
                     onClick={() => setShowAssignRepModal(true)}
-                    className="bg-[#3B82F6] hover:bg-[#3B82F6]/90 text-text-primary font-bold py-1.5 px-3 rounded-lg text-[13.5px] cursor-pointer flex items-center gap-1"
+                    className="bg-surface-elevated hover:bg-surface text-text-primary border border-border-subtle font-bold py-2 px-3 rounded-xl text-[13px] cursor-pointer flex items-center gap-1.5 transition-all"
                   >
-                    <UserPlus className="w-3.5 h-3.5" />
+                    <UserCheck className="w-4 h-4 text-emerald-400" />
                     <span>Assign Rep Dispatch</span>
+                  </button>
+
+                  <button 
+                    onClick={() => handleDownloadUserDirectoryReport()}
+                    className="bg-emerald-700/80 hover:bg-emerald-600 text-white font-bold py-2 px-3 rounded-xl text-[13px] cursor-pointer flex items-center gap-1.5 transition-all"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span>Export PDF</span>
                   </button>
                 </div>
               </div>
 
-              <div className="flex-1 overflow-y-auto scrollbar-thin pr-1 flex flex-col gap-3">
-                {/* Statistics Cards Header */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 flex-shrink-0">
-                  <div className="bg-surface-elevated border border-border-subtle p-3 rounded-2xl text-left">
-                    <span className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Total Active Reps</span>
-                    <span className="text-xl font-extrabold text-text-primary mt-1 block leading-none">{users.filter(u => u.role === 'rep').length}</span>
+              {/* Statistics & Category Pills Header */}
+              <div className="flex flex-col gap-3 flex-shrink-0">
+                {/* Stats Cards */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div className="bg-surface-elevated border border-border-subtle p-3 rounded-2xl text-left shadow-sm">
+                    <span className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider block">Total System Users</span>
+                    <span className="text-2xl font-black text-text-primary mt-1 block leading-none">{users.length} Users</span>
                   </div>
-                  <div className="bg-surface-elevated border border-border-subtle p-3 rounded-2xl text-left">
-                    <span className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Reps On Shift</span>
-                    <span className="text-xl font-extrabold text-emerald-450 mt-1 block leading-none">
-                      {users.filter(u => u && u.role === 'rep' && shiftReports.some(sr => sr.rep_id === u.id && sr.status === 'Draft')).length}
-                    </span>
+                  <div className="bg-surface-elevated border border-border-subtle p-3 rounded-2xl text-left shadow-sm">
+                    <span className="text-[10.5px] font-bold text-emerald-400 uppercase tracking-wider block">IDS Field Inspectors</span>
+                    <span className="text-2xl font-black text-emerald-350 mt-1 block leading-none">{users.filter(u => u.role === 'rep' || isFieldRep(u)).length} Reps</span>
                   </div>
-                  <div className="bg-surface-elevated border border-border-subtle p-3 rounded-2xl text-left">
-                    <span className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Total Suspect Materials</span>
-                    <span className="text-xl font-extrabold text-amber-450 mt-1 block leading-none">{incidents.length}</span>
+                  <div className="bg-surface-elevated border border-border-subtle p-3 rounded-2xl text-left shadow-sm">
+                    <span className="text-[10.5px] font-bold text-amber-400 uppercase tracking-wider block">Client Quality Contacts</span>
+                    <span className="text-2xl font-black text-amber-350 mt-1 block leading-none">{users.filter(u => u.role === 'customer' || u.role === 'client' || !!u.customer_id).length} Contacts</span>
                   </div>
-                  <div className="bg-surface-elevated border border-border-subtle p-3 rounded-2xl text-left">
-                    <span className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Total Rework Logged</span>
-                    <span className="text-xl font-extrabold text-[#3B82F6] mt-1 block leading-none">
-                      {reworkLogs.reduce((acc, curr) => acc + (curr.pieces_reworked || curr.quantity || 0), 0)} pcs
-                    </span>
+                  <div className="bg-surface-elevated border border-border-subtle p-3 rounded-2xl text-left shadow-sm">
+                    <span className="text-[10.5px] font-bold text-purple-400 uppercase tracking-wider block">Management & Staff</span>
+                    <span className="text-2xl font-black text-purple-350 mt-1 block leading-none">{users.filter(u => ['admin', 'owner', 'lead', 'accountant', 'shahroz'].includes(u.role)).length} Staff</span>
                   </div>
                 </div>
 
-                {/* Reps Detail List Grid */}
-                <div className="grid grid-cols-2 gap-3">
-                  {users.filter(isFieldRep).map(u => {
-                    const activeShift = shiftReports.find(r => r.rep_id === u.id && r.status === 'Draft');
-                    const assignedRates = rates.filter(r => r.rep_id === u.id);
-                    const assignedPlants = assignedRates.map(r => plants.find(p => p.id === r.plant_id || p.id === r.supplier_id)).filter(Boolean);
-                    
-                    const totalHours = timeEntries.filter(t => t.rep_id === u.id).reduce((acc, curr) => acc + (curr.hours || 0), 0);
-                    const totalIncidents = incidents.filter(i => i.rep_id === u.id).length;
-                    const totalRework = reworkLogs.filter(rl => rl.rep_id === u.id).reduce((acc, curr) => acc + (curr.pieces_reworked || curr.quantity || 0), 0);
-                    
-                    return (
-                      <div key={u.id} className="bg-surface-elevated border border-border-subtle p-3 rounded-2xl flex flex-col gap-3 hover:border-border-subtle transition-colors">
-                        <div className="flex justify-between items-start">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-[#3B82F6] flex items-center justify-center font-bold text-[14.5px] text-[#3B82F6] border border-[#3B82F6]/25">
-                              {u.avatar}
+                {/* Sub-Tab Filter Pills */}
+                <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-surface border border-border-subtle overflow-x-auto scrollbar-none">
+                  <button
+                    onClick={() => setUserCategoryTab('all')}
+                    className={`px-3.5 py-1.5 rounded-xl font-extrabold text-[12.5px] cursor-pointer transition-all flex items-center gap-1.5 ${
+                      userCategoryTab === 'all'
+                        ? 'bg-[#3B82F6] text-white shadow-md'
+                        : 'text-text-secondary hover:text-text-primary hover:bg-surface-elevated'
+                    }`}
+                  >
+                    <span>🌐 All Registered Users</span>
+                    <span className="bg-black/20 text-white text-[10px] px-1.5 py-0.5 rounded-md font-bold">{users.length}</span>
+                  </button>
+
+                  <button
+                    onClick={() => setUserCategoryTab('reps')}
+                    className={`px-3.5 py-1.5 rounded-xl font-extrabold text-[12.5px] cursor-pointer transition-all flex items-center gap-1.5 ${
+                      userCategoryTab === 'reps'
+                        ? 'bg-emerald-600 text-white shadow-md'
+                        : 'text-text-secondary hover:text-text-primary hover:bg-surface-elevated'
+                    }`}
+                  >
+                    <span>👷 IDS Field Reps</span>
+                    <span className="bg-black/20 text-white text-[10px] px-1.5 py-0.5 rounded-md font-bold">{users.filter(u => u.role === 'rep' || isFieldRep(u)).length}</span>
+                  </button>
+
+                  <button
+                    onClick={() => setUserCategoryTab('clients')}
+                    className={`px-3.5 py-1.5 rounded-xl font-extrabold text-[12.5px] cursor-pointer transition-all flex items-center gap-1.5 ${
+                      userCategoryTab === 'clients'
+                        ? 'bg-amber-600 text-white shadow-md'
+                        : 'text-text-secondary hover:text-text-primary hover:bg-surface-elevated'
+                    }`}
+                  >
+                    <span>🏢 Client Contacts</span>
+                    <span className="bg-black/20 text-white text-[10px] px-1.5 py-0.5 rounded-md font-bold">{users.filter(u => u.role === 'customer' || u.role === 'client' || !!u.customer_id).length}</span>
+                  </button>
+
+                  <button
+                    onClick={() => setUserCategoryTab('staff')}
+                    className={`px-3.5 py-1.5 rounded-xl font-extrabold text-[12.5px] cursor-pointer transition-all flex items-center gap-1.5 ${
+                      userCategoryTab === 'staff'
+                        ? 'bg-purple-600 text-white shadow-md'
+                        : 'text-text-secondary hover:text-text-primary hover:bg-surface-elevated'
+                    }`}
+                  >
+                    <span>🛡️ Staff & Admin</span>
+                    <span className="bg-black/20 text-white text-[10px] px-1.5 py-0.5 rounded-md font-bold">{users.filter(u => ['admin', 'owner', 'lead', 'accountant', 'shahroz'].includes(u.role)).length}</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Users Grid */}
+              <div className="flex-1 overflow-y-auto scrollbar-thin pr-1 flex flex-col gap-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {users
+                    .filter(u => {
+                      if (userCategoryTab === 'reps') return u.role === 'rep' || isFieldRep(u);
+                      if (userCategoryTab === 'clients') return u.role === 'customer' || u.role === 'client' || !!u.customer_id;
+                      if (userCategoryTab === 'staff') return ['admin', 'owner', 'lead', 'accountant', 'shahroz'].includes(u.role);
+                      return true;
+                    })
+                    .map(u => {
+                      const isRep = u.role === 'rep' || isFieldRep(u);
+                      const isClient = u.role === 'customer' || u.role === 'client' || !!u.customer_id;
+                      const activeShift = isRep ? shiftReports.find(r => r.rep_id === u.id && r.status === 'Draft') : null;
+                      const assignedRates = isRep ? rates.filter(r => r.rep_id === u.id) : [];
+                      const assignedPlants = isRep ? assignedRates.map(r => plants.find(p => p.id === r.plant_id || p.id === r.supplier_id)).filter(Boolean) : [];
+                      
+                      const linkedSupplier = isClient ? suppliers.find(s => s.id === u.supplier_id || s.id === u.customer_id || s.name?.toLowerCase().includes((u.name || '').toLowerCase())) : null;
+                      const linkedPlant = u.plant_id ? plants.find(p => p.id === u.plant_id) : null;
+
+                      const totalHours = isRep ? timeEntries.filter(t => t.rep_id === u.id).reduce((acc, curr) => acc + (curr.hours || 0), 0) : 0;
+                      const totalIncidents = isRep ? incidents.filter(i => i.rep_id === u.id).length : 0;
+                      const totalRework = isRep ? reworkLogs.filter(rl => rl.rep_id === u.id).reduce((acc, curr) => acc + (curr.pieces_reworked || curr.quantity || 0), 0) : 0;
+
+                      return (
+                        <div key={u.id} className="bg-surface-elevated border border-border-subtle p-3.5 rounded-2xl flex flex-col gap-3 hover:border-border-subtle transition-colors shadow-sm text-left">
+                          <div className="flex justify-between items-start gap-2">
+                            <div className="flex items-center gap-3">
+                              <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-[14.5px] border ${
+                                isRep ? 'bg-blue-600/20 text-blue-400 border-blue-500/30' :
+                                isClient ? 'bg-amber-600/20 text-amber-400 border-amber-500/30' :
+                                'bg-purple-600/20 text-purple-400 border-purple-500/30'
+                              }`}>
+                                {u.avatar || u.name?.substring(0, 2)?.toUpperCase() || 'US'}
+                              </div>
+                              <div className="text-left">
+                                <h4 className="text-[14px] font-black text-text-primary flex items-center gap-2">
+                                  <span>{u.name}</span>
+                                  {u.username === 'shahroz' && (
+                                    <span className="bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[9px] px-1.5 py-0.5 rounded font-black">SUPER-ADMIN</span>
+                                  )}
+                                </h4>
+                                <p className="text-[11.5px] text-text-secondary font-mono mt-0.5">{u.email || 'No email registered'} • {u.phone || 'No phone'}</p>
+                              </div>
                             </div>
-                            <div className="text-left">
-                              <h4 className="text-[13.5px] font-black text-text-primary">{u.name}</h4>
-                              <p className="text-[11.5px] text-text-secondary font-mono mt-0.5">{u.email} • {u.phone}</p>
-                            </div>
+                            
+                            {/* Role Badge */}
+                            <span className={`px-2.5 py-1 text-[11px] font-black uppercase rounded-full tracking-wider border ${
+                              isRep ? (activeShift ? 'bg-emerald-950/80 text-emerald-300 border-emerald-500/50 animate-pulse' : 'bg-blue-950/80 text-blue-300 border-blue-500/40') :
+                              isClient ? 'bg-amber-950/80 text-amber-300 border-amber-500/40' :
+                              'bg-purple-950/80 text-purple-300 border-purple-500/40'
+                            }`}>
+                              {isRep ? (activeShift ? '🟢 On Shift' : '👷 IDS Field Rep') :
+                               isClient ? '🏢 Client Contact' :
+                               `🛡️ ${u.title || u.role?.toUpperCase() || 'Staff'}`}
+                            </span>
                           </div>
-                          
-                          {activeShift ? (
-                            <span className="px-2 py-1 bg-emerald-50 text-emerald-600 text-[12.5px] font-extrabold uppercase rounded-full tracking-wider animate-pulse flex items-center gap-1 border border-emerald-200">
-                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> On Shift
-                            </span>
-                          ) : (
-                            <span className="px-2 py-1 bg-surface text-text-secondary text-[12.5px] font-extrabold uppercase rounded-full tracking-wider border border-border-subtle">
-                              Off Shift
-                            </span>
+
+                          {/* Specific Details Container */}
+                          {isRep && (
+                            <div className="bg-surface border border-border-subtle p-2.5 rounded-xl flex flex-col gap-1.5 text-[11.5px] text-left">
+                              <div className="flex justify-between">
+                                <span className="text-text-secondary uppercase font-bold text-[10.5px]">Assigned Plants:</span>
+                                <span className="text-text-primary font-semibold text-right max-w-[170px] truncate">
+                                  {assignedPlants.map(p => p.name).join(', ') || 'General / Dispatch Queue'}
+                                </span>
+                              </div>
+                              <div className="flex justify-between border-t border-border-subtle pt-1 text-[10.5px]">
+                                <span className="text-text-secondary font-bold">Pay Currency:</span>
+                                <span className="text-emerald-400 font-extrabold">{u.pay_currency || 'CAD'}</span>
+                              </div>
+                            </div>
                           )}
-                        </div>
 
-                        {/* Location Details */}
-                        <div className="bg-surface border border-border-subtle p-2.5 rounded-xl flex flex-col gap-1.5 text-[11.5px] text-left">
-                          <div className="flex justify-between">
-                            <span className="text-text-secondary uppercase font-bold text-[11.5px]">Assigned Locations:</span>
-                            <span className="text-text-primary font-semibold text-right max-w-[150px] truncate">
-                              {assignedPlants.map(p => p.name).join(', ') || 'General / Dispatch Queue'}
-                            </span>
-                          </div>
-                          {activeShift && (
-                            <div className="flex justify-between border-t border-border-subtle pt-1.5">
-                              <span className="text-emerald-600 uppercase font-bold text-[11.5px]">Active Plant Location:</span>
-                              <span className="text-emerald-350 font-bold">
-                                {plants.find(p => p.id === activeShift.plant_id)?.name || activeShift.plant_id}
-                              </span>
+                          {isClient && (
+                            <div className="bg-surface border border-border-subtle p-2.5 rounded-xl flex flex-col gap-1.5 text-[11.5px] text-left">
+                              <div className="flex justify-between">
+                                <span className="text-text-secondary uppercase font-bold text-[10.5px]">Linked Client Company:</span>
+                                <span className="text-amber-300 font-black">
+                                  {linkedSupplier ? linkedSupplier.name : (u.title || 'Client Partner')}
+                                </span>
+                              </div>
+                              {linkedPlant && (
+                                <div className="flex justify-between border-t border-border-subtle pt-1 text-[10.5px]">
+                                  <span className="text-text-secondary font-bold">Plant Location:</span>
+                                  <span className="text-text-primary font-semibold">{linkedPlant.name}</span>
+                                </div>
+                              )}
                             </div>
                           )}
-                        </div>
 
-                        {/* Performance Stats */}
-                        <div className="grid grid-cols-3 gap-2 bg-surface p-2 rounded-xl border border-border-subtle text-center">
-                          <div className="flex flex-col">
-                            <span className="text-[12.5px] text-text-secondary uppercase font-bold">Hours Logged</span>
-                            <span className="text-[13.5px] font-black text-text-primary mt-0.5">{totalHours.toFixed(1)} hrs</span>
-                          </div>
-                          <div className="flex flex-col border-l border-r border-border-subtle">
-                            <span className="text-[12.5px] text-text-secondary uppercase font-bold">Suspect Materials</span>
-                            <span className="text-[13.5px] font-black text-text-primary mt-0.5">{totalIncidents}</span>
-                          </div>
-                          <div className="flex flex-col">
-                            <span className="text-[12.5px] text-text-secondary uppercase font-bold">Rework Logged</span>
-                            <span className="text-[13.5px] font-black text-text-primary mt-0.5">{totalRework} pcs</span>
-                          </div>
-                        </div>
+                          {!isRep && !isClient && (
+                            <div className="bg-surface border border-border-subtle p-2.5 rounded-xl flex justify-between text-[11.5px] text-left">
+                              <span className="text-text-secondary uppercase font-bold text-[10.5px]">Access Title:</span>
+                              <span className="text-purple-300 font-bold">{u.title || 'System Administrator'}</span>
+                            </div>
+                          )}
 
-                        <div className="flex items-center justify-between pt-2 border-t border-slate-800">
-                          <div className="text-[11px] text-slate-400">
-                            Username: <strong className="text-cyan-400 font-mono">{u.username || u.email?.split('@')[0] || u.name?.toLowerCase().replace(/\s+/g, '')}</strong>
+                          {/* Stats Grid for Reps */}
+                          {isRep && (
+                            <div className="grid grid-cols-3 gap-2 bg-surface p-2 rounded-xl border border-border-subtle text-center">
+                              <div className="flex flex-col">
+                                <span className="text-[10px] text-text-secondary uppercase font-bold">Hours Logged</span>
+                                <span className="text-[12.5px] font-black text-text-primary mt-0.5">{totalHours.toFixed(1)} hrs</span>
+                              </div>
+                              <div className="flex flex-col border-l border-r border-border-subtle">
+                                <span className="text-[10px] text-text-secondary uppercase font-bold">Incidents</span>
+                                <span className="text-[12.5px] font-black text-text-primary mt-0.5">{totalIncidents}</span>
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="text-[10px] text-text-secondary uppercase font-bold">Rework</span>
+                                <span className="text-[12.5px] font-black text-text-primary mt-0.5">{totalRework} pcs</span>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Action Footer */}
+                          <div className="flex items-center justify-between pt-2 border-t border-border-subtle text-[11px]">
+                            <div className="text-text-secondary">
+                              Username: <strong className="text-cyan-400 font-mono">{u.username || u.email?.split('@')[0] || u.name?.toLowerCase().replace(/\s+/g, '')}</strong>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setResetPasswordUser(u);
+                                setNewPasswordInput(u.password || 'password123');
+                              }}
+                              className="bg-amber-500/20 hover:bg-amber-600 border border-amber-500/40 text-amber-300 hover:text-white font-bold text-[11px] px-2.5 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1 shadow-sm"
+                            >
+                              <span>🔑 Reset Password</span>
+                            </button>
                           </div>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setResetPasswordUser(u);
-                              setNewPasswordInput(u.password || 'password123');
-                            }}
-                            className="bg-amber-500/20 hover:bg-amber-600 border border-amber-500/40 text-amber-300 hover:text-white font-bold text-[11px] px-2.5 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1 shadow-sm"
-                          >
-                            <span>🔑 Reset Password</span>
-                          </button>
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
                 </div>
               </div>
             </div>
@@ -11596,6 +11850,212 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
               <button onClick={() => setSelectedReworkLog(null)} className="bg-surface-elevated border border-border-subtle text-text-primary font-bold text-[13.5px] py-2 px-4 rounded-xl">Close Inspector</button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* UNIVERSAL CREATE NEW USER MODAL (USER DIRECTORY TAB) */}
+      {showAddUserModal && (
+        <div className="absolute inset-0 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-3 z-50 animate-in fade-in duration-200">
+          <form onSubmit={handleUnifiedCreateUser} className="bg-surface-elevated border border-border-subtle rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col text-left">
+            <div className="bg-surface px-6 py-4 border-b border-border-subtle flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <UserPlus className="w-5 h-5 text-[#3B82F6]" />
+                <h3 className="text-[14.5px] font-black text-text-primary uppercase tracking-wider">Create New User Account</h3>
+              </div>
+              <button type="button" onClick={() => setShowAddUserModal(false)} className="text-text-secondary hover:text-text-primary cursor-pointer"><X className="w-5 h-5" /></button>
+            </div>
+
+            <div className="p-6 flex flex-col gap-4 max-h-[80vh] overflow-y-auto scrollbar-thin">
+              {/* Role Selection Tabs */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[11px] font-black text-text-secondary uppercase tracking-wider">Select Account Role Type</label>
+                <div className="grid grid-cols-3 gap-1.5 bg-surface p-1 rounded-2xl border border-border-subtle text-xs">
+                  <button
+                    type="button"
+                    onClick={() => setNewUserForm(prev => ({ ...prev, roleType: 'rep', title: 'Quality Liaison Rep' }))}
+                    className={`py-2 px-2 rounded-xl font-bold transition-all cursor-pointer ${newUserForm.roleType === 'rep' ? 'bg-blue-600 text-white shadow-md' : 'text-text-secondary hover:text-text-primary'}`}
+                  >
+                    👷 Field Rep
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setNewUserForm(prev => ({ ...prev, roleType: 'customer', title: 'Customer Quality Contact' }))}
+                    className={`py-2 px-2 rounded-xl font-bold transition-all cursor-pointer ${newUserForm.roleType === 'customer' ? 'bg-amber-600 text-white shadow-md' : 'text-text-secondary hover:text-text-primary'}`}
+                  >
+                    🏢 Client Contact
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setNewUserForm(prev => ({ ...prev, roleType: 'lead', title: 'Quality Lead' }))}
+                    className={`py-2 px-2 rounded-xl font-bold transition-all cursor-pointer ${newUserForm.roleType === 'lead' ? 'bg-sky-600 text-white shadow-md' : 'text-text-secondary hover:text-text-primary'}`}
+                  >
+                    🛡️ Quality Lead
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setNewUserForm(prev => ({ ...prev, roleType: 'accountant', title: 'Senior Accountant' }))}
+                    className={`py-2 px-2 rounded-xl font-bold transition-all cursor-pointer ${newUserForm.roleType === 'accountant' ? 'bg-emerald-600 text-white shadow-md' : 'text-text-secondary hover:text-text-primary'}`}
+                  >
+                    💼 Accountant
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setNewUserForm(prev => ({ ...prev, roleType: 'admin', title: 'System Administrator' }))}
+                    className={`py-2 px-2 rounded-xl font-bold transition-all cursor-pointer ${newUserForm.roleType === 'admin' ? 'bg-purple-600 text-white shadow-md' : 'text-text-secondary hover:text-text-primary'}`}
+                  >
+                    ⚡ System Admin
+                  </button>
+                </div>
+              </div>
+
+              {/* Conditional Client/Supplier Selection for Customer Role */}
+              {newUserForm.roleType === 'customer' && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-amber-500/5 p-3 rounded-2xl border border-amber-500/20">
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[10.5px] font-bold text-amber-300 uppercase">Link Client Company *</label>
+                    <select
+                      value={newUserForm.supplier_id}
+                      onChange={(e) => setNewUserForm(prev => ({ ...prev, supplier_id: e.target.value }))}
+                      className="h-10 w-full bg-surface border border-border-subtle rounded-xl px-3 text-[13px] text-text-primary focus:outline-none"
+                    >
+                      <option value="">Select Supplier / Client Company</option>
+                      {suppliers.map(s => (
+                        <option key={s.id} value={s.id}>{s.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[10.5px] font-bold text-amber-300 uppercase">Link Assembly Plant</label>
+                    <select
+                      value={newUserForm.plant_id}
+                      onChange={(e) => setNewUserForm(prev => ({ ...prev, plant_id: e.target.value }))}
+                      className="h-10 w-full bg-surface border border-border-subtle rounded-xl px-3 text-[13px] text-text-primary focus:outline-none"
+                    >
+                      <option value="">Select Assembly Plant (Optional)</option>
+                      {plants.map(p => (
+                        <option key={p.id} value={p.id}>{p.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              )}
+
+              {/* Conditional Pay Currency for Field Rep Role */}
+              {newUserForm.roleType === 'rep' && (
+                <div className="flex flex-col gap-1.5 bg-blue-500/5 p-3 rounded-2xl border border-blue-500/20">
+                  <label className="text-[10.5px] font-bold text-blue-300 uppercase">Pay Currency (Rule 11)</label>
+                  <div className="flex gap-4">
+                    <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-text-primary">
+                      <input
+                        type="radio"
+                        name="pay_currency_modal"
+                        value="CAD"
+                        checked={newUserForm.pay_currency === 'CAD'}
+                        onChange={(e) => setNewUserForm(prev => ({ ...prev, pay_currency: e.target.value }))}
+                      />
+                      <span>CAD ($) - Canadian Rep</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-text-primary">
+                      <input
+                        type="radio"
+                        name="pay_currency_modal"
+                        value="USD"
+                        checked={newUserForm.pay_currency === 'USD'}
+                        onChange={(e) => setNewUserForm(prev => ({ ...prev, pay_currency: e.target.value }))}
+                      />
+                      <span>USD ($) - US Rep</span>
+                    </label>
+                  </div>
+                </div>
+              )}
+
+              {/* Common Inputs */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10.5px] font-bold text-text-secondary uppercase">Full Name *</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Sarah Jenkins"
+                    value={newUserForm.name}
+                    onChange={(e) => setNewUserForm(prev => ({ ...prev, name: e.target.value }))}
+                    className="h-10 w-full bg-surface border border-border-subtle rounded-xl px-3 text-[13px] text-text-primary focus:outline-none"
+                    required
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10.5px] font-bold text-text-secondary uppercase">Email Address</label>
+                  <input
+                    type="email"
+                    placeholder="e.g. sjenkins@company.com"
+                    value={newUserForm.email}
+                    onChange={(e) => setNewUserForm(prev => ({ ...prev, email: e.target.value }))}
+                    className="h-10 w-full bg-surface border border-border-subtle rounded-xl px-3 text-[13px] text-text-primary focus:outline-none"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10.5px] font-bold text-text-secondary uppercase">Phone Number</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. +1 (416) 555-0182"
+                    value={newUserForm.phone}
+                    onChange={(e) => setNewUserForm(prev => ({ ...prev, phone: e.target.value }))}
+                    className="h-10 w-full bg-surface border border-border-subtle rounded-xl px-3 text-[13px] text-text-primary focus:outline-none"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10.5px] font-bold text-text-secondary uppercase">Job Title / Designation</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Quality Manager"
+                    value={newUserForm.title}
+                    onChange={(e) => setNewUserForm(prev => ({ ...prev, title: e.target.value }))}
+                    className="h-10 w-full bg-surface border border-border-subtle rounded-xl px-3 text-[13px] text-text-primary focus:outline-none"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10.5px] font-bold text-text-secondary uppercase">Login Username</label>
+                  <input
+                    type="text"
+                    placeholder="Auto-generated if empty"
+                    value={newUserForm.username}
+                    onChange={(e) => setNewUserForm(prev => ({ ...prev, username: e.target.value }))}
+                    className="h-10 w-full bg-surface border border-border-subtle rounded-xl px-3 text-[13px] text-text-primary focus:outline-none font-mono"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10.5px] font-bold text-text-secondary uppercase">Password</label>
+                  <input
+                    type="text"
+                    placeholder="Default: password123"
+                    value={newUserForm.password}
+                    onChange={(e) => setNewUserForm(prev => ({ ...prev, password: e.target.value }))}
+                    className="h-10 w-full bg-surface border border-border-subtle rounded-xl px-3 text-[13px] text-text-primary focus:outline-none font-mono"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-surface px-6 py-3.5 border-t border-border-subtle flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setShowAddUserModal(false)}
+                className="h-10 px-4 bg-surface-elevated border border-border-subtle text-text-secondary hover:text-text-primary rounded-xl text-[13px] font-bold transition-all cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="h-10 px-5 bg-[#3B82F6] hover:bg-blue-600 text-white rounded-xl text-[13px] font-bold transition-all cursor-pointer shadow-md shadow-blue-500/20"
+              >
+                Create Account
+              </button>
+            </div>
+          </form>
         </div>
       )}
 

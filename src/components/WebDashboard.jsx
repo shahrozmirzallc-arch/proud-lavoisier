@@ -308,11 +308,13 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
   // Sync activeTab to primaryDomain automatically
   useEffect(() => {
-    if (['command-center', 'incidents', 'heatmap', 'shift-logs', 'daily-planner', 'daily-checklists', 'rework-logs'].includes(activeTab)) {
+    if (['command-center', 'projects'].includes(activeTab)) {
       setPrimaryDomain('operations');
-    } else if (['users', 'suppliers', 'projects'].includes(activeTab)) {
+    } else if (['shift-logs', 'incidents', 'heatmap', 'rework-logs', 'daily-checklists', 'reports'].includes(activeTab)) {
+      setPrimaryDomain('reports');
+    } else if (['users', 'suppliers', 'dispatches'].includes(activeTab)) {
       setPrimaryDomain('workforce');
-    } else if (['time-tracking', 'invoices', 'reports'].includes(activeTab)) {
+    } else if (['time-tracking', 'invoices', 'rates', 'expenses'].includes(activeTab)) {
       setPrimaryDomain('finance');
     } else if (['system-logs', 'pulse-ai', 'security'].includes(activeTab)) {
       setPrimaryDomain('governance');
@@ -5420,7 +5422,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
             {/* Left Sidebar 4-Domain Primary Navigation Header */}
             <div className="flex flex-col gap-1.5 p-2 rounded-2xl bg-surface border border-border-subtle mb-1 text-left">
               <span className="text-[10px] font-black text-text-secondary uppercase tracking-widest px-2 py-0.5 block">
-                Primary Domains
+                Consolidated Hubs
               </span>
               <button
                 type="button"
@@ -5439,6 +5441,21 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
               <button
                 type="button"
+                onClick={() => { setPrimaryDomain('reports'); setActiveTab('shift-logs'); }}
+                className={`w-full px-3 py-2 rounded-xl font-black text-[12.5px] cursor-pointer transition-all flex items-center justify-between border ${
+                  primaryDomain === 'reports'
+                    ? 'bg-sky-600 text-white border-sky-500 shadow-md'
+                    : 'bg-surface-elevated text-text-secondary hover:text-text-primary border-border-subtle/70'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <FileText className="w-4 h-4" />
+                  <span>2. REPORTS HUB</span>
+                </div>
+              </button>
+
+              <button
+                type="button"
                 onClick={() => { setPrimaryDomain('workforce'); setActiveTab('users'); }}
                 className={`w-full px-3 py-2 rounded-xl font-black text-[12.5px] cursor-pointer transition-all flex items-center justify-between border ${
                   primaryDomain === 'workforce'
@@ -5448,7 +5465,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
               >
                 <div className="flex items-center gap-2">
                   <Users className="w-4 h-4" />
-                  <span>2. WORKFORCE</span>
+                  <span>3. WORKFORCE</span>
                 </div>
               </button>
 
@@ -5463,22 +5480,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
               >
                 <div className="flex items-center gap-2">
                   <DollarSign className="w-4 h-4" />
-                  <span>3. FINANCE</span>
-                </div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => { setPrimaryDomain('governance'); setActiveTab('system-logs'); }}
-                className={`w-full px-3 py-2 rounded-xl font-black text-[12.5px] cursor-pointer transition-all flex items-center justify-between border ${
-                  primaryDomain === 'governance'
-                    ? 'bg-purple-600 text-white border-purple-500 shadow-md'
-                    : 'bg-surface-elevated text-text-secondary hover:text-text-primary border-border-subtle/70'
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  <Shield className="w-4 h-4" />
-                  <span>4. GOVERNANCE</span>
+                  <span>4. ACCOUNTING</span>
                 </div>
               </button>
             </div>

@@ -2820,10 +2820,6 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     (i.status === 'Open' || i.status === 'Acknowledged')
   ).length;
 
-  const totalReworkPcs = reworkLogs
-    .filter(r => showAllDates || r.created_at?.startsWith(selectedDate))
-    .reduce((acc, curr) => acc + (Number(curr.qty || curr.pieces_reworked || curr.rework_qty) || 0), 0);
-
   const activeRepsCount = useMemo(() => {
     if (userRole === 'customer') {
       const custIncidents = (incidents || []).filter(i => i.supplier_id === currentUserCustomerId || i.customer_id === currentUserCustomerId);
@@ -2865,39 +2861,15 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   // Hours and Mileage cost calculation (strictly accounting-eligible time entries: regular recorded or client approved overtime)
   const approvedTimeEntries = (timeEntries || []).filter(isEntryAccountingEligible);
 
-  const ratePerKm = CONFIG_MILEAGE_RATE;
-  const totalMileage = approvedTimeEntries
-    .filter(t => showAllDates || (t.date || t.work_date) === selectedDate)
-    .reduce((acc, curr) => acc + (parseFloat(curr.mileage_km) || 0), 0);
+
 
   const totalHours = approvedTimeEntries
     .filter(t => showAllDates || (t.date || t.work_date) === selectedDate)
     .reduce((acc, curr) => acc + (parseFloat(curr.hours) || 0), 0);
   
-  const totalMileageCost = totalMileage * ratePerKm;
-  const totalHoursCost = approvedTimeEntries.reduce((acc, curr) => acc + ((curr.hours || 0) * ((curr.billing_rate !== undefined && curr.billing_rate !== null) ? parseFloat(curr.billing_rate) : getRepSupplierRates(curr.rep_id, curr.supplier_id, curr.plant_id).billing_rate)), 0);
-  const totalInvoicedEst = totalMileageCost + totalHoursCost;
 
-  // Dynamic currency-aware totals for Admin billing overview
-  const activeEntries = approvedTimeEntries.filter(t => showAllDates || (t.date || t.work_date) === selectedDate);
-  const cadInvoicedTotal = activeEntries
-    .filter(t => getRepSupplierRates(t.rep_id, t.supplier_id, t.plant_id).currency === 'CAD')
-    .reduce((acc, curr) => {
-      const rates = getRepSupplierRates(curr.rep_id, curr.supplier_id, curr.plant_id);
-      return acc + ((curr.hours || 0) * rates.billing_rate) + ((curr.mileage_km || 0) * CONFIG_MILEAGE_RATE);
-    }, 0);
-    
-  const usdInvoicedTotal = activeEntries
-    .filter(t => getRepSupplierRates(t.rep_id, t.supplier_id, t.plant_id).currency === 'USD')
-    .reduce((acc, curr) => {
-      const rates = getRepSupplierRates(curr.rep_id, curr.supplier_id, curr.plant_id);
-      return acc + (curr.hours * rates.billing_rate) + (curr.mileage_km * 0.73);
-    }, 0);
-  
-  const totalExpenseClaimed = expenseEntries
-    .filter(e => showAllDates || e.date === selectedDate)
-    .reduce((acc, curr) => acc + parseFloat(curr.amount || 0), 0);
-  const grandTotalWithExpenses = totalInvoicedEst + totalExpenseClaimed;
+
+
 
   // Print & PDF methods
   const getConfidentiality = (data, type = "incident") => {
@@ -5351,66 +5323,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
         </div>
       )}
 
-      {/* Metrics Cards row */}
-      {!forceRoadmapOnly && userRole !== 'customer' && userRole !== 'client' && activeTab !== 'customer-portal' && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 mt-5 flex-shrink-0">
-          <div className="border border-rose-500/30 hover:border-rose-400/60 rounded-2xl p-3.5 flex flex-col justify-between h-28 transition-all group">
-            <div>
-              <span className="text-[10.5px] font-extrabold text-rose-500 uppercase tracking-wider block">Active Defect Containments</span>
-              <span className="text-2xl font-extrabold text-text-primary mt-0.5 block leading-none font-mono">{totalOpenIncidents}</span>
-            </div>
-            <span className="text-[10.5px] text-rose-500 border border-rose-500/30 px-2 py-1 rounded-lg font-extrabold w-fit uppercase tracking-wider">
-              Awaiting Supplier Actions
-            </span>
-          </div>
-          
-          <div className="border border-emerald-500/30 hover:border-emerald-400/60 rounded-2xl p-3.5 flex flex-col justify-between h-28 transition-all group">
-            <div>
-              <span className="text-[10.5px] font-extrabold text-emerald-600 uppercase tracking-wider block">Parts Reworked</span>
-              <span className="text-2xl font-extrabold text-text-primary mt-0.5 block leading-none font-mono">{totalReworkPcs} pcs</span>
-            </div>
-            <span className="text-[10.5px] text-emerald-600 border border-emerald-500/30 px-2 py-1 rounded-lg font-extrabold w-fit uppercase tracking-wider">
-              Rework Logs Synced
-            </span>
-          </div>
-          
-          <div className="border border-cyan-500/30 hover:border-cyan-400/60 rounded-2xl p-3.5 flex flex-col justify-between h-28 transition-all group">
-            <div>
-              <span className="text-[10.5px] font-extrabold text-cyan-600 uppercase tracking-wider block">Active Rep Dispatches</span>
-              <span className="text-2xl font-extrabold text-text-primary mt-0.5 block leading-none font-mono">{activeRepsCount} reps</span>
-            </div>
-            <span className="text-[10.5px] text-cyan-600 border border-cyan-500/30 px-2 py-1 rounded-lg font-extrabold w-fit uppercase tracking-wider">
-              Auditing Plant Floors
-            </span>
-          </div>
-          
-          {['admin', 'owner', 'accountant', 'lead', 'shahroz', 'super_admin']?.includes(userRole) ? (
-            <div className="border border-purple-500/30 hover:border-purple-400/60 rounded-2xl p-3.5 flex flex-col justify-between h-28 transition-all group">
-              <div>
-                <span className="text-[10.5px] font-extrabold text-purple-600 uppercase tracking-wider block">Supplier Invoice Billable</span>
-                <span className="text-2xl font-extrabold text-text-primary mt-0.5 block leading-none font-mono">
-                  {selectedCurrencyFilter === 'CAD' ? `C$ ${cadInvoicedTotal.toFixed(2)}` : 
-                   selectedCurrencyFilter === 'USD' ? `US$ ${usdInvoicedTotal.toFixed(2)}` : 
-                   `C$ ${cadInvoicedTotal.toFixed(2)} / US$ ${usdInvoicedTotal.toFixed(2)}`}
-                </span>
-              </div>
-              <span className="text-[10.5px] text-purple-600 border border-purple-500/30 px-2 py-1 rounded-lg font-extrabold w-fit uppercase tracking-wider">
-                Rate: $0.73/km standard
-              </span>
-            </div>
-          ) : (
-            <div className="border border-purple-500/30 hover:border-purple-400/60 rounded-2xl p-3.5 flex flex-col justify-between h-28 transition-all group">
-              <div>
-                <span className="text-[10.5px] font-extrabold text-purple-600 uppercase tracking-wider block">Total Audited Hours</span>
-                <span className="text-2xl font-extrabold text-text-primary mt-0.5 block leading-none font-mono">{totalHours.toFixed(1)} hrs</span>
-              </div>
-              <span className="text-[10.5px] text-purple-600 border border-purple-500/30 px-2 py-1 rounded-lg font-extrabold w-fit uppercase tracking-wider">
-                Audited Floor Hours Logged
-              </span>
-            </div>
-          )}
-        </div>
-      )}
+
 
       {/* Main Panel Content Area */}
       <div className="flex-1 flex gap-6 sm:p-8 mt-5 min-h-0">

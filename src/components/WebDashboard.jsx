@@ -5417,6 +5417,72 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
         {!forceRoadmapOnly && (
           <div className="w-64 flex flex-col gap-3 flex-shrink-0">
             
+            {/* Left Sidebar 4-Domain Primary Navigation Header */}
+            <div className="flex flex-col gap-1.5 p-2 rounded-2xl bg-surface border border-border-subtle mb-1 text-left">
+              <span className="text-[10px] font-black text-text-secondary uppercase tracking-widest px-2 py-0.5 block">
+                Primary Domains
+              </span>
+              <button
+                type="button"
+                onClick={() => { setPrimaryDomain('operations'); setActiveTab('command-center'); }}
+                className={`w-full px-3 py-2 rounded-xl font-black text-[12.5px] cursor-pointer transition-all flex items-center justify-between border ${
+                  primaryDomain === 'operations'
+                    ? 'bg-blue-600 text-white border-blue-500 shadow-md'
+                    : 'bg-surface-elevated text-text-secondary hover:text-text-primary border-border-subtle/70'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <Activity className="w-4 h-4" />
+                  <span>1. OPERATIONS</span>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => { setPrimaryDomain('workforce'); setActiveTab('users'); }}
+                className={`w-full px-3 py-2 rounded-xl font-black text-[12.5px] cursor-pointer transition-all flex items-center justify-between border ${
+                  primaryDomain === 'workforce'
+                    ? 'bg-emerald-600 text-white border-emerald-500 shadow-md'
+                    : 'bg-surface-elevated text-text-secondary hover:text-text-primary border-border-subtle/70'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <Users className="w-4 h-4" />
+                  <span>2. WORKFORCE</span>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => { setPrimaryDomain('finance'); setActiveTab('time-tracking'); }}
+                className={`w-full px-3 py-2 rounded-xl font-black text-[12.5px] cursor-pointer transition-all flex items-center justify-between border ${
+                  primaryDomain === 'finance'
+                    ? 'bg-amber-600 text-white border-amber-500 shadow-md'
+                    : 'bg-surface-elevated text-text-secondary hover:text-text-primary border-border-subtle/70'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <DollarSign className="w-4 h-4" />
+                  <span>3. FINANCE</span>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => { setPrimaryDomain('governance'); setActiveTab('system-logs'); }}
+                className={`w-full px-3 py-2 rounded-xl font-black text-[12.5px] cursor-pointer transition-all flex items-center justify-between border ${
+                  primaryDomain === 'governance'
+                    ? 'bg-purple-600 text-white border-purple-500 shadow-md'
+                    : 'bg-surface-elevated text-text-secondary hover:text-text-primary border-border-subtle/70'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <Shield className="w-4 h-4" />
+                  <span>4. GOVERNANCE</span>
+                </div>
+              </button>
+            </div>
+            
             {/* QRE SIDEBAR BUTTONS */}
             {userRole === 'qre' && (
               <div className="flex flex-col gap-3">

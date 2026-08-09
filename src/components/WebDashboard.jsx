@@ -304,6 +304,20 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   // Navigation & UI Ergonomics Mode ('inspector' vs 'admin')
   const [uiMode, setUiMode] = useState('inspector');
   const [activeTab, setActiveTab] = useState('command-center');
+  const [primaryDomain, setPrimaryDomain] = useState('operations'); // 'operations', 'workforce', 'finance', 'governance'
+
+  // Sync activeTab to primaryDomain automatically
+  useEffect(() => {
+    if (['command-center', 'incidents', 'heatmap', 'shift-logs', 'daily-planner', 'daily-checklists', 'rework-logs'].includes(activeTab)) {
+      setPrimaryDomain('operations');
+    } else if (['users', 'suppliers', 'projects'].includes(activeTab)) {
+      setPrimaryDomain('workforce');
+    } else if (['time-tracking', 'invoices', 'reports'].includes(activeTab)) {
+      setPrimaryDomain('finance');
+    } else if (['system-logs', 'pulse-ai', 'security'].includes(activeTab)) {
+      setPrimaryDomain('governance');
+    }
+  }, [activeTab]);
   const [selectedDispatchRep, setSelectedDispatchRep] = useState(null);
   const [collapsedGroups, setCollapsedGroups] = useState({
     ai: false,
@@ -6014,6 +6028,61 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
           {activeTab === 'command-center' && userRole !== 'customer' && (
             <div className="flex-1 flex flex-col gap-6 min-h-0 text-left overflow-y-auto pr-1">
               
+              {/* PRIMARY 4-DOMAIN NAVIGATION BAR */}
+              <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-surface border border-border-subtle overflow-x-auto scrollbar-none mb-2">
+                <button
+                  type="button"
+                  onClick={() => { setPrimaryDomain('operations'); setActiveTab('command-center'); }}
+                  className={`px-4 py-2.5 rounded-xl font-extrabold text-[13px] cursor-pointer transition-all flex items-center gap-2 ${
+                    primaryDomain === 'operations'
+                      ? 'bg-blue-600 text-white shadow-md'
+                      : 'text-text-secondary hover:text-text-primary hover:bg-surface-elevated'
+                  }`}
+                >
+                  <Activity className="w-4 h-4" />
+                  <span>1. OPERATIONS</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => { setPrimaryDomain('workforce'); setActiveTab('users'); }}
+                  className={`px-4 py-2.5 rounded-xl font-extrabold text-[13px] cursor-pointer transition-all flex items-center gap-2 ${
+                    primaryDomain === 'workforce'
+                      ? 'bg-emerald-600 text-white shadow-md'
+                      : 'text-text-secondary hover:text-text-primary hover:bg-surface-elevated'
+                  }`}
+                >
+                  <Users className="w-4 h-4" />
+                  <span>2. WORKFORCE & DIRECTORY</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => { setPrimaryDomain('finance'); setActiveTab('time-tracking'); }}
+                  className={`px-4 py-2.5 rounded-xl font-extrabold text-[13px] cursor-pointer transition-all flex items-center gap-2 ${
+                    primaryDomain === 'finance'
+                      ? 'bg-amber-600 text-white shadow-md'
+                      : 'text-text-secondary hover:text-text-primary hover:bg-surface-elevated'
+                  }`}
+                >
+                  <DollarSign className="w-4 h-4" />
+                  <span>3. FINANCE & REPORTS</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => { setPrimaryDomain('governance'); setActiveTab('system-logs'); }}
+                  className={`px-4 py-2.5 rounded-xl font-extrabold text-[13px] cursor-pointer transition-all flex items-center gap-2 ${
+                    primaryDomain === 'governance'
+                      ? 'bg-purple-600 text-white shadow-md'
+                      : 'text-text-secondary hover:text-text-primary hover:bg-surface-elevated'
+                  }`}
+                >
+                  <Shield className="w-4 h-4" />
+                  <span>4. GOVERNANCE & SECURITY</span>
+                </button>
+              </div>
+
               {/* TOP EXECUTIVE BANNER */}
               <div className="border border-blue-500/30 rounded-2xl p-6 relative overflow-hidden flex-shrink-0">
                 <div className="absolute right-0 top-0 translate-x-4 -translate-y-4 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>

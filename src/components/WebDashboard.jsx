@@ -10515,9 +10515,9 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                               isClient ? 'bg-amber-950/80 text-amber-300 border-amber-500/40' :
                               'bg-purple-950/80 text-purple-300 border-purple-500/40'
                             }`}>
-                              {isRep ? (activeShift ? '🟢 On Shift' : '👷 IDS Field Rep') :
-                               isClient ? '🏢 Client Contact' :
-                               `🛡️ ${u.title || u.role?.toUpperCase() || 'Staff'}`}
+                              {isRep ? (activeShift ? 'On Shift (Active)' : 'IDS Field Rep') :
+                               isClient ? 'Client Contact' :
+                               `${u.title || u.role?.toUpperCase() || 'Staff'}`}
                             </span>
                           </div>
 

@@ -1043,13 +1043,13 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     setLogHoursQty('');
     setLogHoursMileage('');
     setLogHoursNotes('');
-    addNotification("⏱️ Hours Logged", "Time entry logged and synced to cloud successfully!", "shift");
+    addNotification("Hours Logged", "Time entry logged and synced to cloud successfully!", "shift");
   };
 
   const handleLogExpenseSubmit = (e) => {
     e.preventDefault();
     if (!logExpAmount || parseFloat(logExpAmount) <= 0) {
-      addNotification("⚠️ Invalid Amount", "Please enter a valid expense amount.", "defect");
+      addNotification("Invalid Amount", "Please enter a valid expense amount.", "defect");
       return;
     }
     const newEntry = {
@@ -1068,7 +1068,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     setExpenseEntries(getEntities('expenseEntries'));
     setLogExpAmount('');
     setLogExpNotes('');
-    addNotification("💳 Expense Submitted", "Expense claim submitted for approval and synced to cloud!", "expense");
+    addNotification("Expense Submitted", "Expense claim submitted for approval and synced to cloud!", "expense");
   };
 
   const handleSaveRateConfig = (e) => {
@@ -1994,7 +1994,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
         setSelectedCurrencyFilter('all');
       }
 
-      addNotification("🏢 Company Onboarded", `Company ${quickClientName} onboarded and Project Assignment registered successfully!`, "shift");
+      addNotification("Company Onboarded", `Company ${quickClientName} onboarded and Project Assignment registered successfully!`, "shift");
       showToast(`Company ${quickClientName} onboarded successfully!`, "success");
 
       // Background non-blocking sync to Supabase
@@ -2010,7 +2010,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   const handleQuickAddPlantSubmit = (e) => {
     if (e) e.preventDefault();
     if (!quickPlantName) {
-      addNotification("⚠️ Plant Name Missing", "Plant name is required.", "defect");
+      addNotification("Plant Name Missing", "Plant name is required.", "defect");
       return;
     }
     const newId = quickPlantName?.toLowerCase()?.replace(/[^a-z0-9]/g, '_');
@@ -2042,13 +2042,13 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     // Auto-select
     setNewProjPlant(newId);
     
-    addNotification("🏭 Plant Registered", `Plant ${quickPlantName} added successfully!`, "shift");
+    addNotification("Plant Registered", `Plant ${quickPlantName} added successfully!`, "shift");
   };
 
   const handleExtraHoursSubmit = (e) => {
     e.preventDefault();
     if (!extraHoursQty || parseFloat(extraHoursQty) <= 0) {
-      addNotification("⚠️ Invalid Hours", "Enter a valid number of extra hours.", "defect");
+      addNotification("Invalid Hours", "Enter a valid number of extra hours.", "defect");
       return;
     }
 
@@ -2144,7 +2144,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       logSystemEvent('shift', 'publish_report', `${user} published daily quality report ${reportId} to Customer Portal & routed to Colleen Boyd for customer invoicing.`);
       
       addNotification(
-        "💳 Report Approved & Published",
+        " Report Approved & Published",
         `${user} published daily quality report for ${plantName} to Client Portal and routed to Colleen Boyd (Accounting) for customer billing.`,
         "shift"
       );
@@ -2403,7 +2403,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     window.dispatchEvent(new Event('ids_pulse_db_update'));
 
     addNotification(
-      "⚡ Emergency Job Handover Complete",
+      " Emergency Job Handover Complete",
       `Job successfully transferred from ${currentRepObj?.name || currentRepId} to ${seniorRepName}. 100% of hours (${loggedHours} hrs) & inspected pcs (${inspectedPcs} pcs) preserved.`,
       "shift"
     );
@@ -2488,7 +2488,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
           const rep = getEntities('users')?.find(u => u.id === newInc.rep_id)?.name || 'Clarence Kuiken';
           
           addNotification(
-            "⚠️ New Defect Incident!",
+            " New Defect Incident!",
             `${rep} reported a defect on Part #${partPN} in ${newInc.area}.`,
             "defect"
           );
@@ -2500,7 +2500,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
           const newRework = currentRework[currentRework.length - 1];
           const rep = getEntities('users')?.find(u => u.id === newRework.rep_id)?.name || 'Clarence Kuiken';
           addNotification(
-            "🔧 New Rework Logged",
+            " New Rework Logged",
             `${rep} logged ${newRework.qty || 0} reworked parts.`,
             "rework"
           );
@@ -2515,7 +2515,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
             // Brand new shift report created
             const rep = getEntities('users')?.find(u => u.id === sr.rep_id)?.name || 'Clarence Kuiken';
             addNotification(
-              "📝 Daily Quality Report Created",
+              " Daily Quality Report Created",
               `${rep} started a new daily quality report (${sr.status || 'Draft'}).`,
               "shift"
             );
@@ -2524,7 +2524,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
             // Draft was submitted/completed
             const rep = getEntities('users')?.find(u => u.id === sr.rep_id)?.name || 'Clarence Kuiken';
             addNotification(
-              "📝 Daily Quality Report Submitted",
+              " Daily Quality Report Submitted",
               `${rep} completed their daily quality report. Total Hours: ${sr.total_hours || 8.0} hrs.`,
               "shift"
             );
@@ -2545,7 +2545,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
           const newExpense = currentExpenses[currentExpenses.length - 1];
           const rep = getEntities('users')?.find(u => u.id === newExpense.rep_id)?.name || 'Clarence Kuiken';
           addNotification(
-            "💵 New Expense Logged",
+            " New Expense Logged",
             `${rep} logged a ${newExpense.category} expense of $${parseFloat(newExpense.amount).toFixed(2)}.`,
             "expense"
           );
@@ -4900,7 +4900,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
         logs.push({
           type: 'warning',
           category: 'Expense Verification',
-          message: `⚠️ Audit Alert: High expense entry logged without receipt validation (Logged $${parseFloat(entry.amount).toFixed(2)} under ${entry.category} on ${entry.date}).`,
+          message: `Audit Alert: High expense entry logged without receipt validation (Logged $${parseFloat(entry.amount).toFixed(2)} under ${entry.category} on ${entry.date}).`,
           item: entry
         });
       }
@@ -4950,26 +4950,26 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       const count = logs.length;
       if (userRole === 'lead') {
         responseText = count > 0 
-          ? `I have completed the Quality Defect audit. ⚠️ Found ${count} potential defect log gaps or duplicate entries in the system.`
-          : "I have successfully audited the Quality Defect logs. 🟢 All entries are complete, and no duplicate defects or missing supplier QM contacts were found!";
+          ? `I have completed the Quality Defect audit. Found ${count} potential defect log gaps or duplicate entries in the system.`
+          : "I have successfully audited the Quality Defect logs. All entries are complete, and no duplicate defects or missing supplier QM contacts were found!";
       } else if (userRole === 'accountant') {
         responseText = count > 0 
-          ? `I have audited the timesheets and expense verification logs. ⚠️ Found ${count} potential discrepancy entries in the system.`
-          : "I have successfully audited all active timesheet records. 🟢 All entries have verified rates and zero missing fields!";
+          ? `I have audited the timesheets and expense verification logs. Found ${count} potential discrepancy entries in the system.`
+          : "I have successfully audited all active timesheet records. All entries have verified rates and zero missing fields!";
       } else {
         responseText = count > 0
-          ? `I have completed the full system audit. ⚠️ Found ${count} potential data anomalies or missing fields in the database.`
-          : "I have completed the full system audit. 🟢 All database records, supplier rates, and incident logs are clean!";
+          ? `I have completed the full system audit. Found ${count} potential data anomalies or missing fields in the database.`
+          : "I have completed the full system audit. All database records, supplier rates, and incident logs are clean!";
       }
     } else if (lowerText?.includes('excel') || lowerText?.includes('xlsx')) {
       action = 'excel';
-      responseText = "🟢 Generating and downloading the styled Excel payroll and audit spreadsheet...";
+      responseText = " Generating and downloading the styled Excel payroll and audit spreadsheet...";
     } else if (lowerText?.includes('csv') || lowerText?.includes('quickbooks') || lowerText?.includes('qb')) {
       action = 'csv';
-      responseText = "🟢 Generating and exporting QuickBooks IIF/CSV formatted timesheets...";
+      responseText = " Generating and exporting QuickBooks IIF/CSV formatted timesheets...";
     } else if (lowerText?.includes('pdf') || lowerText?.includes('download report') || lowerText?.includes('download pdf')) {
       action = 'pdf';
-      responseText = "🟢 Generating and downloading the formal PDF Timesheet & Audit Report...";
+      responseText = " Generating and downloading the formal PDF Timesheet & Audit Report...";
     } else {
       if (userRole === 'lead') {
         responseText = "I'm not sure how to process that request. As Quality Lead, you can ask me to: \n1. 'Audit the database for defect mistakes' \n2. 'Download the Timesheet PDF report'";
@@ -4994,7 +4994,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     const userMsg = {
       id: `msg_user_${Date.now()}`,
       sender: 'user',
-      text: `📸 Uploaded image: ${file.name}`,
+      text: `Uploaded image: ${file.name}`,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
     setPulseAiChat(prev => [...prev, userMsg]);
@@ -5004,7 +5004,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       const aiMsg = {
         id: `msg_ai_${Date.now()}`,
         sender: 'ai',
-        text: "📸 **AI Vision Simulator Active**\n\nScanning uploaded image using computer vision...\n\n🔴 **Defect Detected:** Visual scratch on Top Panel.\n🎯 **Confidence Score:** 94%\n📋 **Recommended Action:** Scrap part and log under code V-02.",
+        text: " **AI Vision Simulator Active**\n\nScanning uploaded image using computer vision...\n\n **Defect Detected:** Visual scratch on Top Panel.\n **Confidence Score:** 94%\n **Recommended Action:** Scrap part and log under code V-02.",
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
       setPulseAiChat(prev => [...prev, aiMsg]);
@@ -5325,7 +5325,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 }`}
                 aria-label={showAllDates ? "Switch to daily filtered view" : "Show all historical records"}
               >
-                {showAllDates ? '📅 Filter by Day' : '🌍 Show All History'}
+                {showAllDates ? 'Filter by Day' : 'Show All History'}
               </button>
             </div>
           </div>
@@ -5746,7 +5746,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     Direct urgent containment line for floor escalations and rep dispatches.
                   </p>
                   <a href="tel:18005554371" className="text-xs font-black text-emerald-400 hover:underline block pt-1">
-                    📞 1-800-555-IDS1
+                    1-800-555-IDS1
                   </a>
                 </div>
 
@@ -6300,7 +6300,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                       <div className="text-3xl font-black text-amber-600 mt-2">
                         {(incidents || []).filter(i => showAllDates || i.created_at?.startsWith(selectedDate)).length} logged
                       </div>
-                      <span className="text-[11px] text-amber-600 font-semibold mt-1">⚠ 100% contained on-site</span>
+                      <span className="text-[11px] text-amber-600 font-semibold mt-1">100% contained on-site</span>
                     </div>
                   </div>
                 </div>
@@ -6434,8 +6434,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                       {/* Metrics & Quick Action */}
                       <div className="pt-3 border-t border-slate-300 dark:border-slate-800/80 flex items-center justify-between">
                         <div className="text-[11px] text-text-secondary space-y-0.5">
-                          <div className="text-text-primary font-bold">⏱️ <strong>{rep.shiftTime}</strong></div>
-                          <div>📊 Inspected: <strong className="text-emerald-700 font-extrabold">{rep.inspected}</strong></div>
+                          <div className="text-text-primary font-bold"><strong>{rep.shiftTime}</strong></div>
+                          <div>Inspected: <strong className="text-emerald-700 font-extrabold">{rep.inspected}</strong></div>
                         </div>
 
                         <div className="flex items-center gap-2">
@@ -6456,7 +6456,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                               className="bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-xs px-3 py-1.5 rounded-xl transition-all cursor-pointer shadow-md flex items-center gap-1"
                               title="Transfer shift to Senior Inspector without loss of hours"
                             >
-                              <span>⚡ Handover</span>
+                              <span>Handover</span>
                             </button>
                           )}
                         </div>
@@ -6540,16 +6540,16 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                           const usagePercent = Math.min(100, (totalLogged / allocatedPO) * 100);
                           
                           let statusColor = "bg-emerald-500/20 text-emerald-700 border-emerald-500/40";
-                          let statusText = "🟢 Active";
+                          let statusText = " Active";
                           let barColor = "bg-emerald-500";
                           
                           if (usagePercent >= 100) {
                             statusColor = "bg-red-500/20 text-red-700 border-red-500/40";
-                            statusText = "🔴 PO Cap Reached";
+                            statusText = " PO Cap Reached";
                             barColor = "bg-red-500";
                           } else if (usagePercent >= 80) {
                             statusColor = "bg-amber-500/20 text-amber-700 border-amber-500/40";
-                            statusText = "🟡 Cap Near (Warning)";
+                            statusText = " Cap Near (Warning)";
                             barColor = "bg-amber-500";
                           }
 
@@ -6733,28 +6733,28 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         onClick={() => executeQuickCommand("Audit database for mistakes")}
                         className="px-2.5 py-1.5 rounded-lg bg-surface-elevated border border-border-subtle hover:border-border-subtle text-text-primary hover:text-text-primary text-[12.5px] font-bold cursor-pointer transition-colors"
                       >
-                        🔍 Audit Database for Errors
+                        Audit Database for Errors
                       </button>
                       <button 
                         type="button"
                         onClick={() => executeQuickCommand("Check for duplicate incident reports")}
                         className="px-2.5 py-1.5 rounded-lg bg-surface-elevated border border-border-subtle hover:border-border-subtle text-text-primary hover:text-text-primary text-[12.5px] font-bold cursor-pointer transition-colors"
                       >
-                        🚨 Scan Duplicate Defects
+                        Scan Duplicate Defects
                       </button>
                       <button 
                         type="button"
                         onClick={() => executeQuickCommand("Export styled Excel (.xlsx)")}
                         className="px-2.5 py-1.5 rounded-lg bg-surface-elevated border border-border-subtle hover:border-border-subtle text-text-primary hover:text-text-primary text-[12.5px] font-bold cursor-pointer transition-colors"
                       >
-                        📊 Export Styled Excel (.xlsx)
+                        Export Styled Excel (.xlsx)
                       </button>
                       <button 
                         type="button"
                         onClick={() => executeQuickCommand("Export QuickBooks CSV")}
                         className="px-2.5 py-1.5 rounded-lg bg-surface-elevated border border-border-subtle hover:border-border-subtle text-text-primary hover:text-text-primary text-[12.5px] font-bold cursor-pointer transition-colors"
                       >
-                        📄 Export QuickBooks CSV
+                        Export QuickBooks CSV
                       </button>
                     </>
                   )}
@@ -6765,21 +6765,21 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         onClick={() => executeQuickCommand("Audit timesheets and receipts")}
                         className="px-2.5 py-1.5 rounded-lg bg-surface-elevated border border-border-subtle hover:border-border-subtle text-text-primary hover:text-text-primary text-[12.5px] font-bold cursor-pointer transition-colors"
                       >
-                        🔍 Audit Timesheets & Receipts
+                        Audit Timesheets & Receipts
                       </button>
                       <button 
                         type="button"
                         onClick={() => executeQuickCommand("Export styled Excel (.xlsx)")}
                         className="px-2.5 py-1.5 rounded-lg bg-surface-elevated border border-border-subtle hover:border-border-subtle text-text-primary hover:text-text-primary text-[12.5px] font-bold cursor-pointer transition-colors"
                       >
-                        📊 Export Styled Excel (.xlsx)
+                        Export Styled Excel (.xlsx)
                       </button>
                       <button 
                         type="button"
                         onClick={() => executeQuickCommand("Export QuickBooks CSV")}
                         className="px-2.5 py-1.5 rounded-lg bg-surface-elevated border border-border-subtle hover:border-border-subtle text-text-primary hover:text-text-primary text-[12.5px] font-bold cursor-pointer transition-colors"
                       >
-                        📄 Export QuickBooks CSV
+                        Export QuickBooks CSV
                       </button>
                     </>
                   )}
@@ -6790,21 +6790,21 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         onClick={() => executeQuickCommand("Audit defect logs")}
                         className="px-2.5 py-1.5 rounded-lg bg-surface-elevated border border-border-subtle hover:border-border-subtle text-text-primary hover:text-text-primary text-[12.5px] font-bold cursor-pointer transition-colors"
                       >
-                        🔍 Audit Quality Defect Logs
+                        Audit Quality Defect Logs
                       </button>
                       <button 
                         type="button"
                         onClick={() => executeQuickCommand("Check for duplicate incident reports")}
                         className="px-2.5 py-1.5 rounded-lg bg-surface-elevated border border-border-subtle hover:border-border-subtle text-text-primary hover:text-text-primary text-[12.5px] font-bold cursor-pointer transition-colors"
                       >
-                        🚨 Scan Duplicate Defects
+                        Scan Duplicate Defects
                       </button>
                       <button 
                         type="button"
                         onClick={() => executeQuickCommand("Download Quality Report (PDF)")}
                         className="px-2.5 py-1.5 rounded-lg bg-surface-elevated border border-border-subtle hover:border-border-subtle text-text-primary hover:text-text-primary text-[12.5px] font-bold cursor-pointer transition-colors"
                       >
-                        📋 Download Quality Report (PDF)
+                        Download Quality Report (PDF)
                       </button>
                     </>
                   )}
@@ -6885,7 +6885,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         
                         {auditLogs.length === 0 ? (
                           <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl text-center text-[11.5px] font-bold">
-                            🟢 All calculations verified! 100% accurate data.
+                            All calculations verified! 100% accurate data.
                           </div>
                         ) : (
                           auditLogs.map((log, index) => (
@@ -7017,7 +7017,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                             ? 'bg-emerald-50 border-transparent text-emerald-600' 
                             : 'bg-amber-50 border-amber-200 text-amber-600'
                         }`}>
-                          {t.status === 'completed' ? '🟢 Done' : '⏳ Pending'}
+                          {t.status === 'completed' ? ' Done' : ' Pending'}
                         </span>
                       </div>
                     ))
@@ -7060,12 +7060,12 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   {/* Preset Buttons */}
                   <div className="flex flex-wrap gap-1.5 mb-3">
                     {[
-                      { label: '🔍 Audit PN 86286761', task: 'Audit sequence line for PN 86286761 (tail light rattles)' },
-                      { label: '🔍 Audit PN 86291945', task: 'Conduct bin sort inspection for PN 86291945' },
-                      { label: '📋 Sequence Line Walk', task: 'Walk sequence area assembly and interview line operators' },
-                      { label: '🛠️ Rework Verification', task: 'Audit rework table logs and verify part specifications' },
-                      { label: '🏷️ Scrap Table Check', task: 'Check scrap tables and verify defect labeling tags' },
-                      { label: '📞 Call Magna QM', task: 'Call Martin (Magna QM) to review open PRR items' }
+                      { label: ' Audit PN 86286761', task: 'Audit sequence line for PN 86286761 (tail light rattles)' },
+                      { label: ' Audit PN 86291945', task: 'Conduct bin sort inspection for PN 86291945' },
+                      { label: ' Sequence Line Walk', task: 'Walk sequence area assembly and interview line operators' },
+                      { label: ' Rework Verification', task: 'Audit rework table logs and verify part specifications' },
+                      { label: ' Scrap Table Check', task: 'Check scrap tables and verify defect labeling tags' },
+                      { label: ' Call Magna QM', task: 'Call Martin (Magna QM) to review open PRR items' }
                     ].map((preset, idx) => (
                       <button
                         key={idx}
@@ -7243,7 +7243,9 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
             const totalWithCoords = zoneA + zoneB + zoneC || 1;
 
             return (
-              <div className="flex-1 flex gap-6 sm:p-8 min-h-0">
+              <div className="flex-1 flex flex-col min-h-0">
+                {renderReportsSubTabBar()}
+                <div className="flex-1 flex gap-6 min-h-0">
                 {/* Left Panel: Filters, scrubber, statistics */}
                 <div className="w-80 flex flex-col gap-3 flex-shrink-0 border-r border-border-subtle pr-5 min-h-0 overflow-y-auto">
                   <div>
@@ -7449,15 +7451,18 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                       </div>
                     )}
                   </div>
-                  <p className="text-[10.5px] text-text-secondary mt-4 text-center">💡 Hover over coordinates for summary preview, click dot to open incident detail drawer profile.</p>
+                  <p className="text-[10.5px] text-text-secondary mt-4 text-center">Hover over coordinates for summary preview, click dot to open incident detail drawer profile.</p>
                 </div>
+              </div>
               </div>
             );
           })()}
           
           {/* TAB 1: INCIDENTS FEED (Split layout: Table + Activities) */}
           {activeTab === 'incidents' && (
-            <div className="flex-1 flex gap-3 min-h-0">
+            <div className="flex-1 flex flex-col min-h-0">
+              {renderReportsSubTabBar()}
+              <div className="flex-1 flex gap-3 min-h-0">
               {/* Left Column: Incidents Table */}
               <div className="flex-1 flex flex-col min-h-0 border-r border-border-subtle pr-4">
                 <div className="flex gap-2 mb-3 flex-shrink-0">
@@ -7487,7 +7492,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 <div className="flex-1 overflow-y-auto overflow-x-auto scrollbar-thin">
                   {filteredIncidents.length > 0 && (
                     <span className="text-[10.5px] text-[#3B82F6] font-bold mb-2 flex items-center gap-1">
-                      <span>💡 Tip:</span>
+                      <span>Tip:</span>
                       <span className="text-text-secondary">Scroll down inside this list to view more reports.</span>
                     </span>
                   )}
@@ -7535,8 +7540,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                 inc.status === 'Acknowledged' ? 'bg-amber-50 text-amber-600 border border-amber-200' :
                                 'bg-emerald-50 text-emerald-600 border border-emerald-200'
                               }`}>
-                                {inc.status === 'Open' ? '🔴 Red Alert (Awaiting Review)' : 
-                                 inc.status === 'Acknowledged' ? '🟡 In Progress' : '🟢 Closed'}
+                                {inc.status === 'Open' ? ' Red Alert (Awaiting Review)' : 
+                                 inc.status === 'Acknowledged' ? ' In Progress' : ' Closed'}
                               </span>
                             </td>
                             <td className="py-2 px-2">
@@ -7588,6 +7593,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 </div>
               </div>
             </div>
+          </div>
           )}
 
           {/* TAB 1.25: CUSTOMER QUALITY PARTNER PORTAL */}
@@ -7757,10 +7763,10 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                           onChange={(e) => setSelectedClientPlantFilter(e.target.value)}
                           className="bg-transparent text-xs font-black text-slate-900 focus:outline-none cursor-pointer pr-2"
                         >
-                          <option value="all">📍 All Plant Locations ({clientPlants.length || 1})</option>
+                          <option value="all">All Plant Locations ({clientPlants.length || 1})</option>
                           {(clientPlants.length > 0 ? clientPlants : ['plant_oakville']).map(pId => {
                             const pl = plants.find(p => p.id === pId) || { name: pId };
-                            return <option key={pId} value={pId}>📍 {pl.name}</option>;
+                            return <option key={pId} value={pId}>{pl.name}</option>;
                           })}
                         </select>
                       </div>
@@ -7801,7 +7807,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                             <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
                           </div>
                           <div className="text-2xl font-black text-slate-900 mt-3">{totalShiftPiecesToday} Pcs</div>
-                          <span className="text-[11px] text-blue-700 font-extrabold mt-2">📊 Authoritative Piece Count</span>
+                          <span className="text-[11px] text-blue-700 font-extrabold mt-2">Authoritative Piece Count</span>
                         </div>
 
                         <div className="bg-white border border-slate-200/90 shadow-2xs p-5 rounded-2xl flex flex-col justify-between h-full transition-all hover:border-blue-300">
@@ -7952,7 +7958,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                           if (customerReports.length === 0) {
                             return (
                               <div className="py-8 text-center text-slate-500 bg-slate-50 rounded-xl border border-dashed border-slate-300">
-                                <div className="text-xl mb-1">📋</div>
+                                <div className="text-xl mb-1"></div>
                                 <div className="text-xs font-black text-slate-800">No published daily quality reports match filter criteria.</div>
                               </div>
                             );
@@ -7970,7 +7976,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                   <div className="flex items-center gap-2 flex-wrap">
                                     <span className="font-black text-slate-900 text-sm">{plantName}</span>
                                     <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 border border-emerald-300 text-emerald-900 font-black text-[10px] uppercase">✓ Published Report</span>
-                                    <span className="text-xs text-slate-500 font-mono font-bold">📅 {report.date}</span>
+                                    <span className="text-xs text-slate-500 font-mono font-bold">{report.date}</span>
                                   </div>
                                   <div className="text-xs text-slate-600 font-medium">
                                     Inspector: <strong className="text-slate-900">{repName}</strong> • Walked Areas: <strong>{report.areas_walked?.length || 4} Checked</strong> • Incidents: <strong className="text-rose-600">{report.incidents_count || 0} Concerns</strong>
@@ -8029,7 +8035,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                           if (custIncidents.length === 0) {
                             return (
                               <div className="py-8 text-center text-slate-500 bg-slate-50 rounded-xl border border-dashed border-slate-300">
-                                <div className="text-xl mb-1">🎉</div>
+                                <div className="text-xl mb-1"></div>
                                 <div className="text-xs font-black text-slate-800">No quality incidents logged for your plant locations.</div>
                               </div>
                             );
@@ -8058,7 +8064,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                     onClick={() => setSelectedZoomImage(inc.photos?.[0] || 'https://via.placeholder.com/600x400?text=Inspection+Proof+Photo')}
                                     className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-extrabold px-3 py-1.5 rounded-xl transition-colors shadow-sm cursor-pointer"
                                   >
-                                    🔍 Inspect HD Proofs
+                                    Inspect HD Proofs
                                   </button>
                                   {!inc.client_acknowledged && (
                                     <button 
@@ -8194,7 +8200,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                           onClick={() => setSelectedZoomImage(null)} 
                           className="px-3 py-1 bg-slate-800 hover:bg-slate-700 rounded-xl text-xs font-bold cursor-pointer"
                         >
-                          Close ✖
+                          Close 
                         </button>
                       </div>
                       
@@ -8307,7 +8313,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                     <span className="px-2 py-0.5 bg-amber-500/20 border border-amber-500/40 text-amber-400 text-[10.5px] font-bold uppercase rounded-md">
                                       Overtime Review
                                     </span>
-                                    <span className="text-[11.5px] text-text-secondary font-mono">📅 {entry.work_date || entry.date || 'Today'}</span>
+                                    <span className="text-[11.5px] text-text-secondary font-mono">{entry.work_date || entry.date || 'Today'}</span>
                                   </div>
                                   <h4 className="text-sm font-bold text-text-primary flex items-center gap-1.5">
                                     <User className="w-4 h-4 text-amber-500" />
@@ -8338,7 +8344,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                     onClick={() => setClientReviewModalState({ show: true, action: 'returned', entry, comment: '' })}
                                     className="px-3.5 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 font-bold text-xs rounded-lg transition-colors cursor-pointer"
                                   >
-                                    ↩ Return
+                                    Return
                                   </button>
                                   <button 
                                     onClick={() => setClientReviewModalState({ show: true, action: 'rejected', entry, comment: '' })}
@@ -8405,7 +8411,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                               <tr key={item.id} className="hover:bg-surface/60 transition-colors">
                                 <td className="p-3">
                                   <div className="font-bold text-text-primary">{repObj?.name || item.rep_id}</div>
-                                  <div className="text-[10.5px] font-mono text-purple-300">📅 {item.work_date || item.date}</div>
+                                  <div className="text-[10.5px] font-mono text-purple-300">{item.work_date || item.date}</div>
                                 </td>
                                 <td className="p-3">
                                   <div className="font-bold text-text-primary">{resolveProjectTitle(item.project_id)}</div>
@@ -8420,7 +8426,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                     isReturned ? 'bg-amber-500/20 text-amber-300' :
                                     'bg-rose-500/20 text-rose-300'
                                   }`}>
-                                    {isApproved ? '✓ Approved' : isReturned ? '↩ Returned' : '✕ Rejected'}
+                                    {isApproved ? '✓ Approved' : isReturned ? ' Returned' : '✕ Rejected'}
                                   </span>
                                 </td>
                                 <td className="p-3 text-text-secondary text-[11px] max-w-xs break-words">
@@ -8530,7 +8536,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
           
           {/* DAILY CHECKLISTS TAB */}
           {activeTab === 'daily-checklists' && (
-            <div className="flex-1 flex flex-col gap-3 min-h-0 bg-surface rounded-xl border border-border-subtle p-6 overflow-y-auto">
+            <div className="flex-1 flex flex-col gap-3 min-h-0 overflow-y-auto">
               {renderReportsSubTabBar()}
               <div className="flex justify-between items-center pb-4 border-b border-border-subtle">
                 <div>
@@ -9073,7 +9079,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         accountingSubTab === 'review-queue' ? 'bg-[#10B981] text-white shadow-md' : 'text-text-secondary hover:text-text-primary'
                       }`}
                     >
-                      <span>⏱️ Hours & Overtime Oversight</span>
+                      <span>Hours & Overtime Oversight</span>
                       {(timeEntries || []).filter(e => e.status === 'client_pending' || e.hour_type === 'overtime').length > 0 && (
                         <span className="bg-amber-400 text-slate-950 px-1.5 py-0.5 rounded-full text-[10px] font-black">
                           {(timeEntries || []).filter(e => e.status === 'client_pending').length}
@@ -9086,7 +9092,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         accountingSubTab === 'client-review' ? 'bg-[#8B5CF6] text-white shadow-md' : 'text-text-secondary hover:text-text-primary'
                       }`}
                     >
-                      <span>🏢 Client Overtime Review</span>
+                      <span>Client Overtime Review</span>
                       {(timeEntries || []).filter(e => e.status === 'client_pending').length > 0 && (
                         <span className="bg-purple-300 text-purple-950 px-1.5 py-0.5 rounded-full text-[10px] font-black">
                           {(timeEntries || []).filter(e => e.status === 'client_pending').length}
@@ -9131,7 +9137,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         accountingSubTab === 'weekly-grid' ? 'bg-[#8B0000] text-white shadow-md' : 'text-text-secondary hover:text-text-primary'
                       }`}
                     >
-                      📋 Weekly Timesheet Grid
+                      Weekly Timesheet Grid
                     </button>
                     <button
                       onClick={() => setAccountingSubTab('integrity-sheet')}
@@ -9139,7 +9145,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         accountingSubTab === 'integrity-sheet' ? 'bg-[#0969dc] text-white shadow-md' : 'text-text-secondary hover:text-text-primary'
                       }`}
                     >
-                      📄 Integrity Sheet (QuickBooks)
+                      Integrity Sheet (QuickBooks)
                     </button>
                   </div>
                 </div>
@@ -9153,7 +9159,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 pb-3 border-b border-border-subtle">
                         <div>
                           <h4 className="text-[14.5px] font-bold text-text-primary uppercase tracking-wider flex items-center gap-2">
-                            <span>⏱️ Hours & Overtime Oversight</span>
+                            <span>Hours & Overtime Oversight</span>
                           </h4>
                           <p className="text-[11.5px] text-text-secondary mt-0.5">
                             Monitor automatically recorded regular hours (authorized via assignment allocation) and track client overtime approval statuses. No Admin approval is required for regular hours within allocation.
@@ -9189,7 +9195,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         if (allList.length === 0) {
                           return (
                             <div className="py-12 text-center text-text-secondary bg-surface/50 rounded-xl border border-dashed border-border-subtle">
-                              <div className="text-3xl mb-2">📋</div>
+                              <div className="text-3xl mb-2"></div>
                               <div className="text-sm font-semibold text-text-primary">No matching time entries found</div>
                               <div className="text-xs text-text-secondary mt-1">Field rep hours will appear here as they are logged.</div>
                             </div>
@@ -9221,7 +9227,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                     <tr key={entry.id} className="hover:bg-surface/60 transition-colors">
                                       <td className="py-3 px-3">
                                         <div className="font-bold text-text-primary">{repName}</div>
-                                        <div className="text-[11px] font-mono text-emerald-700 font-bold mt-0.5">📅 {entry.date || entry.work_date || 'Today'}</div>
+                                        <div className="text-[11px] font-mono text-emerald-700 font-bold mt-0.5">{entry.date || entry.work_date || 'Today'}</div>
                                       </td>
                                       <td className="py-3 px-3">
                                         <div className="font-semibold text-text-primary">{supName}</div>
@@ -9291,7 +9297,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 pb-3 border-b border-border-subtle">
                         <div>
                           <h4 className="text-[14.5px] font-bold text-text-primary uppercase tracking-wider flex items-center gap-2">
-                            <span>🏢 Client Overtime Review Queue</span>
+                            <span>Client Overtime Review Queue</span>
                           </h4>
                           <p className="text-[11.5px] text-text-secondary mt-0.5">
                             Review rep overtime submissions exceeding authorized assignment limits. Only client-authorized overtime and regular recorded hours enter accounting.
@@ -9330,7 +9336,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         if (otList.length === 0) {
                           return (
                             <div className="py-12 text-center text-text-secondary bg-surface/50 rounded-xl border border-dashed border-border-subtle">
-                              <div className="text-3xl mb-2">🎉</div>
+                              <div className="text-3xl mb-2"></div>
                               <div className="text-sm font-semibold text-text-primary">No overtime entries requiring review!</div>
                               <div className="text-xs text-text-secondary mt-1">All field rep hours were within authorized assignment limits or already reviewed.</div>
                             </div>
@@ -9362,7 +9368,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                     <tr key={entry.id} className="hover:bg-surface/60 transition-colors">
                                       <td className="py-3 px-3">
                                         <div className="font-bold text-text-primary">{repName}</div>
-                                        <div className="text-[11px] font-mono text-purple-300 mt-0.5">📅 {entry.date || entry.work_date || 'Today'}</div>
+                                        <div className="text-[11px] font-mono text-purple-300 mt-0.5">{entry.date || entry.work_date || 'Today'}</div>
                                         <div className="text-[10px] text-text-secondary">{supName}</div>
                                       </td>
                                       <td className="py-3 px-3 font-medium">
@@ -9383,17 +9389,17 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                            'bg-amber-400/20 text-amber-200'
                                          }`}>
                                            {entry.status === 'client_approved' || entry.client_review_status === 'approved' ? '✓ Approved' :
-                                            entry.status === 'client_returned' || entry.client_review_status === 'returned' ? '↩ Returned' :
+                                            entry.status === 'client_returned' || entry.client_review_status === 'returned' ? ' Returned' :
                                             entry.status === 'client_rejected' || entry.client_review_status === 'rejected' ? '✕ Rejected' :
-                                            '⏳ Pending Review'}
+                                            ' Pending Review'}
                                          </span>
                                        </td>
                                        <td className="py-3 px-3 text-right">
                                          <span className="text-[11px] text-slate-300 italic font-medium">
                                            {entry.status === 'client_approved' || entry.client_review_status === 'approved' ? `✓ Approved by ${entry.client_reviewed_by || 'Client'}` :
-                                            entry.status === 'client_returned' || entry.client_review_status === 'returned' ? `↩ Returned (${entry.client_review_comment || 'No comment'})` :
+                                            entry.status === 'client_returned' || entry.client_review_status === 'returned' ? `Returned (${entry.client_review_comment || 'No comment'})`:
                                             entry.status === 'client_rejected' || entry.client_review_status === 'rejected' ? `✕ Rejected by ${entry.client_reviewed_by || 'Client'}` :
-                                            '⏳ Pending Client Review'}
+                                            ' Pending Client Review'}
                                          </span>
                                        </td>
                                     </tr>
@@ -9410,7 +9416,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
                           <div className="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 text-left shadow-2xl flex flex-col gap-4">
                             <h3 className="text-base font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                              <span>{clientReviewModalState.action === 'returned' ? '↩ Return Overtime for Correction' : '✕ Reject Overtime'}</span>
+                              <span>{clientReviewModalState.action === 'returned' ? ' Return Overtime for Correction' : '✕ Reject Overtime'}</span>
                             </h3>
                             <p className="text-xs text-slate-300 leading-relaxed">
                               Please provide a reason or comment for {clientReviewModalState.action === 'returned' ? 'returning this overtime submission to the representative' : 'rejecting this overtime request'}.
@@ -9507,7 +9513,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                       </div>
                                       <div className="flex justify-between items-center text-[10.5px] text-text-secondary">
                                         <span>Client: <strong>{clientName}</strong></span>
-                                        <span className="px-2 py-0.5 bg-amber-500/20 text-amber-300 rounded font-bold uppercase text-[9.5px]">⏳ Pending Client Review</span>
+                                        <span className="px-2 py-0.5 bg-amber-500/20 text-amber-300 rounded font-bold uppercase text-[9.5px]">Pending Client Review</span>
                                       </div>
                                     </div>
                                   );
@@ -10282,10 +10288,10 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                               </div>
                               <div className="flex flex-col gap-1"><label className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Invoice Schedule</label>
                                 <select value={newCustomerInvoiceSchedule} onChange={(e) => setNewCustomerInvoiceSchedule(e.target.value)} className="bg-surface border border-border-subtle rounded-xl px-2 py-1.5 text-xs text-text-primary">
-                                  <option value="on-demand">⚡ On Demand</option>
-                                  <option value="weekly">📅 Weekly</option>
-                                  <option value="bi-weekly">📅 Bi-Weekly</option>
-                                  <option value="monthly">📅 Monthly</option>
+                                  <option value="on-demand">On Demand</option>
+                                  <option value="weekly">Weekly</option>
+                                  <option value="bi-weekly">Bi-Weekly</option>
+                                  <option value="monthly">Monthly</option>
                                 </select>
                               </div>
                             </div>
@@ -10325,7 +10331,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                     <td className="py-2 font-mono text-slate-450">{s.id?.toUpperCase()}</td>
                                     <td className="py-2 font-bold text-cyan-400">{s.allotted_hours ? `${s.allotted_hours} hrs` : '20 hrs'}</td>
                                     <td className="py-2">{(Array.isArray(s.contacts) ? s.contacts : []).map(c => c?.name || c).filter(Boolean).join(", ") || (s.contact_name || 'Primary Contact')}</td>
-                                    <td className="py-2"><span className={`px-2 py-1 rounded text-[10.5px] font-bold uppercase ${s.invoice_schedule === 'on-demand' ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-500/40' : 'bg-amber-50 text-amber-600'}`}>{s.invoice_schedule === 'on-demand' ? '⚡ ON DEMAND (MANUAL)' : (s.invoice_schedule || 'ON DEMAND')}</span></td>
+                                    <td className="py-2"><span className={`px-2 py-1 rounded text-[10.5px] font-bold uppercase ${s.invoice_schedule === 'on-demand' ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-500/40' : 'bg-amber-50 text-amber-600'}`}>{s.invoice_schedule === 'on-demand' ? ' ON DEMAND (MANUAL)' : (s.invoice_schedule || 'ON DEMAND')}</span></td>
                                   </tr>
                                 ))}
                               </tbody>
@@ -10824,7 +10830,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                               }}
                               className="bg-amber-500/20 hover:bg-amber-600 border border-amber-500/40 text-amber-300 hover:text-white font-bold text-[11px] px-2.5 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1 shadow-sm"
                             >
-                              <span>🔑 Reset Password</span>
+                              <span>Reset Password</span>
                             </button>
                           </div>
                         </div>
@@ -10865,7 +10871,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
               <div className="flex-1 overflow-y-auto scrollbar-thin pr-1">
                 {reworkLogs.length > 0 && (
                   <span className="text-[10.5px] text-[#3B82F6] font-bold mb-1.5 block">
-                    💡 Tip: Click any row to view details, download PDF, or print.
+                    Tip: Click any row to view details, download PDF, or print.
                   </span>
                 )}
                 <div className="overflow-x-auto w-full"><table className="w-full border-collapse text-[13.5px] text-left">
@@ -10939,7 +10945,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                       </div>
                       <div className="text-2xl font-black text-text-primary mt-2">{activeProjects.length} Projects</div>
                       <div className="text-[11.5px] text-emerald-450 font-semibold flex items-center gap-1 mt-1">
-                        <span>🟢 Monitoring live assignments</span>
+                        <span>Monitoring live assignments</span>
                       </div>
                     </div>
 
@@ -12112,35 +12118,35 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     onClick={() => setNewUserForm(prev => ({ ...prev, roleType: 'rep', title: 'Quality Liaison Rep' }))}
                     className={`py-2 px-2 rounded-xl font-bold transition-all cursor-pointer ${newUserForm.roleType === 'rep' ? 'bg-blue-600 text-white shadow-md' : 'text-text-secondary hover:text-text-primary'}`}
                   >
-                    👷 Field Rep
+                    Field Rep
                   </button>
                   <button
                     type="button"
                     onClick={() => setNewUserForm(prev => ({ ...prev, roleType: 'customer', title: 'Customer Quality Contact' }))}
                     className={`py-2 px-2 rounded-xl font-bold transition-all cursor-pointer ${newUserForm.roleType === 'customer' ? 'bg-amber-600 text-white shadow-md' : 'text-text-secondary hover:text-text-primary'}`}
                   >
-                    🏢 Client Contact
+                    Client Contact
                   </button>
                   <button
                     type="button"
                     onClick={() => setNewUserForm(prev => ({ ...prev, roleType: 'lead', title: 'Quality Lead' }))}
                     className={`py-2 px-2 rounded-xl font-bold transition-all cursor-pointer ${newUserForm.roleType === 'lead' ? 'bg-sky-600 text-white shadow-md' : 'text-text-secondary hover:text-text-primary'}`}
                   >
-                    🛡️ Quality Lead
+                    Quality Lead
                   </button>
                   <button
                     type="button"
                     onClick={() => setNewUserForm(prev => ({ ...prev, roleType: 'accountant', title: 'Senior Accountant' }))}
                     className={`py-2 px-2 rounded-xl font-bold transition-all cursor-pointer ${newUserForm.roleType === 'accountant' ? 'bg-emerald-600 text-white shadow-md' : 'text-text-secondary hover:text-text-primary'}`}
                   >
-                    💼 Accountant
+                    Accountant
                   </button>
                   <button
                     type="button"
                     onClick={() => setNewUserForm(prev => ({ ...prev, roleType: 'admin', title: 'System Administrator' }))}
                     className={`py-2 px-2 rounded-xl font-bold transition-all cursor-pointer ${newUserForm.roleType === 'admin' ? 'bg-purple-600 text-white shadow-md' : 'text-text-secondary hover:text-text-primary'}`}
                   >
-                    ⚡ System Admin
+                    System Admin
                   </button>
                 </div>
               </div>
@@ -12326,7 +12332,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                       }}
                       className="bg-red-600 hover:bg-red-500 text-white text-[11.5px] font-black px-3 py-1.5 rounded-xl cursor-pointer shadow-md transition-all uppercase tracking-wider flex items-center gap-1.5"
                     >
-                      <span>⚡ Open Handover Workflow</span>
+                      <span>Open Handover Workflow</span>
                     </button>
                   </div>
                 </div>
@@ -12388,7 +12394,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
           <div className="bg-surface-elevated border-2 border-amber-500/60 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col text-left">
             <div className="bg-gradient-to-r from-amber-950 via-slate-900 to-slate-950 px-6 py-4 border-b border-amber-500/40 flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-amber-500 flex items-center justify-center text-slate-950 font-black">⚡</div>
+                <div className="w-8 h-8 rounded-xl bg-amber-500 flex items-center justify-center text-slate-950 font-black"></div>
                 <div>
                   <h3 className="text-[14px] font-black text-amber-300 uppercase tracking-wider">Emergency Shift Transfer & Re-assign</h3>
                   <span className="text-[11px] text-slate-300 font-medium">Zero-Hours-Waste Seamless Handover Protocol</span>
@@ -12406,9 +12412,9 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 </div>
                 <div className="text-base font-black text-white">{handoverTargetRep?.name || 'Clarence Kuiken'}</div>
                 <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-800 text-[11.5px] font-bold">
-                  <div>⏱️ Logged: <span className="text-emerald-400">4.5 hrs</span></div>
-                  <div>📦 Inspected: <span className="text-cyan-400">380 pcs</span></div>
-                  <div>⚠️ Defects: <span className="text-red-400">12 logged</span></div>
+                  <div>Logged: <span className="text-emerald-400">4.5 hrs</span></div>
+                  <div>Inspected: <span className="text-cyan-400">380 pcs</span></div>
+                  <div>Defects: <span className="text-red-400">12 logged</span></div>
                 </div>
               </div>
 
@@ -12470,7 +12476,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 }}
                 className="h-10 px-5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs rounded-xl transition-all cursor-pointer shadow-lg shadow-amber-500/20 uppercase tracking-wider flex items-center gap-1.5"
               >
-                <span>⚡ Execute Seamless Transfer</span>
+                <span>Execute Seamless Transfer</span>
               </button>
             </div>
           </div>
@@ -12698,7 +12704,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
             <div className="flex-1 overflow-y-auto pr-1 flex flex-col gap-3 text-[13.5px] text-text-primary leading-relaxed min-h-0">
               
               <div className="bg-[#3B82F6]/20 p-3 rounded-2xl border border-[#3B82F6]/15">
-                <h4 className="font-bold text-text-primary text-[12.5px] uppercase tracking-wide mb-1 text-[#3B82F6]">📅 Using the Calendar</h4>
+                <h4 className="font-bold text-text-primary text-[12.5px] uppercase tracking-wide mb-1 text-[#3B82F6]">Using the Calendar</h4>
                 <p className="text-[11.5px]">
                   Click on any day in the top date bar to filter the entire screen to that date. Days with activity show tiny colored dots:
                 </p>
@@ -13011,10 +13017,10 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                       className="bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-extrabold text-slate-900 focus:outline-none focus:border-blue-600 shadow-sm w-full"
                       required
                     >
-                      <option value="on-demand">⚡ On Demand</option>
-                      <option value="weekly">📅 Weekly</option>
-                      <option value="bi-weekly">📅 Bi-Weekly</option>
-                      <option value="monthly">📅 Monthly</option>
+                      <option value="on-demand">On Demand</option>
+                      <option value="weekly">Weekly</option>
+                      <option value="bi-weekly">Bi-Weekly</option>
+                      <option value="monthly">Monthly</option>
                     </select>
                   </div>
                 </div>
@@ -13058,7 +13064,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                       className="bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-extrabold text-slate-900 focus:outline-none focus:border-blue-600 shadow-sm w-full"
                       required
                     >
-                      <option value="__new__">➕ Register New IDS Field Rep...</option>
+                      <option value="__new__">Register New IDS Field Rep...</option>
                       {users && users.filter(isFieldRep).length > 0 ? (
                         users.filter(isFieldRep).map(u => (
                           <option key={u.id} value={u.id}>{u.name} (IDS Field Rep)</option>
@@ -13078,7 +13084,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   <div className="p-4 bg-blue-50 border border-blue-200 rounded-2xl flex flex-col gap-3 shadow-inner text-slate-900">
                     <div className="flex justify-between items-center border-b border-blue-200 pb-2">
                       <span className="text-xs font-black text-blue-800 uppercase tracking-wider flex items-center gap-1.5">
-                        <UserPlus className="w-4 h-4 text-blue-700" /> 👤 New IDS Field Rep Details
+                        <UserPlus className="w-4 h-4 text-blue-700" />New IDS Field Rep Details
                       </span>
                       <button 
                         type="button" 
@@ -13483,7 +13489,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
               </div>
 
               <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl text-[11px] text-blue-900 font-medium">
-                💡 <strong>Client Portal Access:</strong> Saving this contact will automatically provision a Customer Contact account (`role: customer`) so they can log in to approve timesheets.
+                <strong>Client Portal Access:</strong>Saving this contact will automatically provision a Customer Contact account (`role: customer`) so they can log in to approve timesheets.
               </div>
 
               <div className="flex gap-3 mt-2">

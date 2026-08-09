@@ -5089,6 +5089,105 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     }, 800);
   };
 
+  const renderReportsSubTabBar = () => (
+    <div className="flex items-center gap-2 p-2 rounded-2xl bg-surface border border-border-subtle overflow-x-auto scrollbar-none mb-4 flex-shrink-0 text-left">
+      <div className="text-[10px] font-black text-text-secondary uppercase tracking-widest px-2 py-1 flex items-center gap-1.5 flex-shrink-0">
+        <FileText className="w-3.5 h-3.5 text-sky-500" />
+        <span>REPORTS HUB:</span>
+      </div>
+
+      {/* 1. IDS REP SHIFT REPORTS */}
+      <button
+        type="button"
+        onClick={() => { setPrimaryDomain('reports'); setActiveTab('shift-logs'); }}
+        className={`px-3.5 py-1.5 rounded-xl font-extrabold text-[12px] cursor-pointer transition-all flex items-center gap-2 border flex-shrink-0 ${
+          activeTab === 'shift-logs'
+            ? 'bg-sky-600 text-white border-sky-500 shadow-sm'
+            : 'bg-surface-elevated text-text-secondary hover:text-text-primary border-border-subtle/70'
+        }`}
+      >
+        <Calendar className="w-3.5 h-3.5" />
+        <span>Rep Shift Reports</span>
+        <span className="text-[9px] bg-white/20 px-1.5 py-0.5 rounded font-black uppercase">IDS Rep</span>
+      </button>
+
+      {/* 2. INCIDENT CONTAINMENT HOLDS */}
+      <button
+        type="button"
+        onClick={() => { setPrimaryDomain('reports'); setActiveTab('incidents'); }}
+        className={`px-3.5 py-1.5 rounded-xl font-extrabold text-[12px] cursor-pointer transition-all flex items-center gap-2 border flex-shrink-0 ${
+          activeTab === 'incidents'
+            ? 'bg-sky-600 text-white border-sky-500 shadow-sm'
+            : 'bg-surface-elevated text-text-secondary hover:text-text-primary border-border-subtle/70'
+        }`}
+      >
+        <AlertTriangle className="w-3.5 h-3.5" />
+        <span>Incident Defect Holds</span>
+        <span className="text-[9px] bg-white/20 px-1.5 py-0.5 rounded font-black uppercase">IDS Rep</span>
+      </button>
+
+      {/* 3. REWORK & SORTING LOGS */}
+      <button
+        type="button"
+        onClick={() => { setPrimaryDomain('reports'); setActiveTab('rework-logs'); }}
+        className={`px-3.5 py-1.5 rounded-xl font-extrabold text-[12px] cursor-pointer transition-all flex items-center gap-2 border flex-shrink-0 ${
+          activeTab === 'rework-logs'
+            ? 'bg-sky-600 text-white border-sky-500 shadow-sm'
+            : 'bg-surface-elevated text-text-secondary hover:text-text-primary border-border-subtle/70'
+        }`}
+      >
+        <Activity className="w-3.5 h-3.5" />
+        <span>Rework & Sorting</span>
+        <span className="text-[9px] bg-white/20 px-1.5 py-0.5 rounded font-black uppercase">IDS Rep</span>
+      </button>
+
+      {/* 4. PRE-SHIFT CHECKLISTS */}
+      <button
+        type="button"
+        onClick={() => { setPrimaryDomain('reports'); setActiveTab('daily-checklists'); }}
+        className={`px-3.5 py-1.5 rounded-xl font-extrabold text-[12px] cursor-pointer transition-all flex items-center gap-2 border flex-shrink-0 ${
+          activeTab === 'daily-checklists'
+            ? 'bg-sky-600 text-white border-sky-500 shadow-sm'
+            : 'bg-surface-elevated text-text-secondary hover:text-text-primary border-border-subtle/70'
+        }`}
+      >
+        <ClipboardCheck className="w-3.5 h-3.5" />
+        <span>Pre-Shift Checklists</span>
+        <span className="text-[9px] bg-white/20 px-1.5 py-0.5 rounded font-black uppercase">IDS Rep</span>
+      </button>
+
+      {/* 5. DEFECT MATRIX HEATMAP */}
+      <button
+        type="button"
+        onClick={() => { setPrimaryDomain('reports'); setActiveTab('heatmap'); }}
+        className={`px-3.5 py-1.5 rounded-xl font-extrabold text-[12px] cursor-pointer transition-all flex items-center gap-2 border flex-shrink-0 ${
+          activeTab === 'heatmap'
+            ? 'bg-sky-600 text-white border-sky-500 shadow-sm'
+            : 'bg-surface-elevated text-text-secondary hover:text-text-primary border-border-subtle/70'
+        }`}
+      >
+        <MapPin className="w-3.5 h-3.5" />
+        <span>Defect Heatmap</span>
+        <span className="text-[9px] bg-amber-500/20 text-amber-300 border border-amber-500/30 px-1.5 py-0.5 rounded font-black uppercase">Admin</span>
+      </button>
+
+      {/* 6. EXECUTIVE PDF & CLIENT SUMMARIES */}
+      <button
+        type="button"
+        onClick={() => { setPrimaryDomain('reports'); setActiveTab('reports'); }}
+        className={`px-3.5 py-1.5 rounded-xl font-extrabold text-[12px] cursor-pointer transition-all flex items-center gap-2 border flex-shrink-0 ${
+          activeTab === 'reports'
+            ? 'bg-sky-600 text-white border-sky-500 shadow-sm'
+            : 'bg-surface-elevated text-text-secondary hover:text-text-primary border-border-subtle/70'
+        }`}
+      >
+        <Building className="w-3.5 h-3.5" />
+        <span>Executive Summaries</span>
+        <span className="text-[9px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-1.5 py-0.5 rounded font-black uppercase">Client Portal</span>
+      </button>
+    </div>
+  );
+
   return (
     <div className={`web-dashboard-frame flex-1 bg-bg-primary border border-border-subtle rounded-3xl p-3 shadow-2xl flex flex-col ${layoutMode === 'dashboard-only' || layoutMode === 'roadmap-only' ? 'min-h-[calc(100vh-140px)]' : 'h-[780px]'} overflow-hidden text-left relative`}>
       
@@ -8343,6 +8442,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
           {/* TAB 1.5: DAILY SHIFT SUMMARIES LOG (Donna requested to view rep reports) */}
           {activeTab === 'shift-logs' && (
             <div className="flex-1 flex flex-col gap-3 min-h-0">
+              {renderReportsSubTabBar()}
               <div className="flex justify-between items-center pb-2 border-b border-border-subtle flex-shrink-0">
                 <h3 className="text-[14.5px] font-bold text-text-primary uppercase tracking-wider">Daily Quality Report Walkthrough Logs</h3>
                 <span className="text-[11.5px] text-text-secondary font-medium">Auto-aggregated daily quality reports from rep phones</span>
@@ -8431,6 +8531,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
           {/* DAILY CHECKLISTS TAB */}
           {activeTab === 'daily-checklists' && (
             <div className="flex-1 flex flex-col gap-3 min-h-0 bg-surface rounded-xl border border-border-subtle p-6 overflow-y-auto">
+              {renderReportsSubTabBar()}
               <div className="flex justify-between items-center pb-4 border-b border-border-subtle">
                 <div>
                   <h3 className="text-xl font-bold text-text-primary">Weekly REP Activities Report</h3>
@@ -8544,6 +8645,87 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     </div>
                   );
                 })()}
+              </div>
+            </div>
+          )}
+
+          {/* TAB 1.8: EXECUTIVE PDF & CLIENT SUMMARIES */}
+          {activeTab === 'reports' && (
+            <div className="flex-1 flex flex-col gap-4 min-h-0 text-left overflow-y-auto pr-1">
+              {renderReportsSubTabBar()}
+              
+              <div className="bg-surface-elevated border border-border-subtle rounded-2xl p-6 flex flex-col gap-4">
+                <div className="flex justify-between items-center pb-3 border-b border-border-subtle">
+                  <div>
+                    <h3 className="text-lg font-bold text-text-primary uppercase tracking-wider">Executive PDF & Client Quality Summaries</h3>
+                    <p className="text-xs text-text-secondary">Authoritative plant floor inspection summaries with official base64 company logo</p>
+                  </div>
+                  <span className="px-3 py-1 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-xl text-xs font-extrabold uppercase">
+                    Official IDS Report Standard
+                  </span>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="bg-surface p-4 rounded-xl border border-border-subtle flex flex-col gap-2">
+                    <div className="flex items-center gap-2 text-sky-500 font-extrabold text-sm">
+                      <Calendar className="w-5 h-5" />
+                      <span>Shift Inspection Summaries</span>
+                    </div>
+                    <p className="text-xs text-text-secondary">Published shift reports with defect counts, yield %, and inspector notes.</p>
+                    <button 
+                      type="button"
+                      onClick={() => setActiveTab('shift-logs')}
+                      className="mt-2 text-xs font-bold text-sky-500 hover:underline flex items-center gap-1 cursor-pointer"
+                    >
+                      View Shift Reports Feed &rarr;
+                    </button>
+                  </div>
+
+                  <div className="bg-surface p-4 rounded-xl border border-border-subtle flex flex-col gap-2">
+                    <div className="flex items-center gap-2 text-amber-500 font-extrabold text-sm">
+                      <AlertTriangle className="w-5 h-5" />
+                      <span>Quality Containment Holds</span>
+                    </div>
+                    <p className="text-xs text-text-secondary">Suspect part holds, defect proof photos, and HD canvas markup annotations.</p>
+                    <button 
+                      type="button"
+                      onClick={() => setActiveTab('incidents')}
+                      className="mt-2 text-xs font-bold text-amber-500 hover:underline flex items-center gap-1 cursor-pointer"
+                    >
+                      View Defect Incident Feed &rarr;
+                    </button>
+                  </div>
+
+                  <div className="bg-surface p-4 rounded-xl border border-border-subtle flex flex-col gap-2">
+                    <div className="flex items-center gap-2 text-emerald-500 font-extrabold text-sm">
+                      <Building className="w-5 h-5" />
+                      <span>Client Portal Reports Access</span>
+                    </div>
+                    <p className="text-xs text-text-secondary">Client quality contacts portal view with plant-filtered metrics and PO budget burn.</p>
+                    <button 
+                      type="button"
+                      onClick={() => { setActiveTab('customer-portal'); setClientActiveSubTab('reports'); }}
+                      className="mt-2 text-xs font-bold text-emerald-500 hover:underline flex items-center gap-1 cursor-pointer"
+                    >
+                      Open Client Portal View &rarr;
+                    </button>
+                  </div>
+                </div>
+
+                <div className="mt-2 pt-4 border-t border-border-subtle flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-xs text-text-secondary">
+                    <Shield className="w-4 h-4 text-emerald-500" />
+                    <span>Authoritative Database Only — 100% Logo & Layout Compliant</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => shiftReports[0] ? handleDownloadCustomerSafeReport(shiftReports[0]) : handleDownloadTimesheetReport()}
+                    className="bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-4 rounded-xl text-xs flex items-center gap-2 transition-all cursor-pointer shadow-md"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span>Download Latest Executive Summary PDF</span>
+                  </button>
+                </div>
               </div>
             </div>
           )}
@@ -10656,6 +10838,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
           {/* TAB 6: REWORK LOGS FEED */}
           {activeTab === 'rework-logs' && (
             <div className="flex-1 flex flex-col gap-3 min-h-0">
+              {renderReportsSubTabBar()}
               <div className="flex justify-between items-center pb-2 border-b border-border-subtle flex-shrink-0">
                 <div>
                   <h3 className="text-[14.5px] font-bold text-text-primary uppercase tracking-wider">Defect Rework Logs Feed</h3>

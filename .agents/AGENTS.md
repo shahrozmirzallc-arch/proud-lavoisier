@@ -71,6 +71,10 @@ To ensure historical mistakes are never repeated, the agent MUST obey the follow
 - **Canonical Key Uniformity**: The `supplier_id` field MUST be stamped as the single canonical client key across all Shift Reports, Incidents, Projects, and Users. Data layers (`SharedDatabase.js`) and UI layers (`WebDashboard.jsx`, `PhoneSimulator.jsx`) MUST evaluate client visibility using `supplier_id` with fallback getters for legacy fields.
 - **Truthful Status Lifecycle Badges**: Shift reports MUST transition truthfully through `Submitted (Pending IDS Review)` $\rightarrow$ `published (Published to Client)`. Agents are strictly forbidden from showing unverified "Sent" status badges when a report is awaiting review or missing client routing.
 
+## 13. HARD RULE: STRICT FILE EXPLORER & ZERO BINARY TAB PREVIEW GUARDRAIL
+- **Zero Binary IDE Tab Open**: When creating or generating build output files (e.g. APKs `.apk`, PDFs `.pdf`, binary archives `.zip`, large media files, compiled binaries), NEVER automatically open them or attempt to render them as editor tabs inside the internal IDE layout. Rendering large binary files like `idspulse-app.apk` in internal editor tabs freezes the Electron renderer thread when clicked.
+- **Folder Explorer Dispatch**: Always dispatch Windows File Explorer using `explorer.exe /select,"<file_path>"` or provide a clean folder directory link so the user can open generated files in their native OS applications without freezing the IDE.
 
-
+## 14. HARD RULE: ZERO EMOJI USAGE AT ALL TIMES (NEVER USE EMOJIS IN UI, CODE, OR CHAT RESPONSES)
+- **Zero Emojis**: Emojis are strictly forbidden across the entire codebase, UI buttons, titles, modals, alert cards, feeds, reports, documentation, artifacts, and AI assistant responses. Use clean SVG icons from `lucide-react` or professional plain text typography only.
 

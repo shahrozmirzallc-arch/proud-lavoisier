@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useDeferredValue, useMemo } from 'react';
 import { 
   Shield, Activity, Server, FileText, Users, Mail, DollarSign, Database, 
-  Search, Filter, ChevronRight, ChevronDown, X, Clock, CheckCircle, CheckCircle2, UserCheck, AlertCircle, AlertTriangle, PhoneCall, 
+  Search, Filter, ChevronRight, ChevronDown, ChevronUp, Globe, Building, X, Clock, CheckCircle, CheckCircle2, UserCheck, AlertCircle, AlertTriangle, PhoneCall, 
   FileSpreadsheet, Calendar, ArrowRight, UserPlus, MapPin, Printer, Download, Eye, EyeOff, Sparkles, Key,
   Milestone, TrendingUp, FolderKanban, PlusCircle, Plus, ArrowLeft, Camera, ClipboardCheck, Zap, Building2, ShieldAlert, User, Cpu, Mic, Video, Trash2, History, Lock, BarChart3, Layers
 } from 'lucide-react';
@@ -6197,9 +6197,9 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                   className="mt-1 text-[11.5px] font-black text-amber-800 hover:text-amber-950 hover:underline flex items-center gap-1 cursor-pointer"
                                 >
                                   {isExpanded ? (
-                                    <span className="flex items-center gap-1">👆 Read Less</span>
+                                    <span className="flex items-center gap-1"><ChevronUp className="w-3.5 h-3.5" /> Read Less</span>
                                   ) : (
-                                    <span className="flex items-center gap-1">👇 Read More</span>
+                                    <span className="flex items-center gap-1"><ChevronDown className="w-3.5 h-3.5" /> Read More</span>
                                   )}
                                 </button>
                               )}
@@ -10417,7 +10417,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         : 'text-text-secondary hover:text-text-primary hover:bg-surface-elevated'
                     }`}
                   >
-                    <span>🌐 All Registered Users</span>
+                    <Globe className="w-3.5 h-3.5" />
+                    <span>All Registered Users</span>
                     <span className="bg-black/20 text-white text-[10px] px-1.5 py-0.5 rounded-md font-bold">{users.length}</span>
                   </button>
 
@@ -10429,7 +10430,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         : 'text-text-secondary hover:text-text-primary hover:bg-surface-elevated'
                     }`}
                   >
-                    <span>👷 IDS Field Reps</span>
+                    <UserCheck className="w-3.5 h-3.5" />
+                    <span>IDS Field Reps</span>
                     <span className="bg-black/20 text-white text-[10px] px-1.5 py-0.5 rounded-md font-bold">{users.filter(u => u.role === 'rep' || isFieldRep(u)).length}</span>
                   </button>
 
@@ -10441,7 +10443,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         : 'text-text-secondary hover:text-text-primary hover:bg-surface-elevated'
                     }`}
                   >
-                    <span>🏢 Client Contacts</span>
+                    <Building className="w-3.5 h-3.5" />
+                    <span>Client Contacts</span>
                     <span className="bg-black/20 text-white text-[10px] px-1.5 py-0.5 rounded-md font-bold">{users.filter(u => u.role === 'customer' || u.role === 'client' || !!u.customer_id).length}</span>
                   </button>
 
@@ -10453,7 +10456,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         : 'text-text-secondary hover:text-text-primary hover:bg-surface-elevated'
                     }`}
                   >
-                    <span>🛡️ Staff & Admin</span>
+                    <Shield className="w-3.5 h-3.5" />
+                    <span>Staff & Admin</span>
                     <span className="bg-black/20 text-white text-[10px] px-1.5 py-0.5 rounded-md font-bold">{users.filter(u => ['admin', 'owner', 'lead', 'accountant', 'shahroz'].includes(u.role)).length}</span>
                   </button>
                 </div>

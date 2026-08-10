@@ -1,0 +1,779 @@
+[
+  {
+    "StartLine": 1046,
+    "EndLine": 1046,
+    "TargetContent": "    addNotification(\"⏱️ Hours Logged\", \"Time entry logged and synced to cloud successfully!\", \"shift\");\r",
+    "ReplacementContent": "    addNotification(\" Hours Logged\", \"Time entry logged and synced to cloud successfully!\", \"shift\");\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 1052,
+    "EndLine": 1052,
+    "TargetContent": "      addNotification(\"⚠️ Invalid Amount\", \"Please enter a valid expense amount.\", \"defect\");\r",
+    "ReplacementContent": "      addNotification(\" Invalid Amount\", \"Please enter a valid expense amount.\", \"defect\");\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 1071,
+    "EndLine": 1071,
+    "TargetContent": "    addNotification(\"💳 Expense Submitted\", \"Expense claim submitted for approval and synced to cloud!\", \"expense\");\r",
+    "ReplacementContent": "    addNotification(\" Expense Submitted\", \"Expense claim submitted for approval and synced to cloud!\", \"expense\");\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 1997,
+    "EndLine": 1997,
+    "TargetContent": "      addNotification(\"🏢 Company Onboarded\", `Company ${quickClientName} onboarded and Project Assignment registered successfully!`, \"shift\");\r",
+    "ReplacementContent": "      addNotification(\" Company Onboarded\", `Company ${quickClientName} onboarded and Project Assignment registered successfully!`, \"shift\");\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 2013,
+    "EndLine": 2013,
+    "TargetContent": "      addNotification(\"⚠️ Plant Name Missing\", \"Plant name is required.\", \"defect\");\r",
+    "ReplacementContent": "      addNotification(\" Plant Name Missing\", \"Plant name is required.\", \"defect\");\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 2045,
+    "EndLine": 2045,
+    "TargetContent": "    addNotification(\"🏭 Plant Registered\", `Plant ${quickPlantName} added successfully!`, \"shift\");\r",
+    "ReplacementContent": "    addNotification(\" Plant Registered\", `Plant ${quickPlantName} added successfully!`, \"shift\");\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 2051,
+    "EndLine": 2051,
+    "TargetContent": "      addNotification(\"⚠️ Invalid Hours\", \"Enter a valid number of extra hours.\", \"defect\");\r",
+    "ReplacementContent": "      addNotification(\" Invalid Hours\", \"Enter a valid number of extra hours.\", \"defect\");\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 2147,
+    "EndLine": 2147,
+    "TargetContent": "        \"💳 Report Approved & Published\",\r",
+    "ReplacementContent": "        \" Report Approved & Published\",\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 2406,
+    "EndLine": 2406,
+    "TargetContent": "      \"⚡ Emergency Job Handover Complete\",\r",
+    "ReplacementContent": "      \" Emergency Job Handover Complete\",\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 2491,
+    "EndLine": 2491,
+    "TargetContent": "            \"⚠️ New Defect Incident!\",\r",
+    "ReplacementContent": "            \" New Defect Incident!\",\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 2503,
+    "EndLine": 2503,
+    "TargetContent": "            \"🔧 New Rework Logged\",\r",
+    "ReplacementContent": "            \" New Rework Logged\",\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 2518,
+    "EndLine": 2518,
+    "TargetContent": "              \"📝 Daily Quality Report Created\",\r",
+    "ReplacementContent": "              \" Daily Quality Report Created\",\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 2527,
+    "EndLine": 2527,
+    "TargetContent": "              \"📝 Daily Quality Report Submitted\",\r",
+    "ReplacementContent": "              \" Daily Quality Report Submitted\",\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 2548,
+    "EndLine": 2548,
+    "TargetContent": "            \"💵 New Expense Logged\",\r",
+    "ReplacementContent": "            \" New Expense Logged\",\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 4511,
+    "EndLine": 4511,
+    "TargetContent": "        { key: 'G', width: 20 }  // Total Billing\r",
+    "ReplacementContent": "        { key: 'G', width: 20 } // Total Billing\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 4903,
+    "EndLine": 4903,
+    "TargetContent": "          message: `⚠️ Audit Alert: High expense entry logged without receipt validation (Logged $${parseFloat(entry.amount).toFixed(2)} under ${entry.category} on ${entry.date}).`,\r",
+    "ReplacementContent": "          message: ` Audit Alert: High expense entry logged without receipt validation (Logged $${parseFloat(entry.amount).toFixed(2)} under ${entry.category} on ${entry.date}).`,\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 4953,
+    "EndLine": 4953,
+    "TargetContent": "          ? `I have completed the Quality Defect audit. ⚠️ Found ${count} potential defect log gaps or duplicate entries in the system.`\r",
+    "ReplacementContent": "          ? `I have completed the Quality Defect audit. Found ${count} potential defect log gaps or duplicate entries in the system.`\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 4954,
+    "EndLine": 4954,
+    "TargetContent": "          : \"I have successfully audited the Quality Defect logs. 🟢 All entries are complete, and no duplicate defects or missing supplier QM contacts were found!\";\r",
+    "ReplacementContent": "          : \"I have successfully audited the Quality Defect logs. All entries are complete, and no duplicate defects or missing supplier QM contacts were found!\";\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 4957,
+    "EndLine": 4957,
+    "TargetContent": "          ? `I have audited the timesheets and expense verification logs. ⚠️ Found ${count} potential discrepancy entries in the system.`\r",
+    "ReplacementContent": "          ? `I have audited the timesheets and expense verification logs. Found ${count} potential discrepancy entries in the system.`\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 4958,
+    "EndLine": 4958,
+    "TargetContent": "          : \"I have successfully audited all active timesheet records. 🟢 All entries have verified rates and zero missing fields!\";\r",
+    "ReplacementContent": "          : \"I have successfully audited all active timesheet records. All entries have verified rates and zero missing fields!\";\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 4961,
+    "EndLine": 4961,
+    "TargetContent": "          ? `I have completed the full system audit. ⚠️ Found ${count} potential data anomalies or missing fields in the database.`\r",
+    "ReplacementContent": "          ? `I have completed the full system audit. Found ${count} potential data anomalies or missing fields in the database.`\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 4962,
+    "EndLine": 4962,
+    "TargetContent": "          : \"I have completed the full system audit. 🟢 All database records, supplier rates, and incident logs are clean!\";\r",
+    "ReplacementContent": "          : \"I have completed the full system audit. All database records, supplier rates, and incident logs are clean!\";\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 4966,
+    "EndLine": 4966,
+    "TargetContent": "      responseText = \"🟢 Generating and downloading the styled Excel payroll and audit spreadsheet...\";\r",
+    "ReplacementContent": "      responseText = \" Generating and downloading the styled Excel payroll and audit spreadsheet...\";\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 4969,
+    "EndLine": 4969,
+    "TargetContent": "      responseText = \"🟢 Generating and exporting QuickBooks IIF/CSV formatted timesheets...\";\r",
+    "ReplacementContent": "      responseText = \" Generating and exporting QuickBooks IIF/CSV formatted timesheets...\";\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 4972,
+    "EndLine": 4972,
+    "TargetContent": "      responseText = \"🟢 Generating and downloading the formal PDF Timesheet & Audit Report...\";\r",
+    "ReplacementContent": "      responseText = \" Generating and downloading the formal PDF Timesheet & Audit Report...\";\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 4997,
+    "EndLine": 4997,
+    "TargetContent": "      text: `📸 Uploaded image: ${file.name}`,\r",
+    "ReplacementContent": "      text: ` Uploaded image: ${file.name}`,\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 5007,
+    "EndLine": 5007,
+    "TargetContent": "        text: \"📸 **AI Vision Simulator Active**\\n\\nScanning uploaded image using computer vision...\\n\\n🔴 **Defect Detected:** Visual scratch on Top Panel.\\n🎯 **Confidence Score:** 94%\\n📋 **Recommended Action:** Scrap part and log under code V-02.\",\r",
+    "ReplacementContent": "        text: \" **AI Vision Simulator Active**\\n\\nScanning uploaded image using computer vision...\\n\\n **Defect Detected:** Visual scratch on Top Panel.\\n **Confidence Score:** 94%\\n **Recommended Action:** Scrap part and log under code V-02.\",\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 5749,
+    "EndLine": 5749,
+    "TargetContent": "                    📞 1-800-555-IDS1\r",
+    "ReplacementContent": "                    1-800-555-IDS1\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 6303,
+    "EndLine": 6303,
+    "TargetContent": "                      <span className=\"text-[11px] text-amber-600 font-semibold mt-1\">⚠ 100% contained on-site</span>\r",
+    "ReplacementContent": "                      <span className=\"text-[11px] text-amber-600 font-semibold mt-1\"> 100% contained on-site</span>\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 6437,
+    "EndLine": 6437,
+    "TargetContent": "                          <div className=\"text-text-primary font-bold\">⏱️ <strong>{rep.shiftTime}</strong></div>\r",
+    "ReplacementContent": "                          <div className=\"text-text-primary font-bold\"> <strong>{rep.shiftTime}</strong></div>\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 6438,
+    "EndLine": 6438,
+    "TargetContent": "                          <div>📊 Inspected: <strong className=\"text-emerald-700 font-extrabold\">{rep.inspected}</strong></div>\r",
+    "ReplacementContent": "                          <div> Inspected: <strong className=\"text-emerald-700 font-extrabold\">{rep.inspected}</strong></div>\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 6459,
+    "EndLine": 6459,
+    "TargetContent": "                              <span>⚡ Handover</span>\r",
+    "ReplacementContent": "                              <span> Handover</span>\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 6543,
+    "EndLine": 6543,
+    "TargetContent": "                          let statusText = \"🟢 Active\";\r",
+    "ReplacementContent": "                          let statusText = \" Active\";\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 6548,
+    "EndLine": 6548,
+    "TargetContent": "                            statusText = \"🔴 PO Cap Reached\";\r",
+    "ReplacementContent": "                            statusText = \" PO Cap Reached\";\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 6552,
+    "EndLine": 6552,
+    "TargetContent": "                            statusText = \"🟡 Cap Near (Warning)\";\r",
+    "ReplacementContent": "                            statusText = \" Cap Near (Warning)\";\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 6736,
+    "EndLine": 6736,
+    "TargetContent": "                        🔍 Audit Database for Errors\r",
+    "ReplacementContent": "                        Audit Database for Errors\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 6743,
+    "EndLine": 6743,
+    "TargetContent": "                        🚨 Scan Duplicate Defects\r",
+    "ReplacementContent": "                        Scan Duplicate Defects\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 6750,
+    "EndLine": 6750,
+    "TargetContent": "                        📊 Export Styled Excel (.xlsx)\r",
+    "ReplacementContent": "                        Export Styled Excel (.xlsx)\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 6757,
+    "EndLine": 6757,
+    "TargetContent": "                        📄 Export QuickBooks CSV\r",
+    "ReplacementContent": "                        Export QuickBooks CSV\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 6768,
+    "EndLine": 6768,
+    "TargetContent": "                        🔍 Audit Timesheets & Receipts\r",
+    "ReplacementContent": "                        Audit Timesheets & Receipts\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 6775,
+    "EndLine": 6775,
+    "TargetContent": "                        📊 Export Styled Excel (.xlsx)\r",
+    "ReplacementContent": "                        Export Styled Excel (.xlsx)\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 6782,
+    "EndLine": 6782,
+    "TargetContent": "                        📄 Export QuickBooks CSV\r",
+    "ReplacementContent": "                        Export QuickBooks CSV\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 6793,
+    "EndLine": 6793,
+    "TargetContent": "                        🔍 Audit Quality Defect Logs\r",
+    "ReplacementContent": "                        Audit Quality Defect Logs\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 6800,
+    "EndLine": 6800,
+    "TargetContent": "                        🚨 Scan Duplicate Defects\r",
+    "ReplacementContent": "                        Scan Duplicate Defects\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 6807,
+    "EndLine": 6807,
+    "TargetContent": "                        📋 Download Quality Report (PDF)\r",
+    "ReplacementContent": "                        Download Quality Report (PDF)\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 6888,
+    "EndLine": 6888,
+    "TargetContent": "                            🟢 All calculations verified! 100% accurate data.\r",
+    "ReplacementContent": "                            All calculations verified! 100% accurate data.\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 7020,
+    "EndLine": 7020,
+    "TargetContent": "                          {t.status === 'completed' ? '🟢 Done' : '⏳ Pending'}\r",
+    "ReplacementContent": "                          {t.status === 'completed' ? ' Done' : ' Pending'}\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 7063,
+    "EndLine": 7063,
+    "TargetContent": "                      { label: '🔍 Audit PN 86286761', task: 'Audit sequence line for PN 86286761 (tail light rattles)' },\r",
+    "ReplacementContent": "                      { label: ' Audit PN 86286761', task: 'Audit sequence line for PN 86286761 (tail light rattles)' },\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 7064,
+    "EndLine": 7064,
+    "TargetContent": "                      { label: '🔍 Audit PN 86291945', task: 'Conduct bin sort inspection for PN 86291945' },\r",
+    "ReplacementContent": "                      { label: ' Audit PN 86291945', task: 'Conduct bin sort inspection for PN 86291945' },\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 7065,
+    "EndLine": 7065,
+    "TargetContent": "                      { label: '📋 Sequence Line Walk', task: 'Walk sequence area assembly and interview line operators' },\r",
+    "ReplacementContent": "                      { label: ' Sequence Line Walk', task: 'Walk sequence area assembly and interview line operators' },\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 7066,
+    "EndLine": 7066,
+    "TargetContent": "                      { label: '🛠️ Rework Verification', task: 'Audit rework table logs and verify part specifications' },\r",
+    "ReplacementContent": "                      { label: ' Rework Verification', task: 'Audit rework table logs and verify part specifications' },\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 7067,
+    "EndLine": 7067,
+    "TargetContent": "                      { label: '🏷️ Scrap Table Check', task: 'Check scrap tables and verify defect labeling tags' },\r",
+    "ReplacementContent": "                      { label: ' Scrap Table Check', task: 'Check scrap tables and verify defect labeling tags' },\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 7068,
+    "EndLine": 7068,
+    "TargetContent": "                      { label: '📞 Call Magna QM', task: 'Call Martin (Magna QM) to review open PRR items' }\r",
+    "ReplacementContent": "                      { label: ' Call Magna QM', task: 'Call Martin (Magna QM) to review open PRR items' }\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 7495,
+    "EndLine": 7495,
+    "TargetContent": "                      <span>💡 Tip:</span>\r",
+    "ReplacementContent": "                      <span> Tip:</span>\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 7543,
+    "EndLine": 7543,
+    "TargetContent": "                                {inc.status === 'Open' ? '🔴 Red Alert (Awaiting Review)' : \r",
+    "ReplacementContent": "                                {inc.status === 'Open' ? ' Red Alert (Awaiting Review)' : \r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 7544,
+    "EndLine": 7544,
+    "TargetContent": "                                 inc.status === 'Acknowledged' ? '🟡 In Progress' : '🟢 Closed'}\r",
+    "ReplacementContent": "                                 inc.status === 'Acknowledged' ? ' In Progress' : ' Closed'}\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 7766,
+    "EndLine": 7766,
+    "TargetContent": "                          <option value=\"all\">📍 All Plant Locations ({clientPlants.length || 1})</option>\r",
+    "ReplacementContent": "                          <option value=\"all\"> All Plant Locations ({clientPlants.length || 1})</option>\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 7769,
+    "EndLine": 7769,
+    "TargetContent": "                            return <option key={pId} value={pId}>📍 {pl.name}</option>;\r",
+    "ReplacementContent": "                            return <option key={pId} value={pId}> {pl.name}</option>;\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 7810,
+    "EndLine": 7810,
+    "TargetContent": "                          <span className=\"text-[11px] text-blue-700 font-extrabold mt-2\">📊 Authoritative Piece Count</span>\r",
+    "ReplacementContent": "                          <span className=\"text-[11px] text-blue-700 font-extrabold mt-2\"> Authoritative Piece Count</span>\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 7961,
+    "EndLine": 7961,
+    "TargetContent": "                                <div className=\"text-xl mb-1\">📋</div>\r",
+    "ReplacementContent": "                                <div className=\"text-xl mb-1\"></div>\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 7979,
+    "EndLine": 7979,
+    "TargetContent": "                                    <span className=\"text-xs text-slate-500 font-mono font-bold\">📅 {report.date}</span>\r",
+    "ReplacementContent": "                                    <span className=\"text-xs text-slate-500 font-mono font-bold\"> {report.date}</span>\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 8038,
+    "EndLine": 8038,
+    "TargetContent": "                                <div className=\"text-xl mb-1\">🎉</div>\r",
+    "ReplacementContent": "                                <div className=\"text-xl mb-1\"></div>\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 8067,
+    "EndLine": 8067,
+    "TargetContent": "                                    🔍 Inspect HD Proofs\r",
+    "ReplacementContent": "                                    Inspect HD Proofs\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 8203,
+    "EndLine": 8203,
+    "TargetContent": "                          Close ✖\r",
+    "ReplacementContent": "                          Close \r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 8316,
+    "EndLine": 8316,
+    "TargetContent": "                                    <span className=\"text-[11.5px] text-text-secondary font-mono\">📅 {entry.work_date || entry.date || 'Today'}</span>\r",
+    "ReplacementContent": "                                    <span className=\"text-[11.5px] text-text-secondary font-mono\"> {entry.work_date || entry.date || 'Today'}</span>\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 8347,
+    "EndLine": 8347,
+    "TargetContent": "                                    ↩ Return\r",
+    "ReplacementContent": "                                    Return\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 8414,
+    "EndLine": 8414,
+    "TargetContent": "                                  <div className=\"text-[10.5px] font-mono text-purple-300\">📅 {item.work_date || item.date}</div>\r",
+    "ReplacementContent": "                                  <div className=\"text-[10.5px] font-mono text-purple-300\"> {item.work_date || item.date}</div>\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 8429,
+    "EndLine": 8429,
+    "TargetContent": "                                    {isApproved ? '✓ Approved' : isReturned ? '↩ Returned' : '✕ Rejected'}\r",
+    "ReplacementContent": "                                    {isApproved ? '✓ Approved' : isReturned ? ' Returned' : '✕ Rejected'}\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 9082,
+    "EndLine": 9082,
+    "TargetContent": "                      <span>⏱️ Hours & Overtime Oversight</span>\r",
+    "ReplacementContent": "                      <span> Hours & Overtime Oversight</span>\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 9095,
+    "EndLine": 9095,
+    "TargetContent": "                      <span>🏢 Client Overtime Review</span>\r",
+    "ReplacementContent": "                      <span> Client Overtime Review</span>\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 9140,
+    "EndLine": 9140,
+    "TargetContent": "                      📋 Weekly Timesheet Grid\r",
+    "ReplacementContent": "                      Weekly Timesheet Grid\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 9148,
+    "EndLine": 9148,
+    "TargetContent": "                      📄 Integrity Sheet (QuickBooks)\r",
+    "ReplacementContent": "                      Integrity Sheet (QuickBooks)\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 9162,
+    "EndLine": 9162,
+    "TargetContent": "                            <span>⏱️ Hours & Overtime Oversight</span>\r",
+    "ReplacementContent": "                            <span> Hours & Overtime Oversight</span>\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 9198,
+    "EndLine": 9198,
+    "TargetContent": "                              <div className=\"text-3xl mb-2\">📋</div>\r",
+    "ReplacementContent": "                              <div className=\"text-3xl mb-2\"></div>\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 9230,
+    "EndLine": 9230,
+    "TargetContent": "                                        <div className=\"text-[11px] font-mono text-emerald-700 font-bold mt-0.5\">📅 {entry.date || entry.work_date || 'Today'}</div>\r",
+    "ReplacementContent": "                                        <div className=\"text-[11px] font-mono text-emerald-700 font-bold mt-0.5\"> {entry.date || entry.work_date || 'Today'}</div>\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 9300,
+    "EndLine": 9300,
+    "TargetContent": "                            <span>🏢 Client Overtime Review Queue</span>\r",
+    "ReplacementContent": "                            <span> Client Overtime Review Queue</span>\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 9339,
+    "EndLine": 9339,
+    "TargetContent": "                              <div className=\"text-3xl mb-2\">🎉</div>\r",
+    "ReplacementContent": "                              <div className=\"text-3xl mb-2\"></div>\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 9371,
+    "EndLine": 9371,
+    "TargetContent": "                                        <div className=\"text-[11px] font-mono text-purple-300 mt-0.5\">📅 {entry.date || entry.work_date || 'Today'}</div>\r",
+    "ReplacementContent": "                                        <div className=\"text-[11px] font-mono text-purple-300 mt-0.5\"> {entry.date || entry.work_date || 'Today'}</div>\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 9392,
+    "EndLine": 9392,
+    "TargetContent": "                                            entry.status === 'client_returned' || entry.client_review_status === 'returned' ? '↩ Returned' :\r",
+    "ReplacementContent": "                                            entry.status === 'client_returned' || entry.client_review_status === 'returned' ? ' Returned' :\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 9394,
+    "EndLine": 9394,
+    "TargetContent": "                                            '⏳ Pending Review'}\r",
+    "ReplacementContent": "                                            ' Pending Review'}\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 9400,
+    "EndLine": 9400,
+    "TargetContent": "                                            entry.status === 'client_returned' || entry.client_review_status === 'returned' ? `↩ Returned (${entry.client_review_comment || 'No comment'})` :\r",
+    "ReplacementContent": "                                            entry.status === 'client_returned' || entry.client_review_status === 'returned' ? ` Returned (${entry.client_review_comment || 'No comment'})` :\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 9402,
+    "EndLine": 9402,
+    "TargetContent": "                                            '⏳ Pending Client Review'}\r",
+    "ReplacementContent": "                                            ' Pending Client Review'}\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 9419,
+    "EndLine": 9419,
+    "TargetContent": "                              <span>{clientReviewModalState.action === 'returned' ? '↩ Return Overtime for Correction' : '✕ Reject Overtime'}</span>\r",
+    "ReplacementContent": "                              <span>{clientReviewModalState.action === 'returned' ? ' Return Overtime for Correction' : '✕ Reject Overtime'}</span>\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 9516,
+    "EndLine": 9516,
+    "TargetContent": "                                        <span className=\"px-2 py-0.5 bg-amber-500/20 text-amber-300 rounded font-bold uppercase text-[9.5px]\">⏳ Pending Client Review</span>\r",
+    "ReplacementContent": "                                        <span className=\"px-2 py-0.5 bg-amber-500/20 text-amber-300 rounded font-bold uppercase text-[9.5px]\"> Pending Client Review</span>\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 10291,
+    "EndLine": 10291,
+    "TargetContent": "                                  <option value=\"on-demand\">⚡ On Demand</option>\r",
+    "ReplacementContent": "                                  <option value=\"on-demand\"> On Demand</option>\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 10292,
+    "EndLine": 10292,
+    "TargetContent": "                                  <option value=\"weekly\">📅 Weekly</option>\r",
+    "ReplacementContent": "                                  <option value=\"weekly\"> Weekly</option>\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 10293,
+    "EndLine": 10293,
+    "TargetContent": "                                  <option value=\"bi-weekly\">📅 Bi-Weekly</option>\r",
+    "ReplacementContent": "                                  <option value=\"bi-weekly\"> Bi-Weekly</option>\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 10294,
+    "EndLine": 10294,
+    "TargetContent": "                                  <option value=\"monthly\">📅 Monthly</option>\r",
+    "ReplacementContent": "                                  <option value=\"monthly\"> Monthly</option>\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 10334,
+    "EndLine": 10334,
+    "TargetContent": "                                    <td className=\"py-2\"><span className={`px-2 py-1 rounded text-[10.5px] font-bold uppercase ${s.invoice_schedule === 'on-demand' ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-500/40' : 'bg-amber-50 text-amber-600'}`}>{s.invoice_schedule === 'on-demand' ? '⚡ ON DEMAND (MANUAL)' : (s.invoice_schedule || 'ON DEMAND')}</span></td>\r",
+    "ReplacementContent": "                                    <td className=\"py-2\"><span className={`px-2 py-1 rounded text-[10.5px] font-bold uppercase ${s.invoice_schedule === 'on-demand' ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-500/40' : 'bg-amber-50 text-amber-600'}`}>{s.invoice_schedule === 'on-demand' ? ' ON DEMAND (MANUAL)' : (s.invoice_schedule || 'ON DEMAND')}</span></td>\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 10833,
+    "EndLine": 10833,
+    "TargetContent": "                              <span>🔑 Reset Password</span>\r",
+    "ReplacementContent": "                              <span> Reset Password</span>\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 10874,
+    "EndLine": 10874,
+    "TargetContent": "                    💡 Tip: Click any row to view details, download PDF, or print.\r",
+    "ReplacementContent": "                    Tip: Click any row to view details, download PDF, or print.\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 10948,
+    "EndLine": 10948,
+    "TargetContent": "                        <span>🟢 Monitoring live assignments</span>\r",
+    "ReplacementContent": "                        <span> Monitoring live assignments</span>\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 12121,
+    "EndLine": 12121,
+    "TargetContent": "                    👷 Field Rep\r",
+    "ReplacementContent": "                    Field Rep\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 12128,
+    "EndLine": 12128,
+    "TargetContent": "                    🏢 Client Contact\r",
+    "ReplacementContent": "                    Client Contact\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 12135,
+    "EndLine": 12135,
+    "TargetContent": "                    🛡️ Quality Lead\r",
+    "ReplacementContent": "                    Quality Lead\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 12142,
+    "EndLine": 12142,
+    "TargetContent": "                    💼 Accountant\r",
+    "ReplacementContent": "                    Accountant\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 12149,
+    "EndLine": 12149,
+    "TargetContent": "                    ⚡ System Admin\r",
+    "ReplacementContent": "                    System Admin\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 12335,
+    "EndLine": 12335,
+    "TargetContent": "                      <span>⚡ Open Handover Workflow</span>\r",
+    "ReplacementContent": "                      <span> Open Handover Workflow</span>\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 12397,
+    "EndLine": 12397,
+    "TargetContent": "                <div className=\"w-8 h-8 rounded-xl bg-amber-500 flex items-center justify-center text-slate-950 font-black\">⚡</div>\r",
+    "ReplacementContent": "                <div className=\"w-8 h-8 rounded-xl bg-amber-500 flex items-center justify-center text-slate-950 font-black\"></div>\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 12415,
+    "EndLine": 12415,
+    "TargetContent": "                  <div>⏱️ Logged: <span className=\"text-emerald-400\">4.5 hrs</span></div>\r",
+    "ReplacementContent": "                  <div> Logged: <span className=\"text-emerald-400\">4.5 hrs</span></div>\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 12416,
+    "EndLine": 12416,
+    "TargetContent": "                  <div>📦 Inspected: <span className=\"text-cyan-400\">380 pcs</span></div>\r",
+    "ReplacementContent": "                  <div> Inspected: <span className=\"text-cyan-400\">380 pcs</span></div>\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 12417,
+    "EndLine": 12417,
+    "TargetContent": "                  <div>⚠️ Defects: <span className=\"text-red-400\">12 logged</span></div>\r",
+    "ReplacementContent": "                  <div> Defects: <span className=\"text-red-400\">12 logged</span></div>\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 12479,
+    "EndLine": 12479,
+    "TargetContent": "                <span>⚡ Execute Seamless Transfer</span>\r",
+    "ReplacementContent": "                <span> Execute Seamless Transfer</span>\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 12707,
+    "EndLine": 12707,
+    "TargetContent": "                <h4 className=\"font-bold text-text-primary text-[12.5px] uppercase tracking-wide mb-1 text-[#3B82F6]\">📅 Using the Calendar</h4>\r",
+    "ReplacementContent": "                <h4 className=\"font-bold text-text-primary text-[12.5px] uppercase tracking-wide mb-1 text-[#3B82F6]\"> Using the Calendar</h4>\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 13020,
+    "EndLine": 13020,
+    "TargetContent": "                      <option value=\"on-demand\">⚡ On Demand</option>\r",
+    "ReplacementContent": "                      <option value=\"on-demand\"> On Demand</option>\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 13021,
+    "EndLine": 13021,
+    "TargetContent": "                      <option value=\"weekly\">📅 Weekly</option>\r",
+    "ReplacementContent": "                      <option value=\"weekly\"> Weekly</option>\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 13022,
+    "EndLine": 13022,
+    "TargetContent": "                      <option value=\"bi-weekly\">📅 Bi-Weekly</option>\r",
+    "ReplacementContent": "                      <option value=\"bi-weekly\"> Bi-Weekly</option>\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 13023,
+    "EndLine": 13023,
+    "TargetContent": "                      <option value=\"monthly\">📅 Monthly</option>\r",
+    "ReplacementContent": "                      <option value=\"monthly\"> Monthly</option>\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 13067,
+    "EndLine": 13067,
+    "TargetContent": "                      <option value=\"__new__\">➕ Register New IDS Field Rep...</option>\r",
+    "ReplacementContent": "                      <option value=\"__new__\"> Register New IDS Field Rep...</option>\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 13087,
+    "EndLine": 13087,
+    "TargetContent": "                        <UserPlus className=\"w-4 h-4 text-blue-700\" /> 👤 New IDS Field Rep Details\r",
+    "ReplacementContent": "                        <UserPlus className=\"w-4 h-4 text-blue-700\" /> New IDS Field Rep Details\r",
+    "AllowMultiple": false
+  },
+  {
+    "StartLine": 13492,
+    "EndLine": 13492,
+    "TargetContent": "                💡 <strong>Client Portal Access:</strong> Saving this contact will automatically provision a Customer Contact account (`role: customer`) so they can log in to approve timesheets.\r",
+    "ReplacementContent": "                <strong>Client Portal Access:</strong> Saving this contact will automatically provision a Customer Contact account (`role: customer`) so they can log in to approve timesheets.\r",
+    "AllowMultiple": false
+  }
+]

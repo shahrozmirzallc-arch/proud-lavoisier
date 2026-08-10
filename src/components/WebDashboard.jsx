@@ -132,17 +132,23 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   const [newContactEmail, setNewContactEmail] = useState('');
   const [newContactRole, setNewContactRole] = useState('Customer Quality Manager');
   const [newContactPhone, setNewContactPhone] = useState('');
+  const [addContactError, setAddContactError] = useState('');
 
   const handleSaveContactToSupplier = (e) => {
     if (e && e.preventDefault) e.preventDefault();
+    setAddContactError('');
     if (!addContactSupplier || !newContactName.trim()) {
-      showToast("Please enter contact name.", "error");
+      const errMsg = "Please enter contact name.";
+      setAddContactError(errMsg);
+      showToast(errMsg, "error");
       return;
     }
 
     const cleanEmail = newContactEmail.trim();
     if (!cleanEmail) {
-      showToast("Contact email address is required to create a Client Representative account.", "error");
+      const errMsg = "Contact email address is required to create a Client Representative account.";
+      setAddContactError(errMsg);
+      showToast(errMsg, "error");
       return;
     }
 
@@ -159,7 +165,9 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
         customer_id: addContactSupplier.id
       });
     } catch (err) {
-      showToast(`Creation refused: ${err.message}`, "error");
+      const refusalMsg = `Creation refused: ${err.message}`;
+      setAddContactError(refusalMsg);
+      showToast(refusalMsg, "error");
       return; // STOP EXECUTION: DO NOT SAVE SUPPLIER CONTACT ON DUPLICATE OR INVALID EMAIL
     }
 
@@ -2191,7 +2199,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     // 1. Check if Senior Rep is already locked on another active job
     const seniorActiveProject = allProjects.find(p => 
       (p.rep_id === newSeniorRepId || p.rep_id === targetSeniorRepObj?.id || p.rep_id === targetSeniorRepObj?.name) && 
-      (p.status === 'Active' || p.status === 'ON-SITE')
+      (!p.status || String(p.status).trim().toLowerCase() === 'active' || String(p.status).trim().toLowerCase() === 'on-site')
     );
 
     if (seniorActiveProject && seniorActiveProject.id !== projectId) {
@@ -2278,7 +2286,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     setAssignmentLockAlert(null);
 
     const targetUser = users.find(u => u.name === assignRepName || u.id === assignRepName);
-    const activeProj = projects.find(p => (p.rep_id === targetUser?.id || p.rep_id === assignRepName) && (p.status === 'Active' || p.status === 'ON-SITE'));
+    const activeProj = projects.find(p => (p.rep_id === targetUser?.id || p.rep_id === assignRepName) && (!p.status || String(p.status).trim().toLowerCase() === 'active' || String(p.status).trim().toLowerCase() === 'on-site'));
 
     // Rule 1: Strict Active Assignment Lock Alert
     if (activeProj) {
@@ -2805,7 +2813,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     const desc = (data?.description || "")?.toLowerCase();
     const action = (data?.action_taken || "")?.toLowerCase();
     const status = data?.status || "";
-    const isCritical = status === "Red Alert" || data?.rma_required === "Y" || data?.rma_required === "Yes";
+    const isCritical = status === "Red Alert" || data?.rma_required === "Yes";
     
     const hasCriticalKeywords = 
       desc?.includes("fail") || desc?.includes("safety") || desc?.includes("recall") || 
@@ -7978,7 +7986,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                   <span className="text-blue-800 font-black">{inc.rep_name || 'Clarence Kuiken'}</span>
                                 </div>
                                 <div className="bg-white p-2 rounded-lg border border-slate-200">
-                                  <span className="text-slate-500 block text-[9.5px] uppercase font-bold">Classification</span>
+                                  <span className="text-slate-500 block text-[9.5px] uppercase font-bold">Level of Concern</span>
                                   <span className="text-rose-800 font-black">{inc.concern_classification || 'PRR Containment'}</span>
                                 </div>
                               </div>
@@ -10815,7 +10823,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
             <div className="flex-1 flex flex-col gap-3 min-h-0 text-left">
               {/* Top Summary Row */}
               {(() => {
-                const activeProjects = projects.filter(p => p.status === 'Active');
+                const activeProjects = projects.filter(p => !p.status || String(p.status).trim().toLowerCase() === 'active' || String(p.status).trim().toLowerCase() === 'on-site');
                 const cadBilled = activeProjects
                   .filter(p => p.currency === 'CAD')
                   .reduce((sum, p) => sum + (parseFloat(p.billing_rate) || 0) * 160, 0);
@@ -13396,7 +13404,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 </h4>
                 <span className="text-xs text-slate-500 font-semibold">{addContactSupplier.name}</span>
               </div>
-              <button onClick={() => setAddContactSupplier(null)} className="text-slate-400 hover:text-slate-900 text-lg font-bold cursor-pointer">✕</button>
+              <button onClick={() => { setAddContactSupplier(null); setAddContactError(''); }} className="text-slate-400 hover:text-slate-900 text-lg font-bold cursor-pointer">✕</button>
             </div>
 
             <form onSubmit={handleSaveContactToSupplier} className="flex flex-col gap-3.5">
@@ -13417,7 +13425,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 <input 
                   type="email" 
                   value={newContactEmail} 
-                  onChange={(e) => setNewContactEmail(e.target.value)} 
+                  onChange={(e) => { setNewContactEmail(e.target.value); setAddContactError(''); }} 
                   placeholder="e.g. rsterling@magnapowertrain.com" 
                   className="bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-600"
                   required
@@ -13451,10 +13459,17 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 <strong>Client Portal Access:</strong>Saving this contact will automatically provision a Customer Contact account (`role: customer`) so they can log in to approve timesheets.
               </div>
 
+              {addContactError && (
+                <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700 font-extrabold flex items-center gap-2">
+                  <AlertCircle className="w-4.5 h-4.5 text-rose-600 flex-shrink-0" />
+                  <span>{addContactError}</span>
+                </div>
+              )}
+
               <div className="flex gap-3 mt-2">
                 <button 
                   type="button" 
-                  onClick={() => setAddContactSupplier(null)}
+                  onClick={() => { setAddContactSupplier(null); setAddContactError(''); }}
                   className="flex-1 bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 py-2.5 rounded-xl text-xs font-extrabold transition-colors cursor-pointer"
                 >
                   Cancel
@@ -13536,7 +13551,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
       {/* Floating Toast Notification Overlay */}
       {toast && (
-        <div className={`fixed bottom-6 right-6 z-[100] px-4 py-3 rounded-2xl shadow-2xl border backdrop-blur-md flex items-center gap-3 text-xs font-bold animate-in slide-in-from-bottom duration-200 ${
+        <div className={`fixed bottom-6 right-6 z-[100000] px-4 py-3 rounded-2xl shadow-2xl border backdrop-blur-md flex items-center gap-3 text-xs font-bold animate-in slide-in-from-bottom duration-200 ${
           toast.type === 'error' ? 'bg-rose-950/90 text-rose-200 border-rose-500/40' :
           toast.type === 'warning' ? 'bg-amber-950/90 text-amber-200 border-amber-500/40' :
           toast.type === 'info' ? 'bg-sky-950/90 text-sky-200 border-sky-500/40' :

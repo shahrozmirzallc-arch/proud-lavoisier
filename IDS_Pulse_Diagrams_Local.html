@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>IDS Pulse - Local Standalone System & Field Rep Diagrams</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: #0f172a;
+      color: #f8fafc;
+      margin: 0;
+      padding: 30px;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    .header h1 {
+      color: #38bdf8;
+      font-size: 28px;
+      margin-bottom: 8px;
+    }
+    .header p {
+      color: #94a3b8;
+      font-size: 14px;
+    }
+    .rule-box {
+      background: #0284c715;
+      border: 1px solid #0284c7;
+      border-radius: 12px;
+      padding: 18px 24px;
+      margin-bottom: 30px;
+    }
+    .rule-title {
+      font-weight: 800;
+      color: #38bdf8;
+      font-size: 16px;
+      margin-bottom: 8px;
+    }
+    .rule-desc {
+      color: #e2e8f0;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    .card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 35px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+    }
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      border-bottom: 1px solid #334155;
+      padding-bottom: 15px;
+    }
+    .card-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #f1f5f9;
+    }
+    .btn-group {
+      display: flex;
+      gap: 10px;
+    }
+    .btn {
+      background-color: #0284c7;
+      color: #ffffff;
+      border: none;
+      padding: 9px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn:hover {
+      background-color: #0369a1;
+    }
+    .btn-secondary {
+      background-color: #334155;
+      color: #e2e8f0;
+    }
+    .btn-secondary:hover {
+      background-color: #475569;
+    }
+    .diagram-container {
+      background: #ffffff;
+      padding: 20px;
+      border-radius: 12px;
+      overflow-x: auto;
+      display: flex;
+      justify-content: center;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <h1>IDS Pulse - Local Standalone System Diagrams</h1>
+    <p>Click "Save SVG Locally" or "Save PNG Locally" to export vector graphics directly to your computer.</p>
+  </div>
+
+  <div class="rule-box">
+    <div class="rule-title">MANDATORY ROLE DISTINCTION: IDS REP vs CLIENT REP</div>
+    <div class="rule-desc">
+      • <strong>IDS Rep (IDS Field Inspector / Quality Liaison)</strong>: Employees of Integrity Driven Solutions Inc. (IDS) dispatched to assembly plant floors to perform quality inspections, rework, and log shift hours (e.g. <em>Clarence Kuiken, Hugo Ramos, Nabil, Rogelio</em>).<br>
+      • <strong>Client Rep (Client Contact / Customer Quality Manager)</strong>: Key representatives and quality contacts employed by Client Companies (e.g. <em>Magna, GM, Stellantis, Ford</em>) who review overtime, approve extra hours, and receive published reports (e.g. <em>Robert Sterling, Sarah Jenkins</em>).
+    </div>
+  </div>
+
+  <!-- Diagram 1 Card -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">1. IDS Pulse System Architecture (IDS Rep vs Client Rep Flow)</div>
+      <div class="btn-group">
+        <button class="btn" onclick="downloadSVG('diagram1', 'IDS_Pulse_System_Architecture.svg')">Save SVG Locally</button>
+        <button class="btn btn-secondary" onclick="downloadPNG('diagram1', 'IDS_Pulse_System_Architecture.png')">Save PNG Locally</button>
+      </div>
+    </div>
+    <div class="diagram-container" id="container1">
+      <pre class="mermaid" id="diagram1">
+graph TD
+    subgraph Data_Inputs ["1. Distinct Platform Users & Actors"]
+        IDSRepApp["IDS Field Rep (IDS Staff Inspector)<br>- Clarence Kuiken, Hugo Ramos, Nabil, Rogelio<br>- Dispatched to Assembly Plant Floors<br>- Logs Shift Hours, Defect Holds & Rework Pcs"]
+        
+        AdminWeb["IDS Admin Back-Office (IDS Management)<br>- Donna Cabral, Greg Phillippe, Shahroz Mirza<br>- Manages Projects, Billing Rates & Overtime<br>- Reviews & Publishes Field Reports"]
+        
+        ClientRepWeb["Client Rep (Customer Quality Contact)<br>- Robert Sterling (Magna), Sarah Jenkins (GM)<br>- Employed by Client Assembly Company<br>- Reviews Overtime & Published Reports"]
+    end
+
+    subgraph Data_Engine ["2. Central Engine & Strict Role Isolation (SharedDatabase.js)"]
+        SharedDB[("Authoritative Database & Supabase<br>- incidents, shiftReports, reworkLogs<br>- timeEntries, expenseEntries<br>- projects, suppliers, plants, users, rates")]
+        RoleFilter["Role & Session Access Engine<br>- isFieldRep Guard: Excludes customer/client users<br>- Admin: Full Unrestricted System Access<br>- Client Rep: Filtered by supplier_id & published status<br>- IDS Rep: Filtered by project assignment"]
+    end
+
+    subgraph UI_Modules ["3. UI Render Modules & Role Views (WebDashboard.jsx)"]
+        CommandCenter["IDS Operations Command Center<br>- Real-Time Field Rep Radar<br>- Active Rep Deployments (Clarence, Hugo, Nabil, Rogelio)<br>- Quality Pass Rate & Project Cards"]
+        
+        ReportsHub["Reports Hub (Consolidated Hub 2)<br>- Sub-tab 1: Rep Shift Reports<br>- Sub-tab 2: Incident Defect Holds<br>- Sub-tab 3: Rework & Sorting<br>- Sub-tab 4: Pre-Shift Checklists"]
+        
+        IncidentHeatmap["Incident Feed & Heatmap<br>- 2D Visual Defect Matrix<br>- Supplier & Status Filters"]
+        
+        WorkforceDir["Workforce & Directory Hub<br>- IDS Field Inspectors Roster<br>- Client Companies & Client Quality Contacts"]
+        
+        AccountingHub["Accounting & Finance Hub<br>- Timesheets & Payroll Audit<br>- Overtime Approval Queue<br>- Invoice Generator (USD / CAD)"]
+        
+        ClientPortalView["Client Rep Portal View<br>- Quality Incident Holds Feed<br>- Daily Sorting Progress<br>- Active Containment PO Budget"]
+    end
+
+    IDSRepApp --> SharedDB
+    AdminWeb --> SharedDB
+    ClientRepWeb --> SharedDB
+
+    SharedDB --> RoleFilter
+    RoleFilter --> CommandCenter
+    RoleFilter --> ReportsHub
+    RoleFilter --> IncidentHeatmap
+    RoleFilter --> WorkforceDir
+    RoleFilter --> AccountingHub
+    RoleFilter --> ClientPortalView
+      </pre>
+    </div>
+  </div>
+
+  <!-- Diagram 2 Card -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">2. Field Rep Reports & Lifecycle Pipeline</div>
+      <div class="btn-group">
+        <button class="btn" onclick="downloadSVG('diagram2', 'IDS_Pulse_Field_Rep_Reports.svg')">Save SVG Locally</button>
+        <button class="btn btn-secondary" onclick="downloadPNG('diagram2', 'IDS_Pulse_Field_Rep_Reports.png')">Save PNG Locally</button>
+      </div>
+    </div>
+    <div class="diagram-container" id="container2">
+      <pre class="mermaid" id="diagram2">
+graph TD
+    subgraph Rep_Role ["1. IDS Field Rep (IDS Staff Inspector)"]
+        Inspector["IDS Field Quality Inspector<br>(Clarence Kuiken, Hugo Ramos, Nabil, Rogelio)"]
+    end
+
+    subgraph Rep_Reports ["2. IDS Field Rep 6 Core Report Types"]
+        R1["1. Daily Shift Walkthrough Report (shiftReports)<br>- Inspected Pcs & Pass/Fail Yield<br>- Hours Worked & Shift Duration<br>- Floor Notes & Area Walk Photos"]
+        R2["2. Incident Defect Hold Report (incidents)<br>- P1/P2/P3 Severity Hold<br>- Part Number & Defect Description<br>- 2D Image Coordinates (X, Y)"]
+        R3["3. Defect Rework & Sorting Log (reworkLogs)<br>- Batch Sorting & Rework Pcs<br>- Tooling & Seating Adjustments"]
+        R4["4. Pre-Shift Safety & Quality Checklist (preShiftChecklists)<br>- PPE Safety Compliance<br>- Station Cleanliness & Gauge Check"]
+        R5["5. Shift Hours & Mileage Log (timeEntries)<br>- Regular & Overtime Hours<br>- Mileage (KM) Driven ($0.73/km)"]
+        R6["6. Inspector Expense Claim (expenseEntries)<br>- Travel, Tolls, Lodging, Tools<br>- External Billed vs Internal"]
+    end
+
+    subgraph Engine ["3. Processing & Validation Engine"]
+        OfflineQueue["Offline Storage & Queue<br>- Persists reports if plant Wi-Fi drops"]
+        Validation["Database Validation & Auto-Stamping<br>- Stamps supplier_id, plant_id, rep_id<br>- Evaluates OT Rules & USD/CAD Currency"]
+        StatusPipeline{"Status Lifecycle"}
+    end
+
+    subgraph Outputs ["4. Admin Review & Client Rep Presentation"]
+        AdminView["Admin Dashboard (WebDashboard)<br>- Consolidated Hub 2: REPORTS HUB<br>- Incident Feed & 2D Defect Heatmap<br>- Admin Publish Action ('Submitted' -> 'published')"]
+        ClientView["Client Rep Portal View<br>- Client Quality Manager Access<br>- Real-time Published Holds Feed<br>- PO Budget Spend Tracker"]
+        ExportDocs["Official Report PDF / Excel Exports<br>- IDS Official Daily Quality PDF Report<br>- Executive Timesheet Audit PDF<br>- Client Invoice PDF with Logo"]
+    end
+
+    Inspector --> R1
+    Inspector --> R2
+    Inspector --> R3
+    Inspector --> R4
+    Inspector --> R5
+    Inspector --> R6
+
+    R1 --> OfflineQueue
+    R2 --> OfflineQueue
+    R3 --> OfflineQueue
+    R4 --> OfflineQueue
+    R5 --> OfflineQueue
+    R6 --> OfflineQueue
+
+    OfflineQueue --> Validation
+    Validation --> StatusPipeline
+
+    StatusPipeline -->|"Status: 'Submitted'"| AdminView
+    AdminView -->|"Status: 'published'"| ClientView
+    AdminView --> ExportDocs
+    ClientView --> ExportDocs
+      </pre>
+    </div>
+  </div>
+
+  <script>
+    mermaid.initialize({ startOnLoad: true, theme: 'default' });
+
+    function downloadSVG(diagramId, filename) {
+      const container = document.getElementById(diagramId).parentElement;
+      const svgElement = container.querySelector('svg');
+      if (!svgElement) {
+        alert('Diagram is rendering, please wait...');
+        return;
+      }
+      const serializer = new XMLSerializer();
+      let svgString = serializer.serializeToString(svgElement);
+      const blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    function downloadPNG(diagramId, filename) {
+      const container = document.getElementById(diagramId).parentElement;
+      const svgElement = container.querySelector('svg');
+      if (!svgElement) {
+        alert('Diagram is rendering, please wait...');
+        return;
+      }
+      const serializer = new XMLSerializer();
+      const svgString = serializer.serializeToString(svgElement);
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+      const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(svgBlob);
+      
+      img.onload = function() {
+        canvas.width = img.width * 2;
+        canvas.height = img.height * 2;
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        const pngUrl = canvas.toDataURL('image/png');
+        const link = document.createElement('a');
+        link.href = pngUrl;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      };
+      img.src = url;
+    }
+  </script>
+</body>
+</html>

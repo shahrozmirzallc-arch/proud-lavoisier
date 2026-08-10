@@ -42,7 +42,7 @@ export function normalizeAndMergeShiftAreas(savedAreas = []) {
       id: `wa_${idx + 1}`,
       name: cName,
       status: 'pending',
-      contact: 'Martin',
+      spoke_with: '',
       notes: ''
     });
   });
@@ -57,7 +57,7 @@ export function normalizeAndMergeShiftAreas(savedAreas = []) {
         mergedMap.set(formattedName, {
           ...existing,
           status: item.status && item.status !== 'pending' ? item.status : (existing.status !== 'pending' ? existing.status : item.status || 'pending'),
-          contact: item.contact || existing.contact,
+          spoke_with: item.spoke_with || item.contact || existing.spoke_with || '',
           notes: item.notes ? item.notes : existing.notes
         });
       } else {
@@ -66,7 +66,7 @@ export function normalizeAndMergeShiftAreas(savedAreas = []) {
           id: item.id || `wa_custom_${Math.random().toString(36).substring(2, 6)}`,
           name: formattedName,
           status: item.status || 'pending',
-          contact: item.contact || 'Plant Floor Contact',
+          spoke_with: item.spoke_with || item.contact || '',
           notes: item.notes || ''
         });
       }

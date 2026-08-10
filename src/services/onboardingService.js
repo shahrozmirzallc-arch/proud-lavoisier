@@ -185,7 +185,7 @@ export async function performAtomicClientOnboarding(rawPayload) {
         billing_rate: validated.billing_rate,
         pay_rate: validated.pay_rate,
         currency: validated.currency,
-        status: 'Active',
+        status: 'active',
         start_date: validated.start_date
       });
 
@@ -275,7 +275,7 @@ export async function performAtomicClientOnboarding(rawPayload) {
     billing_rate: validated.billing_rate,
     pay_rate: validated.pay_rate,
     currency: validated.currency,
-    status: 'Active',
+    status: 'active',
     start_date: validated.start_date
   };
 
@@ -326,11 +326,27 @@ export async function performAtomicClientOnboarding(rawPayload) {
     }
   }
 
+  // Clean project object for Supabase table upsert (only valid database columns)
+  const dbProjectObj = {
+    id: projectId,
+    name: validated.project_name,
+    supplier_id: supplierId,
+    client_id: supplierId,
+    plant_id: plantId,
+    rep_id: validated.rep_id,
+    po_hours: validated.allotted_hours,
+    billing_rate: validated.billing_rate,
+    pay_rate: validated.pay_rate,
+    currency: validated.currency,
+    status: 'active',
+    start_date: validated.start_date
+  };
+
   // Upsert to Supabase with Promise.resolve safety
   Promise.allSettled([
     Promise.resolve(supabase.from('suppliers').upsert(supplierObj)),
     Promise.resolve(supabase.from('plants').upsert(plantObj)),
-    Promise.resolve(supabase.from('projects').upsert(projectObj)),
+    Promise.resolve(supabase.from('projects').upsert(dbProjectObj)),
     Promise.resolve(supabase.from('rates').upsert(rateObj))
   ]).then((results) => {
     results.forEach((res, idx) => {

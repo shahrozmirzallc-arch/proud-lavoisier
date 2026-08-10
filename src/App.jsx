@@ -678,7 +678,7 @@ function App() {
       {import.meta.env.VITE_DEMO_MODE === 'true' && (
         <div className="bg-amber-500 text-slate-950 font-bold text-center py-1.5 px-4 text-xs uppercase tracking-wider flex items-center justify-center gap-2 sticky top-0 z-50 shadow-md">
           <AlertTriangle className="w-4 h-4 shrink-0 text-slate-950" />
-          <span>DEMO MODE — Simulated Data (Not Connected to Production Database)</span>
+          <span>DEMO MODE - Simulated Data (Not Connected to Production Database)</span>
         </div>
       )}
       

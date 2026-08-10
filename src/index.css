@@ -263,7 +263,7 @@ input[type="number"] {
 
 .phone-toggle-btn {
   flex: 1;
-  min-height: 38px;
+  min-height: 44px;
   font-size: 13px;
   font-weight: 700;
   border-radius: 8px;

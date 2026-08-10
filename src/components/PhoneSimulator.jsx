@@ -312,9 +312,9 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
   const [selectedSupplierContactIds, setSelectedSupplierContactIds] = useState([]);
   const [supplierContactSearch, setSupplierContactSearch] = useState('');
   const [supplierContact, setSupplierContact] = useState('');
-  const [isReturningDefect, setIsReturningDefect] = useState('N');
-  const [isSortRequired, setIsSortRequired] = useState('N');
-  const [isRmaRequired, setIsRmaRequired] = useState('N');
+  const [isReturningDefect, setIsReturningDefect] = useState('Unknown');
+  const [isSortRequired, setIsSortRequired] = useState('Unknown');
+  const [isRmaRequired, setIsRmaRequired] = useState('Unknown');
   const [rmaNumber, setRmaNumber] = useState('');
 
   const getSupplierName = (supId) => {
@@ -338,7 +338,8 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
     const res = resolveAssignmentContacts({
       assignment: activeAssignment || { supplier_id: clientId, billing_customer_id: clientId },
       contactsList: dbContacts,
-      suppliersList: dbSuppliers
+      suppliersList: dbSuppliers,
+      usersDirectory: dbUsers
     });
 
     const matchedContacts = [];
@@ -488,7 +489,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
           valid: false,
           errorStep: 1,
           code: 'NO_ASSIGNMENT_RESOLVED',
-          message: 'An authoritative project assignment is required to release an incident report. Please select an active assignment.'
+          message: 'No active project assignment found for your account. Please contact an IDS Administrator to assign an active plant project.'
         };
       }
 
@@ -520,6 +521,26 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
     window.__setIncStep = (step) => {
       setActiveScreen('incident');
       setIncStep(step);
+    };
+    window.__setMediaUnavailable = (reason, note = '') => {
+      setMediaEvidenceStatus('unavailable');
+      setMediaUnavailableReason(reason || 'No Camera Available');
+      setMediaUnavailableNote(note);
+    };
+    window.__setPartNumber = (pn) => {
+      setScannedPN(pn);
+      setPartChoice('manual');
+      setAffectedParts([{ id: `sp_${Date.now()}`, part_number: pn, bin: 'N/A' }]);
+    };
+    window.__setIncidentField = (field, value) => {
+      if (field === 'area') setSelectedArea(value);
+      if (field === 'defect_type') setDefectType(value);
+      if (field === 'description') setDescription(value);
+      if (field === 'action_taken') setActionTaken(value);
+      if (field === 'concern_classification') setConcernClassification(value);
+      if (field === 'returned_to_supplier') setIsReturningDefect(value);
+      if (field === 'sort_requested') setIsSortRequired(value);
+      if (field === 'rma_required') setIsRmaRequired(value);
     };
     if (currentUser?.id) {
       const draftKey = `ids_incident_draft_${currentUser.id}`;
@@ -568,9 +589,18 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
     if (savedDraftObject.actionTaken !== undefined) setActionTaken(savedDraftObject.actionTaken);
     if (savedDraftObject.selectedSupplierContactIds !== undefined) setSelectedSupplierContactIds(savedDraftObject.selectedSupplierContactIds);
     if (savedDraftObject.supplierContact !== undefined) setSupplierContact(savedDraftObject.supplierContact);
-    if (savedDraftObject.isReturningDefect !== undefined) setIsReturningDefect(savedDraftObject.isReturningDefect);
-    if (savedDraftObject.isSortRequired !== undefined) setIsSortRequired(savedDraftObject.isSortRequired);
-    if (savedDraftObject.isRmaRequired !== undefined) setIsRmaRequired(savedDraftObject.isRmaRequired);
+    if (savedDraftObject.isReturningDefect !== undefined) {
+      const v = savedDraftObject.isReturningDefect;
+      setIsReturningDefect(v === 'Y' || v === 'Yes' ? 'Yes' : v === 'N' || v === 'No' ? 'No' : 'Unknown');
+    }
+    if (savedDraftObject.isSortRequired !== undefined) {
+      const v = savedDraftObject.isSortRequired;
+      setIsSortRequired(v === 'Y' || v === 'Yes' ? 'Yes' : v === 'N' || v === 'No' ? 'No' : 'Unknown');
+    }
+    if (savedDraftObject.isRmaRequired !== undefined) {
+      const v = savedDraftObject.isRmaRequired;
+      setIsRmaRequired(v === 'Y' || v === 'Yes' ? 'Yes' : v === 'N' || v === 'No' ? 'No' : 'Unknown');
+    }
     if (savedDraftObject.rmaNumber !== undefined) setRmaNumber(savedDraftObject.rmaNumber);
     if (savedDraftObject.concernClassification !== undefined) setConcernClassification(savedDraftObject.concernClassification);
 
@@ -706,9 +736,9 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
     setSelectedSupplierContactIds([]);
     setSupplierContactSearch('');
     setSupplierContact('');
-    setIsReturningDefect('N');
-    setIsSortRequired('N');
-    setIsRmaRequired('N');
+    setIsReturningDefect('Unknown');
+    setIsSortRequired('Unknown');
+    setIsRmaRequired('Unknown');
     setRmaNumber('');
     setConcernClassification('');
     setIncStep(1);
@@ -2112,22 +2142,18 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
     } else {
       setSupplierContact('Robert Sterling, Elena Rostova');
     }
-    setIsReturningDefect('N');
-    setIsSortRequired('N');
-    setIsRmaRequired('N');
+    setIsReturningDefect('Unknown');
+    setIsSortRequired('Unknown');
+    setIsRmaRequired('Unknown');
     setConcernClassification('PRR');
   };
 
   // AUTHORITATIVE SUBMIT / RELEASE INCIDENT HANDLER (Sections 1, 5, 6, 7)
   const handleSendIncident = async () => {
-    // 1. Run Centralized Validation
-    const validation = validateIncidentWorkflow(4);
-    if (!validation.valid) {
-      showToast(validation.message, "warning");
-      if (validation.code.startsWith('MEDIA_')) {
-        setShowMissingMediaDialog(true);
-      }
-      setIncStep(validation.errorStep);
+    const valResult = validateIncidentWorkflow(4);
+    if (!valResult.valid) {
+      showToast(valResult.message || "Please complete required fields.", "error");
+      setIncStep(valResult.errorStep || 1);
       return;
     }
 
@@ -2184,9 +2210,9 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
       const resolvedPlantId = activeProj.plant_id;
       const resolvedProjectId = activeProj.id;
 
-      const dbSuppliers = getEntities('suppliers') || [];
+      const dbUsers = getEntities('users') || [];
       const selectedContacts = getAvailableSupplierContacts().filter(c => selectedSupplierContactIds.includes(c.id));
-      const recipientSnapshot = buildRecipientSnapshot(selectedContacts, dbSuppliers);
+      const recipientSnapshot = buildRecipientSnapshot(selectedContacts, dbUsers);
 
       // Upload base64 photos to Cloudinary before incident release
       const uploadedPhotos = await Promise.all(
@@ -2260,10 +2286,10 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
         supplier_contact_ids: selectedSupplierContactIds || [],
         supplier_contacts_snapshot: recipientSnapshot,
         supplier_contact: selectedContacts.map(c => c.name).join(', ') || supplierContact || null,
-        returned_to_supplier: isReturningDefect === 'Y',
-        sort_requested: isSortRequired === 'Y',
-        rma_required: isRmaRequired === 'Y',
-        rma_number: isRmaRequired === 'Y' && rmaNumber ? rmaNumber.trim() : null,
+        returned_to_supplier: isReturningDefect,
+        sort_requested: isSortRequired,
+        rma_required: isRmaRequired,
+        rma_number: isRmaRequired === 'Yes' && rmaNumber ? rmaNumber.trim() : null,
         concern_classification: concernClassification ? concernClassification.trim() : null,
 
         created_at: new Date().toISOString()
@@ -3728,7 +3754,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                 <div className="flex flex-col gap-3 relative">
                   <div className="flex justify-between items-center bg-slate-100/70 p-2.5 rounded-xl border border-slate-200">
                     <div>
-                      <span className="text-[11.5px] text-[#008F72] font-black uppercase tracking-wider block">Visual Evidence — Optional</span>
+                      <span className="text-[11.5px] text-[#008F72] font-black uppercase tracking-wider block">Visual Evidence - Optional</span>
                       <span className="text-[10px] text-slate-500 font-medium">Add a photo or video when it is safe and available.</span>
                     </div>
                   </div>
@@ -3738,7 +3764,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                       <div className="flex items-center gap-2">
                         <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
                         <div>
-                          <span className="text-xs font-black text-amber-900 block">No media — {mediaUnavailableReason}</span>
+                          <span className="text-xs font-black text-amber-900 block">No media - {mediaUnavailableReason}</span>
                           {mediaUnavailableNote && <span className="text-[10px] text-amber-700">{mediaUnavailableNote}</span>}
                         </div>
                       </div>
@@ -4100,7 +4126,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
 
                         <div className="grid grid-cols-2 gap-2">
                           <div className="flex flex-col gap-1">
-                            <label className="text-[10px] font-bold text-slate-600">Serial/Lot # — Optional</label>
+                            <label className="text-[10px] font-bold text-slate-600">Serial/Lot # - Optional</label>
                             <input
                               type="text"
                               value={manualLotInput}
@@ -4110,7 +4136,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                             />
                           </div>
                           <div className="flex flex-col gap-1">
-                            <label className="text-[10px] font-bold text-slate-600">Quantity — Optional</label>
+                            <label className="text-[10px] font-bold text-slate-600">Quantity - Optional</label>
                             <input
                               type="number"
                               value={manualQtyInput}
@@ -4142,7 +4168,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                     {/* CHOICE 3 FORM: Part Number Not Available (Section 7) */}
                     {(partChoice === 'unavailable' || traceabilityStatus === 'unavailable') && (
                       <div className="flex flex-col gap-2 pt-2 border-t border-amber-200 bg-amber-50/70 p-3 rounded-xl border border-amber-200">
-                        <span className="text-[11px] font-extrabold text-amber-900">Why is the part number unavailable? — Optional</span>
+                        <span className="text-[11px] font-extrabold text-amber-900">Why is the part number unavailable? - Optional</span>
 
                         <select
                           value={unavailableReason || ''}
@@ -4158,7 +4184,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                         </select>
 
                         <div className="flex flex-col gap-1">
-                          <label className="text-[10px] font-bold text-amber-900">Add a note — Optional</label>
+                          <label className="text-[10px] font-bold text-amber-900">Add a note - Optional</label>
                           <textarea
                             rows={2}
                             value={unavailableNote}
@@ -4181,7 +4207,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                     <div className="bg-amber-50 border-2 border-amber-400 p-3 rounded-xl flex flex-col gap-2 shadow-md">
                       <div className="flex items-center gap-2 text-amber-900 font-extrabold text-xs leading-snug">
                         <AlertTriangle className="w-4.5 h-4.5 text-amber-600 shrink-0" />
-                        <span>Possible mislabel — the scanned label does not match the expected part.</span>
+                        <span>Possible mislabel - the scanned label does not match the expected part.</span>
                       </div>
                       <p className="text-[11px] text-amber-800 font-medium">
                         Scanned code: <code className="font-mono font-bold text-slate-900 bg-amber-100 px-1 py-0.5 rounded">{mislabelWarning.scannedValue}</code> vs Expected part: <code className="font-mono font-bold text-slate-900 bg-amber-100 px-1 py-0.5 rounded">{mislabelWarning.expectedPartNumber}</code>
@@ -4354,7 +4380,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                     <div className="flex items-center justify-between">
                       <div>
                         <span className="text-[11.5px] font-black text-slate-800 uppercase tracking-wider block">
-                          Section 2: Tote or Container Information — Optional
+                          Section 2: Tote or Container Information - Optional
                         </span>
                         <span className="text-[10px] text-slate-500 font-medium">
                           Add this information only when a tote, bin, box or container label is available.
@@ -4474,7 +4500,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                     {/* CHOICE 3 CONTAINER FORM: No Container Label Reason (Section 13) */}
                     {(containerChoice === 'unavailable' || containerTraceabilityStatus === 'unavailable') && (
                       <div className="flex flex-col gap-2 pt-2 border-t border-slate-300 bg-slate-100 p-2.5 rounded-xl border border-slate-200 text-left">
-                        <span className="text-[11px] font-extrabold text-slate-800">Reason container label is unavailable — Optional</span>
+                        <span className="text-[11px] font-extrabold text-slate-800">Reason container label is unavailable - Optional</span>
                         <select
                           value={containerUnavailableReason || ''}
                           onChange={(e) => setContainerUnavailableReason(e.target.value || null)}
@@ -4908,23 +4934,23 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                       {/* Returned to Supplier? */}
                       <div className="flex justify-between items-center bg-white p-2.5 rounded-xl border border-slate-200 shadow-2xs">
                         <span className="text-slate-800 font-bold">Returned to Supplier?</span>
-                        <div className="phone-toggle-group w-48 min-h-[44px]">
+                        <div className="phone-toggle-group w-52 min-h-[44px]">
                           <button
                             type="button"
-                            aria-pressed={isReturningDefect === 'Y'}
-                            onClick={() => setIsReturningDefect('Y')}
-                            className={`flex-1 min-h-[44px] phone-toggle-btn transition-all text-[11px] font-extrabold ${
-                              isReturningDefect === 'Y' ? 'active-yes' : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
+                            aria-pressed={isReturningDefect === 'Yes'}
+                            onClick={() => setIsReturningDefect('Yes')}
+                            className={`flex-1 min-h-[44px] phone-toggle-btn transition-all font-extrabold ${
+                              isReturningDefect === 'Yes' ? 'active-yes' : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
                             }`}
                           >
                             Yes
                           </button>
                           <button
                             type="button"
-                            aria-pressed={isReturningDefect === 'N'}
-                            onClick={() => setIsReturningDefect('N')}
-                            className={`flex-1 min-h-[44px] phone-toggle-btn transition-all text-[11px] font-extrabold ${
-                              isReturningDefect === 'N' ? 'active-no' : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
+                            aria-pressed={isReturningDefect === 'No'}
+                            onClick={() => setIsReturningDefect('No')}
+                            className={`flex-1 min-h-[44px] phone-toggle-btn transition-all font-extrabold ${
+                              isReturningDefect === 'No' ? 'active-no' : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
                             }`}
                           >
                             No
@@ -4933,7 +4959,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                             type="button"
                             aria-pressed={isReturningDefect === 'Unknown'}
                             onClick={() => setIsReturningDefect('Unknown')}
-                            className={`flex-1 min-h-[44px] phone-toggle-btn transition-all text-[10.5px] font-extrabold ${
+                            className={`flex-1 min-h-[44px] phone-toggle-btn transition-all font-extrabold ${
                               isReturningDefect === 'Unknown' ? 'bg-amber-500 text-white font-black' : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
                             }`}
                           >
@@ -4945,23 +4971,23 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                       {/* Sort Requested? */}
                       <div className="flex justify-between items-center bg-white p-2.5 rounded-xl border border-slate-200 shadow-2xs">
                         <span className="text-slate-800 font-bold">Sort Requested?</span>
-                        <div className="phone-toggle-group w-48 min-h-[44px]">
+                        <div className="phone-toggle-group w-52 min-h-[44px]">
                           <button
                             type="button"
-                            aria-pressed={isSortRequired === 'Y'}
-                            onClick={() => setIsSortRequired('Y')}
-                            className={`flex-1 min-h-[44px] phone-toggle-btn transition-all text-[11px] font-extrabold ${
-                              isSortRequired === 'Y' ? 'active-yes' : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
+                            aria-pressed={isSortRequired === 'Yes'}
+                            onClick={() => setIsSortRequired('Yes')}
+                            className={`flex-1 min-h-[44px] phone-toggle-btn transition-all font-extrabold ${
+                              isSortRequired === 'Yes' ? 'active-yes' : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
                             }`}
                           >
                             Yes
                           </button>
                           <button
                             type="button"
-                            aria-pressed={isSortRequired === 'N'}
-                            onClick={() => setIsSortRequired('N')}
-                            className={`flex-1 min-h-[44px] phone-toggle-btn transition-all text-[11px] font-extrabold ${
-                              isSortRequired === 'N' ? 'active-no' : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
+                            aria-pressed={isSortRequired === 'No'}
+                            onClick={() => setIsSortRequired('No')}
+                            className={`flex-1 min-h-[44px] phone-toggle-btn transition-all font-extrabold ${
+                              isSortRequired === 'No' ? 'active-no' : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
                             }`}
                           >
                             No
@@ -4970,7 +4996,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                             type="button"
                             aria-pressed={isSortRequired === 'Unknown'}
                             onClick={() => setIsSortRequired('Unknown')}
-                            className={`flex-1 min-h-[44px] phone-toggle-btn transition-all text-[10.5px] font-extrabold ${
+                            className={`flex-1 min-h-[44px] phone-toggle-btn transition-all font-extrabold ${
                               isSortRequired === 'Unknown' ? 'bg-amber-500 text-white font-black' : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
                             }`}
                           >
@@ -4982,26 +5008,26 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                       {/* RMA Required? */}
                       <div className="flex justify-between items-center bg-white p-2.5 rounded-xl border border-slate-200 shadow-2xs">
                         <span className="text-slate-800 font-bold">RMA Required?</span>
-                        <div className="phone-toggle-group w-48 min-h-[44px]">
+                        <div className="phone-toggle-group w-52 min-h-[44px]">
                           <button
                             type="button"
-                            aria-pressed={isRmaRequired === 'Y'}
-                            onClick={() => setIsRmaRequired('Y')}
-                            className={`flex-1 min-h-[44px] phone-toggle-btn transition-all text-[11px] font-extrabold ${
-                              isRmaRequired === 'Y' ? 'active-yes' : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
+                            aria-pressed={isRmaRequired === 'Yes'}
+                            onClick={() => setIsRmaRequired('Yes')}
+                            className={`flex-1 min-h-[44px] phone-toggle-btn transition-all font-extrabold ${
+                              isRmaRequired === 'Yes' ? 'active-yes' : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
                             }`}
                           >
                             Yes
                           </button>
                           <button
                             type="button"
-                            aria-pressed={isRmaRequired === 'N'}
+                            aria-pressed={isRmaRequired === 'No'}
                             onClick={() => {
-                              setIsRmaRequired('N');
+                              setIsRmaRequired('No');
                               setRmaNumber('');
                             }}
-                            className={`flex-1 min-h-[44px] phone-toggle-btn transition-all text-[11px] font-extrabold ${
-                              isRmaRequired === 'N' ? 'active-no' : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
+                            className={`flex-1 min-h-[44px] phone-toggle-btn transition-all font-extrabold ${
+                              isRmaRequired === 'No' ? 'active-no' : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
                             }`}
                           >
                             No
@@ -5013,7 +5039,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                               setIsRmaRequired('Unknown');
                               setRmaNumber('');
                             }}
-                            className={`flex-1 min-h-[44px] phone-toggle-btn transition-all text-[10.5px] font-extrabold ${
+                            className={`flex-1 min-h-[44px] phone-toggle-btn transition-all font-extrabold ${
                               isRmaRequired === 'Unknown' ? 'bg-amber-500 text-white font-black' : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
                             }`}
                           >
@@ -5023,9 +5049,9 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                       </div>
 
                       {/* Optional RMA Number input if RMA Required */}
-                      {isRmaRequired === 'Y' && (
+                      {isRmaRequired === 'Yes' && (
                         <div className="flex flex-col gap-1 bg-blue-50/50 p-2.5 rounded-xl border border-blue-200 animate-in fade-in-50 duration-150">
-                          <label className="text-[10.5px] font-bold text-blue-900">RMA Number — Optional</label>
+                          <label className="text-[10.5px] font-bold text-blue-900">RMA Number - Optional</label>
                           <input
                             type="text"
                             value={rmaNumber}
@@ -5054,8 +5080,8 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                       ]}
                       value={concernClassification}
                       onChange={(newVal) => setConcernClassification(newVal)}
-                      placeholder="Select classification..."
-                      customInputLabel="Enter custom concern classification"
+                      placeholder="Select Level of Concern..."
+                      customInputLabel="Enter custom Level of Concern"
                       customInputPlaceholder="Example: Engineering Hold Notice #402..."
                     />
                   </div>
@@ -5075,6 +5101,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                         const validation = validateIncidentWorkflow(4);
                         if (!validation.valid) {
                           showToast(validation.message, "warning");
+                          if (validation.errorStep) setIncStep(validation.errorStep);
                           return;
                         }
                         setIncStep(4);
@@ -5324,20 +5351,32 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                       <div className="grid grid-cols-2 gap-2 text-[11.5px]">
                         <div className="bg-slate-50 p-2 rounded-lg border border-slate-200 flex justify-between items-center">
                           <span className="text-slate-600 font-bold">Returned:</span>
-                          <span className={`px-2 py-0.5 rounded text-[10.5px] font-extrabold ${isReturningDefect === 'Y' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}`}>
-                            {isReturningDefect === 'Y' ? 'Yes' : 'No'}
+                          <span className={`px-2 py-0.5 rounded text-[10.5px] font-extrabold ${
+                            isReturningDefect === 'Yes' ? 'bg-emerald-100 text-emerald-800' :
+                            isReturningDefect === 'No' ? 'bg-rose-100 text-rose-800' :
+                            'bg-amber-100 text-amber-900 border border-amber-300'
+                          }`}>
+                            {isReturningDefect}
                           </span>
                         </div>
                         <div className="bg-slate-50 p-2 rounded-lg border border-slate-200 flex justify-between items-center">
                           <span className="text-slate-600 font-bold">Sort Requested:</span>
-                          <span className={`px-2 py-0.5 rounded text-[10.5px] font-extrabold ${isSortRequired === 'Y' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}`}>
-                            {isSortRequired === 'Y' ? 'Yes' : 'No'}
+                          <span className={`px-2 py-0.5 rounded text-[10.5px] font-extrabold ${
+                            isSortRequired === 'Yes' ? 'bg-emerald-100 text-emerald-800' :
+                            isSortRequired === 'No' ? 'bg-rose-100 text-rose-800' :
+                            'bg-amber-100 text-amber-900 border border-amber-300'
+                          }`}>
+                            {isSortRequired}
                           </span>
                         </div>
                         <div className="bg-slate-50 p-2 rounded-lg border border-slate-200 flex justify-between items-center col-span-2">
                           <span className="text-slate-600 font-bold">RMA Required:</span>
-                          <span className={`px-2 py-0.5 rounded text-[10.5px] font-extrabold ${isRmaRequired === 'Y' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}`}>
-                            {isRmaRequired === 'Y' ? `Yes (${rmaNumber || 'No code entered'})` : 'No'}
+                          <span className={`px-2 py-0.5 rounded text-[10.5px] font-extrabold ${
+                            isRmaRequired === 'Yes' ? 'bg-emerald-100 text-emerald-800' :
+                            isRmaRequired === 'No' ? 'bg-rose-100 text-rose-800' :
+                            'bg-amber-100 text-amber-900 border border-amber-300'
+                          }`}>
+                            {isRmaRequired === 'Yes' ? `Yes (${rmaNumber || 'No code entered'})` : isRmaRequired}
                           </span>
                         </div>
                         {concernClassification && (
@@ -5439,7 +5478,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                             </div>
                             <div className="bg-white p-2.5 rounded-lg border border-slate-200 text-slate-800 text-[10.5px] space-y-1.5">
                               <p className="font-bold">IDS PULSE URGENT QUALITY INCIDENT NOTIFICATION</p>
-                              <p><strong>Plant / Location:</strong> {plants.find(p => p.id === selectedPlant)?.name || selectedPlant} — {selectedArea}</p>
+                              <p><strong>Plant / Location:</strong> {plants.find(p => p.id === selectedPlant)?.name || selectedPlant} - {selectedArea}</p>
                               <p><strong>Suspect Defect:</strong> {description}</p>
                               {actionTaken && <p><strong>Action Taken:</strong> {actionTaken}</p>}
                               <p><strong>Traceability / Media:</strong> {affectedParts.length} parts listed | {evidenceList.length} photos attached</p>

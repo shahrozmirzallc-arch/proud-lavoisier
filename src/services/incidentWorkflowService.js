@@ -30,7 +30,8 @@ export function resolveAuthoritativeAssignment({ currentUser, selectedAssignment
     const repId = String(asgn.rep_id || '').trim();
     const repIds = Array.isArray(asgn.rep_ids) ? asgn.rep_ids.map(id => String(id).trim()) : [];
     const isOwner = repId === currentUserIdStr || repIds.includes(currentUserIdStr);
-    const isActive = !asgn.status || asgn.status === 'active';
+    const statusStr = String(asgn.status || '').trim().toLowerCase();
+    const isActive = !asgn.status || statusStr === 'active' || statusStr === 'on-site';
     return isOwner && isActive;
   });
 
@@ -101,15 +102,14 @@ export const MANDATORY_INTERNAL_CC_CONFIG = [
  * @returns {Array} Immutable recipient snapshot objects including mandatory CCs
  */
 export function buildRecipientSnapshot(contacts = [], usersDirectory = []) {
+  const dirList = (Array.isArray(usersDirectory) && usersDirectory.length > 0) ? usersDirectory : (getEntities('users') || []);
   const mandatorySnapshots = MANDATORY_INTERNAL_CC_CONFIG.map(m => {
-    const dirUser = Array.isArray(usersDirectory)
-      ? usersDirectory.find(u => u && (
-          u.id === m.id || 
-          String(u.username || '').toLowerCase() === m.username || 
-          String(u.id || '').toLowerCase() === m.username ||
-          (u.name && u.name.toLowerCase().includes(m.username))
-        ))
-      : null;
+    const dirUser = dirList.find(u => u && (
+      u.id === m.id || 
+      String(u.username || '').toLowerCase() === m.username || 
+      String(u.id || '').toLowerCase() === m.username ||
+      (u.name && u.name.toLowerCase().includes(m.username))
+    ));
 
     if (!dirUser || !dirUser.email) {
       throw new Error(`CRITICAL RECIPIENT RESOLUTION FAILURE: Mandatory internal CC user "${m.username}" could not be resolved from authoritative user directory.`);
@@ -271,12 +271,23 @@ export async function releaseIncidentToClient({ incidentPayload, isOffline, curr
     });
 
     if (error || !validateServerReleaseResponse(data, incidentPayload)) {
+      console.warn('[IncidentWorkflowService] RPC unavailable or errored:', error);
+      const localInc = saveEntity('incidents', {
+        ...incidentPayload,
+        id: incidentPayload.id || `INC-LOCAL-${Date.now()}`,
+        status: 'Draft',
+        released_to_client: false,
+        sync_error: error ? (error.message || JSON.stringify(error)) : 'Invalid server response'
+      });
       return {
         success: false,
         isOffline: false,
         release_status: 'sync_failed',
         status: 'Sync Failed',
-        message: 'Authoritative server response was invalid or missing required fields.'
+        incident: localInc,
+        tracking_ref: localInc.id,
+        activity_message: 'Server release failed.',
+        message: 'Not sent. The server did not confirm the release. Your report is saved on this device and will retry. Call it in if it is urgent.'
       };
     }
 

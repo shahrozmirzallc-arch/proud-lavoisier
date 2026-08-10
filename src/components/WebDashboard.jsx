@@ -10271,24 +10271,31 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
                           <div className="bg-surface-elevated border border-border-subtle p-6 sm:p-8 rounded-2xl col-span-2 flex flex-col gap-3">
                             <h4 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider border-b border-border-subtle pb-2">Active Locations Mapping</h4>
-                            <div className="overflow-x-auto w-full"><table className="w-full text-[13.5px] text-left">
-                              <thead>
-                                <tr className="border-b border-border-subtle text-text-secondary font-bold uppercase text-[10.5px]"><th>Location</th><th>OEM</th><th>Parent Customer</th><th>Address</th></tr>
-                              </thead>
-                              <tbody className="divide-y divide-slate-850 text-text-primary">
-                                {plants.map(p => {
-                                  const parent = suppliers.find(s => s.plants_served?.includes(p.id));
-                                  return (
-                                    <tr key={p.id}>
-                                      <td className="py-2 text-text-primary font-bold">{p.name}</td>
-                                      <td className="py-2"><span className="px-2 py-1 rounded bg-amber-50 text-amber-600 text-[12.5px] font-extrabold uppercase">{p.oem_brand}</span></td>
-                                      <td className="py-2 text-text-secondary">{parent?.name || 'IDS Global'}</td>
-                                      <td className="py-2 text-text-secondary">{p.address}</td>
-                                    </tr>
-                                  );
-                                })}
-                              </tbody>
-                            </table></div>
+                            <div className="overflow-x-auto w-full scrollbar-thin">
+                              <table className="w-full min-w-[650px] text-[13px] text-left border-collapse">
+                                <thead>
+                                  <tr className="border-b border-slate-200 text-slate-500 font-extrabold uppercase text-[10px] tracking-wider">
+                                    <th className="py-2.5 px-3">Location</th>
+                                    <th className="py-2.5 px-3">OEM</th>
+                                    <th className="py-2.5 px-3">Parent Customer</th>
+                                    <th className="py-2.5 px-3">Address</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100 text-slate-800">
+                                  {plants.map(p => {
+                                    const parent = suppliers.find(s => s.plants_served?.includes(p.id));
+                                    return (
+                                      <tr key={p.id} className="hover:bg-slate-50/80 transition-colors">
+                                        <td className="py-2.5 px-3 text-slate-900 font-extrabold whitespace-nowrap">{p.name}</td>
+                                        <td className="py-2.5 px-3 whitespace-nowrap"><span className="px-2 py-0.5 rounded bg-amber-50 text-amber-800 text-[10px] font-extrabold uppercase border border-amber-200">{p.oem_brand}</span></td>
+                                        <td className="py-2.5 px-3 text-slate-700 whitespace-nowrap">{parent?.name || 'IDS Global'}</td>
+                                        <td className="py-2.5 px-3 text-slate-600 max-w-[200px] truncate" title={p.address}>{p.address}</td>
+                                      </tr>
+                                    );
+                                  })}
+                                </tbody>
+                              </table>
+                            </div>
                           </div>
                         </div>
                       )}

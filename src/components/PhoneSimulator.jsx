@@ -2188,6 +2188,44 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
       const selectedContacts = getAvailableSupplierContacts().filter(c => selectedSupplierContactIds.includes(c.id));
       const recipientSnapshot = buildRecipientSnapshot(selectedContacts, dbSuppliers);
 
+      // Upload base64 photos to Cloudinary before incident release
+      const uploadedPhotos = await Promise.all(
+        evidenceList.map(async (ev) => {
+          let targetUrl = ev.annotatedUrl || ev.cloudinaryUrl || ev.url;
+          if (targetUrl && targetUrl.startsWith('data:')) {
+            try {
+              const cldRes = await uploadToCloudinary(targetUrl, 'incidents');
+              if (cldRes && cldRes.url) {
+                targetUrl = cldRes.url;
+              }
+            } catch (e) {
+              console.warn('[Cloudinary Photo Upload Exception]', e.message);
+            }
+          }
+          return {
+            id: ev.id,
+            url: targetUrl,
+            type: ev.label,
+            note: ev.note,
+            order: ev.order
+          };
+        })
+      );
+
+      let uploadedVideos = [];
+      if (stagedVideoObject) {
+        let vidUrl = stagedVideoObject.url || stagedVideoObject.videoUrl;
+        if (vidUrl && vidUrl.startsWith('data:')) {
+          try {
+            const cldRes = await uploadToCloudinary(vidUrl, 'videos');
+            if (cldRes && cldRes.url) vidUrl = cldRes.url;
+          } catch (e) {
+            console.warn('[Cloudinary Video Upload Exception]', e.message);
+          }
+        }
+        uploadedVideos = [{ ...stagedVideoObject, url: vidUrl }];
+      }
+
       const newInc = {
         rep_id: currentUser.id,
         rep_name: currentUser.name || 'Quality Representative',
@@ -2201,14 +2239,8 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
         media_evidence_status: hasAnyRealMedia ? 'provided' : 'unavailable',
         media_unavailable_reason: hasAnyRealMedia ? null : mediaUnavailableReason,
         media_unavailable_note: hasAnyRealMedia ? null : mediaUnavailableNote,
-        photos: evidenceList.map(ev => ({
-          id: ev.id,
-          url: ev.annotatedUrl || ev.url,
-          type: ev.label,
-          note: ev.note,
-          order: ev.order
-        })),
-        videos: stagedVideoObject ? [stagedVideoObject] : [],
+        photos: uploadedPhotos,
+        videos: uploadedVideos,
 
         traceability_status: affectedParts.length > 0 ? 'provided' : (traceabilityStatus || 'not_provided'),
         traceability_unavailable_reason: affectedParts.length > 0 ? null : (unavailableReason || null),
@@ -3359,7 +3391,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                 <div className="w-8 h-8 rounded-lg bg-[#EAF2FF] flex items-center justify-center">
                   <Wrench className="w-4 h-4 text-[#1769E0]" />
                 </div>
-                <span className="text-xs font-bold text-[#10284A]">Log Billable Rework</span>
+                <span className="text-xs font-bold text-[#10284A]">Log Rework</span>
                 <span className="text-[10px] text-[#5B6F89]">Containment rework</span>
               </button>
             </div>
@@ -4876,32 +4908,36 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                       {/* Returned to Supplier? */}
                       <div className="flex justify-between items-center bg-white p-2.5 rounded-xl border border-slate-200 shadow-2xs">
                         <span className="text-slate-800 font-bold">Returned to Supplier?</span>
-                        <div className="phone-toggle-group w-32 min-h-[44px]">
+                        <div className="phone-toggle-group w-48 min-h-[44px]">
                           <button
                             type="button"
                             aria-pressed={isReturningDefect === 'Y'}
-                            aria-label="Returned to Supplier Yes"
                             onClick={() => setIsReturningDefect('Y')}
-                            className={`flex-1 min-h-[44px] phone-toggle-btn transition-all ${
-                              isReturningDefect === 'Y'
-                                ? 'active-yes'
-                                : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
+                            className={`flex-1 min-h-[44px] phone-toggle-btn transition-all text-[11px] font-extrabold ${
+                              isReturningDefect === 'Y' ? 'active-yes' : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
                             }`}
                           >
-                            {isReturningDefect === 'Y' ? '✓ Yes' : 'Yes'}
+                            Yes
                           </button>
                           <button
                             type="button"
                             aria-pressed={isReturningDefect === 'N'}
-                            aria-label="Returned to Supplier No"
                             onClick={() => setIsReturningDefect('N')}
-                            className={`flex-1 min-h-[44px] phone-toggle-btn transition-all ${
-                              isReturningDefect === 'N'
-                                ? 'active-no'
-                                : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
+                            className={`flex-1 min-h-[44px] phone-toggle-btn transition-all text-[11px] font-extrabold ${
+                              isReturningDefect === 'N' ? 'active-no' : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
                             }`}
                           >
-                            {isReturningDefect === 'N' ? '✕ No' : 'No'}
+                            No
+                          </button>
+                          <button
+                            type="button"
+                            aria-pressed={isReturningDefect === 'Unknown'}
+                            onClick={() => setIsReturningDefect('Unknown')}
+                            className={`flex-1 min-h-[44px] phone-toggle-btn transition-all text-[10.5px] font-extrabold ${
+                              isReturningDefect === 'Unknown' ? 'bg-amber-500 text-white font-black' : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
+                            }`}
+                          >
+                            Unknown
                           </button>
                         </div>
                       </div>
@@ -4909,32 +4945,36 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                       {/* Sort Requested? */}
                       <div className="flex justify-between items-center bg-white p-2.5 rounded-xl border border-slate-200 shadow-2xs">
                         <span className="text-slate-800 font-bold">Sort Requested?</span>
-                        <div className="phone-toggle-group w-32 min-h-[44px]">
+                        <div className="phone-toggle-group w-48 min-h-[44px]">
                           <button
                             type="button"
                             aria-pressed={isSortRequired === 'Y'}
-                            aria-label="Sort Requested Yes"
                             onClick={() => setIsSortRequired('Y')}
-                            className={`flex-1 min-h-[44px] phone-toggle-btn transition-all ${
-                              isSortRequired === 'Y'
-                                ? 'active-yes'
-                                : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
+                            className={`flex-1 min-h-[44px] phone-toggle-btn transition-all text-[11px] font-extrabold ${
+                              isSortRequired === 'Y' ? 'active-yes' : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
                             }`}
                           >
-                            {isSortRequired === 'Y' ? '✓ Yes' : 'Yes'}
+                            Yes
                           </button>
                           <button
                             type="button"
                             aria-pressed={isSortRequired === 'N'}
-                            aria-label="Sort Requested No"
                             onClick={() => setIsSortRequired('N')}
-                            className={`flex-1 min-h-[44px] phone-toggle-btn transition-all ${
-                              isSortRequired === 'N'
-                                ? 'active-no'
-                                : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
+                            className={`flex-1 min-h-[44px] phone-toggle-btn transition-all text-[11px] font-extrabold ${
+                              isSortRequired === 'N' ? 'active-no' : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
                             }`}
                           >
-                            {isSortRequired === 'N' ? '✕ No' : 'No'}
+                            No
+                          </button>
+                          <button
+                            type="button"
+                            aria-pressed={isSortRequired === 'Unknown'}
+                            onClick={() => setIsSortRequired('Unknown')}
+                            className={`flex-1 min-h-[44px] phone-toggle-btn transition-all text-[10.5px] font-extrabold ${
+                              isSortRequired === 'Unknown' ? 'bg-amber-500 text-white font-black' : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
+                            }`}
+                          >
+                            Unknown
                           </button>
                         </div>
                       </div>
@@ -4942,35 +4982,42 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                       {/* RMA Required? */}
                       <div className="flex justify-between items-center bg-white p-2.5 rounded-xl border border-slate-200 shadow-2xs">
                         <span className="text-slate-800 font-bold">RMA Required?</span>
-                        <div className="phone-toggle-group w-32 min-h-[44px]">
+                        <div className="phone-toggle-group w-48 min-h-[44px]">
                           <button
                             type="button"
                             aria-pressed={isRmaRequired === 'Y'}
-                            aria-label="RMA Required Yes"
                             onClick={() => setIsRmaRequired('Y')}
-                            className={`flex-1 min-h-[44px] phone-toggle-btn transition-all ${
-                              isRmaRequired === 'Y'
-                                ? 'active-yes'
-                                : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
+                            className={`flex-1 min-h-[44px] phone-toggle-btn transition-all text-[11px] font-extrabold ${
+                              isRmaRequired === 'Y' ? 'active-yes' : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
                             }`}
                           >
-                            {isRmaRequired === 'Y' ? '✓ Yes' : 'Yes'}
+                            Yes
                           </button>
                           <button
                             type="button"
                             aria-pressed={isRmaRequired === 'N'}
-                            aria-label="RMA Required No"
                             onClick={() => {
                               setIsRmaRequired('N');
                               setRmaNumber('');
                             }}
-                            className={`flex-1 min-h-[44px] phone-toggle-btn transition-all ${
-                              isRmaRequired === 'N'
-                                ? 'active-no'
-                                : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
+                            className={`flex-1 min-h-[44px] phone-toggle-btn transition-all text-[11px] font-extrabold ${
+                              isRmaRequired === 'N' ? 'active-no' : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
                             }`}
                           >
-                            {isRmaRequired === 'N' ? '✕ No' : 'No'}
+                            No
+                          </button>
+                          <button
+                            type="button"
+                            aria-pressed={isRmaRequired === 'Unknown'}
+                            onClick={() => {
+                              setIsRmaRequired('Unknown');
+                              setRmaNumber('');
+                            }}
+                            className={`flex-1 min-h-[44px] phone-toggle-btn transition-all text-[10.5px] font-extrabold ${
+                              isRmaRequired === 'Unknown' ? 'bg-amber-500 text-white font-black' : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
+                            }`}
+                          >
+                            Unknown
                           </button>
                         </div>
                       </div>
@@ -4995,7 +5042,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                   <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-xs">
                     <BusinessDropdown
                       id="concern-classification-dropdown"
-                      label="Issue Classification / Status"
+                      label="Level of Concern / Status"
                       options={[
                         'PRR',
                         'PRR / GIM',
@@ -5295,7 +5342,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                         </div>
                         {concernClassification && (
                           <div className="bg-slate-50 p-2 rounded-lg border border-slate-200 flex justify-between items-center col-span-2">
-                            <span className="text-slate-600 font-bold">Classification:</span>
+                            <span className="text-slate-600 font-bold">Level of Concern:</span>
                             <span className="font-bold text-slate-900">{concernClassification}</span>
                           </div>
                         )}
@@ -6457,7 +6504,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
           <div className="flex-1 flex flex-col bg-slate-50 overflow-hidden">
             <div className="flex items-center justify-between p-3 border-b border-slate-200 bg-white">
               <button onClick={() => setActiveScreen('home')} className="text-text-secondary hover:text-slate-900 flex items-center gap-1 text-[13.5px]"><ArrowLeft className="w-4.5 h-4" /><span>Home</span></button>
-              <h2 className="text-[13.5px] font-bold text-slate-900 uppercase tracking-wider">Log Billable Rework</h2>
+              <h2 className="text-[13.5px] font-bold text-slate-900 uppercase tracking-wider">Log Rework</h2>
               <div className="w-10"></div>
             </div>
 

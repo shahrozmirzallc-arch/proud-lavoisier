@@ -11781,6 +11781,78 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   ))}
                 </div>
               )}
+
+              {/* Routine Inspections logged today */}
+              {(() => {
+                const repDateInspections = (timeEntries || []).filter(te => 
+                  te.date === selectedShiftReport.date || te.created_at?.startsWith(selectedShiftReport.date)
+                );
+                if (repDateInspections.length === 0) return null;
+                return (
+                  <div className="flex flex-col gap-2 mt-4 pt-3 border-t border-border-subtle">
+                    <span className="text-[11.5px] text-emerald-600 font-bold uppercase tracking-wider">Routine Inspection Logs</span>
+                    {repDateInspections.map((te, idx) => (
+                      <div key={idx} className="bg-surface border border-border-subtle rounded-xl p-3 flex justify-between items-center text-xs">
+                        <div>
+                          <p className="font-bold text-text-primary">Part #{te.part_number || te.part_id || 'N/A'}</p>
+                          <p className="text-[11px] text-text-secondary mt-0.5">{te.hours || te.time_spent || 0} Hours Spent • {te.notes || 'Routine check'}</p>
+                        </div>
+                        <span className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-2 py-0.5 rounded text-[10px] font-extrabold uppercase">
+                          {te.status || 'Verified'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+
+              {/* Rework Logs logged today */}
+              {(() => {
+                const repDateRework = (reworkLogs || []).filter(rw => 
+                  rw.date === selectedShiftReport.date || rw.created_at?.startsWith(selectedShiftReport.date)
+                );
+                if (repDateRework.length === 0) return null;
+                return (
+                  <div className="flex flex-col gap-2 mt-4 pt-3 border-t border-border-subtle">
+                    <span className="text-[11.5px] text-blue-600 font-bold uppercase tracking-wider">Rework Activity Logs</span>
+                    {repDateRework.map((rw, idx) => (
+                      <div key={idx} className="bg-surface border border-border-subtle rounded-xl p-3 flex justify-between items-center text-xs">
+                        <div>
+                          <p className="font-bold text-text-primary">Part #{rw.part_number || rw.part_id || 'N/A'} • {rw.qty || rw.pieces_reworked || 0} Pcs Reworked</p>
+                          <p className="text-[11px] text-text-secondary mt-0.5">{rw.notes || 'Containment rework completed.'}</p>
+                        </div>
+                        <span className="bg-blue-50 border border-blue-200 text-blue-700 px-2 py-0.5 rounded text-[10px] font-extrabold uppercase">
+                          {rw.time_spent_minutes ? `${rw.time_spent_minutes}m` : 'Reworked'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+
+              {/* Referenced Incident Alerts Issued Today */}
+              {(() => {
+                const repDateIncidents = (incidents || []).filter(inc => 
+                  inc.date === selectedShiftReport.date || inc.created_at?.startsWith(selectedShiftReport.date)
+                );
+                if (repDateIncidents.length === 0) return null;
+                return (
+                  <div className="flex flex-col gap-2 mt-4 pt-3 border-t border-border-subtle">
+                    <span className="text-[11.5px] text-amber-600 font-bold uppercase tracking-wider">Referenced Incident Alerts (Sent Earlier Today)</span>
+                    {repDateIncidents.map((inc, idx) => (
+                      <div key={idx} className="bg-amber-50/60 border border-amber-200 rounded-xl p-3 flex justify-between items-center text-xs">
+                        <div>
+                          <p className="font-bold text-amber-950">Alert Reference: {inc.id || inc.local_tracking_ref}</p>
+                          <p className="text-[11px] text-amber-900 mt-0.5">Defect: {inc.defect_type || 'N/A'} in {inc.area || 'Floor Area'} • Level of Concern: {inc.level_of_concern || inc.concern_classification || 'Major'}</p>
+                        </div>
+                        <span className="bg-amber-100 border border-amber-300 text-amber-900 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase">
+                          Alert Issued
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
             </div>
 
             {/* Export & Actions Box for Shift Walkthrough */}

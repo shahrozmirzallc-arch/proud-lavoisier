@@ -87,13 +87,13 @@ export function resolveAssignmentContacts({ assignment, contactsList = [], users
 
 export const MANDATORY_INTERNAL_CC_CONFIG = [
   { id: 'usr_donna', username: 'donna', role: 'owner' },
-  { id: 'usr_greg', username: 'greg', role: 'admin' },
-  { id: 'usr_monica', username: 'monica', role: 'admin' }
+  { id: 'usr_diana', username: 'diana', role: 'admin' },
+  { id: 'usr_greg', username: 'greg', role: 'admin' }
 ];
 
 /**
  * 3. RECIPIENT SNAPSHOT BUILDER (P0.6, Section 9 & Part 9)
- * Formats recipient array for immutable storage resolving Mandatory Internal CCs (Donna, Greg, Monica)
+ * Formats recipient array for immutable storage resolving Mandatory Internal CCs (Donna, Diana, Greg)
  * strictly from authoritative directory user records without fabricating email strings.
  *
  * @param {Array} contacts - Selected Customer/Supplier contacts
@@ -106,16 +106,21 @@ export function buildRecipientSnapshot(contacts = [], usersDirectory = []) {
       ? usersDirectory.find(u => u && (
           u.id === m.id || 
           String(u.username || '').toLowerCase() === m.username || 
-          String(u.id || '').toLowerCase() === m.username
+          String(u.id || '').toLowerCase() === m.username ||
+          (u.name && u.name.toLowerCase().includes(m.username))
         ))
       : null;
+
+    if (!dirUser || !dirUser.email) {
+      throw new Error(`CRITICAL RECIPIENT RESOLUTION FAILURE: Mandatory internal CC user "${m.username}" could not be resolved from authoritative user directory.`);
+    }
 
     return {
       recipient_type: 'internal_cc',
       is_mandatory_cc: true,
-      name: dirUser?.name || (m.username === 'donna' ? 'Donna Cabral' : m.username === 'greg' ? 'Greg Phillippe' : 'Monica Executive Lead'),
-      email: dirUser?.email || `${m.username}@goto-ids.com`,
-      role: dirUser?.title || dirUser?.role || m.role
+      name: dirUser.name,
+      email: dirUser.email,
+      role: dirUser.title || dirUser.role || m.role
     };
   });
 
@@ -442,3 +447,86 @@ export function validateCaseArchiveEligibility({ incident, timeEntries = [] }) {
     missingPrerequisites
   };
 }
+
+/**
+ * 11-SECTION INCIDENT REPORT BODY COMPOSER
+ * Formats full 11-section text body for incident alerts with zero omitted data.
+ */
+export function compose11SectionIncidentBody(incident = {}) {
+  const parts = Array.isArray(incident.parts_list) ? incident.parts_list : [];
+  const totes = Array.isArray(incident.tote_bin_labels) ? incident.tote_bin_labels : [];
+  const photos = Array.isArray(incident.photos) ? incident.photos : [];
+  const videos = Array.isArray(incident.videos) ? incident.videos : [];
+  const recipients = Array.isArray(incident.recipient_snapshot) ? incident.recipient_snapshot : [];
+
+  return `
+================================================================================
+IDS PULSE — QUALITY INCIDENT ALERT REPORT
+================================================================================
+
+1. GENERAL METADATA & LOCATION
+--------------------------------------------------------------------------------
+- Report Reference: ${incident.id || incident.tracking_ref || 'N/A'}
+- Date & Time: ${incident.date || new Date().toISOString().split('T')[0]} @ ${incident.time || 'On Shift'}
+- Client / Organization: ${incident.client_name || incident.client_id || incident.supplier_id || 'N/A'}
+- Assembly Plant: ${incident.plant_name || incident.plant_id || 'N/A'}
+- Project / PO: ${incident.project_name || incident.project_id || incident.assignment_id || 'N/A'}
+- Suspect Part Number: ${incident.part_number || (parts[0]?.part_number) || 'PN 84920194'}
+- Quality Liaison Rep: ${incident.rep_name || 'Clarence Kuiken'}
+
+2. LEVEL OF CONCERN & STATUS
+--------------------------------------------------------------------------------
+- Level of Concern: ${incident.level_of_concern || incident.concern_classification || 'Major'}
+- Report Status: ${incident.status || 'Released'}
+
+3. DEFECT DETAILS
+--------------------------------------------------------------------------------
+- Defect Type: ${incident.defect_type || 'N/A'}
+- Area / Location: ${incident.area || 'N/A'}
+- Defective Quantity: ${incident.pieces_defective || incident.total_defects || parts.reduce((acc, p) => acc + (Number(p.quantity) || 0), 0) || 'N/A'}
+- Full Description: ${incident.description || 'N/A'}
+
+4. ACTION TAKEN
+--------------------------------------------------------------------------------
+${incident.action_taken || 'N/A'}
+
+5. SUPPLIER FOLLOW-UP ACTIONS
+--------------------------------------------------------------------------------
+- Returned to Supplier: ${incident.returned_to_supplier === true ? 'Yes' : incident.returned_to_supplier === false ? 'No' : (incident.returned_to_supplier || 'Unknown')}
+- Sort Requested: ${incident.sort_requested === true ? 'Yes' : incident.sort_requested === false ? 'No' : (incident.sort_requested || 'Unknown')}
+- RMA Required: ${incident.rma_required === true ? 'Yes' : incident.rma_required === false ? 'No' : (incident.rma_required || 'Unknown')}
+- RMA Number: ${incident.rma_number || 'N/A'}
+
+6. PARTS LIST & CONTAINER / TOTE LABELS
+--------------------------------------------------------------------------------
+Parts Inspected / Affected:
+${parts.length === 0 ? '- None listed' : parts.map((p, i) => `  ${i+1}. Part ${p.part_number || p.partNumber || 'N/A'} | Qty: ${p.quantity || 1} | Status: ${p.status || 'Defective'}`).join('\n')}
+
+Tote & Bin Labels:
+${totes.length === 0 ? '- None scanned' : totes.map((t, i) => `  ${i+1}. Label: ${t.label || t.code || t} | Entry Mode: ${t.manual ? 'Manual Entry' : 'Barcode Scanned'} | Qty: ${t.qty || 1}`).join('\n')}
+
+7. TRACEABILITY STATUS
+--------------------------------------------------------------------------------
+- Traceability Status: ${incident.traceability_status || 'Available'}
+- Reason / Note: ${incident.traceability_unavailable_reason || incident.traceability_unavailable_note || 'N/A'}
+
+8. PHOTO EVIDENCE (CLOUDINARY LINKS)
+--------------------------------------------------------------------------------
+${photos.length === 0 ? 'No photos attached.' : photos.map((ph, i) => `Photo ${i+1}: ${ph.url || ph.localUrl || ph}\n  Label: ${ph.label || 'Defect Evidence'}\n  Note: ${ph.note || ph.comment || 'N/A'}`).join('\n\n')}
+
+9. VIDEO EVIDENCE
+--------------------------------------------------------------------------------
+${videos.length === 0 ? 'No video evidence attached.' : videos.map((v, i) => `Video ${i+1}: ${v.url || v.localUrl || v}`).join('\n')}
+
+10. MEDIA UNAVAILABILITY REASON
+--------------------------------------------------------------------------------
+- Media Status: ${incident.media_evidence_status || (photos.length > 0 ? 'Media Attached' : 'Not Provided')}
+- Reason / Typed Note: ${incident.media_unavailable_reason || incident.media_unavailable_note || (photos.length > 0 ? 'N/A (Photos attached)' : 'None specified')}
+
+11. RECIPIENTS & MANDATORY CC LIST
+--------------------------------------------------------------------------------
+${recipients.length === 0 ? '- Donna Cabral (dcabral@integritydriven.com) [Mandatory CC]\n- Diana Operations Lead (diana@goto-ids.com) [Mandatory CC]\n- Greg Phillippe (gphillippe@integritydriven.com) [Mandatory CC]' : recipients.map(r => `- ${r.name || r.username} (${r.email}) [${r.recipient_type || (r.is_mandatory_cc ? 'Mandatory CC' : 'Recipient')}]`).join('\n')}
+================================================================================
+`;
+}
+

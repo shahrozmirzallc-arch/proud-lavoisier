@@ -10209,22 +10209,30 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
                           <div className="bg-surface-elevated border border-border-subtle p-6 sm:p-8 rounded-2xl col-span-2 flex flex-col gap-3">
                             <h4 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider border-b border-border-subtle pb-2">Active Customers List</h4>
-                            <div className="overflow-x-auto w-full"><table className="w-full text-[13.5px] text-left">
-                              <thead>
-                                <tr className="border-b border-border-subtle text-text-secondary font-bold uppercase text-[10.5px]"><th>Client Name</th><th>Invoicing</th><th>Job Budget</th><th>Contacts</th><th>Schedule</th></tr>
-                              </thead>
-                              <tbody className="divide-y divide-slate-850 text-text-primary">
-                                {suppliers.map(s => (
-                                  <tr key={s.id}>
-                                    <td className="py-2 text-text-primary font-bold">{s.name}</td>
-                                    <td className="py-2 font-mono text-slate-450">{s.id?.toUpperCase()}</td>
-                                    <td className="py-2 font-bold text-cyan-400">{s.allotted_hours ? `${s.allotted_hours} hrs` : '20 hrs'}</td>
-                                    <td className="py-2">{(Array.isArray(s.contacts) ? s.contacts : []).map(c => c?.name || c).filter(Boolean).join(", ") || (s.contact_name || 'Primary Contact')}</td>
-                                    <td className="py-2"><span className={`px-2 py-1 rounded text-[10.5px] font-bold uppercase ${s.invoice_schedule === 'on-demand' ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-500/40' : 'bg-amber-50 text-amber-600'}`}>{s.invoice_schedule === 'on-demand' ? ' ON DEMAND (MANUAL)' : (s.invoice_schedule || 'ON DEMAND')}</span></td>
+                            <div className="overflow-x-auto w-full scrollbar-thin">
+                              <table className="w-full min-w-[650px] text-[13px] text-left border-collapse">
+                                <thead>
+                                  <tr className="border-b border-slate-200 text-slate-500 font-extrabold uppercase text-[10px] tracking-wider">
+                                    <th className="py-2.5 px-3">Client Name</th>
+                                    <th className="py-2.5 px-3">Invoicing ID</th>
+                                    <th className="py-2.5 px-3">Job Budget</th>
+                                    <th className="py-2.5 px-3">Contacts</th>
+                                    <th className="py-2.5 px-3">Schedule</th>
                                   </tr>
-                                ))}
-                              </tbody>
-                            </table></div>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100 text-slate-800">
+                                  {suppliers.map(s => (
+                                    <tr key={s.id} className="hover:bg-slate-50/80 transition-colors">
+                                      <td className="py-2.5 px-3 text-slate-900 font-extrabold whitespace-nowrap">{s.name}</td>
+                                      <td className="py-2.5 px-3 font-mono text-xs text-slate-500 max-w-[140px] truncate" title={s.id?.toUpperCase()}>{s.id?.toUpperCase()}</td>
+                                      <td className="py-2.5 px-3 font-bold text-[#1769E0] whitespace-nowrap">{s.allotted_hours ? `${s.allotted_hours} hrs` : '20 hrs'}</td>
+                                      <td className="py-2.5 px-3 text-slate-600 max-w-[180px] truncate" title={(Array.isArray(s.contacts) ? s.contacts : []).map(c => c?.name || c).filter(Boolean).join(", ") || s.contact_name || 'Primary Contact'}>{(Array.isArray(s.contacts) ? s.contacts : []).map(c => c?.name || c).filter(Boolean).join(", ") || (s.contact_name || 'Primary Contact')}</td>
+                                      <td className="py-2.5 px-3 whitespace-nowrap"><span className={`px-2 py-0.5 rounded text-[10px] font-extrabold uppercase border ${s.invoice_schedule === 'on-demand' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-amber-50 text-amber-800 border-amber-200'}`}>{s.invoice_schedule === 'on-demand' ? 'ON DEMAND' : (s.invoice_schedule || 'ON DEMAND').toUpperCase()}</span></td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
                           </div>
                         </div>
                       )}
@@ -10310,35 +10318,45 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
                           <div className="bg-surface-elevated border border-border-subtle p-6 sm:p-8 rounded-2xl col-span-2 flex flex-col gap-3">
                             <h4 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider border-b border-border-subtle pb-2">Active Field Representatives & Configured Rates</h4>
-                            <div className="overflow-x-auto w-full"><table className="w-full text-[13.5px] text-left">
-                              <thead>
-                                <tr className="border-b border-border-subtle text-text-secondary font-bold uppercase text-[10.5px]"><th>Rep Name</th><th>Email</th><th>Phone</th><th>Pay Rate ($/hr)</th><th>Bill Rate ($/hr)</th><th>Pay Currency</th><th>Role</th></tr>
-                              </thead>
-                              <tbody className="divide-y divide-slate-850 text-text-primary">
-                                {users.filter(isFieldRep).map(r => {
-                                  const repRates = getRepSupplierRates(r.id);
-                                  const payRateVal = r.pay_rate || repRates.pay_rate || 20.00;
-                                  const billRateVal = r.billing_rate || repRates.billing_rate || 28.00;
-                                  const currencyVal = r.pay_currency || repRates.currency || 'USD';
-                                  const symbol = currencyVal === 'CAD' ? 'C$' : 'US$';
+                            <div className="overflow-x-auto w-full scrollbar-thin">
+                              <table className="w-full min-w-[750px] text-[13px] text-left border-collapse">
+                                <thead>
+                                  <tr className="border-b border-slate-200 text-slate-500 font-extrabold uppercase text-[10px] tracking-wider">
+                                    <th className="py-2.5 px-3">Rep Name</th>
+                                    <th className="py-2.5 px-3">Email</th>
+                                    <th className="py-2.5 px-3">Phone</th>
+                                    <th className="py-2.5 px-3">Pay Rate ($/hr)</th>
+                                    <th className="py-2.5 px-3">Bill Rate ($/hr)</th>
+                                    <th className="py-2.5 px-3">Pay Currency</th>
+                                    <th className="py-2.5 px-3">Role</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100 text-slate-800">
+                                  {users.filter(isFieldRep).map(r => {
+                                    const repRates = getRepSupplierRates(r.id);
+                                    const payRateVal = r.pay_rate || repRates.pay_rate || 20.00;
+                                    const billRateVal = r.billing_rate || repRates.billing_rate || 28.00;
+                                    const currencyVal = r.pay_currency || repRates.currency || 'USD';
+                                    const symbol = currencyVal === 'CAD' ? 'C$' : 'US$';
 
-                                  return (
-                                    <tr key={r.id}>
-                                      <td className="py-2 text-text-primary font-bold flex items-center gap-2">
-                                        <span className="w-6 h-6 rounded-full bg-[#3B82F6] flex items-center justify-center text-[11.5px] text-white font-bold">{r.avatar}</span>
-                                        {r.name}
-                                      </td>
-                                      <td className="py-2 font-mono text-text-secondary">{r.email}</td>
-                                      <td className="py-2 text-text-secondary">{r.phone}</td>
-                                      <td className="py-2 font-mono text-emerald-700 font-extrabold">{symbol} {parseFloat(payRateVal).toFixed(2)}/hr</td>
-                                      <td className="py-2 font-mono text-blue-600 font-extrabold">{symbol} {parseFloat(billRateVal).toFixed(2)}/hr</td>
-                                      <td className="py-2 font-mono text-[#3B82F6] font-bold">{currencyVal}</td>
-                                      <td className="py-2"><span className="px-2 py-1 rounded bg-emerald-100 text-emerald-800 text-[12.5px] font-bold uppercase border border-emerald-300">Field QRE</span></td>
-                                    </tr>
-                                  );
-                                })}
-                              </tbody>
-                            </table></div>
+                                    return (
+                                      <tr key={r.id} className="hover:bg-slate-50/80 transition-colors">
+                                        <td className="py-2.5 px-3 text-slate-900 font-extrabold whitespace-nowrap flex items-center gap-2">
+                                          <span className="w-6 h-6 rounded-full bg-[#1769E0] flex items-center justify-center text-[10px] text-white font-extrabold flex-shrink-0">{r.avatar}</span>
+                                          <span>{r.name}</span>
+                                        </td>
+                                        <td className="py-2.5 px-3 font-mono text-xs text-slate-600 max-w-[170px] truncate" title={r.email}>{r.email}</td>
+                                        <td className="py-2.5 px-3 text-xs text-slate-600 whitespace-nowrap">{r.phone}</td>
+                                        <td className="py-2.5 px-3 font-mono text-emerald-700 font-extrabold text-xs whitespace-nowrap">{symbol} {parseFloat(payRateVal).toFixed(2)}/hr</td>
+                                        <td className="py-2.5 px-3 font-mono text-[#1769E0] font-extrabold text-xs whitespace-nowrap">{symbol} {parseFloat(billRateVal).toFixed(2)}/hr</td>
+                                        <td className="py-2.5 px-3 font-mono text-slate-800 font-bold text-xs whitespace-nowrap">{currencyVal}</td>
+                                        <td className="py-2.5 px-3 whitespace-nowrap"><span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 text-[10px] font-extrabold uppercase border border-emerald-200">Field QRE</span></td>
+                                      </tr>
+                                    );
+                                  })}
+                                </tbody>
+                              </table>
+                            </div>
                           </div>
                         </div>
                       )}

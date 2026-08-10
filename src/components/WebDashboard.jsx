@@ -13401,59 +13401,59 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
       {/* GLOBAL CREATED USER CREDENTIALS OVERLAY (ACCESSIBLE FROM ALL TABS & MODALS) */}
       {createdUserCredentials && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-[100] animate-in fade-in duration-200">
-          <div className="bg-surface-elevated border border-emerald-500/50 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col text-left">
-            <div className="bg-emerald-950/90 px-6 py-4 border-b border-emerald-500/40 flex items-center justify-between">
+        <div className="fixed inset-0 bg-slate-950/75 backdrop-blur-sm flex items-center justify-center p-4 z-[100] animate-in fade-in duration-200">
+          <div className="bg-white border border-emerald-600/30 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col text-left">
+            <div className="bg-emerald-800 px-6 py-4 border-b border-emerald-900/20 flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-                <h3 className="text-[14px] font-black text-emerald-200 uppercase tracking-wider">User Account Provisioned</h3>
+                <CheckCircle2 className="w-5 h-5 text-emerald-300" />
+                <h3 className="text-[14px] font-black text-white uppercase tracking-wider">User Account Provisioned</h3>
               </div>
               <button 
                 type="button" 
                 onClick={() => setCreatedUserCredentials(null)} 
-                className="text-emerald-400 hover:text-white cursor-pointer transition-colors p-1"
+                className="text-emerald-200 hover:text-white cursor-pointer transition-colors p-1 rounded-lg hover:bg-emerald-700/50"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="p-6 flex flex-col gap-4 text-xs font-sans">
-              <p className="text-text-secondary leading-relaxed">
-                The user account for <strong className="text-text-primary">{createdUserCredentials.contactName}</strong> has been created. Please copy these credentials for the recipient:
+            <div className="p-6 flex flex-col gap-4 text-xs font-sans bg-white">
+              <p className="text-slate-700 text-xs leading-relaxed">
+                The user account for <strong className="text-slate-950 font-bold">{createdUserCredentials.contactName}</strong> has been created. Please copy these credentials for the recipient:
               </p>
 
-              <div className="bg-surface p-4 rounded-2xl border border-border-subtle flex flex-col gap-2.5 font-mono text-[12.5px]">
+              <div className="bg-emerald-50/60 p-4 rounded-2xl border border-emerald-200/80 flex flex-col gap-3 font-mono text-[12.5px]">
                 {createdUserCredentials.companyName && (
-                  <div className="flex justify-between items-start gap-3">
-                    <span className="text-text-secondary font-sans text-xs flex-shrink-0">Organization:</span>
-                    <strong className="text-text-primary font-semibold text-right">{createdUserCredentials.companyName}</strong>
+                  <div className="flex justify-between items-center gap-3">
+                    <span className="text-slate-600 font-sans text-xs font-semibold flex-shrink-0">Organization:</span>
+                    <strong className="text-slate-950 font-bold text-right text-xs font-sans">{createdUserCredentials.companyName}</strong>
                   </div>
                 )}
-                <div className="flex justify-between items-start gap-3">
-                  <span className="text-text-secondary font-sans text-xs flex-shrink-0">User Role:</span>
-                  <span className="text-emerald-400 font-bold text-xs uppercase tracking-wider text-right">{createdUserCredentials.role}</span>
+                <div className="flex justify-between items-center gap-3">
+                  <span className="text-slate-600 font-sans text-xs font-semibold flex-shrink-0">User Role:</span>
+                  <span className="bg-emerald-100/90 text-emerald-950 font-extrabold text-[11px] uppercase tracking-wider px-2.5 py-0.5 rounded-full border border-emerald-300/80 text-right">{createdUserCredentials.role}</span>
                 </div>
-                <div className="flex justify-between items-start gap-3 border-t border-border-subtle pt-2">
-                  <span className="text-text-secondary font-sans text-xs flex-shrink-0">Username:</span>
-                  <strong className="text-amber-400 font-bold bg-amber-950/60 px-2 py-0.5 rounded border border-amber-500/40 select-all text-right">{createdUserCredentials.username}</strong>
+                <div className="flex justify-between items-center gap-3 border-t border-emerald-200/80 pt-2.5">
+                  <span className="text-slate-600 font-sans text-xs font-semibold flex-shrink-0">Username:</span>
+                  <strong className="text-slate-950 font-bold bg-white px-3 py-1 rounded-lg border border-slate-300 shadow-xs select-all text-right font-mono text-sm tracking-wide">{createdUserCredentials.username}</strong>
                 </div>
-                <div className="flex justify-between items-start gap-3">
-                  <span className="text-text-secondary font-sans text-xs flex-shrink-0">Temp Password:</span>
-                  <strong className="text-cyan-300 font-bold bg-cyan-950/60 px-2 py-0.5 rounded border border-cyan-500/40 select-all text-right">{createdUserCredentials.password}</strong>
+                <div className="flex justify-between items-center gap-3">
+                  <span className="text-slate-600 font-sans text-xs font-semibold flex-shrink-0">Temp Password:</span>
+                  <strong className="text-emerald-950 font-extrabold bg-emerald-100 px-3 py-1 rounded-lg border border-emerald-300 shadow-xs select-all text-right font-mono text-sm tracking-wider">{createdUserCredentials.password}</strong>
                 </div>
               </div>
 
-              <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 text-[11.5px] text-amber-300 leading-snug flex items-start gap-2">
-                <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
+              <div className="bg-amber-50 border border-amber-300/80 rounded-xl p-3.5 text-xs text-amber-950 font-semibold leading-relaxed flex items-start gap-2.5 shadow-xs">
+                <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
                 <span>Save or copy these temporary login credentials before dismissing this panel.</span>
               </div>
             </div>
 
-            <div className="bg-surface px-6 py-3.5 border-t border-border-subtle flex justify-end">
+            <div className="bg-slate-50 px-6 py-4 border-t border-slate-200 flex justify-end">
               <button
                 type="button"
                 onClick={() => setCreatedUserCredentials(null)}
-                className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-black shadow-md cursor-pointer transition-colors"
+                className="px-6 py-2.5 bg-emerald-700 hover:bg-emerald-800 active:bg-emerald-900 text-white rounded-xl text-xs font-extrabold shadow-md cursor-pointer transition-colors"
               >
                 Dismiss Credentials Panel
               </button>

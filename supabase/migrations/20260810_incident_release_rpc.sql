@@ -1,5 +1,5 @@
 -- ============================================================================
--- IDS PULSE: EXTRACTED INCIDENT RELEASE FUNCTION & RLS POLICY FOR SUPABASE
+-- IDS PULSE: EXTRACTED INCIDENT RELEASE FUNCTION & RLS POLICIES FOR SUPABASE
 -- Execute in Supabase SQL Editor: https://supabase.com/dashboard/project/wuqqrcowznrmmuokfxlk/sql
 -- ============================================================================
 
@@ -198,12 +198,24 @@ $$;
 -- Grant execution permissions
 GRANT EXECUTE ON FUNCTION public.release_incident_to_client(JSONB, TEXT) TO anon, authenticated, service_role;
 
--- 2. Add permissive RLS policies for incidents table so app sync & reads work seamlessly
+-- 2. Add permissive RLS policies for incidents, time_entries, and expense_entries tables
 DROP POLICY IF EXISTS "tmp_app_select_incidents" ON public.incidents;
 CREATE POLICY "tmp_app_select_incidents" ON public.incidents FOR SELECT TO anon, authenticated USING (true);
-
 DROP POLICY IF EXISTS "tmp_app_insert_incidents" ON public.incidents;
 CREATE POLICY "tmp_app_insert_incidents" ON public.incidents FOR INSERT TO anon, authenticated WITH CHECK (true);
-
 DROP POLICY IF EXISTS "tmp_app_update_incidents" ON public.incidents;
 CREATE POLICY "tmp_app_update_incidents" ON public.incidents FOR UPDATE TO anon, authenticated USING (true);
+
+DROP POLICY IF EXISTS "tmp_app_select_time_entries" ON public.time_entries;
+CREATE POLICY "tmp_app_select_time_entries" ON public.time_entries FOR SELECT TO anon, authenticated USING (true);
+DROP POLICY IF EXISTS "tmp_app_insert_time_entries" ON public.time_entries;
+CREATE POLICY "tmp_app_insert_time_entries" ON public.time_entries FOR INSERT TO anon, authenticated WITH CHECK (true);
+DROP POLICY IF EXISTS "tmp_app_update_time_entries" ON public.time_entries;
+CREATE POLICY "tmp_app_update_time_entries" ON public.time_entries FOR UPDATE TO anon, authenticated USING (true);
+
+DROP POLICY IF EXISTS "tmp_app_select_expense_entries" ON public.expense_entries;
+CREATE POLICY "tmp_app_select_expense_entries" ON public.expense_entries FOR SELECT TO anon, authenticated USING (true);
+DROP POLICY IF EXISTS "tmp_app_insert_expense_entries" ON public.expense_entries;
+CREATE POLICY "tmp_app_insert_expense_entries" ON public.expense_entries FOR INSERT TO anon, authenticated WITH CHECK (true);
+DROP POLICY IF EXISTS "tmp_app_update_expense_entries" ON public.expense_entries;
+CREATE POLICY "tmp_app_update_expense_entries" ON public.expense_entries FOR UPDATE TO anon, authenticated USING (true);

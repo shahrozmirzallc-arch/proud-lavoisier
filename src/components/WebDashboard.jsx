@@ -5,7 +5,7 @@ import {
   FileSpreadsheet, Calendar, ArrowRight, UserPlus, MapPin, Printer, Download, Eye, EyeOff, Sparkles, Key,
   Milestone, TrendingUp, FolderKanban, PlusCircle, Plus, ArrowLeft, Camera, ClipboardCheck, Zap, Building2, ShieldAlert, User, Cpu, Mic, Video, Trash2, History, Lock, BarChart3, Layers
 } from 'lucide-react';
-import { getEntities, saveEntity, resetDB, logSystemEvent, addProject, deleteRate, isFieldRep, syncWithSupabase, supabase, addUser, isEntryAccountingEligible } from './SharedDatabase';
+import { getEntities, saveEntity, logSystemEvent, deleteRate, isFieldRep, syncWithSupabase, supabase, addUser, isEntryAccountingEligible } from './SharedDatabase';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { LOGO_BASE64 } from './LogoBase64';
@@ -13,7 +13,7 @@ import IntegrityWeeklyTimesheet from './IntegrityWeeklyTimesheet';
 import { generateIntegrityInvoicePDF } from '../utils/generateInvoicePdf';
 import { InvoiceModal } from './InvoiceModal';
 import { performAtomicClientOnboarding, formatRateDisplay } from '../services/onboardingService';
-import { getFormattedLocationTime, getFormattedLocationDate } from '../utils/locationTimeUtil';
+import { getFormattedLocationTime } from '../utils/locationTimeUtil';
 
 export const EXPENSE_GROUPS = {
   INTERNAL: 'Internal Expense (IDS)',
@@ -91,7 +91,6 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   const [quickClientSchedule, setQuickClientSchedule] = useState('on-demand');
   const [quickClientAddress, setQuickClientAddress] = useState('');
   const [isInlineNewRep, setIsInlineNewRep] = useState(false);
-  const [inlineRepNo, setInlineRepNo] = useState('');
   const [inlineRepName, setInlineRepName] = useState('');
   const [inlineRepEmail, setInlineRepEmail] = useState('');
   const [inlineRepPhone, setInlineRepPhone] = useState('');
@@ -199,7 +198,6 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   };
 
   // Admin Hours Review Queue State & Action Handlers
-  const [reviewModalState, setReviewModalState] = useState({ show: false, action: null, entry: null, notes: '' });
   const [reviewSearchTerm, setReviewSearchTerm] = useState('');
 
   // Client Overtime Review State & Handlers
@@ -301,8 +299,6 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     if (dbUpdateTrigger) dbUpdateTrigger(Date.now());
   };
 
-  // Navigation & UI Ergonomics Mode ('inspector' vs 'admin')
-  const [uiMode, setUiMode] = useState('inspector');
   const [activeTab, setActiveTab] = useState('command-center');
   const [primaryDomain, setPrimaryDomain] = useState('operations'); // 'operations', 'workforce', 'finance', 'governance'
 
@@ -337,134 +333,6 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   };
 
   // Live Operations Command Center (Real-Time Field Rep Radar) State
-  const [repDeployments, setRepDeployments] = useState([
-    {
-      id: 'clarence',
-      name: 'Clarence (QRE Rep)',
-      avatar: 'CR',
-      avatarColor: 'from-emerald-600 to-teal-800',
-      plant: 'Ford Oakville Assembly',
-      customer: 'Ford Motor Co.',
-      location: 'Gate 4 - Line 2 Sorting Bay',
-      status: 'Active Inspecting',
-      statusType: 'active',
-      statusBg: 'bg-emerald-950/80 text-emerald-300 border-emerald-500/40',
-      dotBg: 'bg-emerald-400 animate-pulse',
-      partNumber: '86289912',
-      partName: 'Main Body Wire Harness Assembly',
-      defectType: 'Terminal Pin Bend / Lock Disengagement',
-      severity: 'High (P1 Line Containment)',
-      severityColor: 'bg-red-950/80 text-red-300 border-red-500/40',
-      inspected: 850,
-      target: 1200,
-      reworked: 42,
-      quarantined: 14,
-      passed: 794,
-      reworkYield: '95.1%',
-      shiftStarted: '07:00 AM',
-      shiftDuration: '5h 30m',
-      loggedHours: 5.5,
-      breakStatus: 'On Active Shift',
-      lastPing: '2 mins ago',
-      phone: '+1 (416) 555-0192'
-    },
-    {
-      id: 'hugo',
-      name: 'Hugo (Quality Rep)',
-      avatar: 'HG',
-      avatarColor: 'from-cyan-600 to-blue-800',
-      plant: 'Magna Closures - Oakville',
-      customer: 'Magna International',
-      location: 'Staging Area B - Dock 12',
-      status: 'Active Inspecting',
-      statusType: 'active',
-      statusBg: 'bg-emerald-950/80 text-emerald-300 border-emerald-500/40',
-      dotBg: 'bg-emerald-400 animate-pulse',
-      partNumber: '9912041X',
-      partName: 'Power Side Door Latch Actuator',
-      defectType: 'Micro-Switch Seating Alignment',
-      severity: 'Medium (Component Rework)',
-      severityColor: 'bg-amber-950/80 text-amber-300 border-amber-500/40',
-      inspected: 640,
-      target: 800,
-      reworked: 28,
-      quarantined: 6,
-      passed: 606,
-      reworkYield: '94.7%',
-      shiftStarted: '08:00 AM',
-      shiftDuration: '4h 30m',
-      loggedHours: 4.5,
-      breakStatus: 'On Active Shift',
-      lastPing: '1 min ago',
-      phone: '+1 (416) 555-0144'
-    },
-    {
-      id: 'nabil',
-      name: 'Nabil (QRE Inspector)',
-      avatar: 'NB',
-      avatarColor: 'from-amber-600 to-orange-800',
-      plant: 'AutoKabel Canada',
-      customer: 'AutoKabel North America',
-      location: 'Receiving Inspection Bay 3',
-      status: 'Dispatch En Route',
-      statusType: 'enroute',
-      statusBg: 'bg-amber-950/80 text-amber-300 border-amber-500/40',
-      dotBg: 'bg-amber-400 animate-ping',
-      partNumber: '7721890A',
-      partName: 'High Voltage Battery Busbar Harness',
-      defectType: 'Insulation Sheath Micro-Abrasion',
-      severity: 'Critical (Pre-Assembly Hold)',
-      severityColor: 'bg-red-950/80 text-red-300 border-red-500/40',
-      inspected: 310,
-      target: 500,
-      reworked: 15,
-      quarantined: 9,
-      passed: 286,
-      reworkYield: '92.3%',
-      shiftStarted: '09:30 AM',
-      shiftDuration: '3h 00m',
-      loggedHours: 3.0,
-      breakStatus: 'En Route to Bay 3',
-      lastPing: 'Just now',
-      phone: '+1 (416) 555-0811'
-    },
-    {
-      id: 'rogelio',
-      name: 'Rogelio (Lead Rep)',
-      avatar: 'RG',
-      avatarColor: 'from-purple-600 to-indigo-800',
-      plant: 'Brose Cobourg Facility',
-      customer: 'Brose North America',
-      location: 'Sub-Assembly Station 8',
-      status: 'On Break',
-      statusType: 'break',
-      statusBg: 'bg-indigo-950/80 text-indigo-300 border-indigo-500/40',
-      dotBg: 'bg-indigo-400',
-      partNumber: '5521098B',
-      partName: 'Rear Power Seat Rail Module',
-      defectType: 'Weld Seam Porosity Audit',
-      severity: 'Low (Routine Batch Inspection)',
-      severityColor: 'bg-blue-950/80 text-blue-300 border-blue-500/40',
-      inspected: 920,
-      target: 1000,
-      reworked: 18,
-      quarantined: 3,
-      passed: 899,
-      reworkYield: '98.0%',
-      shiftStarted: '06:30 AM',
-      shiftDuration: '6h 00m',
-      loggedHours: 6.0,
-      breakStatus: '15-min Break (Ends 1:30 PM)',
-      lastPing: '8 mins ago',
-      phone: '+1 (416) 555-0377'
-    }
-  ]);
-
-  const [activeDispatchModal, setActiveDispatchModal] = useState(null);
-  const [dispatchMsg, setDispatchMsg] = useState('');
-  const [dispatchPriority, setDispatchPriority] = useState('P1 Emergency Containment');
-  const [dispatchToast, setDispatchToast] = useState('');
-
   const [searchQuery, setSearchQuery] = useState('');
   const deferredSearchQuery = useDeferredValue(searchQuery);
   const [selectedSupplierFilter, setSelectedSupplierFilter] = useState('all');
@@ -4546,7 +4414,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
       worksheet.getCell('A6').value = 'Classification:';
       worksheet.getCell('A6').font = { bold: true, color: { argb: textSlate } };
-      worksheet.getCell('B6').value = 'STRICTLY CONFIDENTIAL - INTERNAL PAYROLL & FINANCIAL';
+      worksheet.getCell('B6').value = `${conf.level} - ${conf.sub}`;
       worksheet.getCell('B6').font = { bold: true, color: { argb: 'B91C1C' } };
 
       // Style a mini red box for classification notice
@@ -7487,6 +7355,17 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                       <option key={s.id} value={s.id}>{s.name}</option>
                     ))}
                   </select>
+
+                  <select 
+                    value={selectedStatusFilter}
+                    onChange={(e) => setSelectedStatusFilter(e.target.value)}
+                    className="h-8 bg-surface border border-border-subtle hover:border-border-subtle rounded-xl px-3.5 text-[13.5px] text-text-primary focus:outline-none focus:ring-1 focus:ring-[#3B82F6]/20 transition-all"
+                  >
+                    <option value="all">All Statuses</option>
+                    <option value="Open Defect Hold">Open Defect Hold</option>
+                    <option value="Pending Approval">Pending Approval</option>
+                    <option value="Approved">Approved</option>
+                  </select>
                 </div>
 
                 <div className="flex-1 overflow-y-auto overflow-x-auto scrollbar-thin">
@@ -9476,16 +9355,10 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     const usdExpense = usdExpenses.reduce((acc, curr) => acc + parseFloat(curr.amount || 0), 0);
                     const usdTotal = usdHourly + usdMileage + usdExpense;
 
-                    const clientHourlySub = selectedInvoiceCurrency === 'CAD' ? cadHourly : (selectedInvoiceCurrency === 'USD' ? usdHourly : cadHourly + usdHourly);
-                    const clientMileageSub = selectedInvoiceCurrency === 'CAD' ? cadMileage : (selectedInvoiceCurrency === 'USD' ? usdMileage : cadMileage + usdMileage);
-                    const clientExpenseSub = selectedInvoiceCurrency === 'CAD' ? cadExpense : (selectedInvoiceCurrency === 'USD' ? usdExpense : cadExpense + usdExpense);
-                    const clientGrandTotal = selectedInvoiceCurrency === 'CAD' ? cadTotal : (selectedInvoiceCurrency === 'USD' ? usdTotal : cadTotal + usdTotal);
-
                     const hoursSubDisplay = selectedInvoiceCurrency === 'all' ? `C$ ${cadHourly.toFixed(2)} + US$ ${usdHourly.toFixed(2)}` : (selectedInvoiceCurrency === 'CAD' ? `C$ ${cadHourly.toFixed(2)}` : `US$ ${usdHourly.toFixed(2)}`);
                     const mileageSubDisplay = selectedInvoiceCurrency === 'all' ? `C$ ${cadMileage.toFixed(2)} + US$ ${usdMileage.toFixed(2)}` : (selectedInvoiceCurrency === 'CAD' ? `C$ ${cadMileage.toFixed(2)}` : `US$ ${usdMileage.toFixed(2)}`);
                     const expenseSubDisplay = selectedInvoiceCurrency === 'all' ? `C$ ${cadExpense.toFixed(2)} + US$ ${usdExpense.toFixed(2)}` : (selectedInvoiceCurrency === 'CAD' ? `C$ ${cadExpense.toFixed(2)}` : `US$ ${usdExpense.toFixed(2)}`);
                     const grandTotalDisplay = selectedInvoiceCurrency === 'all' ? `C$ ${cadTotal.toFixed(2)} & US$ ${usdTotal.toFixed(2)}` : (selectedInvoiceCurrency === 'CAD' ? `C$ ${cadTotal.toFixed(2)}` : `US$ ${usdTotal.toFixed(2)}`);
-                    const invoiceCurrencySymbol = selectedInvoiceCurrency === 'all' ? '' : (selectedInvoiceCurrency === 'CAD' ? 'C$' : 'US$');
 
                     const dates = includedEntries.filter(e => e && e.date).map(e => e.date).sort();
                     const dateRangeStr = dates.length > 0 ? `From ${dates[0]} to ${dates[dates.length - 1]}` : 'No pending periods';

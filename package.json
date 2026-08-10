@@ -17,6 +17,7 @@
     "@phosphor-icons/react": "^2.1.10",
     "@supabase/supabase-js": "^2.110.1",
     "@tailwindcss/vite": "^4.3.0",
+    "emoji-regex": "^10.6.0",
     "exceljs": "^4.4.0",
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.8",

@@ -5432,7 +5432,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
                   <button 
                     onClick={() => setActiveTab('heatmap')}
-                    className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14px] transition-all cursor-pointer flex items-center justify-between border ${
+                    className={`hidden w-full h-11 px-3.5 rounded-xl font-bold text-[14px] transition-all cursor-pointer flex items-center justify-between border ${
                       activeTab === 'heatmap' 
                         ? 'bg-[#10284A] text-white border-[#10284A] shadow-md font-extrabold' 
                         : 'bg-white text-slate-700 hover:bg-[#F5F8FC] hover:text-[#10284A] border-slate-200'
@@ -5447,7 +5447,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
                   <button 
                     onClick={() => setActiveTab('shift-logs')}
-                    className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14px] transition-all cursor-pointer flex items-center justify-between border ${
+                    className={`hidden w-full h-11 px-3.5 rounded-xl font-bold text-[14px] transition-all cursor-pointer flex items-center justify-between border ${
                       activeTab === 'shift-logs' 
                         ? 'bg-[#10284A] text-white border-[#10284A] shadow-md font-extrabold' 
                         : 'bg-white text-slate-700 hover:bg-[#F5F8FC] hover:text-[#10284A] border-slate-200'
@@ -5462,7 +5462,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
                   <button 
                     onClick={() => setActiveTab('daily-checklists')}
-                    className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14px] transition-all cursor-pointer flex items-center justify-between border ${
+                    className={`hidden w-full h-11 px-3.5 rounded-xl font-bold text-[14px] transition-all cursor-pointer flex items-center justify-between border ${
                       activeTab === 'daily-checklists' 
                         ? 'bg-[#10284A] text-white border-[#10284A] shadow-md font-extrabold' 
                         : 'bg-white text-slate-700 hover:bg-[#F5F8FC] hover:text-[#10284A] border-slate-200'
@@ -5477,7 +5477,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
                   <button 
                     onClick={() => setActiveTab('rework-logs')}
-                    className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14px] transition-all cursor-pointer flex items-center justify-between border ${
+                    className={`hidden w-full h-11 px-3.5 rounded-xl font-bold text-[14px] transition-all cursor-pointer flex items-center justify-between border ${
                       activeTab === 'rework-logs' 
                         ? 'bg-[#10284A] text-white border-[#10284A] shadow-md font-extrabold' 
                         : 'bg-white text-slate-700 hover:bg-[#F5F8FC] hover:text-[#10284A] border-slate-200'
@@ -5712,7 +5712,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
                         <button 
                           onClick={() => setActiveTab('heatmap')}
-                          className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14px] transition-all cursor-pointer flex items-center justify-between border ${
+                          className={`hidden w-full h-11 px-3.5 rounded-xl font-bold text-[14px] transition-all cursor-pointer flex items-center justify-between border ${
                             activeTab === 'heatmap' 
                               ? 'bg-[#10284A] text-white border-[#10284A] shadow-md font-extrabold' 
                               : 'bg-white text-slate-700 hover:bg-[#F5F8FC] hover:text-[#10284A] border-slate-200'
@@ -5742,7 +5742,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
                         <button 
                           onClick={() => setActiveTab('shift-logs')}
-                          className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14px] transition-all cursor-pointer flex items-center justify-between border ${
+                          className={`hidden w-full h-11 px-3.5 rounded-xl font-bold text-[14px] transition-all cursor-pointer flex items-center justify-between border ${
                             activeTab === 'shift-logs' 
                               ? 'bg-[#10284A] text-white border-[#10284A] shadow-md font-extrabold' 
                               : 'bg-white text-slate-700 hover:bg-[#F5F8FC] hover:text-[#10284A] border-slate-200'
@@ -5757,7 +5757,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
                         <button 
                           onClick={() => setActiveTab('daily-checklists')}
-                          className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14px] transition-all cursor-pointer flex items-center justify-between border ${
+                          className={`hidden w-full h-11 px-3.5 rounded-xl font-bold text-[14px] transition-all cursor-pointer flex items-center justify-between border ${
                             activeTab === 'daily-checklists' 
                               ? 'bg-[#10284A] text-white border-[#10284A] shadow-md font-extrabold' 
                               : 'bg-white text-slate-700 hover:bg-[#F5F8FC] hover:text-[#10284A] border-slate-200'
@@ -5773,7 +5773,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         {userRole !== 'accountant' && (
                           <button 
                             onClick={() => setActiveTab('rework-logs')}
-                            className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14px] transition-all cursor-pointer flex items-center justify-between border ${
+                            className={`hidden w-full h-11 px-3.5 rounded-xl font-bold text-[14px] transition-all cursor-pointer flex items-center justify-between border ${
                               activeTab === 'rework-logs' 
                                 ? 'bg-[#10284A] text-white border-[#10284A] shadow-md font-extrabold' 
                                 : 'bg-white text-slate-700 hover:bg-[#F5F8FC] hover:text-[#10284A] border-slate-200'

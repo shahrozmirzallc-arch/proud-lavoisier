@@ -303,7 +303,7 @@ export function resetDB() {
       // Re-seed essential admin accounts to Supabase
       for (const admin of ESSENTIAL_ADMIN_USERS) {
         try {
-          const { error: seedErr } = await supabase.from('users').upsert(admin);
+          const { error: seedErr } = await supabase.from('users').upsert(toCloudShape('users', admin));
           if (seedErr) console.error("Admin seed error:", seedErr.message);
         } catch (e) {
           console.error("Admin seed exception:", e);
@@ -496,13 +496,21 @@ export async function syncWithSupabase(force = false, roleOverride = null, repId
           continue;
         }
 
-        const cloudItems = data || [];
+        const cloudItems = (data || []).map(row => fromCloudShape(col, row));
 
         // Cloud state is authoritative for scoped entities; merge local newly created items so they are never lost
         if (col === 'suppliers' || col === 'projects' || col === 'rates' || col === 'users' || col === 'plants' || col === 'systemLogs' || col === 'extraHoursRequests') {
           const localItems = db[col] || [];
           const mergedMap = new Map();
-          cloudItems.forEach(item => { if (item && item.id) mergedMap.set(String(item.id), item); });
+          cloudItems.forEach(item => {
+            if (!item || !item.id) return;
+            // A cloud row with no credential must not wipe a credential we already hold locally.
+            const localMatch = localItems.find(l => String(l.id) === String(item.id));
+            const safeItem = (col === 'users' && !item.password && localMatch?.password)
+              ? { ...item, password: localMatch.password }
+              : item;
+            mergedMap.set(String(item.id), safeItem);
+          });
           localItems.forEach(item => { if (item && item.id && !mergedMap.has(String(item.id))) mergedMap.set(String(item.id), item); });
 
           const merged = Array.from(mergedMap.values());
@@ -564,6 +572,15 @@ export async function flushOfflineQueue() {
   if (isFlushingOfflineQueue) return;
   isFlushingOfflineQueue = true;
 
+  // One-time purge of the pre-mapping backlog. Everything queued before the
+  // password/passcode mapping existed failed for a reason that no longer
+  // applies, and most of it is test data. Do not replay it.
+  const PURGE_FLAG = 'ids_pulse_queue_purged_v1';
+  if (typeof localStorage !== 'undefined' && !localStorage.getItem(PURGE_FLAG)) {
+    localStorage.setItem('ids_pulse_offline_queue', '[]');
+    localStorage.setItem(PURGE_FLAG, new Date().toISOString());
+  }
+
   try {
     const queue = JSON.parse(localStorage.getItem('ids_pulse_offline_queue') || '[]');
     if (queue.length === 0) return;
@@ -591,7 +608,7 @@ export async function flushOfflineQueue() {
         const targetTable = getSupabaseTableName(item.type);
         if (targetTable && targetTable !== 'incidents') {
           try {
-            const { error } = await supabase.from(targetTable).upsert(item.entity);
+            const { error } = await supabase.from(targetTable).upsert(toCloudShape(item.type, item.entity));
             if (error) {
               console.error(`[Offline Sync Error] ${targetTable}:`, error.message);
               remainingQueue.push({
@@ -718,6 +735,38 @@ export function getEntities(type) {
   return entities;
 }
 
+// The local model and the Supabase schema disagree on two field names.
+// Everything crossing the boundary goes through these two functions, and only these.
+const CLOUD_FIELD_MAP = {
+  users: { password: 'passcode', pay_rate: 'hourly_rate' }
+};
+
+export function toCloudShape(type, entity) {
+  const map = CLOUD_FIELD_MAP[type];
+  if (!map || !entity) return entity;
+  const out = { ...entity };
+  Object.entries(map).forEach(([localKey, cloudKey]) => {
+    if (localKey in out) {
+      out[cloudKey] = out[localKey];
+      delete out[localKey];
+    }
+  });
+  return out;
+}
+
+export function fromCloudShape(type, row) {
+  const map = CLOUD_FIELD_MAP[type];
+  if (!map || !row) return row;
+  const out = { ...row };
+  Object.entries(map).forEach(([localKey, cloudKey]) => {
+    if (cloudKey in out) {
+      out[localKey] = out[cloudKey];
+      delete out[cloudKey];
+    }
+  });
+  return out;
+}
+
 // Save entity helper
 export function saveEntity(type, entity) {
   const db = getDB();
@@ -795,7 +844,7 @@ export function saveEntity(type, entity) {
       return normalizedEntity;
     }
 
-    Promise.resolve(supabase.from(targetTable).upsert(normalizedEntity)).then((res) => {
+    Promise.resolve(supabase.from(targetTable).upsert(toCloudShape(type, normalizedEntity))).then((res) => {
       const error = res?.error;
       if (error) {
         console.error(`[Supabase Cloud Upsert Error] Table "${targetTable}":`, error.message);

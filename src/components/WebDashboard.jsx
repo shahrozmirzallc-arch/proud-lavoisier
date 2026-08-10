@@ -10108,16 +10108,16 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                             </div>
 
                             {/* CLIENT REP USER LOGIN PROVISIONING FIELDS */}
-                            <div className="bg-blue-950/30 border border-blue-500/30 p-3 rounded-xl flex flex-col gap-2.5 mt-1">
-                              <div className="flex items-center justify-between border-b border-blue-500/20 pb-1.5">
-                                <span className="text-[11px] font-extrabold text-blue-300 uppercase tracking-wider flex items-center gap-1"><Key className="w-3.5 h-3.5 text-blue-400" /> Client Rep Login Account</span>
-                                <span className="text-[9.5px] bg-blue-900/60 text-blue-200 px-2 py-0.5 rounded font-mono">Role: Customer</span>
+                            <div className="bg-slate-50 border border-blue-200 p-3.5 rounded-xl flex flex-col gap-2.5 mt-1 shadow-sm">
+                              <div className="flex items-center justify-between border-b border-blue-200/80 pb-2">
+                                <span className="text-[11.5px] font-extrabold text-[#10284A] uppercase tracking-wider flex items-center gap-1.5"><Key className="w-3.5 h-3.5 text-[#1769E0]" /> Client Rep Login Account</span>
+                                <span className="text-[10px] bg-blue-100 text-[#10284A] border border-blue-200 px-2 py-0.5 rounded font-mono font-extrabold">Role: Customer</span>
                               </div>
 
                               <div className="flex flex-col gap-1">
                                 <div className="flex items-center justify-between">
-                                  <label className="text-[10px] font-bold text-blue-200 uppercase tracking-wider">Client Login Username</label>
-                                  <span className="text-[9px] text-emerald-400 font-mono font-bold">Short Format: Company_Name</span>
+                                  <label className="text-[10.5px] font-extrabold text-slate-800 uppercase tracking-wider">Client Login Username</label>
+                                  <span className="text-[10px] text-emerald-700 font-mono font-extrabold">Short Format: Company_Name</span>
                                 </div>
                                 <input 
                                   type="text" 
@@ -10128,29 +10128,29 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                       ? `${(newCustomerName || 'company').trim().split(' ')[0].toLowerCase().replace(/[^a-z0-9]/g, '')}_${(newCustomerContactName || 'rep').trim().split(' ')[0].toLowerCase().replace(/[^a-z0-9]/g, '')}`
                                       : 'autokabel_juan'
                                   } 
-                                  className="bg-surface border border-blue-500/40 rounded-xl px-3 py-1.5 text-xs text-text-primary font-mono focus:border-blue-400" 
+                                  className="bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 font-mono focus:border-[#1769E0] focus:ring-1 focus:ring-[#1769E0] shadow-xs" 
                                 />
                               </div>
 
                               <div className="flex flex-col gap-1">
-                                <label className="text-[10px] font-bold text-blue-200 uppercase tracking-wider">Client Login Password (Selected by Admin)</label>
+                                <label className="text-[10.5px] font-extrabold text-slate-800 uppercase tracking-wider">Client Login Password (Selected by Admin)</label>
                                 <div className="relative">
                                   <input 
                                     type={showNewCustPassword ? "text" : "password"} 
                                     value={newCustomerPassword} 
                                     onChange={(e) => setNewCustomerPassword(e.target.value)} 
                                     placeholder="Enter custom password..." 
-                                    className="bg-surface border border-blue-500/40 rounded-xl pl-3 pr-10 py-1.5 text-xs text-text-primary font-mono focus:border-blue-400 w-full" 
+                                    className="bg-white border border-slate-300 rounded-xl pl-3 pr-14 py-2 text-xs text-slate-900 font-mono focus:border-[#1769E0] focus:ring-1 focus:ring-[#1769E0] w-full shadow-xs" 
                                   />
                                   <button
                                     type="button"
                                     onClick={() => setShowNewCustPassword(!showNewCustPassword)}
-                                    className="absolute right-2 top-1/2 -translate-y-1/2 text-blue-300 hover:text-white p-1 text-[11px] font-bold"
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 text-[#1769E0] hover:text-[#10284A] px-2 py-1 text-[11px] font-extrabold cursor-pointer"
                                   >
                                     {showNewCustPassword ? 'Hide' : 'Show'}
                                   </button>
                                 </div>
-                                <span className="text-[9.5px] text-blue-300/70">Leave blank to use default (Password123!)</span>
+                                <span className="text-[10px] text-slate-600 font-bold">Leave blank to use default (Password123!)</span>
                               </div>
                             </div>
 

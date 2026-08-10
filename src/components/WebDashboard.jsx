@@ -5299,8 +5299,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
         {!forceRoadmapOnly && (
           <div className="w-64 flex flex-col gap-3 flex-shrink-0">
             
-            {/* Left Sidebar 4-Domain Primary Navigation Header */}
-            <div className="flex flex-col gap-1.5 p-2 rounded-2xl bg-surface border border-border-subtle mb-1 text-left">
+            {/* Left Sidebar 4-Domain Primary Navigation Header (Hidden per UI preference) */}
+            <div className="hidden flex-col gap-1.5 p-2 rounded-2xl bg-surface border border-border-subtle mb-1 text-left">
               <span className="text-[10px] font-black text-text-secondary uppercase tracking-widest px-2 py-0.5 block">
                 Consolidated Hubs
               </span>
@@ -5975,8 +5975,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
           {activeTab === 'command-center' && userRole !== 'customer' && (
             <div className="flex-1 flex flex-col gap-6 min-h-0 text-left overflow-y-auto pr-1">
               
-              {/* PRIMARY 4-DOMAIN NAVIGATION BAR */}
-              <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-surface border border-border-subtle overflow-x-auto scrollbar-none mb-2">
+              {/* PRIMARY 4-DOMAIN NAVIGATION BAR (Hidden per UI preference) */}
+              <div className="hidden items-center gap-2 p-1.5 rounded-2xl bg-surface border border-border-subtle overflow-x-auto scrollbar-none mb-2">
                 <button
                   type="button"
                   onClick={() => { setPrimaryDomain('operations'); setActiveTab('command-center'); }}

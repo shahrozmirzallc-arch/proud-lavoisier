@@ -5307,10 +5307,10 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
               <button
                 type="button"
                 onClick={() => { setPrimaryDomain('operations'); setActiveTab('command-center'); }}
-                className={`w-full px-3 py-2 rounded-xl font-black text-[12.5px] cursor-pointer transition-all flex items-center justify-between border ${
+                className={`w-full px-3.5 py-2.5 rounded-xl font-extrabold text-[12.5px] cursor-pointer transition-all flex items-center justify-between border ${
                   primaryDomain === 'operations'
-                    ? 'bg-blue-600 text-white border-blue-500 shadow-md'
-                    : 'bg-surface-elevated text-text-secondary hover:text-text-primary border-border-subtle/70'
+                    ? 'bg-[#10284A] text-white border-[#10284A] shadow-md'
+                    : 'bg-white text-slate-700 hover:text-[#10284A] hover:bg-[#F5F8FC] border-slate-200'
                 }`}
               >
                 <div className="flex items-center gap-2">
@@ -5322,10 +5322,10 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
               <button
                 type="button"
                 onClick={() => { setPrimaryDomain('reports'); setActiveTab('shift-logs'); }}
-                className={`w-full px-3 py-2 rounded-xl font-black text-[12.5px] cursor-pointer transition-all flex items-center justify-between border ${
+                className={`w-full px-3.5 py-2.5 rounded-xl font-extrabold text-[12.5px] cursor-pointer transition-all flex items-center justify-between border ${
                   primaryDomain === 'reports'
-                    ? 'bg-sky-600 text-white border-sky-500 shadow-md'
-                    : 'bg-surface-elevated text-text-secondary hover:text-text-primary border-border-subtle/70'
+                    ? 'bg-[#10284A] text-white border-[#10284A] shadow-md'
+                    : 'bg-white text-slate-700 hover:text-[#10284A] hover:bg-[#F5F8FC] border-slate-200'
                 }`}
               >
                 <div className="flex items-center gap-2">
@@ -5337,10 +5337,10 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
               <button
                 type="button"
                 onClick={() => { setPrimaryDomain('workforce'); setActiveTab('users'); }}
-                className={`w-full px-3 py-2 rounded-xl font-black text-[12.5px] cursor-pointer transition-all flex items-center justify-between border ${
+                className={`w-full px-3.5 py-2.5 rounded-xl font-extrabold text-[12.5px] cursor-pointer transition-all flex items-center justify-between border ${
                   primaryDomain === 'workforce'
-                    ? 'bg-emerald-600 text-white border-emerald-500 shadow-md'
-                    : 'bg-surface-elevated text-text-secondary hover:text-text-primary border-border-subtle/70'
+                    ? 'bg-[#10284A] text-white border-[#10284A] shadow-md'
+                    : 'bg-white text-slate-700 hover:text-[#10284A] hover:bg-[#F5F8FC] border-slate-200'
                 }`}
               >
                 <div className="flex items-center gap-2">
@@ -5352,10 +5352,10 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
               <button
                 type="button"
                 onClick={() => { setPrimaryDomain('finance'); setActiveTab('time-tracking'); }}
-                className={`w-full px-3 py-2 rounded-xl font-black text-[12.5px] cursor-pointer transition-all flex items-center justify-between border ${
+                className={`w-full px-3.5 py-2.5 rounded-xl font-extrabold text-[12.5px] cursor-pointer transition-all flex items-center justify-between border ${
                   primaryDomain === 'finance'
-                    ? 'bg-amber-600 text-white border-amber-500 shadow-md'
-                    : 'bg-surface-elevated text-text-secondary hover:text-text-primary border-border-subtle/70'
+                    ? 'bg-[#10284A] text-white border-[#10284A] shadow-md'
+                    : 'bg-white text-slate-700 hover:text-[#10284A] hover:bg-[#F5F8FC] border-slate-200'
                 }`}
               >
                 <div className="flex items-center gap-2">
@@ -5392,102 +5392,102 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
                 {/* QUALITY & FIELD OPERATIONS */}
                 <div className="flex flex-col gap-1.5 mb-1">
-                  <div className="text-[11px] font-extrabold text-sky-400 uppercase tracking-wider px-2 py-0.5 flex items-center justify-between">
+                  <div className="text-[11px] font-extrabold text-[#10284A] uppercase tracking-wider px-2 py-0.5 flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Activity className="w-3.5 h-3.5 text-sky-400 animate-pulse" />
+                      <Activity className="w-3.5 h-3.5 text-[#1769E0]" />
                       <span>Quality & Field Operations</span>
                     </div>
-                    <span className="text-[9px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-1.5 py-0.5 rounded font-black tracking-widest">LIVE</span>
+                    <span className="text-[9px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-1.5 py-0.5 rounded font-extrabold tracking-widest">LIVE</span>
                   </div>
 
                   <button 
                     onClick={() => setActiveTab('command-center')}
-                    className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14.5px] transition-all cursor-pointer flex items-center justify-between border ${
+                    className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14px] transition-all cursor-pointer flex items-center justify-between border ${
                       activeTab === 'command-center' 
-                        ? 'bg-blue-950/80 text-blue-300 border-blue-500/60 shadow-lg shadow-blue-500/30 font-black' 
-                        : 'bg-surface-elevated text-text-secondary hover:bg-surface hover:text-text-primary border-border-subtle/70'
+                        ? 'bg-[#10284A] text-white border-[#10284A] shadow-md font-extrabold' 
+                        : 'bg-white text-slate-700 hover:bg-[#F5F8FC] hover:text-[#10284A] border-slate-200'
                     }`}
                   >
                     <div className="flex items-center gap-2.5">
-                      <Activity className="w-4.5 h-4.5 text-[#3B82F6] animate-pulse" />
+                      <Activity className={`w-4.5 h-4.5 ${activeTab === 'command-center' ? 'text-white' : 'text-[#1769E0]'}`} />
                       <span>Live Command Center</span>
                     </div>
-                    {activeTab === 'command-center' && <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399] animate-ping"></div>}
+                    {activeTab === 'command-center' && <div className="w-2.5 h-2.5 rounded-full bg-emerald-400"></div>}
                   </button>
 
                   <button 
                     onClick={() => setActiveTab('incidents')}
-                    className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14.5px] transition-all cursor-pointer flex items-center justify-between border ${
+                    className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14px] transition-all cursor-pointer flex items-center justify-between border ${
                       activeTab === 'incidents' 
-                        ? 'bg-sky-950/70 text-sky-300 border-sky-500/50 shadow-md shadow-sky-500/20' 
-                        : 'bg-surface-elevated text-text-secondary hover:bg-surface hover:text-text-primary border-border-subtle/70'
+                        ? 'bg-[#10284A] text-white border-[#10284A] shadow-md font-extrabold' 
+                        : 'bg-white text-slate-700 hover:bg-[#F5F8FC] hover:text-[#10284A] border-slate-200'
                     }`}
                   >
                     <div className="flex items-center gap-2.5">
-                      <FileText className="w-4.5 h-4.5 text-[#3B82F6]" />
+                      <FileText className={`w-4.5 h-4.5 ${activeTab === 'incidents' ? 'text-white' : 'text-[#1769E0]'}`} />
                       <span>Incident Defects Feed</span>
                     </div>
-                    {activeTab === 'incidents' && <div className="w-2 h-2 rounded-full bg-[#3B82F6] shadow-[0_0_6px_#3b82f6]"></div>}
+                    {activeTab === 'incidents' && <div className="w-2 h-2 rounded-full bg-[#1769E0]"></div>}
                   </button>
 
                   <button 
                     onClick={() => setActiveTab('heatmap')}
-                    className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14.5px] transition-all cursor-pointer flex items-center justify-between border ${
+                    className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14px] transition-all cursor-pointer flex items-center justify-between border ${
                       activeTab === 'heatmap' 
-                        ? 'bg-sky-950/70 text-sky-300 border-sky-500/50 shadow-md shadow-sky-500/20' 
-                        : 'bg-surface-elevated text-text-secondary hover:bg-surface hover:text-text-primary border-border-subtle/70'
+                        ? 'bg-[#10284A] text-white border-[#10284A] shadow-md font-extrabold' 
+                        : 'bg-white text-slate-700 hover:bg-[#F5F8FC] hover:text-[#10284A] border-slate-200'
                     }`}
                   >
                     <div className="flex items-center gap-2.5">
-                      <MapPin className="w-4.5 h-4.5 text-[#3B82F6]" />
+                      <MapPin className={`w-4.5 h-4.5 ${activeTab === 'heatmap' ? 'text-white' : 'text-[#1769E0]'}`} />
                       <span>Visual Defect Matrix</span>
                     </div>
-                    {activeTab === 'heatmap' && <div className="w-2 h-2 rounded-full bg-[#3B82F6] shadow-[0_0_6px_#3b82f6]"></div>}
+                    {activeTab === 'heatmap' && <div className="w-2 h-2 rounded-full bg-[#1769E0]"></div>}
                   </button>
 
                   <button 
                     onClick={() => setActiveTab('shift-logs')}
-                    className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14.5px] transition-all cursor-pointer flex items-center justify-between border ${
+                    className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14px] transition-all cursor-pointer flex items-center justify-between border ${
                       activeTab === 'shift-logs' 
-                        ? 'bg-sky-950/70 text-sky-300 border-sky-500/50 shadow-md shadow-sky-500/20' 
-                        : 'bg-surface-elevated text-text-secondary hover:bg-surface hover:text-text-primary border-border-subtle/70'
+                        ? 'bg-[#10284A] text-white border-[#10284A] shadow-md font-extrabold' 
+                        : 'bg-white text-slate-700 hover:bg-[#F5F8FC] hover:text-[#10284A] border-slate-200'
                     }`}
                   >
                     <div className="flex items-center gap-2.5">
-                      <Calendar className="w-4.5 h-4.5 text-[#3B82F6]" />
+                      <Calendar className={`w-4.5 h-4.5 ${activeTab === 'shift-logs' ? 'text-white' : 'text-[#1769E0]'}`} />
                       <span>Daily Quality Reports Feed</span>
                     </div>
-                    {activeTab === 'shift-logs' && <div className="w-2 h-2 rounded-full bg-[#3B82F6] shadow-[0_0_6px_#3b82f6]"></div>}
+                    {activeTab === 'shift-logs' && <div className="w-2 h-2 rounded-full bg-[#1769E0]"></div>}
                   </button>
 
                   <button 
                     onClick={() => setActiveTab('daily-checklists')}
-                    className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14.5px] transition-all cursor-pointer flex items-center justify-between border ${
+                    className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14px] transition-all cursor-pointer flex items-center justify-between border ${
                       activeTab === 'daily-checklists' 
-                        ? 'bg-sky-950/70 text-sky-300 border-sky-500/50 shadow-md shadow-sky-500/20' 
-                        : 'bg-surface-elevated text-text-secondary hover:bg-surface hover:text-text-primary border-border-subtle/70'
+                        ? 'bg-[#10284A] text-white border-[#10284A] shadow-md font-extrabold' 
+                        : 'bg-white text-slate-700 hover:bg-[#F5F8FC] hover:text-[#10284A] border-slate-200'
                     }`}
                   >
                     <div className="flex items-center gap-2.5">
-                      <ClipboardCheck className="w-4.5 h-4.5 text-[#3B82F6]" />
+                      <ClipboardCheck className={`w-4.5 h-4.5 ${activeTab === 'daily-checklists' ? 'text-white' : 'text-[#1769E0]'}`} />
                       <span>Daily Checklists</span>
                     </div>
-                    {activeTab === 'daily-checklists' && <div className="w-2 h-2 rounded-full bg-[#3B82F6] shadow-[0_0_6px_#3b82f6]"></div>}
+                    {activeTab === 'daily-checklists' && <div className="w-2 h-2 rounded-full bg-[#1769E0]"></div>}
                   </button>
 
                   <button 
                     onClick={() => setActiveTab('rework-logs')}
-                    className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14.5px] transition-all cursor-pointer flex items-center justify-between border ${
+                    className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14px] transition-all cursor-pointer flex items-center justify-between border ${
                       activeTab === 'rework-logs' 
-                        ? 'bg-sky-950/70 text-sky-300 border-sky-500/50 shadow-md shadow-sky-500/20' 
-                        : 'bg-surface-elevated text-text-secondary hover:bg-surface hover:text-text-primary border-border-subtle/70'
+                        ? 'bg-[#10284A] text-white border-[#10284A] shadow-md font-extrabold' 
+                        : 'bg-white text-slate-700 hover:bg-[#F5F8FC] hover:text-[#10284A] border-slate-200'
                     }`}
                   >
                     <div className="flex items-center gap-2.5">
-                      <Activity className="w-4.5 h-4.5 text-[#3B82F6]" />
+                      <Activity className={`w-4.5 h-4.5 ${activeTab === 'rework-logs' ? 'text-white' : 'text-[#1769E0]'}`} />
                       <span>Rework Logs Feed</span>
                     </div>
-                    {activeTab === 'rework-logs' && <div className="w-2 h-2 rounded-full bg-[#3B82F6] shadow-[0_0_6px_#3b82f6]"></div>}
+                    {activeTab === 'rework-logs' && <div className="w-2 h-2 rounded-full bg-[#1769E0]"></div>}
                   </button>
                 </div>
 
@@ -5656,7 +5656,6 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         <Sparkles className="w-4.5 h-4.5 text-[#3B82F6] animate-pulse" />
                         <span className="text-[#3B82F6] font-extrabold tracking-wide">Pulse AI</span>
                       </div>
-                      <span className="text-[10px] bg-[#3B82F6]/15 border border-[#3B82F6]/40 text-[#3B82F6] px-2 py-0.5 rounded font-extrabold uppercase tracking-wider">Beta</span>
                     </button>
                   )}
                 </div>
@@ -5665,15 +5664,15 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 <div className="flex flex-col gap-1.5 mb-1">
                     <div 
                       onClick={() => toggleGroup('quality')}
-                      className="text-[11px] font-extrabold text-sky-400 uppercase tracking-wider px-2 py-1 flex items-center justify-between cursor-pointer select-none hover:text-sky-300 transition-colors"
+                      className="text-[11px] font-extrabold text-[#10284A] uppercase tracking-wider px-2 py-1 flex items-center justify-between cursor-pointer select-none hover:text-[#1769E0] transition-colors"
                     >
                       <span className="flex items-center gap-1.5">
-                        <FileText className="w-3.5 h-3.5 text-sky-400" />
+                        <FileText className="w-3.5 h-3.5 text-[#1769E0]" />
                         <span>Quality & Operations</span>
                       </span>
                       <div className="flex items-center gap-1.5">
                         {['incidents', 'heatmap', 'daily-planner', 'shift-logs', 'daily-checklists', 'rework-logs'].includes(activeTab) && collapsedGroups?.quality && (
-                          <div className="w-2 h-2 rounded-full bg-[#3B82F6] shadow-[0_0_6px_#3b82f6]"></div>
+                          <div className="w-2 h-2 rounded-full bg-[#1769E0]"></div>
                         )}
                         {collapsedGroups?.quality ? <ChevronRight className="w-3.5 h-3.5 text-slate-400" /> : <ChevronDown className="w-3.5 h-3.5 text-slate-400" />}
                       </div>
@@ -5683,108 +5682,108 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                       <>
                         <button 
                           onClick={() => setActiveTab('command-center')}
-                          className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14.5px] transition-all cursor-pointer flex items-center justify-between border ${
+                          className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14px] transition-all cursor-pointer flex items-center justify-between border ${
                             activeTab === 'command-center' 
-                              ? 'bg-blue-950/80 text-blue-300 border-blue-500/60 shadow-lg shadow-blue-500/30 font-black' 
-                              : 'bg-surface-elevated text-text-secondary hover:bg-surface hover:text-text-primary border-border-subtle/70'
+                              ? 'bg-[#10284A] text-white border-[#10284A] shadow-md font-extrabold' 
+                              : 'bg-white text-slate-700 hover:bg-[#F5F8FC] hover:text-[#10284A] border-slate-200'
                           }`}
                         >
                           <div className="flex items-center gap-2.5">
-                            <Activity className="w-4.5 h-4.5 text-[#3B82F6] animate-pulse" />
+                            <Activity className={`w-4.5 h-4.5 ${activeTab === 'command-center' ? 'text-white' : 'text-[#1769E0]'}`} />
                             <span>Live Command Center</span>
                           </div>
-                          {activeTab === 'command-center' && <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399] animate-ping"></div>}
+                          {activeTab === 'command-center' && <div className="w-2.5 h-2.5 rounded-full bg-emerald-400"></div>}
                         </button>
 
-                        <button
+                        <button 
                           onClick={() => setActiveTab('incidents')}
-                          className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14.5px] transition-all cursor-pointer flex items-center justify-between border ${
+                          className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14px] transition-all cursor-pointer flex items-center justify-between border ${
                             activeTab === 'incidents' 
-                              ? 'bg-sky-950/70 text-sky-300 border-sky-500/50 shadow-md shadow-sky-500/20' 
-                              : 'bg-surface-elevated text-text-secondary hover:bg-surface hover:text-text-primary border-border-subtle/70'
+                              ? 'bg-[#10284A] text-white border-[#10284A] shadow-md font-extrabold' 
+                              : 'bg-white text-slate-700 hover:bg-[#F5F8FC] hover:text-[#10284A] border-slate-200'
                           }`}
                         >
                           <div className="flex items-center gap-2.5">
-                            <FileText className="w-4.5 h-4.5 text-[#3B82F6]" />
+                            <FileText className={`w-4.5 h-4.5 ${activeTab === 'incidents' ? 'text-white' : 'text-[#1769E0]'}`} />
                             <span>Incident Defects Feed</span>
                           </div>
-                          {activeTab === 'incidents' && <div className="w-2 h-2 rounded-full bg-[#3B82F6] shadow-[0_0_6px_#3b82f6]"></div>}
+                          {activeTab === 'incidents' && <div className="w-2 h-2 rounded-full bg-[#1769E0]"></div>}
                         </button>
 
                         <button 
                           onClick={() => setActiveTab('heatmap')}
-                          className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14.5px] transition-all cursor-pointer flex items-center justify-between border ${
+                          className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14px] transition-all cursor-pointer flex items-center justify-between border ${
                             activeTab === 'heatmap' 
-                              ? 'bg-sky-950/70 text-sky-300 border-sky-500/50 shadow-md shadow-sky-500/20' 
-                              : 'bg-surface-elevated text-text-secondary hover:bg-surface hover:text-text-primary border-border-subtle/70'
+                              ? 'bg-[#10284A] text-white border-[#10284A] shadow-md font-extrabold' 
+                              : 'bg-white text-slate-700 hover:bg-[#F5F8FC] hover:text-[#10284A] border-slate-200'
                           }`}
                         >
                           <div className="flex items-center gap-2.5">
-                            <MapPin className="w-4.5 h-4.5 text-[#3B82F6]" />
+                            <MapPin className={`w-4.5 h-4.5 ${activeTab === 'heatmap' ? 'text-white' : 'text-[#1769E0]'}`} />
                             <span>Visual Defect Matrix</span>
                           </div>
-                          {activeTab === 'heatmap' && <div className="w-2 h-2 rounded-full bg-[#3B82F6] shadow-[0_0_6px_#3b82f6]"></div>}
+                          {activeTab === 'heatmap' && <div className="w-2 h-2 rounded-full bg-[#1769E0]"></div>}
                         </button>
 
                         <button 
                           onClick={() => setActiveTab('daily-planner')}
-                          className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14.5px] transition-all cursor-pointer flex items-center justify-between border ${
+                          className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14px] transition-all cursor-pointer flex items-center justify-between border ${
                             activeTab === 'daily-planner' 
-                              ? 'bg-sky-950/70 text-sky-300 border-sky-500/50 shadow-md shadow-sky-500/20' 
-                              : 'bg-surface-elevated text-text-secondary hover:bg-surface hover:text-text-primary border-border-subtle/70'
+                              ? 'bg-[#10284A] text-white border-[#10284A] shadow-md font-extrabold' 
+                              : 'bg-white text-slate-700 hover:bg-[#F5F8FC] hover:text-[#10284A] border-slate-200'
                           }`}
                         >
                           <div className="flex items-center gap-2.5">
-                            <CheckCircle2 className="w-4.5 h-4.5 text-[#3B82F6]" />
+                            <CheckCircle2 className={`w-4.5 h-4.5 ${activeTab === 'daily-planner' ? 'text-white' : 'text-[#1769E0]'}`} />
                             <span>Daily Tasks Planner</span>
                           </div>
-                          {activeTab === 'daily-planner' && <div className="w-2 h-2 rounded-full bg-[#3B82F6] shadow-[0_0_6px_#3b82f6]"></div>}
+                          {activeTab === 'daily-planner' && <div className="w-2 h-2 rounded-full bg-[#1769E0]"></div>}
                         </button>
 
                         <button 
                           onClick={() => setActiveTab('shift-logs')}
-                          className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14.5px] transition-all cursor-pointer flex items-center justify-between border ${
+                          className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14px] transition-all cursor-pointer flex items-center justify-between border ${
                             activeTab === 'shift-logs' 
-                              ? 'bg-sky-950/70 text-sky-300 border-sky-500/50 shadow-md shadow-sky-500/20' 
-                              : 'bg-surface-elevated text-text-secondary hover:bg-surface hover:text-text-primary border-border-subtle/70'
+                              ? 'bg-[#10284A] text-white border-[#10284A] shadow-md font-extrabold' 
+                              : 'bg-white text-slate-700 hover:bg-[#F5F8FC] hover:text-[#10284A] border-slate-200'
                           }`}
                         >
                           <div className="flex items-center gap-2.5">
-                            <Calendar className="w-4.5 h-4.5 text-[#3B82F6]" />
+                            <Calendar className={`w-4.5 h-4.5 ${activeTab === 'shift-logs' ? 'text-white' : 'text-[#1769E0]'}`} />
                             <span>Daily Quality Reports Feed</span>
                           </div>
-                          {activeTab === 'shift-logs' && <div className="w-2 h-2 rounded-full bg-[#3B82F6] shadow-[0_0_6px_#3b82f6]"></div>}
+                          {activeTab === 'shift-logs' && <div className="w-2 h-2 rounded-full bg-[#1769E0]"></div>}
                         </button>
 
                         <button 
                           onClick={() => setActiveTab('daily-checklists')}
-                          className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14.5px] transition-all cursor-pointer flex items-center justify-between border ${
+                          className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14px] transition-all cursor-pointer flex items-center justify-between border ${
                             activeTab === 'daily-checklists' 
-                              ? 'bg-sky-950/70 text-sky-300 border-sky-500/50 shadow-md shadow-sky-500/20' 
-                              : 'bg-surface-elevated text-text-secondary hover:bg-surface hover:text-text-primary border-border-subtle/70'
+                              ? 'bg-[#10284A] text-white border-[#10284A] shadow-md font-extrabold' 
+                              : 'bg-white text-slate-700 hover:bg-[#F5F8FC] hover:text-[#10284A] border-slate-200'
                           }`}
                         >
                           <div className="flex items-center gap-2.5">
-                            <ClipboardCheck className="w-4.5 h-4.5 text-[#3B82F6]" />
+                            <ClipboardCheck className={`w-4.5 h-4.5 ${activeTab === 'daily-checklists' ? 'text-white' : 'text-[#1769E0]'}`} />
                             <span>Daily Checklists</span>
                           </div>
-                          {activeTab === 'daily-checklists' && <div className="w-2 h-2 rounded-full bg-[#3B82F6] shadow-[0_0_6px_#3b82f6]"></div>}
+                          {activeTab === 'daily-checklists' && <div className="w-2 h-2 rounded-full bg-[#1769E0]"></div>}
                         </button>
 
                         {userRole !== 'accountant' && (
                           <button 
                             onClick={() => setActiveTab('rework-logs')}
-                            className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14.5px] transition-all cursor-pointer flex items-center justify-between border ${
+                            className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14px] transition-all cursor-pointer flex items-center justify-between border ${
                               activeTab === 'rework-logs' 
-                                ? 'bg-sky-950/70 text-sky-300 border-sky-500/50 shadow-md shadow-sky-500/20' 
-                                : 'bg-surface-elevated text-text-secondary hover:bg-surface hover:text-text-primary border-border-subtle/70'
+                                ? 'bg-[#10284A] text-white border-[#10284A] shadow-md font-extrabold' 
+                                : 'bg-white text-slate-700 hover:bg-[#F5F8FC] hover:text-[#10284A] border-slate-200'
                             }`}
                           >
                             <div className="flex items-center gap-2.5">
-                              <Activity className="w-4.5 h-4.5 text-[#3B82F6]" />
+                              <Activity className={`w-4.5 h-4.5 ${activeTab === 'rework-logs' ? 'text-white' : 'text-[#1769E0]'}`} />
                               <span>Rework Logs Feed</span>
                             </div>
-                            {activeTab === 'rework-logs' && <div className="w-2 h-2 rounded-full bg-[#3B82F6] shadow-[0_0_6px_#3b82f6]"></div>}
+                            {activeTab === 'rework-logs' && <div className="w-2 h-2 rounded-full bg-[#1769E0]"></div>}
                           </button>
                         )}
                       </>
@@ -5795,15 +5794,15 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 <div className="flex flex-col gap-1.5 mb-1">
                   <div 
                     onClick={() => toggleGroup('financials')}
-                    className="text-[11px] font-extrabold text-emerald-400 uppercase tracking-wider px-2 py-1 flex items-center justify-between cursor-pointer select-none hover:text-emerald-300 transition-colors"
+                    className="text-[11px] font-extrabold text-[#10284A] uppercase tracking-wider px-2 py-1 flex items-center justify-between cursor-pointer select-none hover:text-[#1769E0] transition-colors"
                   >
                     <span className="flex items-center gap-1.5">
-                      <DollarSign className="w-3.5 h-3.5 text-emerald-400" />
+                      <DollarSign className="w-3.5 h-3.5 text-[#1769E0]" />
                       <span>Financials & Audit</span>
                     </span>
                     <div className="flex items-center gap-1.5">
                       {activeTab === 'time-tracking' && collapsedGroups?.financials && (
-                        <div className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_#34d399]"></div>
+                        <div className="w-2 h-2 rounded-full bg-[#1769E0]"></div>
                       )}
                       {collapsedGroups?.financials ? <ChevronRight className="w-3.5 h-3.5 text-slate-400" /> : <ChevronDown className="w-3.5 h-3.5 text-slate-400" />}
                     </div>
@@ -5812,17 +5811,17 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   {!collapsedGroups?.financials && (
                     <button 
                       onClick={() => setActiveTab('time-tracking')}
-                      className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14.5px] transition-all cursor-pointer flex items-center justify-between border ${
+                      className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14px] transition-all cursor-pointer flex items-center justify-between border ${
                         activeTab === 'time-tracking' 
-                          ? 'bg-emerald-950/70 text-emerald-300 border-emerald-500/50 shadow-md shadow-emerald-500/20' 
-                          : 'bg-surface-elevated text-text-secondary hover:bg-surface hover:text-text-primary border-border-subtle/70'
+                          ? 'bg-[#10284A] text-white border-[#10284A] shadow-md font-extrabold' 
+                          : 'bg-white text-slate-700 hover:bg-[#F5F8FC] hover:text-[#10284A] border-slate-200'
                       }`}
                     >
                       <div className="flex items-center gap-2.5">
-                        <DollarSign className="w-4.5 h-4.5 text-emerald-400" />
+                        <DollarSign className={`w-4.5 h-4.5 ${activeTab === 'time-tracking' ? 'text-white' : 'text-[#1769E0]'}`} />
                         <span>Timesheets & Logging</span>
                       </div>
-                      {activeTab === 'time-tracking' && <div className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_#34d399]"></div>}
+                      {activeTab === 'time-tracking' && <div className="w-2 h-2 rounded-full bg-[#1769E0]"></div>}
                     </button>
                   )}
                 </div>
@@ -5831,15 +5830,15 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 <div className="flex flex-col gap-1.5 mb-1">
                   <div 
                     onClick={() => toggleGroup('comms')}
-                    className="text-[11px] font-extrabold text-purple-400 uppercase tracking-wider px-2 py-1 flex items-center justify-between cursor-pointer select-none hover:text-purple-300 transition-colors"
+                    className="text-[11px] font-extrabold text-[#10284A] uppercase tracking-wider px-2 py-1 flex items-center justify-between cursor-pointer select-none hover:text-[#1769E0] transition-colors"
                   >
                     <span className="flex items-center gap-1.5">
-                      <Server className="w-3.5 h-3.5 text-purple-400" />
+                      <Server className="w-3.5 h-3.5 text-[#1769E0]" />
                       <span>Directories & Comms</span>
                     </span>
                     <div className="flex items-center gap-1.5">
                       {['suppliers', 'emails'].includes(activeTab) && collapsedGroups?.comms && (
-                        <div className="w-2 h-2 rounded-full bg-purple-400 shadow-[0_0_6px_#c084fc]"></div>
+                        <div className="w-2 h-2 rounded-full bg-[#1769E0]"></div>
                       )}
                       {collapsedGroups?.comms ? <ChevronRight className="w-3.5 h-3.5 text-slate-400" /> : <ChevronDown className="w-3.5 h-3.5 text-slate-400" />}
                     </div>
@@ -5850,34 +5849,34 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                       {userRole !== 'accountant' && (
                         <button 
                           onClick={() => setActiveTab('suppliers')}
-                          className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14.5px] transition-all cursor-pointer flex items-center justify-between border ${
+                          className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14px] transition-all cursor-pointer flex items-center justify-between border ${
                             activeTab === 'suppliers' 
-                              ? 'bg-purple-950/70 text-purple-300 border-purple-500/50 shadow-md shadow-purple-500/20' 
-                              : 'bg-surface-elevated text-text-secondary hover:bg-surface hover:text-text-primary border-border-subtle/70'
+                              ? 'bg-[#10284A] text-white border-[#10284A] shadow-md font-extrabold' 
+                              : 'bg-white text-slate-700 hover:bg-[#F5F8FC] hover:text-[#10284A] border-slate-200'
                           }`}
                         >
                           <div className="flex items-center gap-2.5">
-                            <Server className="w-4.5 h-4.5 text-purple-400" />
+                            <Server className={`w-4.5 h-4.5 ${activeTab === 'suppliers' ? 'text-white' : 'text-[#1769E0]'}`} />
                             <span>Suppliers Directory</span>
                           </div>
-                          {activeTab === 'suppliers' && <div className="w-2 h-2 rounded-full bg-purple-400 shadow-[0_0_6px_#c084fc]"></div>}
+                          {activeTab === 'suppliers' && <div className="w-2 h-2 rounded-full bg-[#1769E0]"></div>}
                         </button>
                       )}
 
                       {userRole !== 'accountant' && (
                         <button 
                           onClick={() => setActiveTab('emails')}
-                          className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14.5px] transition-all cursor-pointer flex items-center justify-between border ${
+                          className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14px] transition-all cursor-pointer flex items-center justify-between border ${
                             activeTab === 'emails' 
-                              ? 'bg-purple-950/70 text-purple-300 border-purple-500/50 shadow-md shadow-purple-500/20' 
-                              : 'bg-surface-elevated text-text-secondary hover:bg-surface hover:text-text-primary border-border-subtle/70'
+                              ? 'bg-[#10284A] text-white border-[#10284A] shadow-md font-extrabold' 
+                              : 'bg-white text-slate-700 hover:bg-[#F5F8FC] hover:text-[#10284A] border-slate-200'
                           }`}
                         >
                           <div className="flex items-center gap-2.5">
-                            <Mail className="w-4.5 h-4.5 text-purple-400" />
+                            <Mail className={`w-4.5 h-4.5 ${activeTab === 'emails' ? 'text-white' : 'text-[#1769E0]'}`} />
                             <span>Email Logs</span>
                           </div>
-                          {activeTab === 'emails' && <div className="w-2 h-2 rounded-full bg-purple-400 shadow-[0_0_6px_#c084fc]"></div>}
+                          {activeTab === 'emails' && <div className="w-2 h-2 rounded-full bg-[#1769E0]"></div>}
                         </button>
                       )}
                     </>

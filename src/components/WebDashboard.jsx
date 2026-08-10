@@ -4958,100 +4958,100 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   };
 
   const renderReportsSubTabBar = () => (
-    <div className="flex items-center gap-2 p-2 rounded-2xl bg-surface border border-border-subtle overflow-x-auto scrollbar-none mb-4 flex-shrink-0 text-left">
-      <div className="text-[10px] font-black text-text-secondary uppercase tracking-widest px-2 py-1 flex items-center gap-1.5 flex-shrink-0">
-        <FileText className="w-3.5 h-3.5 text-sky-500" />
-        <span>REPORTS HUB:</span>
+    <div className="flex flex-wrap items-center gap-2 p-2.5 rounded-2xl bg-surface border border-border-subtle mb-4 flex-shrink-0 text-left w-full">
+      <div className="text-[10px] font-black text-text-secondary uppercase tracking-widest px-1.5 py-1 flex items-center gap-1.5 flex-shrink-0">
+        <FileText className="w-3.5 h-3.5 text-[#1769E0]" />
+        <span className="font-extrabold text-slate-800">REPORTS HUB:</span>
       </div>
 
       {/* 1. IDS REP SHIFT REPORTS */}
       <button
         type="button"
         onClick={() => { setPrimaryDomain('reports'); setActiveTab('shift-logs'); }}
-        className={`px-3.5 py-1.5 rounded-xl font-extrabold text-[12px] cursor-pointer transition-all flex items-center gap-2 border flex-shrink-0 ${
+        className={`px-2.5 py-1.5 rounded-xl font-extrabold text-[11.5px] cursor-pointer transition-all flex items-center gap-1.5 border flex-shrink-0 ${
           activeTab === 'shift-logs'
-            ? 'bg-sky-600 text-white border-sky-500 shadow-sm'
-            : 'bg-surface-elevated text-text-secondary hover:text-text-primary border-border-subtle/70'
+            ? 'bg-[#10284A] text-white border-[#10284A] shadow-sm'
+            : 'bg-white text-slate-700 hover:text-[#10284A] hover:bg-[#F5F8FC] border-slate-200'
         }`}
       >
-        <Calendar className="w-3.5 h-3.5" />
+        <Calendar className="w-3.5 h-3.5 text-[#1769E0]" />
         <span>Rep Shift Reports</span>
-        <span className="text-[9px] bg-white/20 px-1.5 py-0.5 rounded font-black uppercase">IDS Rep</span>
+        <span className="text-[9px] bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded font-extrabold uppercase border border-slate-200">IDS Rep</span>
       </button>
 
       {/* 2. INCIDENT CONTAINMENT HOLDS */}
       <button
         type="button"
         onClick={() => { setPrimaryDomain('reports'); setActiveTab('incidents'); }}
-        className={`px-3.5 py-1.5 rounded-xl font-extrabold text-[12px] cursor-pointer transition-all flex items-center gap-2 border flex-shrink-0 ${
+        className={`px-2.5 py-1.5 rounded-xl font-extrabold text-[11.5px] cursor-pointer transition-all flex items-center gap-1.5 border flex-shrink-0 ${
           activeTab === 'incidents'
-            ? 'bg-sky-600 text-white border-sky-500 shadow-sm'
-            : 'bg-surface-elevated text-text-secondary hover:text-text-primary border-border-subtle/70'
+            ? 'bg-[#10284A] text-white border-[#10284A] shadow-sm'
+            : 'bg-white text-slate-700 hover:text-[#10284A] hover:bg-[#F5F8FC] border-slate-200'
         }`}
       >
-        <AlertTriangle className="w-3.5 h-3.5" />
+        <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
         <span>Incident Defect Holds</span>
-        <span className="text-[9px] bg-white/20 px-1.5 py-0.5 rounded font-black uppercase">IDS Rep</span>
+        <span className="text-[9px] bg-amber-50 text-amber-700 px-1.5 py-0.5 rounded font-extrabold uppercase border border-amber-200">IDS Rep</span>
       </button>
 
       {/* 3. REWORK & SORTING LOGS */}
       <button
         type="button"
         onClick={() => { setPrimaryDomain('reports'); setActiveTab('rework-logs'); }}
-        className={`px-3.5 py-1.5 rounded-xl font-extrabold text-[12px] cursor-pointer transition-all flex items-center gap-2 border flex-shrink-0 ${
+        className={`px-2.5 py-1.5 rounded-xl font-extrabold text-[11.5px] cursor-pointer transition-all flex items-center gap-1.5 border flex-shrink-0 ${
           activeTab === 'rework-logs'
-            ? 'bg-sky-600 text-white border-sky-500 shadow-sm'
-            : 'bg-surface-elevated text-text-secondary hover:text-text-primary border-border-subtle/70'
+            ? 'bg-[#10284A] text-white border-[#10284A] shadow-sm'
+            : 'bg-white text-slate-700 hover:text-[#10284A] hover:bg-[#F5F8FC] border-slate-200'
         }`}
       >
-        <Activity className="w-3.5 h-3.5" />
+        <Activity className="w-3.5 h-3.5 text-[#1769E0]" />
         <span>Rework & Sorting</span>
-        <span className="text-[9px] bg-white/20 px-1.5 py-0.5 rounded font-black uppercase">IDS Rep</span>
+        <span className="text-[9px] bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded font-extrabold uppercase border border-slate-200">IDS Rep</span>
       </button>
 
       {/* 4. PRE-SHIFT CHECKLISTS */}
       <button
         type="button"
         onClick={() => { setPrimaryDomain('reports'); setActiveTab('daily-checklists'); }}
-        className={`px-3.5 py-1.5 rounded-xl font-extrabold text-[12px] cursor-pointer transition-all flex items-center gap-2 border flex-shrink-0 ${
+        className={`px-2.5 py-1.5 rounded-xl font-extrabold text-[11.5px] cursor-pointer transition-all flex items-center gap-1.5 border flex-shrink-0 ${
           activeTab === 'daily-checklists'
-            ? 'bg-sky-600 text-white border-sky-500 shadow-sm'
-            : 'bg-surface-elevated text-text-secondary hover:text-text-primary border-border-subtle/70'
+            ? 'bg-[#10284A] text-white border-[#10284A] shadow-sm'
+            : 'bg-white text-slate-700 hover:text-[#10284A] hover:bg-[#F5F8FC] border-slate-200'
         }`}
       >
-        <ClipboardCheck className="w-3.5 h-3.5" />
+        <ClipboardCheck className="w-3.5 h-3.5 text-[#1769E0]" />
         <span>Pre-Shift Checklists</span>
-        <span className="text-[9px] bg-white/20 px-1.5 py-0.5 rounded font-black uppercase">IDS Rep</span>
+        <span className="text-[9px] bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded font-extrabold uppercase border border-slate-200">IDS Rep</span>
       </button>
 
       {/* 5. DEFECT MATRIX HEATMAP */}
       <button
         type="button"
         onClick={() => { setPrimaryDomain('reports'); setActiveTab('heatmap'); }}
-        className={`px-3.5 py-1.5 rounded-xl font-extrabold text-[12px] cursor-pointer transition-all flex items-center gap-2 border flex-shrink-0 ${
+        className={`px-2.5 py-1.5 rounded-xl font-extrabold text-[11.5px] cursor-pointer transition-all flex items-center gap-1.5 border flex-shrink-0 ${
           activeTab === 'heatmap'
-            ? 'bg-sky-600 text-white border-sky-500 shadow-sm'
-            : 'bg-surface-elevated text-text-secondary hover:text-text-primary border-border-subtle/70'
+            ? 'bg-[#10284A] text-white border-[#10284A] shadow-sm'
+            : 'bg-white text-slate-700 hover:text-[#10284A] hover:bg-[#F5F8FC] border-slate-200'
         }`}
       >
-        <MapPin className="w-3.5 h-3.5" />
+        <MapPin className="w-3.5 h-3.5 text-[#1769E0]" />
         <span>Defect Heatmap</span>
-        <span className="text-[9px] bg-amber-500/20 text-amber-300 border border-amber-500/30 px-1.5 py-0.5 rounded font-black uppercase">Admin</span>
+        <span className="text-[9px] bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded font-extrabold uppercase border border-blue-200">Admin</span>
       </button>
 
       {/* 6. EXECUTIVE PDF & CLIENT SUMMARIES */}
       <button
         type="button"
         onClick={() => { setPrimaryDomain('reports'); setActiveTab('reports'); }}
-        className={`px-3.5 py-1.5 rounded-xl font-extrabold text-[12px] cursor-pointer transition-all flex items-center gap-2 border flex-shrink-0 ${
+        className={`px-2.5 py-1.5 rounded-xl font-extrabold text-[11.5px] cursor-pointer transition-all flex items-center gap-1.5 border flex-shrink-0 ${
           activeTab === 'reports'
-            ? 'bg-sky-600 text-white border-sky-500 shadow-sm'
-            : 'bg-surface-elevated text-text-secondary hover:text-text-primary border-border-subtle/70'
+            ? 'bg-[#10284A] text-white border-[#10284A] shadow-sm'
+            : 'bg-white text-slate-700 hover:text-[#10284A] hover:bg-[#F5F8FC] border-slate-200'
         }`}
       >
-        <Building className="w-3.5 h-3.5" />
+        <Building className="w-3.5 h-3.5 text-[#1769E0]" />
         <span>Executive Summaries</span>
-        <span className="text-[9px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-1.5 py-0.5 rounded font-black uppercase">Client Portal</span>
+        <span className="text-[9px] bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded font-extrabold uppercase border border-emerald-200">Client Portal</span>
       </button>
     </div>
   );
@@ -5425,7 +5425,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   >
                     <div className="flex items-center gap-2.5">
                       <FileText className={`w-4.5 h-4.5 ${activeTab === 'incidents' ? 'text-white' : 'text-[#1769E0]'}`} />
-                      <span>Incident Defects Feed</span>
+                      <span>Reports Hub</span>
                     </div>
                     {activeTab === 'incidents' && <div className="w-2 h-2 rounded-full bg-[#1769E0]"></div>}
                   </button>
@@ -5705,7 +5705,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         >
                           <div className="flex items-center gap-2.5">
                             <FileText className={`w-4.5 h-4.5 ${activeTab === 'incidents' ? 'text-white' : 'text-[#1769E0]'}`} />
-                            <span>Incident Defects Feed</span>
+                            <span>Reports Hub</span>
                           </div>
                           {activeTab === 'incidents' && <div className="w-2 h-2 rounded-full bg-[#1769E0]"></div>}
                         </button>

@@ -8959,18 +8959,18 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
             ) : (
               <div className="flex-1 flex flex-col gap-3 min-h-0 text-left">
                 {/* Portal Header */}
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-3 border-b border-border-subtle flex-shrink-0">
+                <div className="flex flex-col gap-3 pb-3 border-b border-border-subtle flex-shrink-0 w-full">
                   <div>
                     <h3 className="text-[14.5px] font-bold text-text-primary uppercase tracking-wider">Invoicing, Rates & Payroll Portal</h3>
                     <span className="text-[11.5px] text-text-secondary font-medium">Colleen's accountant workspace</span>
                   </div>
                   
                   {/* Sub-tab navigation */}
-                  <div className="flex items-center gap-1.5 bg-surface p-1.5 rounded-xl border border-border-subtle overflow-x-auto scrollbar-thin max-w-full">
+                  <div className="flex flex-wrap items-center gap-2 bg-surface p-2.5 rounded-xl border border-border-subtle w-full">
 
                     <button
                       onClick={() => setAccountingSubTab('review-queue')}
-                      className={`px-3 py-1.5 rounded-lg text-[11.5px] font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                      className={`px-3 py-1.5 rounded-lg text-[11.5px] font-bold transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
                         accountingSubTab === 'review-queue' ? 'bg-[#10B981] text-white shadow-md' : 'text-text-secondary hover:text-text-primary'
                       }`}
                     >
@@ -8983,7 +8983,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     </button>
                     <button
                       onClick={() => setAccountingSubTab('client-review')}
-                      className={`px-3 py-1.5 rounded-lg text-[11.5px] font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                      className={`px-3 py-1.5 rounded-lg text-[11.5px] font-bold transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
                         accountingSubTab === 'client-review' ? 'bg-[#8B5CF6] text-white shadow-md' : 'text-text-secondary hover:text-text-primary'
                       }`}
                     >
@@ -8996,7 +8996,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     </button>
                     <button
                       onClick={() => setAccountingSubTab('invoice-gen')}
-                      className={`px-3 py-1.5 rounded-lg text-[11.5px] font-bold transition-all cursor-pointer ${
+                      className={`px-3 py-1.5 rounded-lg text-[11.5px] font-bold transition-all cursor-pointer whitespace-nowrap ${
                         accountingSubTab === 'invoice-gen' ? 'bg-[#3B82F6] text-text-primary' : 'text-text-secondary hover:text-text-primary'
                       }`}
                     >
@@ -9004,7 +9004,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     </button>
                     <button
                       onClick={() => setAccountingSubTab('payroll')}
-                      className={`px-3 py-1.5 rounded-lg text-[11.5px] font-bold transition-all cursor-pointer ${
+                      className={`px-3 py-1.5 rounded-lg text-[11.5px] font-bold transition-all cursor-pointer whitespace-nowrap ${
                         accountingSubTab === 'payroll' ? 'bg-[#3B82F6] text-text-primary' : 'text-text-secondary hover:text-text-primary'
                       }`}
                     >
@@ -9012,7 +9012,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     </button>
                     <button
                       onClick={() => setAccountingSubTab('rates-config')}
-                      className={`px-3 py-1.5 rounded-lg text-[11.5px] font-bold transition-all cursor-pointer ${
+                      className={`px-3 py-1.5 rounded-lg text-[11.5px] font-bold transition-all cursor-pointer whitespace-nowrap ${
                         accountingSubTab === 'rates-config' ? 'bg-[#3B82F6] text-text-primary' : 'text-text-secondary hover:text-text-primary'
                       }`}
                     >
@@ -9020,7 +9020,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     </button>
                     <button
                       onClick={() => setAccountingSubTab('bulk-entry')}
-                      className={`px-3 py-1.5 rounded-lg text-[11.5px] font-bold transition-all cursor-pointer ${
+                      className={`px-3 py-1.5 rounded-lg text-[11.5px] font-bold transition-all cursor-pointer whitespace-nowrap ${
                         accountingSubTab === 'bulk-entry' ? 'bg-[#3B82F6] text-text-primary' : 'text-text-secondary hover:text-text-primary'
                       }`}
                     >
@@ -9028,7 +9028,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     </button>
                     <button
                       onClick={() => setAccountingSubTab('weekly-grid')}
-                      className={`px-3 py-1.5 rounded-lg text-[11.5px] font-bold transition-all cursor-pointer ${
+                      className={`px-3 py-1.5 rounded-lg text-[11.5px] font-bold transition-all cursor-pointer whitespace-nowrap ${
                         accountingSubTab === 'weekly-grid' ? 'bg-[#8B0000] text-white shadow-md' : 'text-text-secondary hover:text-text-primary'
                       }`}
                     >
@@ -9036,7 +9036,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     </button>
                     <button
                       onClick={() => setAccountingSubTab('integrity-sheet')}
-                      className={`px-3 py-1.5 rounded-lg text-[11.5px] font-bold transition-all cursor-pointer ${
+                      className={`px-3 py-1.5 rounded-lg text-[11.5px] font-bold transition-all cursor-pointer whitespace-nowrap ${
                         accountingSubTab === 'integrity-sheet' ? 'bg-[#0969dc] text-white shadow-md' : 'text-text-secondary hover:text-text-primary'
                       }`}
                     >
@@ -9751,9 +9751,9 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
                   {/* SUB-TAB: WEEKLY CER TIMESHEET MATRIX GRID */}
                   {accountingSubTab === 'weekly-grid' && (
-                    <div className="bg-surface-elevated border border-border-subtle p-4 sm:p-6 rounded-2xl flex flex-col gap-4 text-left overflow-x-auto">
+                    <div className="bg-surface-elevated border border-border-subtle p-4 sm:p-6 rounded-2xl flex flex-col gap-4 text-left w-full max-w-full overflow-hidden">
                       {/* Sub-header Controls */}
-                      <div className="flex flex-wrap items-center justify-between gap-3 bg-surface p-3 rounded-xl border border-border-subtle">
+                      <div className="flex flex-wrap items-center justify-between gap-3 bg-surface p-3 rounded-xl border border-border-subtle w-full">
                         <div className="flex flex-wrap items-center gap-4 text-[13px] font-bold text-text-primary">
                           <div className="flex items-center gap-2">
                             <span className="text-text-secondary font-semibold">Person:</span>
@@ -9821,8 +9821,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                       </div>
 
                       {/* Main CER Weekly Table Grid */}
-                      <div className="overflow-x-auto w-full border border-gray-400/40 rounded-xl shadow-sm">
-                        <table className="w-full text-left text-[11px] border-collapse bg-white text-slate-900 font-sans">
+                      <div className="overflow-x-auto w-full max-w-full border border-gray-400/40 rounded-xl shadow-sm scrollbar-thin">
+                        <table className="w-full min-w-[960px] text-left text-[10.5px] border-collapse bg-white text-slate-900 font-sans">
                           <thead>
                             <tr className="bg-slate-100 text-slate-800 font-bold border-b border-gray-400 text-center">
                               <th className="p-2 border-r border-gray-300 w-28 whitespace-nowrap">Day / Date</th>

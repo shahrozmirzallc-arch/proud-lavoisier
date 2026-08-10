@@ -51,7 +51,7 @@ BEGIN
     SELECT id::text, name, role, COALESCE(is_deactivated, FALSE)
     INTO v_user_id, v_user_name, v_user_role, v_is_deactivated
     FROM public.users
-    WHERE id = v_input_user_id OR auth_id = v_input_user_id OR username = v_input_user_id
+    WHERE id = v_input_user_id OR auth_id::text = v_input_user_id OR username = v_input_user_id
     LIMIT 1;
 
     IF v_user_id IS NULL THEN

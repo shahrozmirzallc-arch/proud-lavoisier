@@ -5809,20 +5809,37 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   </div>
 
                   {!collapsedGroups?.financials && (
-                    <button 
-                      onClick={() => setActiveTab('time-tracking')}
-                      className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14px] transition-all cursor-pointer flex items-center justify-between border ${
-                        activeTab === 'time-tracking' 
-                          ? 'bg-[#10284A] text-white border-[#10284A] shadow-md font-extrabold' 
-                          : 'bg-white text-slate-700 hover:bg-[#F5F8FC] hover:text-[#10284A] border-slate-200'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <DollarSign className={`w-4.5 h-4.5 ${activeTab === 'time-tracking' ? 'text-white' : 'text-[#1769E0]'}`} />
-                        <span>Timesheets & Logging</span>
-                      </div>
-                      {activeTab === 'time-tracking' && <div className="w-2 h-2 rounded-full bg-[#1769E0]"></div>}
-                    </button>
+                    <div className="flex flex-col gap-1.5">
+                      <button 
+                        onClick={() => { setActiveTab('time-tracking'); if (accountingSubTab === 'rates-config') setAccountingSubTab('review-queue'); }}
+                        className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14px] transition-all cursor-pointer flex items-center justify-between border ${
+                          activeTab === 'time-tracking' && accountingSubTab !== 'rates-config'
+                            ? 'bg-[#10284A] text-white border-[#10284A] shadow-md font-extrabold' 
+                            : 'bg-white text-slate-700 hover:bg-[#F5F8FC] hover:text-[#10284A] border-slate-200'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <DollarSign className={`w-4.5 h-4.5 ${activeTab === 'time-tracking' && accountingSubTab !== 'rates-config' ? 'text-white' : 'text-[#1769E0]'}`} />
+                          <span>Timesheets & Logging</span>
+                        </div>
+                        {activeTab === 'time-tracking' && accountingSubTab !== 'rates-config' && <div className="w-2 h-2 rounded-full bg-[#1769E0]"></div>}
+                      </button>
+
+                      <button 
+                        onClick={() => { setActiveTab('time-tracking'); setAccountingSubTab('rates-config'); }}
+                        className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14px] transition-all cursor-pointer flex items-center justify-between border ${
+                          activeTab === 'time-tracking' && accountingSubTab === 'rates-config'
+                            ? 'bg-[#10284A] text-white border-[#10284A] shadow-md font-extrabold' 
+                            : 'bg-white text-slate-700 hover:bg-[#F5F8FC] hover:text-[#10284A] border-slate-200'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <Building className={`w-4.5 h-4.5 ${activeTab === 'time-tracking' && accountingSubTab === 'rates-config' ? 'text-white' : 'text-[#1769E0]'}`} />
+                          <span>Clients & Rates</span>
+                        </div>
+                        {activeTab === 'time-tracking' && accountingSubTab === 'rates-config' && <div className="w-2 h-2 rounded-full bg-[#1769E0]"></div>}
+                      </button>
+                    </div>
                   )}
                 </div>
 

@@ -5,7 +5,7 @@ import {
   FileSpreadsheet, Calendar, ArrowRight, UserPlus, MapPin, Printer, Download, Eye, EyeOff, Sparkles, Key,
   Milestone, TrendingUp, FolderKanban, PlusCircle, Plus, ArrowLeft, Camera, ClipboardCheck, Zap, Building2, ShieldAlert, User, Cpu, Mic, Video, Trash2, History, Lock, BarChart3, Layers
 } from 'lucide-react';
-import { getEntities, saveEntity, logSystemEvent, deleteRate, isFieldRep, syncWithSupabase, supabase, addUser, isEntryAccountingEligible } from './SharedDatabase';
+import { getEntities, saveEntity, logSystemEvent, deleteRate, isFieldRep, syncWithSupabase, supabase, addUser, provisionUser, isEntryAccountingEligible } from './SharedDatabase';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { LOGO_BASE64 } from './LogoBase64';
@@ -140,10 +140,34 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       return;
     }
 
+    const cleanEmail = newContactEmail.trim();
+    if (!cleanEmail) {
+      showToast("Contact email address is required to create a Client Representative account.", "error");
+      return;
+    }
+
+    // BLOCKER 4 FIX: Provision User Login FIRST. If duplicate email/username, this throws and stops execution.
+    let provRes;
+    try {
+      provRes = provisionUser({
+        name: newContactName.trim(),
+        email: cleanEmail,
+        phone: newContactPhone.trim(),
+        role: 'customer',
+        title: newContactRole.trim() || 'Customer Quality Manager',
+        supplier_id: addContactSupplier.id,
+        customer_id: addContactSupplier.id
+      });
+    } catch (err) {
+      showToast(`Creation refused: ${err.message}`, "error");
+      return; // STOP EXECUTION: DO NOT SAVE SUPPLIER CONTACT ON DUPLICATE OR INVALID EMAIL
+    }
+
+    // Only if provisionUser succeeds, update supplier contacts
     const newContactObj = {
       id: `cnt_${Date.now()}`,
       name: newContactName.trim(),
-      email: newContactEmail.trim(),
+      email: cleanEmail,
       role: newContactRole.trim() || 'Customer Quality Manager',
       phone: newContactPhone.trim()
     };
@@ -158,38 +182,21 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       contact_email: addContactSupplier.contact_email || newContactObj.email
     };
 
-    // Save to suppliers collection
     saveEntity('suppliers', updatedSupplier);
     setSuppliers(prev => prev.map(s => s.id === updatedSupplier.id ? updatedSupplier : s));
+    setUsers(getEntities('users') || []);
 
-    // Rule 10: Auto-create Client Portal User login
-    if (newContactEmail.trim()) {
-      const dbUsers = getEntities('users') || [];
-      const generatedUsername = newContactEmail.trim().split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
-      const userExists = dbUsers.some(u => u.email === newContactEmail.trim() || u.username === generatedUsername);
-      if (!userExists) {
-        const newClientUser = {
-          id: `user_cust_${Date.now()}`,
-          name: newContactName.trim(),
-          email: newContactEmail.trim(),
-          username: generatedUsername,
-          password: 'password123',
-          role: 'customer',
-          title: newContactRole.trim() || 'Customer Quality Manager',
-          customer_id: addContactSupplier.id,
-          supplier_id: addContactSupplier.id,
-          phone: newContactPhone.trim(),
-          created_at: new Date().toISOString()
-        };
-        saveEntity('users', newClientUser);
-        setUsers(prev => [...prev, newClientUser]);
-        showToast(`Client Contact created! Username: "${generatedUsername}", Temp Password: "password123"`, "success");
-      } else {
-        showToast(`Client Contact "${newContactName.trim()}" added to ${addContactSupplier.name}!`, "success");
-      }
-    } else {
-      showToast(`Client Contact "${newContactName.trim()}" added to ${addContactSupplier.name}!`, "success");
-    }
+    // BLOCKER 1 FIX: Toast names username only. Password shown in dismissible panel.
+    showToast(`Client Rep created for ${addContactSupplier.name}. Username: "${provRes.user.username}".`, "success");
+
+    setCreatedUserCredentials({
+      companyName: addContactSupplier.name,
+      contactName: newContactName.trim(),
+      username: provRes.user.username,
+      password: provRes.tempPassword,
+      role: 'Client Portal (Customer Role)'
+    });
+
     setAddContactSupplier(null);
     setNewContactName('');
     setNewContactEmail('');
@@ -1418,24 +1425,28 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     const shortSuggestedUsername = `${shortComp}_${shortName}`;
 
     const finalUsername = (newCustomerUsername || shortSuggestedUsername).toLowerCase().trim().replace(/[^a-z0-9_]/g, '_');
-    const finalPassword = newCustomerPassword ? newCustomerPassword.trim() : 'Password123!';
+    const finalPassword = newCustomerPassword ? newCustomerPassword.trim() : undefined;
 
-    // 3. Provision Client Rep User Login in 'users' collection
-    const newUser = {
-      id: `user_cust_${newId}`,
-      name: `${newCustomerContactName || newCustomerName} (${newCustomerName})`,
-      email: newCustomerContactEmail || `${finalUsername}@company.com`,
-      username: finalUsername,
-      password: finalPassword,
-      role: 'customer',
-      title: newCustomerContactRole || `${newCustomerName} Client Quality Director`,
-      supplier_id: newId,
-      customer_id: newId,
-      client_id: newId,
-      isDemoSession: true
-    };
-    saveEntity('users', newUser);
-    setUsers(getEntities('users'));
+    // 3. Provision Client Rep User Login in 'users' collection via provisionUser
+    let createdUserObj = null;
+    let createdTempPassword = '';
+    try {
+      const provRes = provisionUser({
+        name: `${newCustomerContactName || newCustomerName} (${newCustomerName})`,
+        email: newCustomerContactEmail || `${finalUsername}@company.com`,
+        username: finalUsername,
+        password: finalPassword,
+        role: 'customer',
+        title: newCustomerContactRole || `${newCustomerName} Client Quality Director`,
+        supplier_id: newId,
+        customer_id: newId
+      });
+      createdUserObj = provRes.user;
+      createdTempPassword = provRes.tempPassword;
+      setUsers(getEntities('users') || []);
+    } catch (userErr) {
+      console.warn("[Create Customer User Warning]:", userErr.message);
+    }
 
     // 4. Save to 'contacts' collection for 3-way contact resolution
     const newContactObj = {
@@ -1451,13 +1462,13 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
     // 5. System event log
     const user = getActiveActorName();
-    logSystemEvent('system', 'create_customer', `${user} onboarded new client/supplier ${newCustomerName} with Client Rep login (${finalUsername}).`);
+    logSystemEvent('system', 'create_customer', `${user} onboarded new client/supplier ${newCustomerName} with Client Rep login (${createdUserObj?.username || finalUsername}).`);
     
     setCreatedUserCredentials({
       companyName: newCustomerName,
       contactName: newCustomerContactName || `${newCustomerName} Contact`,
-      username: finalUsername,
-      password: finalPassword,
+      username: createdUserObj?.username || finalUsername,
+      password: createdTempPassword || finalPassword,
       role: 'Client Portal (Customer Role)'
     });
 
@@ -1467,7 +1478,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     setNewCustomerContactEmail('');
     setNewCustomerUsername('');
     setNewCustomerPassword('');
-    showToast(`Client Company & Client Rep Login (${finalUsername}) created successfully!`, "success");
+    showToast(`Client Company & Client Rep Login (${createdUserObj?.username || finalUsername}) created successfully!`, "success");
   };
 
   const handleCreateLocation = (e) => {
@@ -1520,35 +1531,38 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       return;
     }
     const cleanName = newRepName.trim();
-    const newId = `rep_${cleanName.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
-    const newRep = {
-      id: newId,
-      name: cleanName,
-      username: cleanName.toLowerCase().replace(/[^a-z0-9]/g, '_'),
-      password: 'password123',
-      email: newRepEmail.trim() || `${cleanName.toLowerCase().replace(/[^a-z0-9]/g, '.')}@integritydriven.com`,
-      role: 'rep',
-      title: 'Quality Liaison Rep',
-      phone: newRepPhone.trim() || '',
-      pay_currency: newRepPayCurrency || 'CAD',
-      avatar: cleanName.split(' ').map(n => n[0]).join('')?.toUpperCase() || 'QI',
-      created_at: new Date().toISOString()
-    };
-    saveEntity('users', newRep);
-    if (typeof addUser === 'function') {
-      addUser(newRep);
-    }
-    setUsers(getEntities('users') || []);
-    window.dispatchEvent(new Event('ids_pulse_db_update'));
-    
-    const userRep = getActiveActorName();
-    logSystemEvent('system', 'create_representative', `${userRep} onboarded representative ${cleanName} (${newRepPayCurrency}).`);
+    try {
+      const provRes = provisionUser({
+        name: cleanName,
+        email: newRepEmail.trim(),
+        phone: newRepPhone.trim() || '',
+        role: 'rep',
+        title: 'Quality Liaison Rep',
+        pay_currency: newRepPayCurrency || 'CAD'
+      });
 
-    setNewRepName('');
-    setNewRepEmail('');
-    setNewRepPhone('');
-    setNewRepPayCurrency('CAD');
-    showToast("Representative onboarding successful!", "success");
+      setUsers(getEntities('users') || []);
+      window.dispatchEvent(new Event('ids_pulse_db_update'));
+      
+      const userRep = getActiveActorName();
+      logSystemEvent('system', 'create_representative', `${userRep} onboarded representative ${cleanName} (${newRepPayCurrency}).`);
+
+      setCreatedUserCredentials({
+        companyName: 'IDS Pulse Staffing',
+        contactName: cleanName,
+        username: provRes.user.username,
+        password: provRes.tempPassword,
+        role: 'IDS Field Representative'
+      });
+
+      setNewRepName('');
+      setNewRepEmail('');
+      setNewRepPhone('');
+      setNewRepPayCurrency('CAD');
+      showToast(`Representative "${cleanName}" onboarded. Username: "${provRes.user.username}".`, "success");
+    } catch (err) {
+      showToast(err.message, "error");
+    }
   };
 
   const handleQuickAddRepSubmit = (e) => {
@@ -1559,40 +1573,36 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     }
     try {
       const cleanName = quickRepName.trim();
-      const newId = `rep_${cleanName.toLowerCase().replace(/[^a-z0-9]/g, '_')}_${Math.random().toString(36).substring(2, 6)}`;
-      const repNoFormatted = quickRepNo?.trim() || `REP-${Math.floor(1000 + Math.random() * 9000)}`;
-      
-      const newRep = {
-        id: newId,
-        rep_no: repNoFormatted,
+      const provRes = provisionUser({
         name: cleanName,
-        username: cleanName.toLowerCase().replace(/[^a-z0-9]/g, '_'),
-        password: 'password123',
-        email: quickRepEmail.trim() || `${cleanName.toLowerCase().replace(/[^a-z0-9]/g, '.')}@integritydriven.com`,
+        email: quickRepEmail.trim(),
+        phone: quickRepPhone.trim() || '',
         role: 'rep',
         title: 'Quality Liaison Rep',
-        phone: quickRepPhone.trim() || '',
-        pay_currency: quickRepPayCurrency || 'CAD',
-        avatar: cleanName.split(' ').map(n => n[0]).join('')?.toUpperCase() || 'QI',
-        created_at: new Date().toISOString()
-      };
+        pay_currency: quickRepPayCurrency || 'CAD'
+      });
 
-      // Save to Local DB & update React state instantly
-      saveEntity('users', newRep);
-      if (typeof addUser === 'function') {
-        addUser(newRep);
-      }
+      const newRep = provRes.user;
+      const newId = newRep.id;
+
       setUsers(getEntities('users') || []);
       window.dispatchEvent(new Event('ids_pulse_db_update'));
 
       try {
         const user = getActiveActorName();
-        logSystemEvent('system', 'quick_add_rep', `${user} quick-added representative ${cleanName} (${repNoFormatted}).`);
+        logSystemEvent('system', 'quick_add_rep', `${user} quick-added representative ${cleanName}.`);
       } catch (lErr) {
         console.warn("[System Log Warning]:", lErr);
       }
 
-      // Reset form fields & CLOSE MODAL INSTANTLY
+      setCreatedUserCredentials({
+        companyName: 'IDS Pulse Staffing',
+        contactName: cleanName,
+        username: newRep.username,
+        password: provRes.tempPassword,
+        role: 'IDS Field Representative'
+      });
+
       setQuickRepNo('');
       setQuickRepName('');
       setQuickRepEmail('');
@@ -1600,12 +1610,11 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       setQuickRepPayCurrency('CAD');
       setShowQuickAddRep(false);
       
-      // Auto-select newly created rep in all dropdown states
       setNewProjRep(newId);
       setConfigRepId(newId);
       setSelectedDispatchRepId(newId);
       
-      showToast(`Representative ${cleanName} added successfully!`, "success");
+      showToast(`Representative "${cleanName}" added. Username: "${newRep.username}".`, "success");
     } catch (err) {
       console.error("[Quick Add Rep Failure]:", err);
       showToast(`Failed to add representative: ${err.message}`, "error");
@@ -1621,56 +1630,32 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       return;
     }
 
-    const cleanName = name.trim();
-    const cleanEmail = email ? email.trim() : '';
-    const defaultUsername = username ? username.trim().toLowerCase().replace(/[^a-z0-9_]/g, '') : cleanName.toLowerCase().replace(/[^a-z0-9]/g, '_');
-    const defaultPassword = password ? password.trim() : 'password123';
+    try {
+      const provRes = provisionUser({
+        name: name.trim(),
+        email: email ? email.trim() : undefined,
+        phone: phone ? phone.trim() : '',
+        username: username ? username.trim() : undefined,
+        password: password ? password.trim() : undefined,
+        role: roleType,
+        title: title ? title.trim() : undefined,
+        supplier_id: supplier_id || undefined,
+        customer_id: supplier_id || undefined,
+        plant_id: plant_id || undefined,
+        pay_currency: pay_currency || 'CAD'
+      });
 
-    let role = roleType;
-    let defaultTitle = title?.trim() || '';
-    if (roleType === 'rep') defaultTitle = defaultTitle || 'Quality Liaison Rep';
-    else if (roleType === 'customer') defaultTitle = defaultTitle || 'Customer Quality Contact';
-    else if (roleType === 'lead') defaultTitle = defaultTitle || 'Quality Lead';
-    else if (roleType === 'accountant') defaultTitle = defaultTitle || 'Senior Accountant';
-    else if (roleType === 'admin') defaultTitle = defaultTitle || 'System Administrator';
+      const newUserObj = provRes.user;
 
-    const userId = `usr_${roleType}_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
-    const avatar = cleanName.split(' ').map(n => n[0]).join('')?.toUpperCase() || 'U';
-
-    const newUserObj = {
-      id: userId,
-      name: cleanName,
-      email: cleanEmail || `${defaultUsername}@integritydriven.com`,
-      username: defaultUsername,
-      password: defaultPassword,
-      role: role,
-      title: defaultTitle,
-      phone: phone ? phone.trim() : '',
-      avatar: avatar,
-      created_at: new Date().toISOString()
-    };
-
-    if (roleType === 'rep') {
-      newUserObj.pay_currency = pay_currency || 'CAD';
-    } else if (roleType === 'customer') {
-      if (supplier_id) {
-        newUserObj.supplier_id = supplier_id;
-        newUserObj.customer_id = supplier_id;
-        newUserObj.client_id = supplier_id;
-      }
-      if (plant_id) {
-        newUserObj.plant_id = plant_id;
-      }
-
-      if (supplier_id) {
+      if (roleType === 'customer' && supplier_id) {
         const foundSup = suppliers.find(s => s.id === supplier_id);
         if (foundSup) {
           const existingContacts = Array.isArray(foundSup.contacts) ? foundSup.contacts : [];
           const newCnt = {
             id: `cnt_${Date.now()}`,
-            name: cleanName,
-            email: cleanEmail,
-            role: defaultTitle,
+            name: name.trim(),
+            email: newUserObj.email,
+            role: newUserObj.title,
             phone: phone ? phone.trim() : ''
           };
           const updatedSup = {
@@ -1681,36 +1666,42 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
           setSuppliers(prev => prev.map(s => s.id === updatedSup.id ? updatedSup : s));
         }
       }
+
+      setUsers(getEntities('users') || []);
+      window.dispatchEvent(new Event('ids_pulse_db_update'));
+
+      try {
+        logSystemEvent('system', 'create_user_unified', `${getActiveActorName()} created ${roleType.toUpperCase()} user ${newUserObj.name} (${newUserObj.username}).`);
+      } catch (lErr) {
+        console.warn("[System Log Warning]:", lErr);
+      }
+
+      setCreatedUserCredentials({
+        companyName: 'IDS Pulse Platform',
+        contactName: newUserObj.name,
+        username: newUserObj.username,
+        password: provRes.tempPassword,
+        role: `${roleType.toUpperCase()} User Account`
+      });
+
+      setNewUserForm({
+        roleType: 'rep',
+        name: '',
+        email: '',
+        phone: '',
+        username: '',
+        password: '',
+        title: '',
+        supplier_id: '',
+        plant_id: '',
+        pay_currency: 'CAD'
+      });
+      setShowAddUserModal(false);
+
+      showToast(`User "${newUserObj.name}" created. Username: "${newUserObj.username}".`, "success");
+    } catch (err) {
+      showToast(err.message, "error");
     }
-
-    saveEntity('users', newUserObj);
-    if (typeof addUser === 'function') {
-      addUser(newUserObj);
-    }
-    setUsers(getEntities('users') || []);
-    window.dispatchEvent(new Event('ids_pulse_db_update'));
-
-    try {
-      logSystemEvent('system', 'create_user_unified', `${getActiveActorName()} created ${roleType.toUpperCase()} user ${cleanName} (${defaultUsername}).`);
-    } catch (lErr) {
-      console.warn("[System Log Warning]:", lErr);
-    }
-
-    setNewUserForm({
-      roleType: 'rep',
-      name: '',
-      email: '',
-      phone: '',
-      username: '',
-      password: '',
-      title: '',
-      supplier_id: '',
-      plant_id: '',
-      pay_currency: 'CAD'
-    });
-    setShowAddUserModal(false);
-
-    showToast(`User "${cleanName}" (${roleType.toUpperCase()}) created successfully!`, "success");
   };
 
   const handleQuickAddClientSubmit = async (e) => {
@@ -1773,20 +1764,21 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       let newRepUserObj = null;
 
       if ((isInlineNewRep || newProjRep === '__new__') && inlineRepName && inlineRepName.trim()) {
-        newRepUserObj = {
-          id: `rep_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
-          name: inlineRepName.trim(),
-          email: inlineRepEmail.trim() || `${inlineRepName.toLowerCase().replace(/\s+/g, '.')}@integritydriven.com`,
-          phone: inlineRepPhone.trim() || '',
-          role: 'rep',
-          title: inlineRepTitle || 'Quality Liaison Rep',
-          username: inlineRepName.toLowerCase().replace(/\s+/g, '_'),
-          created_at: new Date().toISOString()
-        };
-        addUser(newRepUserObj);
-        assignedRepId = newRepUserObj.id;
-        assignedRepName = newRepUserObj.name;
-        isInlineRep = true;
+        try {
+          const provRepRes = provisionUser({
+            name: inlineRepName.trim(),
+            email: inlineRepEmail.trim() || `${inlineRepName.toLowerCase().replace(/\s+/g, '.')}@integritydriven.com`,
+            phone: inlineRepPhone.trim() || '',
+            role: 'rep',
+            title: inlineRepTitle || 'Quality Liaison Rep'
+          });
+          newRepUserObj = provRepRes.user;
+          assignedRepId = newRepUserObj.id;
+          assignedRepName = newRepUserObj.name;
+          isInlineRep = true;
+        } catch (repErr) {
+          console.warn("[Inline Rep Provision Notice]:", repErr.message);
+        }
       } else {
         const allUsers = getEntities('users') || [];
         const targetRepId = (newProjRep && newProjRep !== '__new__') ? newProjRep : 'rep_clarence';
@@ -10167,7 +10159,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                     {showNewCustPassword ? 'Hide' : 'Show'}
                                   </button>
                                 </div>
-                                <span className="text-[10px] text-slate-600 font-bold">Leave blank to use default (Password123!)</span>
+                                <span className="text-[10px] text-slate-600 font-bold">Leave blank to generate a random temporary password.</span>
                               </div>
                             </div>
 
@@ -10186,25 +10178,6 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                             </div>
 
                             <button type="submit" className="bg-[#3B82F6] hover:bg-[#2563EB] text-text-primary font-bold py-2 rounded-xl text-[13.5px] mt-1 shadow-md cursor-pointer transition-colors">Onboard Customer & Create Login</button>
-
-                            {/* CREATED CREDENTIALS CONFIRMATION BOX */}
-                            {createdUserCredentials && (
-                              <div className="mt-3 p-3.5 bg-emerald-950/80 border border-emerald-500/50 rounded-xl text-left flex flex-col gap-2 shadow-lg animate-in fade-in">
-                                <div className="flex items-center justify-between border-b border-emerald-500/30 pb-1.5">
-                                  <span className="text-xs font-black text-emerald-300 uppercase tracking-wider flex items-center gap-1.5">
-                                    <CheckCircle className="w-4 h-4 text-emerald-400" /> Client Rep Account Created!
-                                  </span>
-                                  <button type="button" onClick={() => setCreatedUserCredentials(null)} className="text-[10px] text-emerald-400 hover:text-white font-bold">Dismiss</button>
-                                </div>
-                                <div className="bg-slate-900/90 p-2.5 rounded-lg border border-emerald-500/20 text-xs flex flex-col gap-1 font-mono text-emerald-200">
-                                  <div><span className="text-slate-400 font-sans">Company:</span> <strong className="text-white">{createdUserCredentials.companyName}</strong></div>
-                                  <div><span className="text-slate-400 font-sans">Contact:</span> <strong className="text-white">{createdUserCredentials.contactName}</strong></div>
-                                  <div><span className="text-slate-400 font-sans">Username:</span> <strong className="text-amber-300 font-bold bg-amber-950/80 px-1.5 py-0.5 rounded border border-amber-500/40">{createdUserCredentials.username}</strong></div>
-                                  <div><span className="text-slate-400 font-sans">Password:</span> <strong className="text-cyan-300 font-bold bg-cyan-950/80 px-1.5 py-0.5 rounded border border-cyan-500/40">{createdUserCredentials.password}</strong></div>
-                                  <div><span className="text-slate-400 font-sans">Access Role:</span> <span className="text-emerald-300">{createdUserCredentials.role}</span></div>
-                                </div>
-                              </div>
-                            )}
                           </form>
 
                           <div className="bg-surface-elevated border border-border-subtle p-6 sm:p-8 rounded-2xl col-span-2 flex flex-col gap-3">
@@ -10740,7 +10713,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                               type="button"
                               onClick={() => {
                                 setResetPasswordUser(u);
-                                setNewPasswordInput(u.password || 'password123');
+                                setNewPasswordInput(u.password || '');
                               }}
                               className="bg-amber-500/20 hover:bg-amber-600 border border-amber-500/40 text-amber-300 hover:text-white font-bold text-[11px] px-2.5 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1 shadow-sm"
                             >
@@ -12188,7 +12161,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   <label className="text-[10.5px] font-bold text-text-secondary uppercase">Password</label>
                   <input
                     type="text"
-                    placeholder="Default: password123"
+                    placeholder="Leave blank to auto-generate"
                     value={newUserForm.password}
                     onChange={(e) => setNewUserForm(prev => ({ ...prev, password: e.target.value }))}
                     className="h-10 w-full bg-surface border border-border-subtle rounded-xl px-3 text-[13px] text-text-primary focus:outline-none font-mono"
@@ -13426,6 +13399,69 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
         </div>
       )}
 
+      {/* GLOBAL CREATED USER CREDENTIALS OVERLAY (ACCESSIBLE FROM ALL TABS & MODALS) */}
+      {createdUserCredentials && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-[100] animate-in fade-in duration-200">
+          <div className="bg-surface-elevated border border-emerald-500/50 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col text-left">
+            <div className="bg-emerald-950/90 px-6 py-4 border-b border-emerald-500/40 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                <h3 className="text-[14px] font-black text-emerald-200 uppercase tracking-wider">User Account Provisioned</h3>
+              </div>
+              <button 
+                type="button" 
+                onClick={() => setCreatedUserCredentials(null)} 
+                className="text-emerald-400 hover:text-white cursor-pointer transition-colors p-1"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 flex flex-col gap-4 text-xs font-sans">
+              <p className="text-text-secondary leading-relaxed">
+                The user account for <strong className="text-text-primary">{createdUserCredentials.contactName}</strong> has been created. Please copy these credentials for the recipient:
+              </p>
+
+              <div className="bg-surface p-4 rounded-2xl border border-border-subtle flex flex-col gap-2.5 font-mono text-[12.5px]">
+                {createdUserCredentials.companyName && (
+                  <div className="flex justify-between items-start gap-3">
+                    <span className="text-text-secondary font-sans text-xs flex-shrink-0">Organization:</span>
+                    <strong className="text-text-primary font-semibold text-right">{createdUserCredentials.companyName}</strong>
+                  </div>
+                )}
+                <div className="flex justify-between items-start gap-3">
+                  <span className="text-text-secondary font-sans text-xs flex-shrink-0">User Role:</span>
+                  <span className="text-emerald-400 font-bold text-xs uppercase tracking-wider text-right">{createdUserCredentials.role}</span>
+                </div>
+                <div className="flex justify-between items-start gap-3 border-t border-border-subtle pt-2">
+                  <span className="text-text-secondary font-sans text-xs flex-shrink-0">Username:</span>
+                  <strong className="text-amber-400 font-bold bg-amber-950/60 px-2 py-0.5 rounded border border-amber-500/40 select-all text-right">{createdUserCredentials.username}</strong>
+                </div>
+                <div className="flex justify-between items-start gap-3">
+                  <span className="text-text-secondary font-sans text-xs flex-shrink-0">Temp Password:</span>
+                  <strong className="text-cyan-300 font-bold bg-cyan-950/60 px-2 py-0.5 rounded border border-cyan-500/40 select-all text-right">{createdUserCredentials.password}</strong>
+                </div>
+              </div>
+
+              <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 text-[11.5px] text-amber-300 leading-snug flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
+                <span>Save or copy these temporary login credentials before dismissing this panel.</span>
+              </div>
+            </div>
+
+            <div className="bg-surface px-6 py-3.5 border-t border-border-subtle flex justify-end">
+              <button
+                type="button"
+                onClick={() => setCreatedUserCredentials(null)}
+                className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-black shadow-md cursor-pointer transition-colors"
+              >
+                Dismiss Credentials Panel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Floating Toast Notification Overlay */}
       {toast && (
         <div className={`fixed bottom-6 right-6 z-[100] px-4 py-3 rounded-2xl shadow-2xl border backdrop-blur-md flex items-center gap-3 text-xs font-bold animate-in slide-in-from-bottom duration-200 ${
@@ -13434,7 +13470,15 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
           toast.type === 'info' ? 'bg-sky-950/90 text-sky-200 border-sky-500/40' :
           'bg-emerald-950/90 text-emerald-200 border-emerald-500/40'
         }`}>
-          <CheckCircle2 className="w-4.5 h-4.5 text-emerald-400 flex-shrink-0" />
+          {toast.type === 'error' ? (
+            <AlertCircle className="w-4.5 h-4.5 text-rose-400 flex-shrink-0" />
+          ) : toast.type === 'warning' ? (
+            <AlertTriangle className="w-4.5 h-4.5 text-amber-400 flex-shrink-0" />
+          ) : toast.type === 'info' ? (
+            <Zap className="w-4.5 h-4.5 text-sky-400 flex-shrink-0" />
+          ) : (
+            <CheckCircle2 className="w-4.5 h-4.5 text-emerald-400 flex-shrink-0" />
+          )}
           <span>{toast.message}</span>
           <button onClick={() => setToast(null)} className="ml-2 text-slate-400 hover:text-white cursor-pointer"><X className="w-3.5 h-3.5" /></button>
         </div>

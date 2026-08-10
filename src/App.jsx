@@ -396,9 +396,9 @@ function App() {
         { id: 'owner_1', name: 'Greg Phillippe', email: 'greg@goto-ids.com', username: 'greg', role: 'owner' },
         { id: 'acct_1', name: 'Colleen Boyd', email: 'colleen@goto-ids.com', username: 'colleen', role: 'accountant' },
         { id: 'rep_clarence', name: 'Clarence Kuiken', email: 'clarence.k@goto-ids.com', username: 'clarence', role: 'rep', title: 'IDS Field Rep' },
-        { id: 'rep_test', name: 'Rep Test Inspector', email: 'rep_test@integritydriven.com', username: 'rep_test', password: 'password123', role: 'rep', title: 'IDS Field Rep' },
+        { id: 'rep_test', name: 'Rep Test Inspector', email: 'rep_test@integritydriven.com', username: 'rep_test', password: 'RepTestPass2026!', role: 'rep', title: 'IDS Field Rep' },
         { id: 'cust_1', name: 'Client Partner', email: 'client@fictionalclient.com', username: 'customer', role: 'customer', title: 'Client Quality Manager' },
-        { id: 'autokabel', name: 'AutoKabel Quality Manager', email: 'quality@autokabel.com', username: 'autokabel', password: 'password123', role: 'customer', title: 'Autokabel Client Partner', supplier_id: 'autokabel' },
+        { id: 'autokabel', name: 'AutoKabel Quality Manager', email: 'quality@autokabel.com', username: 'autokabel', password: 'AutokabelQuality2026!', role: 'customer', title: 'Autokabel Client Partner', supplier_id: 'autokabel' },
         ...localUsers
       ];
 

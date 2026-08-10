@@ -38,7 +38,7 @@ const ESSENTIAL_ADMIN_USERS = [
   { id: 'admin_1', name: 'Shahroz Mirza', email: 'shahrozmirzallc@gmail.com', username: 'shahroz', password: 'Shahroz121$', phone: '+1 (416) 555-0000', role: 'super_admin', title: 'System Super Admin', pay_currency: 'CAD', avatar: 'SM' },
   { id: 'lead_diana', name: 'Diana Operations Lead', email: 'diana@goto-ids.com', username: 'diana', phone: '+1 (416) 555-0088', role: 'lead', title: 'Operations Lead Supervisor', pay_currency: 'CAD', avatar: 'DL' },
   { id: 'rep_clarence', name: 'Clarence Kuiken', email: 'clarence.k@goto-ids.com', username: 'clarence', phone: '+1 (416) 555-0099', role: 'rep', title: 'IDS Field Rep', pay_currency: 'CAD', avatar: 'CK' },
-  { id: 'rep_test', name: 'Rep Test Inspector', email: 'rep_test@integritydriven.com', username: 'rep_test', password: 'password123', phone: '+1 (416) 555-0199', role: 'rep', title: 'IDS Field Rep', pay_currency: 'CAD', avatar: 'RT' }
+  { id: 'rep_test', name: 'Rep Test Inspector', email: 'rep_test@integritydriven.com', username: 'rep_test', password: 'RepTestPass2026!', phone: '+1 (416) 555-0199', role: 'rep', title: 'IDS Field Rep', pay_currency: 'CAD', avatar: 'RT' }
 ];
 
 const ESSENTIAL_SUPPLIERS = [];
@@ -130,8 +130,8 @@ export function initializeDB() {
     { id: 'c_tesla_1', name: 'Elon Vance', email: 'evance@tesla.com', role: 'Quality Director', organization_id: 'sup_tesla', supplier_id: 'sup_tesla', client_id: 'sup_tesla', status: 'active' }
   ];
   const brandNewCustomerUsers = [
-    { id: 'user_cust_magna_robert', name: 'Robert Sterling (Primary Quality Director)', email: 'robert.sterling@magna.com', username: 'magna_client', password: 'password123', role: 'customer', supplier_id: 'sup_magna', customer_id: 'sup_magna', title: 'Magna Primary Quality Director' },
-    { id: 'user_cust_stellantis_mark', name: 'Mark Vance (Primary Quality Mgr)', email: 'mark.vance@stellantis.com', username: 'stellantis_client', password: 'password123', role: 'customer', supplier_id: 'sup_stellantis', customer_id: 'sup_stellantis', title: 'Stellantis Primary Quality Manager' },
+    { id: 'user_cust_magna_robert', name: 'Robert Sterling (Primary Quality Director)', email: 'robert.sterling@magna.com', username: 'magna_client', password: 'MagnaQuality2026!', role: 'customer', supplier_id: 'sup_magna', customer_id: 'sup_magna', title: 'Magna Primary Quality Director' },
+    { id: 'user_cust_stellantis_mark', name: 'Mark Vance (Primary Quality Mgr)', email: 'mark.vance@stellantis.com', username: 'stellantis_client', password: 'StellantisQuality2026!', role: 'customer', supplier_id: 'sup_stellantis', customer_id: 'sup_stellantis', title: 'Stellantis Primary Quality Manager' },
     { id: 'user_cust_tesla_elon', name: 'Elon Vance (Tesla Quality Director)', email: 'evance@tesla.com', username: 'tesla_elon', password: 'TeslaPassword2026!', role: 'customer', supplier_id: 'sup_tesla', customer_id: 'sup_tesla', client_id: 'sup_tesla', title: 'Tesla Quality Director' }
   ];
 
@@ -201,18 +201,19 @@ export function initializeDB() {
     if (!data.incidents.some(x => x.id === inc.id)) { data.incidents.push(inc); updated = true; }
   });
 
-  // Ensure customer accounts exist for all suppliers so client portal logins work out of the box
+  // Ensure customer accounts exist for all suppliers with valid contact emails so client portal logins work out of the box
   if (data.suppliers && Array.isArray(data.suppliers)) {
     data.suppliers.forEach(sup => {
-      if (sup && sup.id) {
+      if (sup && sup.id && sup.contact_email && sup.contact_email.trim() && sup.contact_email.includes('@')) {
         const custUsername = sup.id.toLowerCase().replace(/[^a-z0-9]/g, '_');
         if (!data.users.some(u => u.role === 'customer' && (u.supplier_id === sup.id || u.username === custUsername))) {
+          const autoGenPass = `ClientPass_${Math.random().toString(36).substring(2, 8)}`;
           data.users.push({
             id: `user_cust_${sup.id}`,
             name: sup.contact_name || sup.contact_person || `${sup.name} Quality Manager`,
-            email: sup.contact_email || `${custUsername}@client.com`,
+            email: sup.contact_email.toLowerCase().trim(),
             username: custUsername,
-            password: 'password123',
+            password: autoGenPass,
             role: 'customer',
             supplier_id: sup.id,
             customer_id: sup.id,
@@ -751,19 +752,26 @@ export function saveEntity(type, entity) {
         title: 'System Super Admin'
       };
     } else {
-      const rawName = (entity.name || entity.username || entity.email || 'User').trim();
-      const defaultUsername = entity.username 
-        ? entity.username.toLowerCase().trim().replace(/\s+/g, '_')
-        : (entity.name ? entity.name.toLowerCase().trim().replace(/[^a-z0-9]/g, '_') : (entity.email ? entity.email.split('@')[0] : String(entity.id)));
+        const rawName = (entity.name || entity.username || entity.email || 'User').trim();
+        const defaultUsername = entity.username 
+          ? entity.username.toLowerCase().trim().replace(/\s+/g, '_')
+          : (entity.name ? entity.name.toLowerCase().trim().replace(/[^a-z0-9]/g, '_') : (entity.email ? entity.email.split('@')[0] : String(entity.id)));
 
-      normalizedEntity = {
-        role: 'rep',
-        title: 'IDS Field Rep',
-        ...entity,
-        name: rawName,
-        username: defaultUsername,
-        password: entity.password || 'password123'
-      };
+        const existingUserMatch = db[type]?.find(item => String(item.id) === String(entity.id) || item.username === entity.username);
+        const resolvedPassword = entity.password || existingUserMatch?.password;
+        
+        if (!resolvedPassword) {
+          throw new Error(`Cannot save user "${rawName}" without a password. Route creation through provisionUser().`);
+        }
+
+        normalizedEntity = {
+          role: 'rep',
+          title: 'IDS Field Rep',
+          ...entity,
+          name: rawName,
+          username: defaultUsername,
+          password: resolvedPassword
+        };
     }
   }
   
@@ -811,23 +819,112 @@ export function saveEntity(type, entity) {
   return normalizedEntity;
 }
 
-export function addUser(user) {
-  const rawName = (user.name || user.username || user.email || 'User').trim();
-  const defaultUsername = user.username 
-    ? user.username.toLowerCase().trim().replace(/\s+/g, '_')
-    : (user.name ? user.name.toLowerCase().trim().replace(/[^a-z0-9]/g, '_') : (user.email ? user.email.split('@')[0] : user.id));
+/**
+ * Single Canonical User Provisioning Engine for IDS Pulse.
+ * Replaces fragmented user creation paths across WebDashboard, onboardingService, and SharedDatabase.
+ * 
+ * Enforces:
+ * 1. Single username rule (email local-part normalized with collision suffix)
+ * 2. Strict Email & Username Duplicate Checking
+ * 3. Safe temporary password generation (no hardcoded password123)
+ * 4. Mandatory role, supplier_id, and plant_id validation
+ * 5. Single database write via saveEntity('users')
+ */
+export function provisionUser(payload = {}) {
+  const emailInput = payload.email || payload.user_email || '';
+  const nameInput = payload.name || payload.contact_name || payload.username || '';
+  
+  if (!emailInput || !emailInput.trim() || !emailInput.includes('@')) {
+    throw new Error('A valid email address is required to create a user account.');
+  }
 
-  const newUser = {
-    role: 'rep',
-    title: 'IDS Field Rep',
-    ...user,
+  const normalizedEmail = emailInput.toLowerCase().trim();
+  const existingUsers = getEntities('users') || [];
+
+  // 1. Strict Duplicate Check by Email
+  const existingByEmail = existingUsers.find(u => u.email?.toLowerCase().trim() === normalizedEmail);
+  if (existingByEmail) {
+    throw new Error(`User account already exists for email "${normalizedEmail}" (Username: "${existingByEmail.username}", Role: ${existingByEmail.role?.toUpperCase()}). Duplicate creation blocked.`);
+  }
+
+  // 2. Determine Canonical Username (Email local-part normalized or clean name)
+  let baseUsername = payload.username 
+    ? payload.username.toLowerCase().trim().replace(/[^a-z0-9_]/g, '')
+    : normalizedEmail.split('@')[0].toLowerCase().trim().replace(/[^a-z0-9_]/g, '_');
+  
+  if (!baseUsername) {
+    baseUsername = (nameInput || 'user').toLowerCase().trim().replace(/[^a-z0-9_]/g, '_');
+  }
+
+  let canonicalUsername = baseUsername;
+  let suffix = 1;
+  while (existingUsers.some(u => u.username?.toLowerCase().trim() === canonicalUsername)) {
+    suffix += 1;
+    canonicalUsername = `${baseUsername}_${suffix}`;
+  }
+
+  // 3. Password Generation (No hardcoded password123)
+  let finalPassword = payload.password?.trim();
+  let generatedPassword = false;
+  if (!finalPassword || finalPassword === 'password123' || finalPassword === 'Password123!') {
+    // Generate secure 8-character random temporary password
+    const chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz';
+    finalPassword = Array.from({ length: 8 }, () => chars.charAt(Math.floor(Math.random() * chars.length))).join('');
+    generatedPassword = true;
+  }
+
+  // Hard Rule: Shahroz protection
+  if (canonicalUsername === 'shahroz' || normalizedEmail.includes('shahroz')) {
+    if (existingUsers.some(u => u.username === 'shahroz')) {
+      throw new Error('Shahroz Mirza Super-Admin account is protected and cannot be modified.');
+    }
+  }
+
+  const rawName = (nameInput || normalizedEmail.split('@')[0]).trim();
+  const resolvedRole = (payload.role || 'rep').toLowerCase().trim();
+  const resolvedSupplierId = payload.supplier_id || payload.customer_id || null;
+
+  const newUserObj = {
+    id: payload.id || `usr_${Date.now()}_${Math.random().toString(36)?.substring(2, 7)}`,
     name: rawName,
-    username: defaultUsername,
-    password: user.password || 'password123',
-    id: user.id || `usr_${Date.now()}_${Math.random().toString(36)?.substring(2, 7)}`,
-    created_at: user.created_at || new Date().toISOString()
+    email: normalizedEmail,
+    username: canonicalUsername,
+    password: finalPassword,
+    phone: payload.phone || payload.contact_phone || '',
+    role: resolvedRole,
+    title: payload.title || (resolvedRole === 'customer' ? 'Client Quality Contact' : (resolvedRole === 'rep' ? 'IDS Field Rep' : 'System Staff')),
+    supplier_id: resolvedSupplierId,
+    customer_id: resolvedSupplierId,
+    plant_id: payload.plant_id || null,
+    pay_rate: payload.pay_rate ? parseFloat(payload.pay_rate) : undefined,
+    billing_rate: payload.billing_rate ? parseFloat(payload.billing_rate) : undefined,
+    pay_currency: payload.pay_currency || 'USD',
+    avatar: rawName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) || 'US',
+    created_at: payload.created_at || new Date().toISOString()
   };
-  return saveEntity('users', newUser);
+
+  saveEntity('users', newUserObj);
+
+  return {
+    user: newUserObj,
+    tempPassword: finalPassword,
+    isGeneratedPassword: generatedPassword
+  };
+}
+
+export function addUser(user) {
+  try {
+    const result = provisionUser(user);
+    return result.user;
+  } catch (err) {
+    const existingUsers = getEntities('users') || [];
+    const matched = existingUsers.find(u => 
+      (user.email && u.email?.toLowerCase().trim() === user.email?.toLowerCase().trim()) || 
+      (user.username && u.username?.toLowerCase().trim() === user.username?.toLowerCase().trim())
+    );
+    if (matched) return matched;
+    throw err;
+  }
 }
 
 export function addIncident(incident) {

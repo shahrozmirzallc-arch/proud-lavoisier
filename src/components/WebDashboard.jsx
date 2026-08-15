@@ -11261,7 +11261,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         <div className="text-[13.5px] text-text-secondary font-medium ml-12 mt-1">{proj.description}</div>
                       </div>
                       <div className="flex items-center gap-3">
-                        <div className={`px-4 py-1.5 rounded-full text-[11.5px] font-black uppercase tracking-wider border ${proj.status === 'Active' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : 'bg-surface-elevated text-text-secondary border-border-subtle'}`}>
+                        <div className={`px-4 py-1.5 rounded-full text-[11.5px] font-black uppercase tracking-wider border ${String(proj.status || '').toLowerCase() === 'active' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : 'bg-surface-elevated text-text-secondary border-border-subtle'}`}>
                           {proj.status}
                         </div>
                       </div>
@@ -11332,14 +11332,14 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                             </button>
                             <button 
                               onClick={() => {
-                                const active = proj.status === 'Active';
-                                proj.status = active ? 'Completed' : 'Active';
+                                const active = String(proj.status || '').toLowerCase() === 'active';
+                                proj.status = active ? 'completed' : 'active';
                                 saveEntity('projects', proj);
                                 window.dispatchEvent(new Event('ids_pulse_db_update'));
                               }}
-                              className={`w-full font-bold py-3 rounded-lg text-[12.5px] uppercase tracking-wider cursor-pointer flex items-center justify-center gap-2 transition-colors ${proj.status === 'Active' ? 'bg-surface-elevated text-text-secondary hover:text-text-primary hover:bg-surface-elevated' : 'bg-emerald-50 text-emerald-500 hover:bg-emerald-500 hover:text-text-primary'}`}
+                              className={`w-full font-bold py-3 rounded-lg text-[12.5px] uppercase tracking-wider cursor-pointer flex items-center justify-center gap-2 transition-colors ${String(proj.status || '').toLowerCase() === 'active' ? 'bg-surface-elevated text-text-secondary hover:text-text-primary hover:bg-surface-elevated' : 'bg-emerald-50 text-emerald-500 hover:bg-emerald-500 hover:text-text-primary'}`}
                             >
-                              {proj.status === 'Active' ? 'Mark Project Complete' : 'Re-open Project'}
+                              {String(proj.status || '').toLowerCase() === 'active' ? 'Mark Project Complete' : 'Re-open Project'}
                             </button>
                           </div>
                         </div>

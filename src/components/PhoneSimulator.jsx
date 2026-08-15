@@ -119,7 +119,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
     window.__setActiveScreen = (s) => setActiveScreen(s);
     window.__openDailyQualityReport = () => setActiveScreen('summary');
     window.__getAvailableRoutingContacts = () => getAvailableRoutingContacts();
-  });
+  }, []);
 
   // INCIDENT REPORT STATE
   const [incStep, setIncStep] = useState(1); // steps: 1: Capture, 2: Scan, 3: Describe, 4: Send, 3.5: AI Duplicate Check
@@ -153,7 +153,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
   });
   const [drawingTarget, setDrawingTarget] = useState('closeup'); // 'wide' | 'medium' | 'closeup'
 
-  // Photo evidence collection state — start with EMPTY evidence list per Section 2
+  // Photo evidence collection state - start with EMPTY evidence list per Section 2
   const [evidenceList, setEvidenceList] = useState([]);
   const [annotateTargetId, setAnnotateTargetId] = useState(null);
   const [showAddPhotoModal, setShowAddPhotoModal] = useState(false);

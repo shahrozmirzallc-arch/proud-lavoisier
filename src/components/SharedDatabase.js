@@ -117,8 +117,8 @@ export function initializeDB() {
     { id: 'asgn_stellantis_clarence', organization_id: 'org_ids_pulse', project_id: 'proj_windsor_500', rep_id: 'rep_clarence', billing_customer_id: 'sup_stellantis', supplier_id: 'sup_stellantis', plant_id: 'plant_windsor', authorized_regular_hours: 8.0, status: 'active', effective_from: '2026-01-01T00:00:00Z' }
   ];
   const brandNewRateCards = [
-    { id: 'rc_magna_clarence', assignment_id: 'asgn_magna_clarence', billing_rate: 110.00, billing_currency: 'CAD', currency: 'CAD', pay_rate: 52.00, pay_currency: 'CAD', effective_from: '2026-01-01T00:00:00Z' },
-    { id: 'rc_stellantis_clarence', assignment_id: 'asgn_stellantis_clarence', billing_rate: 95.00, billing_currency: 'CAD', currency: 'CAD', pay_rate: 48.00, pay_currency: 'CAD', effective_from: '2026-01-01T00:00:00Z' }
+    { id: 'rc_magna_clarence', rep_id: 'rep_clarence', supplier_id: 'sup_magna', plant_id: 'plant_oakville', billing_rate: 110.00, billing_currency: 'CAD', currency: 'CAD', pay_rate: 52.00, pay_currency: 'CAD', effective_from: '2026-01-01T00:00:00Z' },
+    { id: 'rc_stellantis_clarence', rep_id: 'rep_clarence', supplier_id: 'sup_stellantis', plant_id: 'plant_windsor', billing_rate: 95.00, billing_currency: 'CAD', currency: 'CAD', pay_rate: 48.00, pay_currency: 'CAD', effective_from: '2026-01-01T00:00:00Z' }
   ];
   const brandNewContacts = [
     { id: 'c_magna_1', name: 'Robert Sterling', email: 'robert.sterling@magna.com', role: 'Primary Quality Director', organization_id: 'sup_magna', supplier_id: 'sup_magna', client_id: 'sup_magna', status: 'active' },
@@ -187,7 +187,7 @@ export function initializeDB() {
     if (!data.assignments.some(x => x.id === a.id)) { data.assignments.push(a); updated = true; }
   });
   brandNewRateCards.forEach(rc => {
-    if (!data.rates.some(x => x.id === rc.id || x.assignment_id === rc.assignment_id)) { data.rates.push(rc); updated = true; }
+    if (!data.rates.some(x => x.id === rc.id)) { data.rates.push(rc); updated = true; }
   });
   if (!data.contacts) data.contacts = [];
   brandNewContacts.forEach(c => {
@@ -228,7 +228,7 @@ export function initializeDB() {
 
   if (updated) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-    window.dispatchEvent(new Event('ids_pulse_db_update'));
+    queueMicrotask(() => window.dispatchEvent(new Event('ids_pulse_db_update')));
   }
 
   // Set up Offline Sync Listener

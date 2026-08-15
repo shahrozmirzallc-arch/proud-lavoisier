@@ -2,30 +2,14 @@ import { createClient } from "@supabase/supabase-js";
 
 const STAGING_ORIGIN = "https://qatoyevwtjjtynisodyq.supabase.co";
 const REQUIRED_GATE = "explicitly-authorized-staging-only";
-const INCIDENT_SELECT = [
-  "id",
-  "project_id",
-  "supplier_id",
-  "plant_id",
-  "rep_name",
-  "part_id",
-  "defect_type",
-  "area",
-  "description",
-  "action_taken",
-  "returned_to_supplier_status",
-  "sort_requested_status",
-  "rma_required_status",
-  "rma_number",
-  "concern_classification",
-  "level_of_concern",
-  "level_of_concern_other",
-  "status",
-  "released_at",
-  "sent_at",
-  "created_at",
-  "updated_at",
-].join(",");
+const FEED_KINDS = new Set([
+  "routine_inspection",
+  "rework",
+  "urgent_incident",
+  "daily_report",
+  "hours",
+  "expense",
+]);
 
 function fail(message) {
   throw new Error(message);
@@ -79,18 +63,76 @@ async function run() {
     const { data: identity, error: identityError } = await client.auth.getUser();
     if (identityError || !identity.user) fail("Authoritative staging identity validation failed.");
 
-    const { data: incidents, error: feedError } = await client
-      .from("incidents")
-      .select(INCIDENT_SELECT)
-      .not("incident_client_reference", "is", null)
-      .eq("released_to_client", true)
-      .eq("dashboard_delivery_state", "available")
-      .order("released_at", { ascending: false })
-      .limit(5);
-    if (feedError || !Array.isArray(incidents)) fail("Released Incident feed contract failed.");
+    const { data: dashboard, error: dashboardError } = await client.rpc(
+      "get_mobile_dashboard_snapshot",
+      { p_limit: 50, p_cursor: null },
+    );
+    if (
+      dashboardError ||
+      !dashboard ||
+      dashboard.status !== "ok" ||
+      dashboard.record_kind !== "mobile_dashboard_snapshot" ||
+      !dashboard.actor ||
+      !dashboard.feed ||
+      dashboard.server_timestamp !== dashboard.actor.server_timestamp ||
+      dashboard.server_timestamp !== dashboard.feed.server_timestamp ||
+      hasTransportMaterial(dashboard)
+    ) {
+      fail("Atomic mobile dashboard snapshot contract failed.");
+    }
+    const actor = dashboard.actor;
+    const feed = dashboard.feed;
+    if (
+      actor.status !== "ok" ||
+      actor.record_kind !== "mobile_dashboard_actor" ||
+      !actor.capabilities ||
+      hasTransportMaterial(actor)
+    ) {
+      fail("Mobile dashboard actor contract failed.");
+    }
+
+    if (
+      !feed ||
+      feed.status !== "ok" ||
+      feed.record_kind !== "mobile_dashboard_feed" ||
+      !Array.isArray(feed.items) ||
+      feed.items.some((item) => !item || !FEED_KINDS.has(item.kind)) ||
+      hasTransportMaterial(feed)
+    ) {
+      fail("Mobile dashboard feed contract failed.");
+    }
+
+    if (actor.capabilities.client_overtime_review === true) {
+      const { data: overtime, error: overtimeError } = await client.rpc(
+        "get_client_mobile_overtime_review_feed",
+        { p_limit: 50, p_cursor: null },
+      );
+      if (
+        overtimeError ||
+        !overtime ||
+        overtime.status !== "ok" ||
+        overtime.record_kind !== "client_overtime_review_feed" ||
+        typeof overtime.has_more !== "boolean" ||
+        (overtime.has_more !== (overtime.next_cursor !== null)) ||
+        !Array.isArray(overtime.items) ||
+        hasTransportMaterial(overtime)
+      ) {
+        fail("Client overtime review feed contract failed.");
+      }
+    }
 
     const incidentId = process.env.IDS_STAGING_INCIDENT_ID;
     if (incidentId) {
+      const incident = feed.items.find(
+        (item) => item.kind === "urgent_incident" && item.entity_id === incidentId,
+      );
+      if (
+        actor.capabilities.incident_evidence !== true ||
+        !incident ||
+        incident.details?.evidence_accessible !== true
+      ) {
+        fail("The optional Incident is not evidence-authorized in the loaded dashboard page.");
+      }
       const { data: evidence, error: evidenceError } = await client.rpc(
         "get_mobile_incident_evidence",
         { p_incident_id: incidentId },
@@ -124,7 +166,7 @@ async function run() {
       }
     }
 
-    process.stdout.write(`Staging viewer contract passed for ${incidents.length} authorized rows.\n`);
+    process.stdout.write(`Staging viewer contract passed for ${feed.items.length} authorized rows.\n`);
   } finally {
     await client.auth.signOut({ scope: "local" });
   }

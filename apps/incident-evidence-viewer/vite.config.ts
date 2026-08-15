@@ -5,7 +5,7 @@ import { defineConfig, loadEnv } from "vite";
 import {
   assertNoForbiddenEnvironmentNames,
   readViewerEnvironment,
-} from "./src/security/environment";
+} from "./src/security/environment.js";
 
 const appDirectory = fileURLToPath(new URL(".", import.meta.url));
 const isolatedEnvDirectory = resolve(appDirectory, "config/env");

@@ -3,21 +3,26 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { fetchIncidentEvidence, requestAttachmentAccess } from "../data/viewerApi";
 import type {
   AttachmentGrant,
+  ClientEvidenceAttachment,
+  ClientEvidenceGroup,
+  EvidenceAudience,
   EvidenceAttachment,
   EvidenceGroup,
   EvidenceState,
-  IncidentEvidence,
+  ViewerIncidentEvidence,
 } from "../types";
 
 interface EvidencePanelProps {
   client: SupabaseClient;
   incidentId: string;
   refreshRevision: number;
+  audience: EvidenceAudience;
 }
 
-interface ActivePreview {
-  attachment: EvidenceAttachment;
-  grant: AttachmentGrant;
+export interface ActivePreview {
+  attachment: EvidenceAttachment | ClientEvidenceAttachment;
+  objectUrl: string;
+  expiresAt: string;
 }
 
 const stateCopy: Record<EvidenceState, { title: string; detail: string }> = {
@@ -61,12 +66,6 @@ const roleLabels: Record<EvidenceAttachment["role"], string> = {
   video_original: "Verified video",
 };
 
-function formatBytes(byteSize: number): string {
-  if (byteSize < 1024) return `${byteSize} B`;
-  if (byteSize < 1048576) return `${(byteSize / 1024).toFixed(1)} KB`;
-  return `${(byteSize / 1048576).toFixed(1)} MB`;
-}
-
 function groupLabel(group: EvidenceGroup): string {
   if (group.title) return group.title;
   return group.kind === "image"
@@ -74,14 +73,195 @@ function groupLabel(group: EvidenceGroup): string {
     : "Incident video";
 }
 
-export function EvidencePanel({ client, incidentId, refreshRevision }: EvidencePanelProps) {
-  const [evidence, setEvidence] = useState<IncidentEvidence | null>(null);
+function clientGroupLabel(group: ClientEvidenceGroup): string {
+  if (group.title) return group.title;
+  return group.kind === "marked_image"
+    ? `Marked photo ${group.displayOrder + 1}`
+    : `Submitted video ${group.displayOrder + 1}`;
+}
+
+function attachmentId(attachment: EvidenceAttachment | ClientEvidenceAttachment): string {
+  return attachment.attachmentId;
+}
+
+function attachmentGroupId(attachment: EvidenceAttachment | ClientEvidenceAttachment): string {
+  return "groupId" in attachment ? attachment.groupId : attachment.mediaGroupId;
+}
+
+function attachmentOrder(attachment: EvidenceAttachment | ClientEvidenceAttachment): number {
+  return "displayOrder" in attachment ? attachment.displayOrder : attachment.sortOrder;
+}
+
+function attachmentLabel(attachment: EvidenceAttachment | ClientEvidenceAttachment): string {
+  if ("kind" in attachment) {
+    return attachment.kind === "marked_image" ? "Marked photo" : "Submitted video";
+  }
+  return roleLabels[attachment.role];
+}
+
+function attachmentIsImage(attachment: EvidenceAttachment | ClientEvidenceAttachment): boolean {
+  return "kind" in attachment
+    ? attachment.kind === "marked_image"
+    : attachment.role === "image_original" || attachment.role === "image_marked";
+}
+
+function attachmentIsVideo(attachment: EvidenceAttachment | ClientEvidenceAttachment): boolean {
+  return "kind" in attachment
+    ? attachment.kind === "submitted_video"
+    : attachment.role === "video_original";
+}
+
+async function fetchGrantedBlob(grant: AttachmentGrant): Promise<Blob> {
+  const response = await fetch(grant.signedUrl, {
+    method: "GET",
+    cache: "no-store",
+    credentials: "omit",
+    referrerPolicy: "no-referrer",
+  });
+  if (!response.ok) {
+    throw new Error("Authorized evidence could not be retrieved.");
+  }
+  const blob = await response.blob();
+  if (blob.size === 0) {
+    throw new Error("Authorized evidence was empty.");
+  }
+  return blob;
+}
+
+function downloadName(attachment: EvidenceAttachment | ClientEvidenceAttachment): string {
+  if (attachmentIsVideo(attachment)) return "submitted-incident-video.mp4";
+  if (attachmentIsImage(attachment)) return "marked-incident-photo.jpg";
+  return "incident-drawing-data.json";
+}
+
+export function EvidenceMediaPreview({
+  preview,
+  onClose,
+}: {
+  preview: ActivePreview;
+  onClose: () => void;
+}) {
+  return (
+    <div className="preview-panel" aria-live="polite">
+      <div className="preview-heading">
+        <div>
+          <strong>{attachmentLabel(preview.attachment)}</strong>
+          <span>Access closes at {new Date(preview.expiresAt).toLocaleTimeString()}</span>
+        </div>
+        <button className="button button-secondary button-compact" type="button" onClick={onClose}>
+          Close preview
+        </button>
+      </div>
+      {attachmentIsImage(preview.attachment) ? (
+        <img
+          className="evidence-image"
+          src={preview.objectUrl}
+          alt={`${attachmentLabel(preview.attachment)} for the released Incident`}
+        />
+      ) : attachmentIsVideo(preview.attachment) ? (
+        <video className="evidence-video" src={preview.objectUrl} controls preload="metadata">
+          This browser cannot play the verified Incident video.
+        </video>
+      ) : (
+        <div className="annotation-preview">
+          <p>Drawing data is available as the verified machine-readable annotation file.</p>
+          <a href={preview.objectUrl} target="_blank" rel="noreferrer">
+            Open drawing data before access expires
+          </a>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function ClientEvidenceGroupCard({
+  group,
+  attachments,
+  busyAction,
+  onView,
+  onDownload,
+}: {
+  group: ClientEvidenceGroup;
+  attachments: ClientEvidenceAttachment[];
+  busyAction: string | null;
+  onView: (attachment: ClientEvidenceAttachment) => void;
+  onDownload: (attachment: ClientEvidenceAttachment) => void;
+}) {
+  return (
+    <article className="evidence-group">
+      <div className="evidence-group-heading">
+        <div>
+          <span className="group-kind">
+            {group.kind === "marked_image" ? "Marked photo" : "Submitted video"}
+          </span>
+          <h3>{clientGroupLabel(group)}</h3>
+        </div>
+      </div>
+      <div className="client-evidence-facts">
+        <span>Kind {group.kind === "marked_image" ? "Marked photo" : "Submitted video"}</span>
+        <span>Display position {group.displayOrder + 1}</span>
+        <span>Title {group.title ?? "Not provided"}</span>
+        <span>
+          Duration {group.durationMs === null ? "Not applicable" : `${group.durationMs} ms`}
+        </span>
+        <span>Note {group.note ?? "Not provided"}</span>
+      </div>
+      {attachments.length > 0 ? (
+        <ul className="attachment-list">
+          {attachments.map((attachment) => {
+            const viewKey = `${attachment.attachmentId}:view`;
+            const downloadKey = `${attachment.attachmentId}:download`;
+            return (
+              <li key={attachment.attachmentId}>
+                <div className="attachment-copy">
+                  <strong>{attachmentLabel(attachment)}</strong>
+                  <span>
+                    {attachmentLabel(attachment)} · display position {attachment.displayOrder + 1}
+                  </span>
+                </div>
+                <div className="attachment-actions">
+                  <button
+                    className="button button-secondary button-compact"
+                    type="button"
+                    disabled={busyAction !== null}
+                    onClick={() => onView(attachment)}
+                  >
+                    {busyAction === viewKey ? "Authorizing" : "View"}
+                  </button>
+                  <button
+                    className="button button-quiet button-compact"
+                    type="button"
+                    disabled={busyAction !== null}
+                    onClick={() => onDownload(attachment)}
+                  >
+                    {busyAction === downloadKey ? "Authorizing" : "Download"}
+                  </button>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      ) : (
+        <p className="evidence-pending-copy">Verified attachments are not available yet.</p>
+      )}
+    </article>
+  );
+}
+
+export function EvidencePanel({
+  client,
+  incidentId,
+  refreshRevision,
+  audience,
+}: EvidencePanelProps) {
+  const [evidence, setEvidence] = useState<ViewerIncidentEvidence | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [busyAction, setBusyAction] = useState<string | null>(null);
   const [preview, setPreview] = useState<ActivePreview | null>(null);
   const expiryTimer = useRef<number | null>(null);
+  const previewUrl = useRef<string | null>(null);
   const actionRequest = useRef(0);
 
   useEffect(() => {
@@ -92,8 +272,12 @@ export function EvidencePanel({ client, incidentId, refreshRevision }: EvidenceP
     setBusyAction(null);
     setEvidence(null);
     setPreview(null);
+    if (previewUrl.current !== null) {
+      URL.revokeObjectURL(previewUrl.current);
+      previewUrl.current = null;
+    }
     actionRequest.current += 1;
-    void fetchIncidentEvidence(client, incidentId)
+    void fetchIncidentEvidence(client, incidentId, audience)
       .then((result) => {
         if (current) setEvidence(result);
       })
@@ -107,19 +291,29 @@ export function EvidencePanel({ client, incidentId, refreshRevision }: EvidenceP
       });
     return () => {
       current = false;
+      actionRequest.current += 1;
       if (expiryTimer.current !== null) window.clearTimeout(expiryTimer.current);
+      expiryTimer.current = null;
+      if (previewUrl.current !== null) {
+        URL.revokeObjectURL(previewUrl.current);
+        previewUrl.current = null;
+      }
     };
-  }, [client, incidentId, refreshRevision]);
+  }, [audience, client, incidentId, refreshRevision]);
 
   const attachmentsByGroup = useMemo(() => {
-    const result = new Map<string, EvidenceAttachment[]>();
+    const result = new Map<string, Array<EvidenceAttachment | ClientEvidenceAttachment>>();
     for (const attachment of evidence?.attachments ?? []) {
-      const existing = result.get(attachment.mediaGroupId) ?? [];
+      const groupId = attachmentGroupId(attachment);
+      const existing = result.get(groupId) ?? [];
       existing.push(attachment);
-      result.set(attachment.mediaGroupId, existing);
+      result.set(groupId, existing);
     }
     for (const attachments of result.values()) {
       attachments.sort((left, right) => {
+        if ("kind" in left || "kind" in right) {
+          return attachmentOrder(left) - attachmentOrder(right);
+        }
         const priority = rolePriority[left.role] - rolePriority[right.role];
         return priority === 0 ? left.sortOrder - right.sortOrder : priority;
       });
@@ -130,65 +324,77 @@ export function EvidencePanel({ client, incidentId, refreshRevision }: EvidenceP
   function clearPreview() {
     if (expiryTimer.current !== null) window.clearTimeout(expiryTimer.current);
     expiryTimer.current = null;
+    if (previewUrl.current !== null) {
+      URL.revokeObjectURL(previewUrl.current);
+      previewUrl.current = null;
+    }
     setPreview(null);
   }
 
-  async function viewAttachment(attachment: EvidenceAttachment) {
+  async function viewAttachment(attachment: EvidenceAttachment | ClientEvidenceAttachment) {
     const request = actionRequest.current + 1;
     actionRequest.current = request;
-    const key = `${attachment.attachmentId}:view`;
+    const key = `${attachmentId(attachment)}:view`;
     setBusyAction(key);
     setActionError(null);
     try {
       const grant = await requestAttachmentAccess(
         client,
         incidentId,
-        attachment.attachmentId,
+        attachmentId(attachment),
         "view",
       );
       if (actionRequest.current !== request) return;
+      const blob = await fetchGrantedBlob(grant);
+      if (actionRequest.current !== request) return;
+      const objectUrl = URL.createObjectURL(blob);
       clearPreview();
-      setPreview({ attachment, grant });
+      previewUrl.current = objectUrl;
+      setPreview({ attachment, objectUrl, expiresAt: grant.expiresAt });
       const remaining = Math.min(
         300000,
         Math.max(0, Date.parse(grant.expiresAt) - Date.now()),
       );
       expiryTimer.current = window.setTimeout(clearPreview, remaining);
-    } catch (reason) {
+    } catch {
       if (actionRequest.current !== request) return;
-      setActionError(
-        reason instanceof Error ? reason.message : "Evidence access could not be authorized.",
-      );
+      setActionError("Evidence could not be opened through the authorized access window.");
     } finally {
       if (actionRequest.current === request) setBusyAction(null);
     }
   }
 
-  async function downloadAttachment(attachment: EvidenceAttachment) {
+  async function downloadAttachment(attachment: EvidenceAttachment | ClientEvidenceAttachment) {
     const request = actionRequest.current + 1;
     actionRequest.current = request;
-    const key = `${attachment.attachmentId}:download`;
+    const key = `${attachmentId(attachment)}:download`;
     setBusyAction(key);
     setActionError(null);
     try {
       const grant = await requestAttachmentAccess(
         client,
         incidentId,
-        attachment.attachmentId,
+        attachmentId(attachment),
         "download",
       );
       if (actionRequest.current !== request) return;
-      const anchor = document.createElement("a");
-      anchor.href = grant.signedUrl;
-      anchor.rel = "noreferrer";
-      document.body.append(anchor);
-      anchor.click();
-      anchor.remove();
-    } catch (reason) {
+      const blob = await fetchGrantedBlob(grant);
       if (actionRequest.current !== request) return;
-      setActionError(
-        reason instanceof Error ? reason.message : "Evidence download could not be authorized.",
-      );
+      const objectUrl = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      try {
+        anchor.href = objectUrl;
+        anchor.download = downloadName(attachment);
+        anchor.rel = "noreferrer";
+        document.body.append(anchor);
+        anchor.click();
+      } finally {
+        anchor.remove();
+        window.setTimeout(() => URL.revokeObjectURL(objectUrl), 0);
+      }
+    } catch {
+      if (actionRequest.current !== request) return;
+      setActionError("Evidence could not be downloaded through the authorized access window.");
     } finally {
       if (actionRequest.current === request) setBusyAction(null);
     }
@@ -202,76 +408,86 @@ export function EvidencePanel({ client, incidentId, refreshRevision }: EvidenceP
   }
 
   const copy = stateCopy[evidence.state];
+  const stateDetail = evidence.accessScope === "external_client_released" && evidence.state === "verified"
+    ? "Only IDS-submitted marked photos and submitted videos are available through audited five-minute access grants."
+    : copy.detail;
   return (
     <section className="evidence-panel" aria-labelledby="evidence-title">
       <div className="section-heading evidence-heading">
         <div>
-          <p className="eyebrow">Private evidence</p>
+          <p className="eyebrow">
+            {evidence.accessScope === "external_client_released"
+              ? "Client-released evidence"
+              : "Private IDS evidence"}
+          </p>
           <h2 id="evidence-title">Media delivery</h2>
         </div>
         <span className={`state-badge state-${evidence.state}`}>{copy.title}</span>
       </div>
-      <p className="section-intro">{copy.detail}</p>
+      <p className="section-intro">{stateDetail}</p>
 
       {actionError ? <div className="alert alert-error" role="alert">{actionError}</div> : null}
 
       {preview ? (
-        <div className="preview-panel" aria-live="polite">
-          <div className="preview-heading">
-            <div>
-              <strong>{roleLabels[preview.attachment.role]}</strong>
-              <span>Access closes at {new Date(preview.grant.expiresAt).toLocaleTimeString()}</span>
-            </div>
-            <button className="button button-secondary button-compact" type="button" onClick={clearPreview}>
-              Close preview
-            </button>
-          </div>
-          {preview.attachment.detectedMimeType === "image/jpeg" ? (
-            <img
-              className="evidence-image"
-              src={preview.grant.signedUrl}
-              alt={`${roleLabels[preview.attachment.role]} for Incident ${incidentId}`}
-            />
-          ) : preview.attachment.detectedMimeType === "video/mp4" ? (
-            <video className="evidence-video" src={preview.grant.signedUrl} controls preload="metadata">
-              This browser cannot play the verified Incident video.
-            </video>
-          ) : (
-            <div className="annotation-preview">
-              <p>Drawing data is available as the verified machine-readable annotation file.</p>
-              <a href={preview.grant.signedUrl} target="_blank" rel="noreferrer">
-                Open drawing data before access expires
-              </a>
-            </div>
-          )}
-        </div>
+        <EvidenceMediaPreview
+          preview={preview}
+          onClose={clearPreview}
+        />
       ) : null}
 
       {evidence.groups.length > 0 ? (
         <div className="evidence-groups">
           {evidence.groups.map((group) => {
-            const attachments = attachmentsByGroup.get(group.mediaGroupId) ?? [];
+            if ("groupId" in group) {
+              const attachments = (attachmentsByGroup.get(group.groupId) ?? []).filter(
+                (attachment): attachment is ClientEvidenceAttachment => "kind" in attachment,
+              );
+              return (
+                <ClientEvidenceGroupCard
+                  key={group.groupId}
+                  group={group}
+                  attachments={attachments}
+                  busyAction={busyAction}
+                  onView={(attachment) => void viewAttachment(attachment)}
+                  onDownload={(attachment) => void downloadAttachment(attachment)}
+                />
+              );
+            }
+            const attachments = (attachmentsByGroup.get(group.mediaGroupId) ?? []).filter(
+              (attachment): attachment is EvidenceAttachment => !("kind" in attachment),
+            );
             return (
               <article className="evidence-group" key={group.mediaGroupId}>
                 <div className="evidence-group-heading">
                   <div>
-                    <span className="group-kind">{group.kind === "image" ? "Photo" : "Video"}</span>
+                    <span className="group-kind">
+                      {group.kind === "image" ? "Photo" : "Video"}
+                    </span>
                     <h3>{groupLabel(group)}</h3>
                   </div>
-                  <span>{group.originalName}</span>
                 </div>
-                {group.note ? <p className="evidence-note">{group.note}</p> : null}
+                <div className="client-evidence-facts">
+                  <span>Evidence group {group.mediaGroupId}</span>
+                  <span>Kind {group.kind === "image" ? "Photo" : "Video"}</span>
+                  <span>Display position {group.displayOrder + 1}</span>
+                  <span>Title {group.title ?? "Not provided"}</span>
+                  <span>
+                    Duration {group.durationMs === null ? "Not applicable" : `${group.durationMs} ms`}
+                  </span>
+                  <span>Note {group.note ?? "Not provided"}</span>
+                </div>
                 {attachments.length > 0 ? (
                   <ul className="attachment-list">
                     {attachments.map((attachment) => {
-                      const viewKey = `${attachment.attachmentId}:view`;
-                      const downloadKey = `${attachment.attachmentId}:download`;
+                      const id = attachmentId(attachment);
+                      const viewKey = `${id}:view`;
+                      const downloadKey = `${id}:download`;
                       return (
-                        <li key={attachment.attachmentId}>
+                        <li key={id}>
                           <div className="attachment-copy">
-                            <strong>{roleLabels[attachment.role]}</strong>
+                            <strong>{attachmentLabel(attachment)}</strong>
                             <span>
-                              {formatBytes(attachment.verifiedByteSize)} · {attachment.detectedMimeType}
+                              Evidence {attachment.attachmentId} · group {attachment.mediaGroupId} · {attachmentLabel(attachment)} · display position {attachment.sortOrder + 1} · access authorized
                             </span>
                           </div>
                           <div className="attachment-actions">

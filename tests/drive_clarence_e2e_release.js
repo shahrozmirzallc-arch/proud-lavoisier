@@ -37,7 +37,7 @@ async function executeClarenceE2E() {
   });
 
   console.log('Navigating to Rep App as Clarence...');
-  await page.goto('http://localhost:5173', { waitUntil: 'networkidle0' });
+  await page.goto('https://proud-lavoisier.vercel.app/', { waitUntil: 'networkidle0' });
 
   // Sign in as Clarence Kuiken
   await page.evaluate(() => {

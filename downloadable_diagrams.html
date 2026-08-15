@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IDS Pulse - User Flow Diagrams</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    :root {
+      --bg-main: #0f172a;
+      --bg-card: #1e293b;
+      --border-color: #334155;
+      --text-primary: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background-color: var(--bg-main);
+      color: var(--text-primary);
+      margin: 0;
+      padding: 32px 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .header {
+      max-width: 1000px;
+      width: 100%;
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    .header h1 { font-size: 2rem; margin-bottom: 8px; color: #ffffff; }
+    .header p { color: var(--text-muted); font-size: 1rem; }
+    .card {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 32px;
+      max-width: 1100px;
+      width: 100%;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+      box-sizing: border-box;
+    }
+    .card-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 16px;
+      color: #38bdf8;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .btn-group { display: flex; gap: 8px; }
+    button {
+      background-color: #2563eb;
+      color: white;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 6px;
+      font-weight: 500;
+      cursor: pointer;
+      font-size: 0.875rem;
+    }
+    button:hover { background-color: #1d4ed8; }
+    button.btn-alt { background-color: #059669; }
+    button.btn-alt:hover { background-color: #047857; }
+    .diagram-container {
+      background-color: #090d16;
+      border: 1px solid #1e293b;
+      border-radius: 8px;
+      padding: 24px;
+      overflow-x: auto;
+      display: flex;
+      justify-content: center;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <h1>IDS Pulse - User Flow Diagrams</h1>
+    <p>Integrity Driven Solutions Inc. (IDS) Platform Flow Architecture</p>
+  </div>
+
+  <!-- DIAGRAM 1 -->
+  <div class="card">
+    <div class="card-title">
+      <span>1. Overall IDS Pulse Multi-Role Architecture Flow</span>
+      <div class="btn-group">
+        <button onclick="downloadSVG('diag1', 'IDS_Pulse_MultiRole_Flow.svg')">Download SVG</button>
+        <button class="btn-alt" onclick="downloadPNG('diag1', 'IDS_Pulse_MultiRole_Flow.png')">Download PNG</button>
+      </div>
+    </div>
+    <div class="diagram-container" id="diag1">
+      <pre class="mermaid">
+flowchart TD
+    subgraph ADMIN["IDS Admin Persona"]
+        A1["Admin Sign-In (shahroz / donna / greg)"] --> A2["Projects & Rates Registry"]
+        A2 --> A3["Onboard Client & Plant (e.g. Magna @ Oakville)"]
+        A3 --> A4["Allocate PO Hours & Set Rates (USD / CAD)"]
+        A4 --> A5["Assign IDS Field Rep (e.g. Clarence Kuiken)"]
+        A5 --> A6["Auto-Provision Client Manager Login"]
+    end
+
+    subgraph REP["IDS Field Representative Persona"]
+        R1["Rep Sign-In (Clarence Kuiken)"] --> R2["Load Active Plant Assignments"]
+        R2 --> R3["Fill Quality Shift Report / Incident Form"]
+        R3 --> R4["Step 1: Defect & Suspect Part Entry"]
+        R4 --> R5["Step 2: Supplier Follow-Up Toggles (Yes / No / Unknown)"]
+        R5 --> R6["Step 3: Upload Evidence & Select Contacts"]
+        R6 --> R7["Step 4: Review & Send Validation"]
+        R7 --> R8{"Validation & Assignment Check"}
+        R8 -- "Valid" --> R9["Call Server RPC release_incident_to_client"]
+        R8 -- "Invalid" --> R10["Highlight Missing Field & Redirect"]
+    end
+
+    subgraph CLOUD["Supabase Cloud Database Engine"]
+        R9 --> C1{"Session & Security Definer Check"}
+        C1 -- "Auth Success" --> C2["Derive Client & Supplier Routing from Database"]
+        C2 --> C3["Write Row to public.incidents & public.system_logs"]
+        C3 --> C4["Emit Realtime Update Event"]
+    end
+
+    subgraph CLIENT["Client Quality Manager Persona"]
+        M1["Client Sign-In (Robert Sterling @ Magna)"] --> M2["Client Portal Dashboard"]
+        M2 --> M3{"Evaluate Supplier ID Filter (sup_magna)"}
+        C4 --> M4["Render Live Incident Feed & Status Badge"]
+        M3 --> M4
+        M4 --> M5["Download PDF / Excel Report (IDS Logo Branded)"]
+    end
+
+    subgraph ISOLATION["Cross-Client Data Security Guard"]
+        M3 -- "Non-Matching Supplier (e.g. Stellantis)" --> I1["0 Records Returned (100% Data Isolation)"]
+    end
+
+    classDef adminFill fill:#1e293b,stroke:#3b82f6,stroke-width:2px,color:#fff
+    classDef repFill fill:#0f172a,stroke:#10b981,stroke-width:2px,color:#fff
+    classDef cloudFill fill:#312e81,stroke:#6366f1,stroke-width:2px,color:#fff
+    classDef clientFill fill:#14532d,stroke:#22c55e,stroke-width:2px,color:#fff
+    
+    class A1,A2,A3,A4,A5,A6 adminFill
+    class R1,R2,R3,R4,R5,R6,R7,R8,R9,R10 repFill
+    class C1,C2,C3,C4 cloudFill
+    class M1,M2,M3,M4,M5,I1 clientFill
+      </pre>
+    </div>
+  </div>
+
+  <!-- DIAGRAM 2 -->
+  <div class="card">
+    <div class="card-title">
+      <span>2. Representative Field Incident Submission Flow</span>
+      <div class="btn-group">
+        <button onclick="downloadSVG('diag2', 'IDS_Pulse_Field_Incident_Flow.svg')">Download SVG</button>
+        <button class="btn-alt" onclick="downloadPNG('diag2', 'IDS_Pulse_Field_Incident_Flow.png')">Download PNG</button>
+      </div>
+    </div>
+    <div class="diagram-container" id="diag2">
+      <pre class="mermaid">
+flowchart TD
+    Start["Start: Open Rep Mobile App"] --> Auth["Authenticate User Session"]
+    Auth --> LoadProj["Resolve Active Project Assignment"]
+    
+    LoadProj --> Step1["Step 1: Concern & Part Information"]
+    Step1 --> S1_Inputs["Enter Defect Type, Area & Part Number"]
+    S1_Inputs --> Step2["Step 2: Quality & Supplier Toggles"]
+    
+    Step2 --> S2_Inputs["Set Toggles: Returned to Supplier, Sort Requested, RMA Required"]
+    S2_Inputs --> S2_Defaults["Defaults: Unknown / Unknown / Unknown"]
+    S2_Defaults --> Step3["Step 3: Contacts & Evidence Attachment"]
+    
+    Step3 --> S3_Inputs["Attach Photo/Video Evidence & Select Client Quality Contacts"]
+    S3_Inputs --> Step4["Step 4: Review & Send Summary"]
+    
+    Step4 --> TapRelease["Tap 'Release to Client Dashboard'"]
+    TapRelease --> ClientVal{"Front-End Validation Check"}
+    
+    ClientVal -- "Fail" --> ErrorToast["Display Warning Toast & Auto-Redirect to Error Step"]
+    ClientVal -- "Pass" --> RPC["Invoke Supabase RPC: release_incident_to_client"]
+    
+    RPC --> RPC_Check{"Server Database Resolution"}
+    RPC_Check -- "Network / DB Error" --> OfflineMode["Save Draft Locally & Display Honest Retry Toast"]
+    RPC_Check -- "Success" --> SyncOK["Update Badge to 'REPORT SUBMITTED / Released'"]
+    
+    SyncOK --> Feed["Publish to Admin Hub & Client Dashboard Feed"]
+
+    classDef stepNode fill:#0f172a,stroke:#38bdf8,stroke-width:2px,color:#fff
+    classDef checkNode fill:#312e81,stroke:#818cf8,stroke-width:2px,color:#fff
+    classDef successNode fill:#064e3b,stroke:#34d399,stroke-width:2px,color:#fff
+    classDef errorNode fill:#7f1d1d,stroke:#f87171,stroke-width:2px,color:#fff
+
+    class Step1,Step2,Step3,Step4,S1_Inputs,S2_Inputs,S3_Inputs stepNode
+    class ClientVal,RPC_Check checkNode
+    class SyncOK,Feed successNode
+    class ErrorToast,OfflineMode errorNode
+      </pre>
+    </div>
+  </div>
+
+  <!-- DIAGRAM 3 -->
+  <div class="card">
+    <div class="card-title">
+      <span>3. Admin Project Onboarding & Currency Resolution Flow</span>
+      <div class="btn-group">
+        <button onclick="downloadSVG('diag3', 'IDS_Pulse_Admin_Onboarding_Flow.svg')">Download SVG</button>
+        <button class="btn-alt" onclick="downloadPNG('diag3', 'IDS_Pulse_Admin_Onboarding_Flow.png')">Download PNG</button>
+      </div>
+    </div>
+    <div class="diagram-container" id="diag3">
+      <pre class="mermaid">
+flowchart TD
+    A_Start["Admin Logs into Web Dashboard"] --> A_Tab["Navigate to Projects & Rates Registry"]
+    A_Tab --> A_Form["Click 'Onboard New Client Project'"]
+    
+    A_Form --> A_Client["Select / Create Client Company (e.g. Magna International)"]
+    A_Client --> A_Plant["Select Assembly Plant & Location (e.g. Oakville Assembly)"]
+    
+    A_Plant --> A_LocCheck{"Plant / Client Location Check"}
+    A_LocCheck -- "United States (US)" --> CurrencyUSD["Set Currency = USD ($)"]
+    A_LocCheck -- "Canada (CA)" --> CurrencyCAD["Set Currency = CAD ($)"]
+    
+    CurrencyUSD --> A_PO["Set Purchase Order Number & Allocated PO Hours"]
+    CurrencyCAD --> A_PO
+    
+    A_PO --> A_Rates["Set Billing Rate & Rep Pay Rate"]
+    A_Rates --> A_RepAssign["Assign IDS Field Representative (Liaison Inspector)"]
+    
+    A_RepAssign --> A_Prov["Auto-Provision Client Quality Manager User Account"]
+    A_Prov --> A_Save["Submit Onboarding Transaction"]
+    
+    A_Save --> A_DBSync["Write Records to projects, plants, suppliers, rates & users"]
+    A_DBSync --> A_Finish["Project Active & Live in Rep Assignment Dropdown"]
+
+    classDef adminStep fill:#1e293b,stroke:#60a5fa,stroke-width:2px,color:#fff
+    classDef decisionStep fill:#431407,stroke:#fb923c,stroke-width:2px,color:#fff
+    classDef completeStep fill:#064e3b,stroke:#4ade80,stroke-width:2px,color:#fff
+
+    class A_Start,A_Tab,A_Form,A_Client,A_Plant,A_PO,A_Rates,A_RepAssign,A_Prov,A_Save adminStep
+    class A_LocCheck,CurrencyUSD,CurrencyCAD decisionStep
+    class A_DBSync,A_Finish completeStep
+      </pre>
+    </div>
+  </div>
+
+  <script>
+    mermaid.initialize({ startOnLoad: true, theme: 'dark' });
+
+    function downloadSVG(containerId, filename) {
+      const container = document.getElementById(containerId);
+      const svg = container ? container.querySelector('svg') : null;
+      if (!svg) return alert('Diagram loading, please try again.');
+      const svgData = new XMLSerializer().serializeToString(svg);
+      const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+      const svgUrl = URL.createObjectURL(svgBlob);
+      const downloadLink = document.createElement('a');
+      downloadLink.href = svgUrl;
+      downloadLink.download = filename;
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
+    }
+
+    function downloadPNG(containerId, filename) {
+      const container = document.getElementById(containerId);
+      const svg = container ? container.querySelector('svg') : null;
+      if (!svg) return alert('Diagram loading, please try again.');
+      
+      try {
+        const svgData = new XMLSerializer().serializeToString(svg);
+        const bbox = svg.getBoundingClientRect();
+        const width = Math.max(bbox.width, 1000);
+        const height = Math.max(bbox.height, 600);
+
+        const canvas = document.createElement('canvas');
+        const scale = 2;
+        canvas.width = width * scale;
+        canvas.height = height * scale;
+        const ctx = canvas.getContext('2d');
+
+        ctx.fillStyle = '#090d16';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        const img = new Image();
+        const blob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+
+        img.onload = function() {
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          URL.revokeObjectURL(url);
+          
+          try {
+            const pngUrl = canvas.toDataURL('image/png');
+            const downloadLink = document.createElement('a');
+            downloadLink.href = pngUrl;
+            downloadLink.download = filename;
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            document.body.removeChild(downloadLink);
+          } catch(e) {
+            downloadSVG(containerId, filename.replace('.png', '.svg'));
+          }
+        };
+
+        img.onerror = function() {
+          downloadSVG(containerId, filename.replace('.png', '.svg'));
+        };
+
+        img.src = url;
+      } catch(err) {
+        downloadSVG(containerId, filename.replace('.png', '.svg'));
+      }
+    }
+  </script>
+
+</body>
+</html>

@@ -1,6 +1,5 @@
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { INCIDENT_SELECT } from "../src/data/contracts";
 import { STAGING_ORIGIN } from "../src/security/environment";
 
 vi.stubEnv("VITE_SUPABASE_URL", STAGING_ORIGIN);
@@ -13,68 +12,189 @@ const incidentId = "INC-0123456789abcdef0123456789abcdef";
 const attachmentId = "22222222-2222-4222-8222-222222222222";
 const groupId = "11111111-1111-4111-8111-111111111111";
 
-const incidentRow = {
-  id: incidentId,
-  project_id: "project-100",
-  supplier_id: null,
-  plant_id: null,
-  rep_name: "Quality Rep",
-  part_id: null,
-  defect_type: null,
-  area: null,
-  description: "Released Incident description",
-  action_taken: null,
-  returned_to_supplier_status: "unknown",
-  sort_requested_status: "unknown",
-  rma_required_status: "unknown",
-  rma_number: null,
-  concern_classification: null,
-  level_of_concern: null,
-  level_of_concern_other: null,
-  status: "Open",
-  released_at: "2026-08-12T14:00:00.000Z",
-  sent_at: null,
-  created_at: "2026-08-12T13:59:59.000Z",
-  updated_at: "2026-08-12T14:00:00.000Z",
+const actorResponse = {
+  status: "ok",
+  record_kind: "mobile_dashboard_actor",
+  server_timestamp: "2026-08-14T14:00:00.000Z",
+  actor: { display_name: "Office Lead", role: "office", role_label: "IDS Office" },
+  capabilities: {
+    quality_sources: true,
+    incident_core: true,
+    incident_evidence: true,
+    daily_reports: true,
+    hours: true,
+    client_overtime_review: false,
+    expenses: false,
+    finance_evidence: false,
+    configuration_attention: true,
+  },
+};
+
+const feedResponse = {
+  status: "ok",
+  record_kind: "mobile_dashboard_feed",
+  server_timestamp: "2026-08-14T14:00:01.000Z",
+  has_more: false,
+  next_cursor: null,
+  items: [],
+};
+
+const overtimeResponse = {
+  status: "ok",
+  record_kind: "client_overtime_review_feed",
+  server_timestamp: "2026-08-14T14:00:02.000Z",
+  has_more: false,
+  next_cursor: null,
+  items: [],
+};
+
+const snapshotResponse = {
+  status: "ok",
+  record_kind: "mobile_dashboard_snapshot",
+  server_timestamp: actorResponse.server_timestamp,
+  actor: actorResponse,
+  feed: { ...feedResponse, server_timestamp: actorResponse.server_timestamp },
 };
 
 beforeAll(async () => {
   api = await import("../src/data/viewerApi");
 });
 
-describe("viewer data boundaries", () => {
-  it("uses the exact released/available feed predicates and no tenant filter", async () => {
-    const calls: unknown[][] = [];
-    const builder = {
-      select: vi.fn((...args: unknown[]) => { calls.push(["select", ...args]); return builder; }),
-      not: vi.fn((...args: unknown[]) => { calls.push(["not", ...args]); return builder; }),
-      eq: vi.fn((...args: unknown[]) => { calls.push(["eq", ...args]); return builder; }),
-      order: vi.fn((...args: unknown[]) => { calls.push(["order", ...args]); return builder; }),
-      limit: vi.fn(async (...args: unknown[]) => {
-        calls.push(["limit", ...args]);
-        return { data: [incidentRow], error: null };
-      }),
-    };
-    const client = {
-      from: vi.fn((table: string) => {
-        calls.push(["from", table]);
-        return builder;
-      }),
-    } as unknown as SupabaseClient;
-
-    await expect(api.fetchReleasedIncidents(client)).resolves.toHaveLength(1);
-    expect(calls).toEqual([
-      ["from", "incidents"],
-      ["select", INCIDENT_SELECT],
-      ["not", "incident_client_reference", "is", null],
-      ["eq", "released_to_client", true],
-      ["eq", "dashboard_delivery_state", "available"],
-      ["order", "released_at", { ascending: false }],
-      ["limit", 100],
-    ]);
-    expect(calls.flat()).not.toContain("client_id");
+describe("role-aware dashboard RPC boundaries", () => {
+  it("loads actor and first feed page through one atomic snapshot RPC", async () => {
+    const rpc = vi.fn(async () => ({ data: snapshotResponse, error: null }));
+    const client = { rpc } as unknown as SupabaseClient;
+    await expect(api.fetchDashboardSnapshot(client)).resolves.toMatchObject({
+      actor: { displayName: "Office Lead", role: "office" },
+      feed: { items: [] },
+    });
+    expect(rpc).toHaveBeenCalledWith("get_mobile_dashboard_snapshot", {
+      p_limit: 50,
+      p_cursor: null,
+      p_rep_id: null,
+    });
   });
 
+  it("keeps the feed-only RPC available for continuation pages", async () => {
+    const rpc = vi.fn(async () => ({ data: feedResponse, error: null }));
+    const client = { rpc } as unknown as SupabaseClient;
+    await expect(api.fetchDashboardFeed(client)).resolves.toMatchObject({ items: [] });
+    expect(rpc).toHaveBeenCalledWith("get_mobile_dashboard_feed", {
+      p_limit: 50,
+      p_cursor: null,
+      p_rep_id: null,
+    });
+  });
+
+  it("maps a stable tuple cursor without storing it in browser state", async () => {
+    const rpc = vi.fn(async () => ({ data: feedResponse, error: null }));
+    const client = { rpc } as unknown as SupabaseClient;
+    await api.fetchDashboardFeed(client, 25, {
+      recordedAt: "2026-08-14T12:00:00.000Z",
+      entityId: "record-25",
+      kind: "urgent_incident",
+    });
+    expect(rpc).toHaveBeenCalledWith("get_mobile_dashboard_feed", {
+      p_limit: 25,
+      p_cursor: {
+        recorded_at: "2026-08-14T12:00:00.000Z",
+        entity_id: "record-25",
+        kind: "urgent_incident",
+      },
+      p_rep_id: null,
+    });
+  });
+
+  it("passes and verifies the exact server-side IDS Rep filter", async () => {
+    const repId = "rep-clarence";
+    const filteredFeed = {
+      ...feedResponse,
+      contract_version: 2,
+      rep_filter: repId,
+    };
+    const filteredSnapshot = {
+      ...snapshotResponse,
+      contract_version: 2,
+      rep_filter: repId,
+      feed: { ...filteredFeed, server_timestamp: actorResponse.server_timestamp },
+    };
+    const rpc = vi.fn(async (name: string) => ({
+      data: name === "get_mobile_dashboard_snapshot" ? filteredSnapshot : filteredFeed,
+      error: null,
+    }));
+    const client = { rpc } as unknown as SupabaseClient;
+    await expect(api.fetchDashboardSnapshot(client, 50, null, repId)).resolves.toMatchObject({
+      contractVersion: 2,
+      repFilter: repId,
+    });
+    await expect(api.fetchDashboardFeed(client, 50, null, repId)).resolves.toMatchObject({
+      contractVersion: 2,
+      repFilter: repId,
+    });
+    expect(rpc).toHaveBeenNthCalledWith(1, "get_mobile_dashboard_snapshot", {
+      p_limit: 50,
+      p_cursor: null,
+      p_rep_id: repId,
+    });
+    expect(rpc).toHaveBeenNthCalledWith(2, "get_mobile_dashboard_feed", {
+      p_limit: 50,
+      p_cursor: null,
+      p_rep_id: repId,
+    });
+  });
+
+  it("rejects malformed Rep filters before issuing an RPC", async () => {
+    const rpc = vi.fn();
+    const client = { rpc } as unknown as SupabaseClient;
+    await expect(api.fetchDashboardFeed(client, 50, null, " rep-clarence"))
+      .rejects.toThrow(/author filter is invalid/i);
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it("rejects an invalid local page size before issuing a query", async () => {
+    const rpc = vi.fn();
+    const client = { rpc } as unknown as SupabaseClient;
+    await expect(api.fetchDashboardFeed(client, 101)).rejects.toThrow(/between 1 and 100/i);
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it("loads the all-assignment Client queue through its dedicated RPC", async () => {
+    const rpc = vi.fn(async () => ({ data: overtimeResponse, error: null }));
+    const client = { rpc } as unknown as SupabaseClient;
+    await expect(api.fetchClientOvertimeReviewFeed(client)).resolves.toMatchObject({ items: [] });
+    expect(rpc).toHaveBeenCalledWith("get_client_mobile_overtime_review_feed", {
+      p_limit: 50,
+      p_cursor: null,
+    });
+  });
+
+  it("maps the exact Client OT continuation cursor", async () => {
+    const rpc = vi.fn(async () => ({ data: overtimeResponse, error: null }));
+    const client = { rpc } as unknown as SupabaseClient;
+    await api.fetchClientOvertimeReviewFeed(client, 20, {
+      submittedAt: "2026-08-14T13:00:00.000Z",
+      overtimeEntryId: "ot-20",
+    });
+    expect(rpc).toHaveBeenCalledWith("get_client_mobile_overtime_review_feed", {
+      p_limit: 20,
+      p_cursor: {
+        submitted_at: "2026-08-14T13:00:00.000Z",
+        overtime_entry_id: "ot-20",
+      },
+    });
+  });
+
+  it("treats a PostgREST denial as an error even if data is present", async () => {
+    const rpc = vi.fn(async () => ({
+      data: snapshotResponse,
+      error: { code: "42501", message: "Active dashboard account required." },
+    }));
+    const client = { rpc } as unknown as SupabaseClient;
+    await expect(api.fetchDashboardSnapshot(client)).rejects.toThrow(/not authorized/i);
+  });
+});
+
+describe("incident evidence boundary", () => {
   it("calls only the path-free evidence RPC for attachment metadata", async () => {
     const response = {
       status: "confirmed",
@@ -85,12 +205,13 @@ describe("viewer data boundaries", () => {
       media_delivery: "not_provided",
       dashboard_delivery: "available",
       admin_approval_required: false,
+      access_scope: "ids_internal_full",
       groups: [],
       attachments: [],
     };
     const rpc = vi.fn(async () => ({ data: response, error: null }));
     const client = { rpc } as unknown as SupabaseClient;
-    await expect(api.fetchIncidentEvidence(client, incidentId)).resolves.toMatchObject({
+    await expect(api.fetchIncidentEvidence(client, incidentId, "ids_internal")).resolves.toMatchObject({
       incidentId,
       state: "not_provided",
     });

@@ -191,7 +191,7 @@ export function validateServerReleaseResponse(serverData, expectedPayload) {
   if (!inc.released_by || typeof inc.released_by !== 'string' || inc.released_by.trim() === '') return false;
 
   const expectedClientId = String(expectedPayload.client_id || expectedPayload.verified_client_id || '').trim();
-  const expectedProjectId = String(expectedPayload.assignment_id || expectedPayload.project_id || '').trim();
+  const expectedProjectId = String(expectedPayload.project_id || '').trim();
 
   if (expectedClientId && String(inc.client_id).trim() !== expectedClientId) return false;
   if (expectedProjectId && String(inc.project_id).trim() !== expectedProjectId) return false;
@@ -214,8 +214,8 @@ export async function releaseIncidentToClient({ incidentPayload, isOffline, curr
     return { success: false, message: 'Invalid incident payload provided.' };
   }
 
-  const assignmentId = incidentPayload.assignment_id || incidentPayload.project_id;
-  if (!assignmentId) {
+  const projectId = incidentPayload.project_id;
+  if (!projectId) {
     return { success: false, message: 'An authoritative project assignment is required to release an incident report.' };
   }
 
@@ -298,7 +298,6 @@ export async function releaseIncidentToClient({ incidentPayload, isOffline, curr
       id: serverRecord.id,
       client_id: serverRecord.client_id,
       project_id: serverRecord.project_id,
-      assignment_id: serverRecord.assignment_id || serverRecord.project_id,
       supplier_id: serverRecord.supplier_id,
       plant_id: serverRecord.plant_id,
       released_to_client: true,
@@ -472,7 +471,7 @@ export function compose11SectionIncidentBody(incident = {}) {
 
   return `
 ================================================================================
-IDS PULSE — QUALITY INCIDENT ALERT REPORT
+IDS PULSE - QUALITY INCIDENT ALERT REPORT
 ================================================================================
 
 1. GENERAL METADATA & LOCATION
@@ -481,13 +480,13 @@ IDS PULSE — QUALITY INCIDENT ALERT REPORT
 - Date & Time: ${incident.date || new Date().toISOString().split('T')[0]} @ ${incident.time || 'On Shift'}
 - Client / Organization: ${incident.client_name || incident.client_id || incident.supplier_id || 'N/A'}
 - Assembly Plant: ${incident.plant_name || incident.plant_id || 'N/A'}
-- Project / PO: ${incident.project_name || incident.project_id || incident.assignment_id || 'N/A'}
-- Suspect Part Number: ${incident.part_number || (parts[0]?.part_number) || 'PN 84920194'}
-- Quality Liaison Rep: ${incident.rep_name || 'Clarence Kuiken'}
+- Project / PO: ${incident.project_name || incident.project_id || 'N/A'}
+- Suspect Part Number: ${incident.part_number || (parts[0]?.part_number) || 'N/A'}
+- Quality Liaison Rep: ${incident.rep_name || 'N/A'}
 
 2. LEVEL OF CONCERN & STATUS
 --------------------------------------------------------------------------------
-- Level of Concern: ${incident.level_of_concern || incident.concern_classification || 'Major'}
+- Level of Concern: ${incident.level_of_concern || incident.concern_classification || 'N/A'}
 - Report Status: ${incident.status || 'Released'}
 
 3. DEFECT DETAILS
@@ -536,7 +535,7 @@ ${videos.length === 0 ? 'No video evidence attached.' : videos.map((v, i) => `Vi
 
 11. RECIPIENTS & MANDATORY CC LIST
 --------------------------------------------------------------------------------
-${recipients.length === 0 ? '- Donna Cabral (dcabral@integritydriven.com) [Mandatory CC]\n- Diana Operations Lead (diana@goto-ids.com) [Mandatory CC]\n- Greg Phillippe (gphillippe@integritydriven.com) [Mandatory CC]' : recipients.map(r => `- ${r.name || r.username} (${r.email}) [${r.recipient_type || (r.is_mandatory_cc ? 'Mandatory CC' : 'Recipient')}]`).join('\n')}
+${recipients.length === 0 ? '- No recipients specified (resolve contacts before release)' : recipients.map(r => `- ${r.name || r.username} (${r.email}) [${r.recipient_type || (r.is_mandatory_cc ? 'Mandatory CC' : 'Recipient')}]`).join('\n')}
 ================================================================================
 `;
 }

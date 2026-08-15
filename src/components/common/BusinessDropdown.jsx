@@ -6,7 +6,7 @@ import { AlertCircle, HelpCircle } from 'lucide-react';
 
 /**
  * BusinessDropdown Component
- * Enforces Global Dropdown Rule — "Other / Not listed" Support
+ * Enforces Global Dropdown Rule - "Other / Not listed" Support
  */
 export default function BusinessDropdown({
   label,

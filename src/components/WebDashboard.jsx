@@ -11406,7 +11406,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                               <button
                                 type="button"
                                 onClick={() => handleEditUserClick(u)}
-                                className="bg-blue-600/20 hover:bg-blue-600 border border-blue-500/40 text-blue-300 hover:text-white font-bold text-[11px] px-2.5 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1 shadow-sm"
+                                className="bg-blue-600 hover:bg-blue-100 text-white hover:text-blue-700 border border-blue-600 hover:border-blue-300 font-bold text-[11px] px-2.5 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1 shadow-sm"
                                 title="Edit User Details"
                               >
                                 <span>Edit</span>
@@ -11416,7 +11416,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                 <button
                                   type="button"
                                   onClick={() => handleDeleteUserClick(u)}
-                                  className="bg-red-600/20 hover:bg-red-600 border border-red-500/40 text-red-300 hover:text-white font-bold text-[11px] px-2.5 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1 shadow-sm"
+                                  className="bg-red-600 hover:bg-red-100 text-white hover:text-red-700 border border-red-600 hover:border-red-300 font-bold text-[11px] px-2.5 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1 shadow-sm"
                                   title="Delete User"
                                 >
                                   <span>Delete</span>
@@ -11429,7 +11429,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                   setResetPasswordUser(u);
                                   setNewPasswordInput(u.password || '');
                                 }}
-                                className="bg-amber-500/20 hover:bg-amber-600 border border-amber-500/40 text-amber-300 hover:text-white font-bold text-[11px] px-2.5 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1 shadow-sm"
+                                className="bg-amber-600 hover:bg-amber-100 text-white hover:text-amber-800 border border-amber-600 hover:border-amber-300 font-bold text-[11px] px-2.5 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1 shadow-sm"
                               >
                                 <span>Reset Password</span>
                               </button>

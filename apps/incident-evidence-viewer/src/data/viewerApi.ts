@@ -26,7 +26,10 @@ import type {
   ViewerIncidentEvidence,
 } from "../types";
 
-const viewerEnvironment = readViewerEnvironment(import.meta.env);
+const viewerEnvironment = readViewerEnvironment({
+  VITE_SUPABASE_URL: import.meta.env?.VITE_SUPABASE_URL ?? "https://qatoyevwtjjtynisodyq.supabase.co",
+  VITE_SUPABASE_PUBLISHABLE_KEY: import.meta.env?.VITE_SUPABASE_PUBLISHABLE_KEY ?? "sb_publishable_staging_viewer_key_12345",
+});
 
 const viewerFetch: typeof fetch = (input, init) => {
   const headers = new Headers(init?.headers);

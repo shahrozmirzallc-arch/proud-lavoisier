@@ -78,14 +78,14 @@ async function runActiveSimulation() {
       };
 
       // Retrieve existing DB from storage
-      const rawDb = localStorage.getItem('ids_pulse_offline_db');
+      const rawDb = localStorage.getItem('ids_pulse_db');
       let db = rawDb ? JSON.parse(rawDb) : {};
       db.shiftReports = db.shiftReports || [];
       db.shiftReports.unshift(shiftReport);
       db.timeEntries = db.timeEntries || [];
       db.timeEntries.unshift(timeEntry);
 
-      localStorage.setItem('ids_pulse_offline_db', JSON.stringify(db));
+      localStorage.setItem('ids_pulse_db', JSON.stringify(db));
       window.dispatchEvent(new Event('storage'));
       window.dispatchEvent(new Event('ids_pulse_db_update'));
       return { success: true, count: db.shiftReports.length };

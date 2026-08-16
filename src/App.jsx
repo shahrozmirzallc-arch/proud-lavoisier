@@ -2,6 +2,7 @@ import React, { useState, useEffect, lazy, Suspense } from 'react';
 const PhoneSimulator = lazy(() => import('./components/PhoneSimulator'));
 const WebDashboard = lazy(() => import('./components/WebDashboard'));
 import { initializeDB, syncWithSupabase, supabase } from './components/SharedDatabase';
+import { initBackgroundSyncWorker } from './services/backgroundSyncWorker';
 import LoginScreen from './components/LoginScreen';
 import { SpinnerGap, LockKey, CheckCircle, WarningCircle } from '@phosphor-icons/react';
 import { Shield, Monitor, Smartphone, Laptop, Lock, AlertTriangle } from 'lucide-react';
@@ -111,6 +112,7 @@ function App() {
       );
     };
     window.addEventListener('resize', handleResize);
+    initBackgroundSyncWorker();
     return () => window.removeEventListener('resize', handleResize);
   }, []);
   const [isOffline, setIsOffline] = useState(false);

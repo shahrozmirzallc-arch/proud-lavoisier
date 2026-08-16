@@ -7814,48 +7814,66 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   {/* SUB-TAB 1: OVERVIEW & ANALYTICS */}
                   {clientActiveSubTab === 'overview' && (
                     <div className="flex flex-col gap-5">
-                      {/* Top Floor Summary Banner - 4 Perfectly Aligned KPI Cards */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                        <div className="bg-white border border-slate-200/90 shadow-2xs p-5 rounded-2xl flex flex-col justify-between h-full transition-all hover:border-blue-300">
-                          <div className="flex justify-between items-center text-slate-600 text-[11px] font-extrabold uppercase tracking-wider">
-                            <span>Active Inspectors</span>
-                            <UserCheck className="w-4 h-4 text-emerald-600 shrink-0" />
-                          </div>
-                          <div className="text-2xl font-black text-slate-900 mt-3">{activeOnSiteReps.length} Reps</div>
-                          <span className="text-[11px] text-emerald-700 font-extrabold mt-2 flex items-center gap-1.5">
-                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> On-Site Floor Coverage
-                          </span>
-                        </div>
+                      {/* Top Floor Summary Banner - 5 Perfectly Aligned KPI Cards */}
+                      {(() => {
+                        const clientPpmStats = calculateSupplierPPM({ supplierId: currentUserCustomerId });
+                        return (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                            <div className="bg-white border border-slate-200/90 shadow-2xs p-4 rounded-2xl flex flex-col justify-between h-full transition-all hover:border-blue-300">
+                              <div className="flex justify-between items-center text-slate-600 text-[11px] font-extrabold uppercase tracking-wider">
+                                <span>Active Inspectors</span>
+                                <UserCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+                              </div>
+                              <div className="text-xl font-black text-slate-900 mt-2">{activeOnSiteReps.length} Reps</div>
+                              <span className="text-[10.5px] text-emerald-700 font-extrabold mt-1.5 flex items-center gap-1.5">
+                                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> On-Site Coverage
+                              </span>
+                            </div>
 
-                        <div className="bg-white border border-slate-200/90 shadow-2xs p-5 rounded-2xl flex flex-col justify-between h-full transition-all hover:border-blue-300">
-                          <div className="flex justify-between items-center text-slate-600 text-[11px] font-extrabold uppercase tracking-wider">
-                            <span>Inspected Volume</span>
-                            <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
-                          </div>
-                          <div className="text-2xl font-black text-slate-900 mt-3">{totalShiftPiecesToday} Pcs</div>
-                          <span className="text-[11px] text-blue-700 font-extrabold mt-2">Authoritative Piece Count</span>
-                        </div>
+                            <div className="bg-white border border-slate-200/90 shadow-2xs p-4 rounded-2xl flex flex-col justify-between h-full transition-all hover:border-blue-300">
+                              <div className="flex justify-between items-center text-slate-600 text-[11px] font-extrabold uppercase tracking-wider">
+                                <span>Inspected Volume</span>
+                                <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
+                              </div>
+                              <div className="text-xl font-black text-slate-900 mt-2">{totalShiftPiecesToday} Pcs</div>
+                              <span className="text-[10.5px] text-blue-700 font-extrabold mt-1.5">Authoritative Pieces</span>
+                            </div>
 
-                        <div className="bg-white border border-slate-200/90 shadow-2xs p-5 rounded-2xl flex flex-col justify-between h-full transition-all hover:border-blue-300">
-                          <div className="flex justify-between items-center text-slate-600 text-[11px] font-extrabold uppercase tracking-wider">
-                            <span>Defect-Free Yield</span>
-                            <Zap className="w-4 h-4 text-amber-600 shrink-0" />
-                          </div>
-                          <div className="text-2xl font-black text-emerald-600 mt-3">{yieldRate}%</div>
-                          <span className="text-[11px] text-slate-600 font-bold mt-2">Shielded Assembly Line Yield</span>
-                        </div>
+                            <div className="bg-white border border-slate-200/90 shadow-2xs p-4 rounded-2xl flex flex-col justify-between h-full transition-all hover:border-blue-300">
+                              <div className="flex justify-between items-center text-slate-600 text-[11px] font-extrabold uppercase tracking-wider">
+                                <span>Defect Rate (PPM)</span>
+                                <span className={`text-[9.5px] font-bold px-1.5 py-0.2 rounded uppercase ${
+                                  clientPpmStats.tier === 'world_class' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
+                                }`}>
+                                  Grade {clientPpmStats.ratingGrade}
+                                </span>
+                              </div>
+                              <div className="text-xl font-black text-slate-900 mt-2 font-mono">{clientPpmStats.ppm} <span className="text-xs font-semibold text-slate-500">PPM</span></div>
+                              <span className="text-[10.5px] text-emerald-700 font-bold mt-1.5">{clientPpmStats.statusText}</span>
+                            </div>
 
-                        <div className="bg-white border border-slate-200/90 shadow-2xs p-5 rounded-2xl flex flex-col justify-between h-full transition-all hover:border-blue-300">
-                          <div className="flex justify-between items-center text-slate-600 text-[11px] font-extrabold uppercase tracking-wider">
-                            <span>Active Containments</span>
-                            <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                            <div className="bg-white border border-slate-200/90 shadow-2xs p-4 rounded-2xl flex flex-col justify-between h-full transition-all hover:border-blue-300">
+                              <div className="flex justify-between items-center text-slate-600 text-[11px] font-extrabold uppercase tracking-wider">
+                                <span>Defect-Free Yield</span>
+                                <Zap className="w-4 h-4 text-amber-600 shrink-0" />
+                              </div>
+                              <div className="text-xl font-black text-emerald-600 mt-2">{yieldRate}%</div>
+                              <span className="text-[10.5px] text-slate-600 font-bold mt-1.5">Shielded Line Yield</span>
+                            </div>
+
+                            <div className="bg-white border border-slate-200/90 shadow-2xs p-4 rounded-2xl flex flex-col justify-between h-full transition-all hover:border-blue-300">
+                              <div className="flex justify-between items-center text-slate-600 text-[11px] font-extrabold uppercase tracking-wider">
+                                <span>Containments</span>
+                                <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                              </div>
+                              <div className="text-xl font-black text-rose-600 mt-2">
+                                {(incidents || []).filter(i => (i.supplier_id === currentUserCustomerId || i.customer_id === currentUserCustomerId || i.client_id === currentUserCustomerId)).length}
+                              </div>
+                              <span className="text-[10.5px] text-rose-700 font-extrabold mt-1.5">Active Spill Alerts</span>
+                            </div>
                           </div>
-                          <div className="text-2xl font-black text-rose-600 mt-3">
-                            {(incidents || []).filter(i => (i.supplier_id === currentUserCustomerId || i.customer_id === currentUserCustomerId || i.client_id === currentUserCustomerId)).length} Incidents
-                          </div>
-                          <span className="text-[11px] text-rose-700 font-extrabold mt-2">Quality Containment Alerts</span>
-                        </div>
-                      </div>
+                        );
+                      })()}
 
                       {/* PO Budget Consumption Meter Card */}
                       <div className="bg-white border border-slate-200/90 shadow-2xs p-5 sm:p-6 rounded-2xl flex flex-col gap-4">

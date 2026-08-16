@@ -1,6 +1,26 @@
 import React, { useState, useEffect, lazy, Suspense } from 'react';
-const PhoneSimulator = lazy(() => import('./components/PhoneSimulator'));
-const WebDashboard = lazy(() => import('./components/WebDashboard'));
+
+const lazyWithRetry = (componentImport) =>
+  lazy(async () => {
+    const hasRefreshed = JSON.parse(
+      window.sessionStorage.getItem('ids_pulse_chunk_retry') || 'false'
+    );
+    try {
+      const component = await componentImport();
+      window.sessionStorage.setItem('ids_pulse_chunk_retry', 'false');
+      return component;
+    } catch (error) {
+      if (!hasRefreshed) {
+        window.sessionStorage.setItem('ids_pulse_chunk_retry', 'true');
+        window.location.reload();
+        return { default: () => null };
+      }
+      throw error;
+    }
+  });
+
+const PhoneSimulator = lazyWithRetry(() => import('./components/PhoneSimulator'));
+const WebDashboard = lazyWithRetry(() => import('./components/WebDashboard'));
 import { initializeDB, syncWithSupabase, supabase } from './components/SharedDatabase';
 import { initBackgroundSyncWorker } from './services/backgroundSyncWorker';
 import LoginScreen from './components/LoginScreen';

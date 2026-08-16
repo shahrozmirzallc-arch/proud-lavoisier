@@ -6243,17 +6243,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     </p>
                   </div>
 
-                  {/* Top Summary Badges & Quick Action */}
+                  {/* Top Summary Badges */}
                   <div className="flex items-center gap-3 flex-wrap">
-                    <button
-                      type="button"
-                      onClick={() => setShowAddUserModal(true)}
-                      className="bg-[#3B82F6] hover:bg-blue-600 text-white font-extrabold px-3.5 py-2.5 rounded-xl text-xs flex items-center gap-1.5 shadow-md shadow-blue-500/20 cursor-pointer transition-all hover:scale-105 border border-blue-400/40"
-                      title="1-Click Fast User Provisioning"
-                    >
-                      <UserPlus className="w-4 h-4" />
-                      <span>+ Quick Add User</span>
-                    </button>
                     <div className="border border-slate-300 dark:border-slate-800 px-4 py-2.5 rounded-xl flex flex-col items-center">
                       <span className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider">Active Field Reps</span>
                       <span className="text-xl font-black text-emerald-600 mt-0.5">{dynamicRepCards.length} Active</span>

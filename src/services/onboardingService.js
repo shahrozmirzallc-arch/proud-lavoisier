@@ -60,11 +60,22 @@ export function resolveRateValue(project, ratesList = [], type = 'billing') {
   }
   if (Array.isArray(ratesList)) {
     const sId = project.supplier_id || project.client_id;
+    const isSupMatch = (rSup, targetSup) => {
+      if (!rSup || !targetSup) return false;
+      if (rSup === targetSup) return true;
+      const s1 = String(rSup).toLowerCase().trim();
+      const s2 = String(targetSup).toLowerCase().trim();
+      if (s1 === s2) return true;
+      const clean1 = s1.replace(/^sup_|^supplier_/, '').replace(/_/g, ' ');
+      const clean2 = s2.replace(/^sup_|^supplier_/, '').replace(/_/g, ' ');
+      return clean1 === clean2 || clean1.includes(clean2) || clean2.includes(clean1);
+    };
+
     const matched = ratesList.find(r => 
       r && (
         r.project_id === project.id || 
-        ((r.supplier_id === sId || r.client_id === sId) && (r.rep_id === project.rep_id || !r.rep_id)) ||
-        (r.supplier_id === sId || r.client_id === sId)
+        (isSupMatch(r.supplier_id || r.client_id, sId) && (r.rep_id === project.rep_id || !r.rep_id)) ||
+        isSupMatch(r.supplier_id || r.client_id, sId)
       )
     );
     if (matched) {

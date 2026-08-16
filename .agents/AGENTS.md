@@ -78,3 +78,8 @@ To ensure historical mistakes are never repeated, the agent MUST obey the follow
 ## 14. HARD RULE: ZERO EMOJI USAGE AT ALL TIMES (NEVER USE EMOJIS IN UI, CODE, OR CHAT RESPONSES)
 - **Zero Emojis**: Emojis are strictly forbidden across the entire codebase, UI buttons, titles, modals, alert cards, feeds, reports, documentation, artifacts, and AI assistant responses. Use clean SVG icons from `lucide-react` or professional plain text typography only.
 
+## 15. MANDATORY UNIFIED RATE RESOLUTION & ZERO DRAFT CODE EXPOSURE GUARDRAIL
+- **Unified Authoritative Rate Resolution**: All project tables, registry views, financial reports, timesheets, and drill-down cards MUST resolve billing and pay rates using the unified authoritative rate engine (`getRepSupplierRates()` and `resolveRateValue()`). Relying on raw isolated properties (`p.billing_rate`) without executing 3-tier fallback checks (rates database $\rightarrow$ supplier profile defaults $\rightarrow$ plant currency defaults) is strictly prohibited.
+- **Smart ID & Fuzzy Supplier Matching**: Rate resolution functions MUST always perform normalized, case-insensitive supplier and representative matching (handling `sup_` / `supplier_` prefixes, underscores, and official company names) to prevent "Rate not configured" false negatives when project rows reference full client names.
+- **Zero Draft/Placeholder Code Exposure**: Internal draft placeholders (e.g. `__new__`, `undefined`, `null`, `[object Object]`) MUST NEVER be rendered to users in table cells, dropdowns, or summary cards. Unassigned entities must cleanly evaluate to **`Unassigned / Pending`** badges.
+

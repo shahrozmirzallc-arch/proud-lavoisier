@@ -383,6 +383,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   });
   const [userCategoryTab, setUserCategoryTab] = useState('all'); // 'all', 'reps', 'clients', 'staff'
   const [expandedAlertIds, setExpandedAlertIds] = useState({});
+  const [showAllAlerts, setShowAllAlerts] = useState(false);
   const [newUserForm, setNewUserForm] = useState({
     roleType: 'rep', // 'rep', 'customer', 'lead', 'accountant', 'admin'
     name: '',
@@ -6330,34 +6331,56 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
               </div>
 
               {/* SECTION 3 & 4: LIVE SHIFT METRICS & ACTIVE QUALITY ALERTS */}
-              <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
                 
                 {/* Shift Progress & Output Metrics (Span 2) */}
-                <div className="xl:col-span-2 border border-slate-300 dark:border-slate-800 rounded-2xl p-5 flex flex-col justify-between">
-                  <div className="flex items-center justify-between mb-4 border-b border-slate-300 dark:border-slate-800 pb-3">
+                <div className="xl:col-span-2 border border-slate-300 dark:border-slate-800 rounded-2xl p-5 flex flex-col gap-4 bg-surface-elevated shadow-xs">
+                  <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
                     <h3 className="text-base font-extrabold text-text-primary tracking-wide flex items-center gap-2">
                       <Activity className="w-5 h-5 text-emerald-600" />
                       <span>Shift Output & Operations Metrics</span>
                     </h3>
-                    <span className="text-xs bg-emerald-500/20 text-emerald-600 border border-emerald-500/30 px-2 py-0.5 rounded font-bold uppercase">Live Progress</span>
+                    <span className="text-xs bg-emerald-500/20 text-emerald-600 border border-emerald-500/30 px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider">Live Progress</span>
                   </div>
 
+                  {/* Operational Telemetry Summary Bar */}
+                  <div className="bg-surface p-3.5 rounded-xl border border-border-subtle flex flex-col sm:flex-row items-center justify-between gap-3 text-left">
+                    <div className="flex-1 w-full">
+                      <div className="flex justify-between text-xs font-black text-text-primary mb-1.5">
+                        <span>Quality Conformance Yield</span>
+                        <span className="text-emerald-600">{qualityPassRateDynamic}</span>
+                      </div>
+                      <div className="w-full bg-slate-200 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden">
+                        <div className="bg-emerald-500 h-full rounded-full transition-all duration-500" style={{ width: qualityPassRateDynamic || '100%' }}></div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <span className="bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 text-[11px] font-black px-2.5 py-1 rounded-lg">
+                        {activeRepsCount} Active Reps
+                      </span>
+                      <span className="bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 text-[11px] font-black px-2.5 py-1 rounded-lg">
+                        {(reworkLogs || []).reduce((acc, curr) => acc + (curr.pieces_reworked || curr.quantity || 0), 0)} Rework Pcs
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* 3 Core Metric KPI Cards */}
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div className="border border-slate-300 dark:border-slate-800 p-4 rounded-xl flex flex-col justify-between">
+                    <div className="border border-slate-300 dark:border-slate-800 p-4 rounded-xl flex flex-col justify-between bg-surface">
                       <span className="text-xs font-bold text-text-secondary uppercase tracking-wider">Total Active Hours Today</span>
-                      <div className="text-3xl font-black text-blue-600 mt-2">{totalHours.toFixed(1)} hrs</div>
+                      <div className="text-2xl sm:text-3xl font-black text-blue-600 mt-2">{totalHours.toFixed(1)} hrs</div>
                       <span className="text-[11px] text-text-secondary mt-1">Across {activeRepsCount} deployed Reps</span>
                     </div>
 
-                    <div className="border border-slate-300 dark:border-slate-800 p-4 rounded-xl flex flex-col justify-between">
+                    <div className="border border-slate-300 dark:border-slate-800 p-4 rounded-xl flex flex-col justify-between bg-surface">
                       <span className="text-xs font-bold text-text-secondary uppercase tracking-wider">Pieces Inspected</span>
-                      <div className="text-3xl font-black text-emerald-600 mt-2">{totalInspectedPcsToday}</div>
+                      <div className="text-2xl sm:text-3xl font-black text-emerald-600 mt-2">{totalInspectedPcsToday}</div>
                       <span className="text-[11px] text-emerald-600 font-semibold mt-1">✓ On target for shift quota</span>
                     </div>
 
-                    <div className="border border-slate-300 dark:border-slate-800 p-4 rounded-xl flex flex-col justify-between">
-                      <span className="text-xs font-bold text-text-secondary uppercase tracking-wider">Quality Defect Containments</span>
-                      <div className="text-3xl font-black text-amber-600 mt-2">
+                    <div className="border border-slate-300 dark:border-slate-800 p-4 rounded-xl flex flex-col justify-between bg-surface">
+                      <span className="text-xs font-bold text-text-secondary uppercase tracking-wider">Quality Containments</span>
+                      <div className="text-2xl sm:text-3xl font-black text-amber-600 mt-2">
                         {(incidents || []).filter(i => showAllDates || i.created_at?.startsWith(selectedDate)).length} logged
                       </div>
                       <span className="text-[11px] text-amber-600 font-semibold mt-1">100% contained on-site</span>
@@ -6365,66 +6388,103 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   </div>
                 </div>
 
-                {/* Live Quality Alerts & Containment Stream */}
-                <div className="border border-slate-300 dark:border-slate-800 rounded-2xl p-5 flex flex-col bg-surface-elevated">
-                  <div className="flex items-center justify-between mb-4 border-b border-slate-300 dark:border-slate-800 pb-3">
+                {/* Live Quality Alerts & Containment Stream (Max 3 with Show All toggle) */}
+                <div className="border border-slate-300 dark:border-slate-800 rounded-2xl p-5 flex flex-col gap-3 bg-surface-elevated shadow-xs">
+                  <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
                     <h3 className="text-base font-extrabold text-text-primary tracking-wide flex items-center gap-2">
                       <Shield className="w-5 h-5 text-amber-600" />
-                      <span>Active Quality Containment Alerts</span>
+                      <span>Active Containment Alerts</span>
                     </h3>
+                    <span className="text-xs font-bold bg-amber-500/20 text-amber-700 dark:text-amber-300 px-2 py-0.5 rounded-full">
+                      {(incidents || []).filter(i => showAllDates || i.created_at?.startsWith(selectedDate)).length} Total
+                    </span>
                   </div>
 
-                  <div className="space-y-3 flex-1 overflow-y-auto">
-                    {(incidents || []).length === 0 ? (
-                      <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-center text-slate-700 font-extrabold italic text-xs">
-                        No active quality containment holds reported today.
-                      </div>
-                    ) : (
-                      (incidents || []).map((inc) => {
-                        const narrativeText = inc.description || inc.notes || 'Defect logged.';
-                        const isExpanded = !!expandedAlertIds[inc.id];
-                        const isLongText = narrativeText.length > 90 || narrativeText.includes('\n');
+                  {(() => {
+                    const allAlerts = (incidents || []).filter(i => showAllDates || i.created_at?.startsWith(selectedDate));
+                    const alertsToDisplay = showAllAlerts ? allAlerts : allAlerts.slice(0, 3);
 
-                        return (
-                          <div key={inc.id} className="p-3.5 rounded-xl bg-amber-50 border border-amber-300 flex items-start gap-2.5 shadow-sm text-left">
-                            <div className="w-2.5 h-2.5 rounded-full bg-amber-600 mt-1 flex-shrink-0 animate-ping"></div>
-                            <div className="flex-1 text-left min-w-0">
-                              <strong className="text-[12.5px] font-extrabold text-amber-950 block leading-snug">
-                                {suppliers.find(s => s.id === inc.supplier_id || s.name?.toLowerCase() === (inc.supplier_id || '').toLowerCase())?.name || inc.supplier_name || (inc.supplier_id ? inc.supplier_id.replace(/^sup_/, '').replace(/_/g, ' ') : 'Client Company')} — PN {inc.part_number || inc.partNumber || 'Hold'}
-                              </strong>
-                              <p 
-                                className={`text-[12px] font-semibold text-slate-900 mt-1 leading-normal ${!isExpanded ? 'line-clamp-3' : ''}`}
-                                style={!isExpanded ? { display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' } : {}}
-                              >
-                                {narrativeText}
-                              </p>
+                    if (allAlerts.length === 0) {
+                      return (
+                        <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-center text-slate-700 font-extrabold italic text-xs">
+                          No active quality containment holds reported today.
+                        </div>
+                      );
+                    }
 
-                              {isLongText && (
-                                <button
-                                  type="button"
-                                  onClick={() => setExpandedAlertIds(prev => ({ ...prev, [inc.id]: !prev[inc.id] }))}
-                                  className="mt-1 text-[11.5px] font-black text-amber-800 hover:text-amber-950 hover:underline flex items-center gap-1 cursor-pointer"
-                                >
-                                  {isExpanded ? (
-                                    <span className="flex items-center gap-1"><ChevronUp className="w-3.5 h-3.5" /> Read Less</span>
-                                  ) : (
-                                    <span className="flex items-center gap-1"><ChevronDown className="w-3.5 h-3.5" /> Read More</span>
+                    return (
+                      <>
+                        <div className="space-y-3 flex-1 overflow-y-auto">
+                          {alertsToDisplay.map((inc) => {
+                            const narrativeText = inc.description || inc.notes || 'Defect logged.';
+                            const isExpanded = !!expandedAlertIds[inc.id];
+                            const isLongText = narrativeText.length > 90 || narrativeText.includes('\n');
+
+                            return (
+                              <div key={inc.id} className="p-3.5 rounded-xl bg-amber-50 border border-amber-300 flex items-start gap-2.5 shadow-xs text-left">
+                                <div className="w-2.5 h-2.5 rounded-full bg-amber-600 mt-1 flex-shrink-0 animate-ping"></div>
+                                <div className="flex-1 text-left min-w-0">
+                                  <strong className="text-[12.5px] font-extrabold text-amber-950 block leading-snug">
+                                    {suppliers.find(s => s.id === inc.supplier_id || s.name?.toLowerCase() === (inc.supplier_id || '').toLowerCase())?.name || inc.supplier_name || (inc.supplier_id ? inc.supplier_id.replace(/^sup_/, '').replace(/_/g, ' ') : 'Client Company')} — PN {inc.part_number || inc.partNumber || 'Hold'}
+                                  </strong>
+                                  <p 
+                                    className={`text-[12px] font-semibold text-slate-900 mt-1 leading-normal ${!isExpanded ? 'line-clamp-3' : ''}`}
+                                    style={!isExpanded ? { display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' } : {}}
+                                  >
+                                    {narrativeText}
+                                  </p>
+
+                                  {isLongText && (
+                                    <button
+                                      type="button"
+                                      onClick={() => setExpandedAlertIds(prev => ({ ...prev, [inc.id]: !prev[inc.id] }))}
+                                      className="mt-1 text-[11.5px] font-black text-amber-800 hover:text-amber-950 hover:underline flex items-center gap-1 cursor-pointer"
+                                    >
+                                      {isExpanded ? (
+                                        <span className="flex items-center gap-1"><ChevronUp className="w-3.5 h-3.5" /> Read Less</span>
+                                      ) : (
+                                        <span className="flex items-center gap-1"><ChevronDown className="w-3.5 h-3.5" /> Read More</span>
+                                      )}
+                                    </button>
                                   )}
-                                </button>
-                              )}
 
-                              <span className="text-[11px] font-mono font-extrabold text-slate-700 mt-1.5 block">
-                                {inc.date || inc.created_at?.substring(0, 10)}
-                              </span>
-                            </div>
+                                  <span className="text-[11px] font-mono font-extrabold text-slate-700 mt-1.5 block">
+                                    {inc.date || inc.created_at?.substring(0, 10)}
+                                  </span>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+
+                        {allAlerts.length > 3 && (
+                          <div className="pt-2 border-t border-slate-200 dark:border-slate-800 text-center">
+                            <button
+                              type="button"
+                              onClick={() => setShowAllAlerts(prev => !prev)}
+                              className="w-full py-2 px-3 rounded-xl bg-amber-100 hover:bg-amber-200 border border-amber-300 text-amber-950 font-black text-xs cursor-pointer transition-all flex items-center justify-center gap-1.5 shadow-xs"
+                            >
+                              {showAllAlerts ? (
+                                <>
+                                  <ChevronUp className="w-4 h-4" />
+                                  <span>Show Less (Top 3 Only)</span>
+                                </>
+                              ) : (
+                                <>
+                                  <ChevronDown className="w-4 h-4" />
+                                  <span>Show All ({allAlerts.length} Alerts)</span>
+                                </>
+                              )}
+                            </button>
                           </div>
-                        );
-                      })
-                    )}
-                  </div>
+                        )}
+                      </>
+                    );
+                  })()}
                 </div>
 
               </div>
+
 
               {/* SECTION 1 & 2: LIVE REP DEPLOYMENT CARDS & PART TRACEABILITY */}
               <div>

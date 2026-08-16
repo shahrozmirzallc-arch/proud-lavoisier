@@ -1000,6 +1000,119 @@ export function addUser(user) {
   }
 }
 
+/**
+ * Updates an existing user record with security guards against altering protected super-admin accounts.
+ *
+ * @param {string} userId - User ID or username
+ * @param {Object} updates - Fields to update
+ * @returns {Object} Updated user object
+ */
+export function updateUser(userId, updates = {}) {
+  const users = getEntities('users') || [];
+  const targetUser = users.find(u => u && (u.id === userId || u.username === userId));
+
+  if (!targetUser) {
+    throw new Error(`User with ID or username "${userId}" not found.`);
+  }
+
+  // Hard Security Rule 7: Shahroz Mirza Super-Admin Protection
+  if (targetUser.username === 'shahroz' || targetUser.id === 'user_shahroz') {
+    if (updates.role && updates.role !== 'admin' && updates.role !== 'super-admin') {
+      throw new Error('Shahroz Mirza Super-Admin privileges are unalterable.');
+    }
+    if (updates.password && updates.password !== 'Shahroz121$') {
+      throw new Error('Shahroz Mirza credentials are protected by System Security Rule 7.');
+    }
+  }
+
+  const updated = {
+    ...targetUser,
+    ...updates,
+    id: targetUser.id, // Preserve immutable ID
+    username: targetUser.username, // Preserve canonical username
+    updated_at: new Date().toISOString()
+  };
+
+  saveEntity('users', updated);
+  logSystemEvent('users', 'update', `User "${updated.username}" profile updated by system`);
+
+  return updated;
+}
+
+/**
+ * Deletes a user account with strict security locks for essential administrative accounts.
+ *
+ * @param {string} userId - User ID or username
+ * @returns {Object} Outcome receipt
+ */
+export function deleteUser(userId) {
+  const users = getEntities('users') || [];
+  const targetUser = users.find(u => u && (u.id === userId || u.username === userId));
+
+  if (!targetUser) {
+    throw new Error(`User with ID or username "${userId}" not found.`);
+  }
+
+  // Mandatory System Security Lock: Never delete core administrative and staff users
+  const protectedUsernames = ['shahroz', 'donna', 'greg', 'colleen', 'owner', 'admin'];
+  if (protectedUsernames.includes(targetUser.username?.toLowerCase().trim())) {
+    throw new Error(`Protected system user "${targetUser.username}" cannot be deleted.`);
+  }
+
+  const db = getDB();
+  db.users = (db.users || []).filter(u => u.id !== targetUser.id && u.username !== targetUser.username);
+  saveDB(db);
+
+  try {
+    if (supabase && typeof supabase.from === 'function') {
+      supabase.from('users').delete().eq('id', targetUser.id).then(() => {}).catch(e => console.warn('[User Delete Cloud Warning]:', e));
+    }
+  } catch (err) {
+    console.warn('[User Delete Exception]:', err);
+  }
+
+  logSystemEvent('users', 'delete', `User "${targetUser.username}" (ID: ${targetUser.id}) deleted from platform`);
+
+  if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
+    window.dispatchEvent(new Event('ids_pulse_db_update'));
+  }
+
+  return { success: true, deletedUser: targetUser };
+}
+
+/**
+ * Universal entity deletion helper for local storage and Supabase cloud.
+ *
+ * @param {string} type - Collection key
+ * @param {string} id - Target entity ID
+ * @returns {boolean}
+ */
+export function deleteEntity(type, id) {
+  if (type === 'users') {
+    return deleteUser(id);
+  }
+
+  const db = getDB();
+  if (db[type] && Array.isArray(db[type])) {
+    db[type] = db[type].filter(item => String(item.id) !== String(id));
+    saveDB(db);
+  }
+
+  try {
+    if (supabase && typeof supabase.from === 'function') {
+      supabase.from(type).delete().eq('id', id).then(() => {}).catch(e => console.warn(`[${type} Delete Warning]:`, e));
+    }
+  } catch (err) {
+    console.warn(`[${type} Delete Exception]:`, err);
+  }
+
+  if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
+    window.dispatchEvent(new Event('ids_pulse_db_update'));
+  }
+
+  return true;
+}
+
 export function addIncident(incident) {
   const newIncident = {
     ...incident,

@@ -2701,11 +2701,11 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
 <hr/>
 <p><strong>Inspected Factory Areas:</strong></p>
 <ul>
-  ${canonicalAreas.map(a => `<li><strong>${formatAreaName(a.name)}</strong>: ${a.status === 'issues' ? '🔴 Concerns Found' : '🟢 No Concerns'} ${a.spoke_with ? `(Spoke with: <strong>${a.spoke_with}</strong>)` : ''} (Notes: ${a.notes || 'None'})</li>`).join('')}
+  ${canonicalAreas.map(a => `<li><strong>${formatAreaName(a.name)}</strong>: ${a.status === 'issues' ? '[CONCERNS FOUND]' : '[NO CONCERNS]'} ${a.spoke_with ? `(Spoke with: <strong>${a.spoke_with}</strong>)` : ''} (Notes: ${a.notes || 'None'})</li>`).join('')}
 </ul>
 <p><strong>Assigned Audits & Checkpoints:</strong></p>
 <ul>
-  ${bonusTasks.map(t => `<li><strong>${t.task}</strong>: ${t.status === 'completed' ? '✅ Completed' : '⏳ Pending'} (Notes: ${t.notes || 'None'})</li>`).join('')}
+  ${bonusTasks.map(t => `<li><strong>${t.task}</strong>: ${t.status === 'completed' ? '[COMPLETED]' : '[PENDING]'} (Notes: ${t.notes || 'None'})</li>`).join('')}
 </ul>`
       });
 
@@ -4921,7 +4921,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                                   <div className={`w-5 h-5 rounded-full border flex items-center justify-center text-xs font-bold ${
                                     isSelected ? 'bg-emerald-600 border-emerald-600 text-white' : 'border-slate-300 bg-white'
                                   }`}>
-                                    {isSelected ? '✓' : ''}
+                                    {isSelected ? '' : ''}
                                   </div>
                                 </button>
                               );
@@ -5163,7 +5163,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                   </div>
 
                   <div className="text-[11.5px] text-slate-700 bg-amber-50 border border-amber-200 p-2.5 rounded-sm leading-relaxed shadow-sm">
-                    🌟 <strong>Merge Observations</strong> will increment the quantity on the existing incident and append your new notes, avoiding double-reporting to the client.
+                     <strong>Merge Observations</strong> will increment the quantity on the existing incident and append your new notes, avoiding double-reporting to the client.
                   </div>
 
                   <div className="flex flex-col gap-2 mt-2">
@@ -5265,7 +5265,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                         {(evidenceList.length > 0 || stagedVideoObject) ? (
                           <div className="flex flex-col gap-1 bg-slate-50 p-2 rounded-lg border border-slate-200">
                             <span className="font-bold text-slate-800">
-                              📷 Photos: {evidenceList.length} | 🎥 Videos: {stagedVideoObject ? 1 : 0}
+                               Photos: {evidenceList.length} |  Videos: {stagedVideoObject ? 1 : 0}
                             </span>
                             {evidenceList.map((ev, idx) => (
                               <div key={idx} className="text-[10.5px] text-slate-600 italic">
@@ -7052,7 +7052,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                     return (
                       <div key={entry.id} className="p-3 bg-white border border-slate-200 rounded-xl flex flex-col gap-2 shadow-sm">
                         <div className="flex justify-between items-center text-xs">
-                          <span className="font-mono text-purple-700 font-bold">📅 {entry.work_date || entry.date || 'Today'}</span>
+                          <span className="font-mono text-purple-700 font-bold"> {entry.work_date || entry.date || 'Today'}</span>
                           <span className="font-extrabold text-amber-700">{parseFloat(entry.overtime_hours || entry.hours || 0).toFixed(1)} hrs OT</span>
                         </div>
                         
@@ -7061,7 +7061,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                           
                           {isApproved && (
                             <span className="text-[10px] bg-emerald-100 text-emerald-800 border border-emerald-300 px-2 py-0.5 rounded-full font-bold uppercase">
-                              ✓ Client Approved
+                               Client Approved
                             </span>
                           )}
 
@@ -7073,13 +7073,13 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
 
                           {isRejected && (
                             <span className="text-[10px] bg-rose-100 text-rose-800 border border-rose-300 px-2 py-0.5 rounded-full font-bold uppercase">
-                              ✕ Client Rejected
+                               Client Rejected
                             </span>
                           )}
 
                           {!isApproved && !isReturned && !isRejected && (
                             <span className="text-[10px] bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full font-bold uppercase">
-                              ⏳ Pending Client Review
+                              [PENDING] Client Review
                             </span>
                           )}
                         </div>
@@ -7226,7 +7226,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
             <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-2xl flex flex-col gap-3.5 text-left w-full max-w-[320px]">
               <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
                 <div className="w-10 h-10 rounded-full bg-emerald-100 border border-emerald-300 flex items-center justify-center text-emerald-600 font-black text-lg">
-                  ✓
+                  
                 </div>
                 <div>
                   <h3 className="text-[15px] font-black text-slate-900 leading-tight">Report safely saved</h3>

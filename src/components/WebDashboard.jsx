@@ -3052,7 +3052,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
         `$${parseFloat(row.other_expenses || 0).toFixed(2)}`,
         `$${parseFloat(row.paid_by_cer || 0).toFixed(2)}`,
         row.description || '-',
-        row.attached ? '✓ Yes' : 'No'
+        row.attached ? ' Yes' : 'No'
       ];
     });
 
@@ -4388,10 +4388,10 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       const dayData = weeklyChecklists[day] || {};
       return [
         day,
-        dayData['Safety Inspection'] || dayData['1'] ? '✓ COMPLETED' : 'PENDING',
-        dayData['Tool Calibration'] || dayData['2'] ? '✓ COMPLETED' : 'PENDING',
-        dayData['Part Containment'] || dayData['3'] ? '✓ COMPLETED' : 'PENDING',
-        dayData['Daily Quality Log'] || dayData['Shift Summary Log'] || dayData['4'] ? '✓ COMPLETED' : 'PENDING',
+        dayData['Safety Inspection'] || dayData['1'] ? ' COMPLETED' : 'PENDING',
+        dayData['Tool Calibration'] || dayData['2'] ? ' COMPLETED' : 'PENDING',
+        dayData['Part Containment'] || dayData['3'] ? ' COMPLETED' : 'PENDING',
+        dayData['Daily Quality Log'] || dayData['Shift Summary Log'] || dayData['4'] ? ' COMPLETED' : 'PENDING',
         weeklySignOff ? 'SIGNED OFF' : 'IN PROGRESS'
       ];
     });
@@ -5237,7 +5237,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
             <div className="flex items-center gap-1.5 px-3 py-1 bg-red-500/10 border border-red-500/30 text-red-500 rounded-xl text-[11px] font-bold animate-pulse">
               <AlertCircle className="w-3.5 h-3.5" />
               <span>{syncError}</span>
-              <button onClick={() => setSyncError(null)} className="ml-1 text-slate-400 hover:text-slate-600">✕</button>
+              <button onClick={() => setSyncError(null)} className="ml-1 text-slate-400 hover:text-slate-600"></button>
             </div>
           )}
           {(() => {
@@ -6386,7 +6386,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     <div className="border border-slate-300 dark:border-slate-800 p-4 rounded-xl flex flex-col justify-between bg-surface">
                       <span className="text-xs font-bold text-text-secondary uppercase tracking-wider">Pieces Inspected</span>
                       <div className="text-2xl sm:text-3xl font-black text-emerald-600 mt-2">{totalInspectedPcsToday}</div>
-                      <span className="text-[11px] text-emerald-600 font-semibold mt-1">✓ On target for shift quota</span>
+                      <span className="text-[11px] text-emerald-600 font-semibold mt-1"> On target for shift quota</span>
                     </div>
 
                     <div className="border border-slate-300 dark:border-slate-800 p-4 rounded-xl flex flex-col justify-between bg-surface">
@@ -8166,7 +8166,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                 <div className="flex flex-col gap-1">
                                   <div className="flex items-center gap-2 flex-wrap">
                                     <span className="font-black text-slate-900 text-sm">{plantName}</span>
-                                    <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 border border-emerald-300 text-emerald-900 font-black text-[10px] uppercase">✓ Published Report</span>
+                                    <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 border border-emerald-300 text-emerald-900 font-black text-[10px] uppercase"> Published Report</span>
                                     <span className="text-xs text-slate-500 font-mono font-bold">{report.date}</span>
                                   </div>
                                   <div className="text-xs text-slate-600 font-medium">
@@ -8243,7 +8243,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                     </span>
                                     {inc.client_acknowledged && (
                                       <span className="bg-emerald-100 border border-emerald-300 text-emerald-900 text-[10px] font-black px-2 py-0.5 rounded uppercase flex items-center gap-1">
-                                        ✓ Client Signed Off by {inc.client_acknowledged_by || 'Client Quality Mgr'}
+                                         Client Signed Off by {inc.client_acknowledged_by || 'Client Quality Mgr'}
                                       </span>
                                     )}
                                   </div>
@@ -8262,7 +8262,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                       onClick={() => setClientIncidentAckModal({ show: true, incident: inc, comment: '' })}
                                       className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold px-3 py-1.5 rounded-xl transition-colors shadow-sm cursor-pointer"
                                     >
-                                      ✓ Acknowledge & Sign-Off
+                                       Acknowledge & Sign-Off
                                     </button>
                                   )}
                                 </div>
@@ -8617,7 +8617,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                     isReturned ? 'bg-amber-500/20 text-amber-300' :
                                     'bg-rose-500/20 text-rose-300'
                                   }`}>
-                                    {isApproved ? '✓ Approved' : isReturned ? ' Returned' : '✕ Rejected'}
+                                    {isApproved ? ' Approved' : isReturned ? ' Returned' : ' Rejected'}
                                   </span>
                                 </td>
                                 <td className="p-3 text-text-secondary text-[11px] max-w-xs break-words">
@@ -9413,7 +9413,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                               className="text-[13.5px] font-black text-cyan-600 hover:text-text-primary cursor-pointer px-1"
                               title="Cancel Edit Mode"
                             >
-                              ✕
+                              
                             </button>
                           </div>
                         )}
@@ -9880,17 +9880,17 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                            entry.status === 'client_rejected' || entry.client_review_status === 'rejected' ? 'bg-rose-500/20 text-rose-300' :
                                            'bg-amber-400/20 text-amber-200'
                                          }`}>
-                                           {entry.status === 'client_approved' || entry.client_review_status === 'approved' ? '✓ Approved' :
+                                           {entry.status === 'client_approved' || entry.client_review_status === 'approved' ? ' Approved' :
                                             entry.status === 'client_returned' || entry.client_review_status === 'returned' ? ' Returned' :
-                                            entry.status === 'client_rejected' || entry.client_review_status === 'rejected' ? '✕ Rejected' :
+                                            entry.status === 'client_rejected' || entry.client_review_status === 'rejected' ? ' Rejected' :
                                             ' Pending Review'}
                                          </span>
                                        </td>
                                        <td className="py-3 px-3 text-right">
                                          <span className="text-[11px] text-slate-300 italic font-medium">
-                                           {entry.status === 'client_approved' || entry.client_review_status === 'approved' ? `✓ Approved by ${entry.client_reviewed_by || 'Client'}` :
+                                           {entry.status === 'client_approved' || entry.client_review_status === 'approved' ? ` Approved by ${entry.client_reviewed_by || 'Client'}` :
                                             entry.status === 'client_returned' || entry.client_review_status === 'returned' ? `Returned (${entry.client_review_comment || 'No comment'})`:
-                                            entry.status === 'client_rejected' || entry.client_review_status === 'rejected' ? `✕ Rejected by ${entry.client_reviewed_by || 'Client'}` :
+                                            entry.status === 'client_rejected' || entry.client_review_status === 'rejected' ? ` Rejected by ${entry.client_reviewed_by || 'Client'}` :
                                             ' Pending Client Review'}
                                          </span>
                                        </td>
@@ -9908,7 +9908,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
                           <div className="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 text-left shadow-2xl flex flex-col gap-4">
                             <h3 className="text-base font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                              <span>{clientReviewModalState.action === 'returned' ? ' Return Overtime for Correction' : '✕ Reject Overtime'}</span>
+                              <span>{clientReviewModalState.action === 'returned' ? ' Return Overtime for Correction' : ' Reject Overtime'}</span>
                             </h3>
                             <p className="text-xs text-slate-300 leading-relaxed">
                               Please provide a reason or comment for {clientReviewModalState.action === 'returned' ? 'returning this overtime submission to the representative' : 'rejecting this overtime request'}.
@@ -10399,7 +10399,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
                         <div className="flex items-center gap-3">
                           {weeklyGridSaveMessage && (
-                            <span className="text-[12px] font-bold text-emerald-500 animate-pulse">✓ Changes Saved Successfully!</span>
+                            <span className="text-[12px] font-bold text-emerald-500 animate-pulse"> Changes Saved Successfully!</span>
                           )}
                           <button
                             onClick={handleGenerateCerReport}
@@ -13533,7 +13533,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
               {/* Rule Summary Box */}
               <div className="bg-emerald-950/40 border border-emerald-500/30 rounded-2xl p-3.5 text-[11.5px] text-emerald-200 space-y-1">
                 <div className="font-black text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
-                  <span>✓ Billing Integrity & Handover Guarantee</span>
+                  <span> Billing Integrity & Handover Guarantee</span>
                 </div>
                 <p className="leading-relaxed font-medium">
                   {handoverTargetRep?.name || 'Current Rep'}'s worked hours will be snapshot in sub-timesheets at their billing rate. Senior Inspector will inherit active containment instructions & running counts seamlessly.
@@ -13870,7 +13870,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
               onClick={() => setNotifications([])}
               className="bg-slate-900/90 hover:bg-red-950/80 text-slate-300 hover:text-red-300 border border-slate-700/80 hover:border-red-500/50 text-[11px] font-black px-2.5 py-1 rounded-lg transition-all cursor-pointer shadow-md uppercase tracking-wider"
             >
-              ✕ Clear All Notifications
+               Clear All Notifications
             </button>
           </div>
         )}
@@ -13911,7 +13911,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
               <p className="text-[11.5px] text-slate-200 leading-relaxed mt-1 font-medium">{n.message}</p>
               <div className="mt-2 flex items-center gap-1 text-[10.5px] font-black text-blue-400 group-hover:text-blue-300 uppercase tracking-wider">
                 <span>Click to open target section</span>
-                <span>➔</span>
+                <span></span>
               </div>
             </div>
             <button 
@@ -13922,7 +13922,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
               className="text-slate-400 hover:text-white bg-slate-800/60 hover:bg-slate-700 w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold transition-all cursor-pointer focus:outline-none flex-shrink-0 z-10"
               title="Dismiss notification"
             >
-              ✕
+              
             </button>
           </div>
         ))}
@@ -13936,7 +13936,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
               <h4 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
                 <UserPlus className="w-4.5 h-4.5 text-purple-700" /> Quick Add Representative
               </h4>
-              <button onClick={() => setShowQuickAddRep(false)} className="text-slate-400 hover:text-slate-900 text-lg font-bold">✕</button>
+              <button onClick={() => setShowQuickAddRep(false)} className="text-slate-400 hover:text-slate-900 text-lg font-bold"></button>
             </div>
             <form onSubmit={handleQuickAddRepSubmit} className="flex flex-col gap-3.5">
               <div className="flex flex-col gap-1">
@@ -14023,7 +14023,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 </h4>
                 <p className="text-xs text-slate-600 mt-0.5 font-semibold">Register new client company & assign field rep in one seamless workflow.</p>
               </div>
-              <button onClick={() => setShowQuickAddClient(false)} className="text-slate-400 hover:text-slate-900 text-xl font-bold p-1 cursor-pointer">✕</button>
+              <button onClick={() => setShowQuickAddClient(false)} className="text-slate-400 hover:text-slate-900 text-xl font-bold p-1 cursor-pointer"></button>
             </div>
 
             <form onSubmit={handleQuickAddClientSubmit} className="flex flex-col gap-5">
@@ -14177,7 +14177,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         onClick={() => { setIsInlineNewRep(false); setNewProjRep('rep_clarence'); }}
                         className="text-xs font-bold text-slate-600 hover:text-slate-900"
                       >
-                        ✕ Cancel Inline Rep
+                         Cancel Inline Rep
                       </button>
                     </div>
 
@@ -14366,7 +14366,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
               <h4 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
                 <MapPin className="w-4.5 h-4.5 text-emerald-700" /> Quick Add Plant Location
               </h4>
-              <button onClick={() => setShowQuickAddPlant(false)} className="text-slate-400 hover:text-slate-900 text-lg font-bold">✕</button>
+              <button onClick={() => setShowQuickAddPlant(false)} className="text-slate-400 hover:text-slate-900 text-lg font-bold"></button>
             </div>
             <form onSubmit={handleQuickAddPlantSubmit} className="flex flex-col gap-3.5">
               <div className="flex flex-col gap-1">
@@ -14441,7 +14441,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 <Lock className="w-5 h-5" />
                 <h3 className="text-base font-black text-slate-900 uppercase tracking-wide">Reset Rep Login Password</h3>
               </div>
-              <button onClick={() => setResetPasswordUser(null)} className="text-slate-400 hover:text-slate-900 text-lg font-bold cursor-pointer">✕</button>
+              <button onClick={() => setResetPasswordUser(null)} className="text-slate-400 hover:text-slate-900 text-lg font-bold cursor-pointer"></button>
             </div>
 
             <div className="space-y-3.5 text-left">
@@ -14523,7 +14523,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 </h4>
                 <span className="text-xs text-slate-500 font-semibold">{addContactSupplier.name}</span>
               </div>
-              <button onClick={() => { setAddContactSupplier(null); setAddContactError(''); }} className="text-slate-400 hover:text-slate-900 text-lg font-bold cursor-pointer">✕</button>
+              <button onClick={() => { setAddContactSupplier(null); setAddContactError(''); }} className="text-slate-400 hover:text-slate-900 text-lg font-bold cursor-pointer"></button>
             </div>
 
             <form onSubmit={handleSaveContactToSupplier} className="flex flex-col gap-3.5">

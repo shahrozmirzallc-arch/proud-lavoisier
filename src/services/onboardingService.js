@@ -59,9 +59,13 @@ export function resolveRateValue(project, ratesList = [], type = 'billing') {
     return parseFloat(directVal);
   }
   if (Array.isArray(ratesList)) {
+    const sId = project.supplier_id || project.client_id;
     const matched = ratesList.find(r => 
-      r.project_id === project.id || 
-      (r.supplier_id === (project.supplier_id || project.client_id) && r.rep_id === project.rep_id)
+      r && (
+        r.project_id === project.id || 
+        ((r.supplier_id === sId || r.client_id === sId) && (r.rep_id === project.rep_id || !r.rep_id)) ||
+        (r.supplier_id === sId || r.client_id === sId)
+      )
     );
     if (matched) {
       const val = type === 'billing' ? matched.billing_rate : matched.pay_rate;

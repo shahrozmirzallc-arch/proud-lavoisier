@@ -11721,9 +11721,25 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                 pl && (pl.id === p.plant_id || pl.name?.toLowerCase() === (p.plant_name || p.plant_id)?.toLowerCase())
                               )?.name || p.plant_name || (typeof p.plant_id === 'string' && (p.plant_id.startsWith('plant_') || p.plant_id.startsWith('plt_')) ? p.plant_id.replace(/^plant_|^plt_/, '').replace(/_[a-z0-9]+$/, '').replace(/_/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') : p.plant_id);
 
-                              const repName = users.find(u => 
+                              const rawRep = users.find(u => 
                                 u && (u.id === p.rep_id || u.username === p.rep_id || u.name?.toLowerCase() === (p.rep_name || p.rep_id)?.toLowerCase())
                               )?.name || p.rep_name || p.rep_id;
+                              const repName = (!rawRep || rawRep === '__new__' || rawRep === 'undefined') ? 'Unassigned / Pending' : rawRep;
+
+                              const ratesObj = getRepSupplierRates(p.rep_id, p.client_id || p.supplier_id, p.plant_id);
+                              const sym = p.currency === 'CAD' ? 'C$' : (p.currency === 'USD' ? 'US$' : (ratesObj.currency === 'CAD' ? 'C$' : 'US$'));
+                              
+                              const bVal = (p.billing_rate !== undefined && p.billing_rate !== null && p.billing_rate !== '')
+                                ? parseFloat(p.billing_rate)
+                                : (ratesObj.is_configured ? ratesObj.billing_rate : null);
+
+                              const pVal = (p.pay_rate !== undefined && p.pay_rate !== null && p.pay_rate !== '')
+                                ? parseFloat(p.pay_rate)
+                                : (ratesObj.is_configured ? ratesObj.pay_rate : null);
+
+                              const billingDisplay = bVal !== null ? `${sym} ${bVal.toFixed(2)}/hr` : 'Rate not configured';
+                              const payDisplay = pVal !== null ? `${sym} ${pVal.toFixed(2)}/hr` : 'Rate not configured';
+
                               return (
                                 <tr 
                                   key={p.id} 
@@ -11736,8 +11752,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                   <td className="py-2.5 px-2 text-text-primary">{plantName}</td>
                                   <td className="py-2.5 px-2 font-medium text-text-primary">{repName}</td>
                                   <td className="py-2.5 px-2 text-text-secondary whitespace-nowrap">{p.start_date}</td>
-                                  <td className="py-2.5 px-2 text-right font-bold text-emerald-600 whitespace-nowrap">{formatRateDisplay(p, rates, 'billing')}</td>
-                                  <td className="py-2.5 px-2 text-right text-text-secondary whitespace-nowrap">{formatRateDisplay(p, rates, 'pay')}</td>
+                                  <td className="py-2.5 px-2 text-right font-bold text-emerald-600 whitespace-nowrap">{billingDisplay}</td>
+                                  <td className="py-2.5 px-2 text-right text-text-secondary whitespace-nowrap">{payDisplay}</td>
                                   <td className="py-2.5 px-2 text-right">
                                     <button className="text-[10px] uppercase font-bold text-[#3B82F6] bg-[#3B82F6]/10 px-2 py-0.5 rounded group-hover:bg-[#3B82F6] group-hover:text-text-primary transition-all whitespace-nowrap">View</button>
                                   </td>
@@ -11754,7 +11770,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   <div className="xl:col-span-1 bg-surface-elevated border border-border-subtle rounded-2xl p-4 flex flex-col min-h-0">
                     <h3 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider mb-3 pb-2 border-b border-border-subtle flex items-center justify-between">
                       <span>Register New Project</span>
-                      <span className="text-[10px] text-cyan-400 font-mono font-bold bg-cyan-950/40 px-2 py-0.5 rounded border border-cyan-800/40">Quick Onboarding</span>
+                      <span className="text-[10.5px] text-blue-700 dark:text-blue-300 font-extrabold bg-blue-100 dark:bg-blue-950/60 px-2.5 py-0.5 rounded-lg border border-blue-300 dark:border-blue-700/60">Quick Onboarding</span>
                     </h3>
                     <form 
                       onSubmit={async (e) => {

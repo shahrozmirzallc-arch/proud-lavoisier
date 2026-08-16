@@ -3,6 +3,17 @@
 
 import { getEntities } from '../components/SharedDatabase.js';
 
+export const isSupMatch = (rSup, targetSup) => {
+  if (!rSup || !targetSup) return false;
+  if (rSup === targetSup) return true;
+  const s1 = String(rSup).toLowerCase().trim();
+  const s2 = String(targetSup).toLowerCase().trim();
+  if (s1 === s2) return true;
+  const clean1 = s1.replace(/^sup_|^supplier_/, '').replace(/_/g, ' ');
+  const clean2 = s2.replace(/^sup_|^supplier_/, '').replace(/_/g, ' ');
+  return clean1 === clean2 || clean1.includes(clean2) || clean2.includes(clean1);
+};
+
 /**
  * 1. Calculate industry-standard Parts Per Million (PPM) defect rate for a supplier or plant.
  * Formula: PPM = (Total Defective Pieces / Total Inspected Pieces) * 1,000,000
@@ -21,7 +32,7 @@ export function calculateSupplierPPM({ supplierId, plantId, startDate, endDate }
   // Filter shift reports based on criteria
   const filteredShifts = shiftReports.filter(sr => {
     if (!sr) return false;
-    if (supplierId && sr.supplier_id !== supplierId && sr.client_id !== supplierId) return false;
+    if (supplierId && !isSupMatch(sr.supplier_id || sr.client_id, supplierId)) return false;
     if (plantId && sr.plant_id !== plantId) return false;
     if (startDate && sr.date && sr.date < startDate) return false;
     if (endDate && sr.date && sr.date > endDate) return false;
@@ -31,7 +42,7 @@ export function calculateSupplierPPM({ supplierId, plantId, startDate, endDate }
   // Filter incidents based on criteria
   const filteredIncidents = incidents.filter(inc => {
     if (!inc) return false;
-    if (supplierId && inc.supplier_id !== supplierId && inc.client_id !== supplierId) return false;
+    if (supplierId && !isSupMatch(inc.supplier_id || inc.client_id, supplierId)) return false;
     if (plantId && inc.plant_id !== plantId) return false;
     const incDate = inc.date || (inc.created_at ? inc.created_at.split('T')[0] : null);
     if (startDate && incDate && incDate < startDate) return false;
@@ -115,8 +126,8 @@ export function getDefectParetoAnalysis(filter = {}) {
   // Aggregate from incidents
   incidents.forEach(inc => {
     if (!inc) return;
-    if (filter.supplierId && inc.supplier_id !== filter.supplierId && inc.client_id !== filter.supplierId) return false;
-    if (filter.plantId && inc.plant_id !== filter.plantId) return false;
+    if (filter.supplierId && !isSupMatch(inc.supplier_id || inc.client_id, filter.supplierId)) return;
+    if (filter.plantId && inc.plant_id !== filter.plantId) return;
 
     const rawDefect = inc.defect_type || inc.defect_description || inc.concern_classification || 'Unclassified Defect';
     const defectType = rawDefect.trim();
@@ -180,8 +191,8 @@ export function getSupplierQualityScorecards() {
 
   return suppliers.map(sup => {
     const supId = sup.id;
-    const supProjects = projects.filter(p => p.supplier_id === supId || p.client_id === supId || p.customer_id === supId);
-    const supIncidents = incidents.filter(i => i.supplier_id === supId || i.client_id === supId);
+    const supProjects = projects.filter(p => isSupMatch(p.supplier_id || p.client_id || p.customer_id, supId));
+    const supIncidents = incidents.filter(i => isSupMatch(i.supplier_id || i.client_id, supId));
     const openIncidents = supIncidents.filter(i => String(i.status || '').toLowerCase() !== 'closed' && String(i.status || '').toLowerCase() !== 'released');
     const criticalIncidents = supIncidents.filter(i => String(i.level_of_concern || i.severity || '').toLowerCase() === 'critical');
 
@@ -189,7 +200,7 @@ export function getSupplierQualityScorecards() {
 
     // Calculate total hours logged for this supplier
     let totalHours = 0;
-    shiftReports.filter(sr => sr.supplier_id === supId || sr.client_id === supId).forEach(sr => {
+    shiftReports.filter(sr => isSupMatch(sr.supplier_id || sr.client_id, supId)).forEach(sr => {
       totalHours += Number(sr.hours_worked || sr.total_hours || sr.hours || 0);
     });
 

@@ -15,6 +15,8 @@ import { InvoiceModal } from './InvoiceModal';
 import { performAtomicClientOnboarding, formatRateDisplay } from '../services/onboardingService';
 import { getFormattedLocationTime } from '../utils/locationTimeUtil';
 import { sendCriticalIncidentBroadcast, getBroadcastHistory, retryBroadcastNotification } from '../services/notificationBroadcastService';
+import { calculateSupplierPPM, getDefectParetoAnalysis, getSupplierQualityScorecards } from '../services/qualityAnalyticsService';
+import { calculatePOBudgetTelemetry, getAllProjectsPOBudgetTelemetry, compileBatchInvoicingPayload } from '../services/poBudgetService';
 
 export const EXPENSE_GROUPS = {
   INTERNAL: 'Internal Expense (IDS)',
@@ -2039,6 +2041,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   const [selectedBroadcastLog, setSelectedBroadcastLog] = useState(null);
   const [isBroadcastingAlert, setIsBroadcastingAlert] = useState(false);
   const [broadcastTabFilter, setBroadcastTabFilter] = useState('all');
+  const [supplierTabMode, setSupplierTabMode] = useState('directory'); // 'directory' | 'ppm_analytics' | 'scorecards'
+  const [selectedAnalyticsSupplier, setSelectedAnalyticsSupplier] = useState('all');
 
   const isAdminOrOwner = ['shahroz', 'super_admin', 'admin', 'owner', 'lead', 'accountant'].includes(userRole) || userRole !== 'rep';
 
@@ -6408,6 +6412,37 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                               ))}
                             </div>
                           </div>
+
+                          {/* Real-Time PO Budget Depletion Telemetry */}
+                          {(() => {
+                            const matchingProj = projects.find(p => p.name === rep.project || p.id === rep.project_id || p.project_id === rep.project_id);
+                            if (!matchingProj) return null;
+                            const poData = calculatePOBudgetTelemetry(matchingProj);
+                            return (
+                              <div className="mt-2 p-2.5 rounded-xl bg-surface border border-border-subtle flex flex-col gap-1 text-left">
+                                <div className="flex justify-between items-center text-[10.5px]">
+                                  <span className="font-mono font-bold text-text-primary truncate max-w-[130px]" title={poData.poNumber}>{poData.poNumber}</span>
+                                  <span className={`font-black uppercase px-1.5 py-0.5 rounded text-[9px] ${
+                                    poData.isCritical ? 'bg-rose-100 text-rose-800 border border-rose-300' : (poData.isWarning ? 'bg-amber-100 text-amber-800 border border-amber-300' : 'bg-emerald-100 text-emerald-800 border border-emerald-300')
+                                  }`}>
+                                    {poData.statusLabel}
+                                  </span>
+                                </div>
+                                <div className="w-full bg-slate-200 dark:bg-slate-700 h-2 rounded-full overflow-hidden my-0.5">
+                                  <div 
+                                    className={`h-full rounded-full transition-all ${
+                                      poData.isCritical ? 'bg-rose-600' : (poData.isWarning ? 'bg-amber-500' : 'bg-emerald-500')
+                                    }`} 
+                                    style={{ width: `${Math.min(100, poData.burnPercentage)}%` }}
+                                  />
+                                </div>
+                                <div className="flex justify-between items-center text-[9.5px] text-text-secondary">
+                                  <span>Spent: <strong className="text-text-primary font-mono">${poData.totalSpend.toLocaleString()}</strong> ({poData.burnPercentage}%)</span>
+                                  <span>Cap: <strong className="text-text-primary font-mono">${poData.authorizedBudget.toLocaleString()} {poData.currency}</strong></span>
+                                </div>
+                              </div>
+                            );
+                          })()}
                         </div>
                       </div>
 
@@ -8728,134 +8763,435 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
           )}
 
 
-          {/* TAB 2: SUPPLIERS DIRECTORY */}
+          {/* TAB 2: SUPPLIERS DIRECTORY & QUALITY INTELLIGENCE HUB */}
           {activeTab === 'suppliers' && (
-            <div className="flex-1 flex flex-col gap-3 min-h-0">
-              <div className="flex justify-between items-center pb-2 border-b border-border-subtle flex-shrink-0">
+            <div className="flex-1 flex flex-col gap-3 min-h-0 text-left">
+              {/* Header with Title, Action Buttons, and Sub-Tab Navigation */}
+              <div className="flex justify-between items-center pb-2.5 border-b border-border-subtle flex-shrink-0 flex-wrap gap-2">
                 <div>
-                  <h3 className="text-[14.5px] font-bold text-text-primary uppercase tracking-wider">Supplier Partnerships</h3>
-                  <span className="text-[11.5px] text-text-secondary">Tier-1 supplier quality contacts</span>
+                  <h3 className="text-[15px] font-black text-text-primary uppercase tracking-wider flex items-center gap-2">
+                    <Building2 className="w-5 h-5 text-blue-500" />
+                    <span>Supplier Quality Intelligence & Directory</span>
+                  </h3>
+                  <p className="text-xs text-text-secondary">
+                    Tier-1 automotive supplier partnerships, real-time PPM defect analytics, and quality scorecards
+                  </p>
                 </div>
-                <div className="flex items-center gap-2">
+
+                <div className="flex items-center gap-2 flex-wrap">
+                  {/* Sub-Tab Navigation Pill */}
+                  <div className="bg-surface-elevated border border-border-subtle p-1 rounded-xl flex items-center gap-1">
+                    <button
+                      onClick={() => setSupplierTabMode('directory')}
+                      className={`px-3 py-1 text-xs font-bold rounded-lg cursor-pointer transition-all ${
+                        supplierTabMode === 'directory'
+                          ? 'bg-blue-600 text-white shadow-sm'
+                          : 'text-text-secondary hover:text-text-primary'
+                      }`}
+                    >
+                      Directory ({suppliers.length})
+                    </button>
+                    <button
+                      onClick={() => setSupplierTabMode('ppm_analytics')}
+                      className={`px-3 py-1 text-xs font-bold rounded-lg cursor-pointer transition-all ${
+                        supplierTabMode === 'ppm_analytics'
+                          ? 'bg-emerald-600 text-white shadow-sm'
+                          : 'text-text-secondary hover:text-text-primary'
+                      }`}
+                    >
+                      PPM & Pareto Defect Analytics
+                    </button>
+                    <button
+                      onClick={() => setSupplierTabMode('scorecards')}
+                      className={`px-3 py-1 text-xs font-bold rounded-lg cursor-pointer transition-all ${
+                        supplierTabMode === 'scorecards'
+                          ? 'bg-amber-600 text-white shadow-sm'
+                          : 'text-text-secondary hover:text-text-primary'
+                      }`}
+                    >
+                      Performance Scorecards
+                    </button>
+                  </div>
+
                   <button 
                     onClick={() => setShowQuickAddClient(true)}
-                    className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold py-1.5 px-3 rounded-lg text-xs cursor-pointer shadow-sm transition-colors"
+                    className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold py-1.5 px-3 rounded-xl text-xs cursor-pointer shadow-sm transition-colors"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     <span>+ Onboard Client Company</span>
                   </button>
                   <button 
-                    onClick={handlePrintSupplierDirectoryReport}
-                    className="flex items-center gap-1.5 bg-surface border border-border-subtle hover:bg-surface-elevated text-text-primary font-bold py-1.5 px-3 rounded-lg text-[13.5px] cursor-pointer transition-colors"
-                  >
-                    <Printer className="w-3.5 h-3.5" />
-                    <span>Print Directory</span>
-                  </button>
-                  <button 
                     onClick={handleDownloadSupplierDirectoryReport}
-                    className="flex items-center gap-1.5 bg-[#3B82F6] hover:bg-[#3B82F6]/90 text-text-primary font-bold py-1.5 px-3 rounded-lg text-[13.5px] cursor-pointer transition-colors"
+                    className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold py-1.5 px-3 rounded-xl text-xs cursor-pointer transition-colors shadow-sm"
                   >
                     <Download className="w-3.5 h-3.5" />
-                    <span>Download PDF</span>
+                    <span>Export Directory PDF</span>
                   </button>
                 </div>
               </div>
-              <div className="flex-1 overflow-y-auto scrollbar-thin pr-1 grid grid-cols-1 md:grid-cols-2 gap-3">
-                {suppliers.map(sup => {
-                  const resolvedContacts = (() => {
-                    const list = [];
-                    const addedKeys = new Set();
-                    const addContact = (name, email, role) => {
-                      if (!name) return;
-                      const key = `${name.toLowerCase()}_${(email || '').toLowerCase()}`;
-                      if (addedKeys.has(key)) return;
-                      addedKeys.add(key);
-                      list.push({ name, email: email || '', role: role || 'Customer Quality Manager' });
-                    };
 
-                    if (Array.isArray(sup.contacts)) {
-                      sup.contacts.forEach(c => {
-                        if (typeof c === 'object' && c) {
-                          addContact(c.name, c.email, c.role || c.title);
-                        } else if (typeof c === 'string') {
-                          addContact(c, sup.contact_email || sup.email, 'Quality Contact');
+              {/* SUB-VIEW 1: SUPPLIER DIRECTORY & CONTACTS */}
+              {supplierTabMode === 'directory' && (
+                <div className="flex-1 overflow-y-auto scrollbar-thin pr-1 grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {suppliers.map(sup => {
+                    const resolvedContacts = (() => {
+                      const list = [];
+                      const addedKeys = new Set();
+                      const addContact = (name, email, role, phone) => {
+                        if (!name) return;
+                        const key = `${name.toLowerCase()}_${(email || '').toLowerCase()}`;
+                        if (addedKeys.has(key)) return;
+                        addedKeys.add(key);
+                        list.push({ name, email: email || '', role: role || 'Customer Quality Manager', phone: phone || '' });
+                      };
+
+                      if (Array.isArray(sup.contacts)) {
+                        sup.contacts.forEach(c => {
+                          if (typeof c === 'object' && c) {
+                            addContact(c.name, c.email, c.role || c.title, c.phone);
+                          } else if (typeof c === 'string') {
+                            addContact(c, sup.contact_email || sup.email, 'Quality Contact', sup.phone);
+                          }
+                        });
+                      }
+
+                      const primaryName = sup.contact_person || sup.contact_name;
+                      if (primaryName) {
+                        addContact(primaryName, sup.contact_email || sup.email, sup.contact_title || 'Primary Quality Contact', sup.phone);
+                      }
+
+                      const allUsers = (users && users.length > 0 ? users : getEntities('users')) || [];
+                      allUsers.forEach(u => {
+                        if (!u) return;
+                        const isCustomerRole = u.role === 'customer' || u.role === 'client' || !!u.customer_id;
+                        const matchesSupplier = u.supplier_id === sup.id || u.customer_id === sup.id || 
+                          (u.company_name && sup.name && u.company_name.toLowerCase() === sup.name.toLowerCase());
+                        
+                        if (isCustomerRole && matchesSupplier) {
+                          addContact(u.name, u.email, u.title || 'Client Quality Contact', u.phone);
                         }
                       });
-                    }
 
-                    const primaryName = sup.contact_person || sup.contact_name;
-                    if (primaryName) {
-                      addContact(primaryName, sup.contact_email || sup.email, sup.contact_title || 'Primary Quality Contact');
-                    }
+                      return list;
+                    })();
 
-                    const allUsers = (users && users.length > 0 ? users : getEntities('users')) || [];
-                    allUsers.forEach(u => {
-                      if (!u) return;
-                      const isCustomerRole = u.role === 'customer' || u.role === 'client' || !!u.customer_id;
-                      const matchesSupplier = u.supplier_id === sup.id || u.customer_id === sup.id || 
-                        (u.company_name && sup.name && u.company_name.toLowerCase() === sup.name.toLowerCase());
-                      
-                      if (isCustomerRole && matchesSupplier) {
-                        addContact(u.name, u.email, u.title || 'Client Quality Contact');
-                      }
-                    });
+                    const ppmStats = calculateSupplierPPM({ supplierId: sup.id });
+                    const supProjects = projects.filter(p => p.supplier_id === sup.id || p.client_id === sup.id);
 
-                    return list;
-                  })();
-
-                  return (
-                    <div key={sup.id} className="bg-surface-elevated border border-border-subtle rounded-2xl p-4 flex flex-col gap-3 h-fit text-left shadow-sm">
-                      <div className="flex justify-between items-start">
+                    return (
+                      <div key={sup.id} className="bg-surface-elevated border border-border-subtle rounded-2xl p-4 flex flex-col justify-between gap-3 text-left shadow-sm hover:border-blue-500/40 transition-all">
                         <div>
-                          <h4 className="text-sm font-extrabold text-text-primary">{sup.name}</h4>
-                          <span className="text-[11.5px] text-text-secondary font-semibold">Active Supplier Partner</span>
-                        </div>
-                        <span className="px-2 py-1 bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10.5px] font-extrabold rounded-full">ACTIVE CONTRACT</span>
-                      </div>
-                      
-                      <div className="border-t border-border-subtle pt-2.5 flex flex-col gap-2 text-[13.5px] text-text-secondary">
-                        <div className="flex items-center justify-between">
-                          <span className="font-extrabold text-text-primary text-[11.5px] uppercase tracking-wider">QM Contacts / Client Reps:</span>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setAddContactSupplier(sup);
-                              setNewContactName('');
-                              setNewContactEmail('');
-                              setNewContactRole('Customer Quality Manager');
-                              setNewContactPhone('');
-                            }}
-                            className="inline-flex items-center gap-1 text-[11px] font-black text-blue-700 hover:text-blue-800 bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-lg transition-all cursor-pointer shadow-xs"
-                          >
-                            <Plus className="w-3 h-3" />
-                            <span>Add Client Rep</span>
-                          </button>
-                        </div>
-
-                        {resolvedContacts.length === 0 ? (
-                          <div className="text-[11px] text-slate-500 italic p-2 rounded-lg bg-slate-50 border border-slate-200">
-                            No contacts logged yet. Click "+ Add Client Rep" to add a Quality Contact.
-                          </div>
-                        ) : (
-                          resolvedContacts.map((c, i) => (
-                            <div key={i} className="bg-surface p-2.5 rounded-xl border border-border-subtle flex justify-between items-center text-[11.5px] shadow-xs">
-                              <div>
-                                <p className="font-extrabold text-text-primary">{c.name}</p>
-                                <p className="text-text-secondary text-[10.5px] font-semibold">{c.role}</p>
-                              </div>
-                              {c.email && (
-                                <a href={`mailto:${c.email}`} className="text-[#3B82F6] hover:underline font-mono font-bold">
-                                  {c.email}
-                                </a>
-                              )}
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <h4 className="text-sm font-extrabold text-text-primary">{sup.name}</h4>
+                              <span className="text-[11.5px] text-text-secondary font-semibold">{sup.address || sup.city || 'Tier-1 Supplier Partner'}</span>
                             </div>
-                          ))
-                        )}
+                            <span className="px-2 py-0.5 bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-extrabold rounded-full">
+                              ACTIVE CONTRACT
+                            </span>
+                          </div>
+
+                          {/* PPM Metric & Project Count Card */}
+                          <div className="grid grid-cols-2 gap-2 my-3 p-2.5 rounded-xl bg-surface border border-border-subtle text-xs">
+                            <div>
+                              <span className="text-[10px] font-bold text-text-secondary uppercase block">Defect Rate (PPM)</span>
+                              <div className="flex items-center gap-1.5 mt-0.5">
+                                <span className="text-sm font-black text-text-primary font-mono">{ppmStats.ppm} PPM</span>
+                                <span className={`text-[9.5px] font-bold px-1.5 py-0.2 rounded uppercase ${
+                                  ppmStats.tier === 'world_class' ? 'bg-emerald-100 text-emerald-800' : (ppmStats.tier === 'acceptable' ? 'bg-blue-100 text-blue-800' : 'bg-rose-100 text-rose-800')
+                                }`}>
+                                  Grade {ppmStats.ratingGrade}
+                                </span>
+                              </div>
+                            </div>
+                            <div>
+                              <span className="text-[10px] font-bold text-text-secondary uppercase block">Inspected / Projects</span>
+                              <div className="text-xs font-black text-text-primary mt-0.5 font-mono">
+                                {ppmStats.totalInspected.toLocaleString()} pcs / {supProjects.length} Prj
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="border-t border-border-subtle pt-2.5 flex flex-col gap-2 text-[13.5px] text-text-secondary">
+                            <div className="flex items-center justify-between">
+                              <span className="font-extrabold text-text-primary text-[11.5px] uppercase tracking-wider">QM Contacts / Client Reps:</span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setAddContactSupplier(sup);
+                                  setNewContactName('');
+                                  setNewContactEmail('');
+                                  setNewContactRole('Customer Quality Manager');
+                                  setNewContactPhone('');
+                                }}
+                                className="inline-flex items-center gap-1 text-[11px] font-black text-blue-700 hover:text-blue-800 bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-lg transition-all cursor-pointer shadow-xs"
+                              >
+                                <Plus className="w-3 h-3" />
+                                <span>Add Client Rep</span>
+                              </button>
+                            </div>
+
+                            {resolvedContacts.length === 0 ? (
+                              <div className="text-[11px] text-slate-500 italic p-2 rounded-lg bg-slate-50 border border-slate-200">
+                                No contacts logged yet. Click "+ Add Client Rep" to add a Quality Contact.
+                              </div>
+                            ) : (
+                              <div className="flex flex-col gap-1.5 max-h-40 overflow-y-auto pr-1">
+                                {resolvedContacts.map((c, i) => (
+                                  <div key={i} className="bg-surface p-2.5 rounded-xl border border-border-subtle flex justify-between items-center text-[11.5px] shadow-xs">
+                                    <div>
+                                      <p className="font-extrabold text-text-primary">{c.name}</p>
+                                      <p className="text-text-secondary text-[10.5px] font-semibold">{c.role}</p>
+                                    </div>
+                                    <div className="text-right">
+                                      {c.email && (
+                                        <a href={`mailto:${c.email}`} className="text-[#3B82F6] hover:underline font-mono font-bold block text-[11px]">
+                                          {c.email}
+                                        </a>
+                                      )}
+                                      {c.phone && (
+                                        <span className="text-[10px] text-emerald-600 font-mono font-bold block">{c.phone}</span>
+                                      )}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* SUB-VIEW 2: PPM DEFECT ANALYTICS & ROOT CAUSE PARETO BREAKDOWN */}
+              {supplierTabMode === 'ppm_analytics' && (() => {
+                const activeFilterSup = selectedAnalyticsSupplier === 'all' ? undefined : selectedAnalyticsSupplier;
+                const overallPpm = calculateSupplierPPM({ supplierId: activeFilterSup });
+                const paretoDefects = getDefectParetoAnalysis({ supplierId: activeFilterSup });
+
+                return (
+                  <div className="flex-1 overflow-y-auto scrollbar-thin pr-1 flex flex-col gap-4 text-left">
+                    {/* Filter bar */}
+                    <div className="flex items-center justify-between bg-surface p-3 rounded-2xl border border-border-subtle flex-wrap gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-text-secondary uppercase">Filter by Supplier:</span>
+                        <select
+                          value={selectedAnalyticsSupplier}
+                          onChange={(e) => setSelectedAnalyticsSupplier(e.target.value)}
+                          className="bg-surface-elevated border border-border-subtle text-text-primary text-xs font-bold px-3 py-1.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                        >
+                          <option value="all">All Enterprise Suppliers & Plants</option>
+                          {suppliers.map(s => (
+                            <option key={s.id} value={s.id}>{s.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="text-xs text-text-secondary font-medium">
+                        Showing authoritative inspection metrics from verified shift logs and incident records.
                       </div>
                     </div>
-                  );
-                })}
-              </div>
+
+                    {/* KPI Cards Grid */}
+                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                      <div className="bg-surface-elevated border border-border-subtle p-3.5 rounded-2xl">
+                        <div className="text-[10.5px] font-bold text-text-secondary uppercase">Defect Rate (PPM)</div>
+                        <div className="text-2xl font-black text-text-primary font-mono mt-1">{overallPpm.ppm} <span className="text-xs font-semibold text-text-secondary">PPM</span></div>
+                        <div className="text-[11px] text-text-secondary mt-0.5 flex items-center gap-1">
+                          <span className={`w-2 h-2 rounded-full ${overallPpm.tier === 'world_class' ? 'bg-emerald-500' : 'bg-amber-500'}`}></span>
+                          <span>{overallPpm.statusText}</span>
+                        </div>
+                      </div>
+
+                      <div className="bg-surface-elevated border border-border-subtle p-3.5 rounded-2xl">
+                        <div className="text-[10.5px] font-bold text-text-secondary uppercase">Inspected Volume</div>
+                        <div className="text-2xl font-black text-blue-600 font-mono mt-1">{overallPpm.totalInspected.toLocaleString()}</div>
+                        <div className="text-[11px] text-text-secondary mt-0.5">Total automotive units sorted</div>
+                      </div>
+
+                      <div className="bg-surface-elevated border border-border-subtle p-3.5 rounded-2xl">
+                        <div className="text-[10.5px] font-bold text-text-secondary uppercase">Defects Quarantined</div>
+                        <div className="text-2xl font-black text-rose-600 font-mono mt-1">{overallPpm.totalDefective.toLocaleString()}</div>
+                        <div className="text-[11px] text-text-secondary mt-0.5">Pieces tagged non-conforming</div>
+                      </div>
+
+                      <div className="bg-surface-elevated border border-border-subtle p-3.5 rounded-2xl">
+                        <div className="text-[10.5px] font-bold text-text-secondary uppercase">Quality Pass Rate</div>
+                        <div className="text-2xl font-black text-emerald-600 font-mono mt-1">{overallPpm.passRate}</div>
+                        <div className="text-[11px] text-text-secondary mt-0.5">Automotive conformance rate</div>
+                      </div>
+                    </div>
+
+                    {/* Interactive Pareto Defect Breakdown Bars */}
+                    <div className="bg-surface-elevated border border-border-subtle p-4 rounded-2xl flex flex-col gap-3">
+                      <div className="flex justify-between items-center border-b border-border-subtle pb-2">
+                        <div>
+                          <h4 className="text-sm font-black text-text-primary uppercase tracking-wider flex items-center gap-2">
+                            <Layers className="w-4.5 h-4.5 text-blue-500" />
+                            <span>Root Cause Defect Pareto Analysis (80/20 Rule)</span>
+                          </h4>
+                          <p className="text-[11px] text-text-secondary">
+                            Rank-ordered defect types by non-conforming piece quantity and cumulative impact
+                          </p>
+                        </div>
+                        <span className="text-[10.5px] font-bold bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full uppercase">
+                          {paretoDefects.length} Defect Classifications
+                        </span>
+                      </div>
+
+                      {paretoDefects.length === 0 ? (
+                        <div className="p-8 text-center text-xs text-text-secondary font-medium italic">
+                          Zero defect records found for the selected supplier criteria. Floor is completely clear.
+                        </div>
+                      ) : (
+                        <div className="flex flex-col gap-3 pt-1">
+                          {paretoDefects.map((item, idx) => (
+                            <div key={idx} className="flex flex-col gap-1 bg-surface p-3 rounded-xl border border-border-subtle">
+                              <div className="flex justify-between items-center text-xs font-bold text-text-primary">
+                                <div className="flex items-center gap-2">
+                                  <span className="w-5 h-5 rounded-full bg-slate-900 text-white font-mono text-[10px] flex items-center justify-center font-bold">
+                                    {idx + 1}
+                                  </span>
+                                  <span>{item.defectType}</span>
+                                  {item.criticalCount > 0 && (
+                                    <span className="bg-rose-100 text-rose-800 text-[9.5px] font-black px-1.5 py-0.2 rounded uppercase">
+                                      {item.criticalCount} Critical
+                                    </span>
+                                  )}
+                                  {item.isParetoTop80 && (
+                                    <span className="bg-amber-100 text-amber-900 text-[9.5px] font-black px-1.5 py-0.2 rounded uppercase">
+                                      Top 80% Vital Few
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-3 font-mono">
+                                  <span><strong>{item.totalQuantity} pcs</strong> ({item.incidentCount} incidents)</span>
+                                  <span className="text-blue-600 font-black">{item.percentage}%</span>
+                                  <span className="text-[10.5px] text-text-secondary">Cumul: {item.cumulativePercentage}%</span>
+                                </div>
+                              </div>
+
+                              {/* Progress bar */}
+                              <div className="w-full bg-slate-200 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden mt-1">
+                                <div 
+                                  className={`h-full rounded-full transition-all ${
+                                    item.criticalCount > 0 ? 'bg-rose-600' : (item.isParetoTop80 ? 'bg-blue-600' : 'bg-slate-400')
+                                  }`} 
+                                  style={{ width: `${item.percentage}%` }}
+                                />
+                              </div>
+
+                              {item.partNumbers.length > 0 && (
+                                <div className="flex items-center gap-1 mt-1 text-[10.5px] text-text-secondary">
+                                  <span className="font-semibold">Associated Parts:</span>
+                                  <div className="flex gap-1 flex-wrap">
+                                    {item.partNumbers.map((pn, pIdx) => (
+                                      <span key={pIdx} className="bg-surface-elevated font-mono font-bold px-1.5 py-0.2 rounded border border-border-subtle text-text-primary text-[10px]">
+                                        {pn}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* SUB-VIEW 3: SUPPLIER PERFORMANCE SCORECARDS */}
+              {supplierTabMode === 'scorecards' && (() => {
+                const scorecards = getSupplierQualityScorecards();
+
+                return (
+                  <div className="flex-1 overflow-y-auto scrollbar-thin pr-1 flex flex-col gap-3 text-left">
+                    <div className="bg-surface-elevated border border-border-subtle rounded-2xl overflow-hidden shadow-sm">
+                      <div className="p-3.5 border-b border-border-subtle flex justify-between items-center">
+                        <div>
+                          <h4 className="text-sm font-black text-text-primary uppercase tracking-wider">
+                            Authoritative Supplier Performance Scorecards
+                          </h4>
+                          <p className="text-[11px] text-text-secondary">
+                            Evaluated across active containment projects, logged shift hours, PPM defect rate, and critical spills
+                          </p>
+                        </div>
+                        <span className="text-xs font-bold text-text-secondary">
+                          {scorecards.length} Evaluated Partners
+                        </span>
+                      </div>
+
+                      <div className="overflow-x-auto w-full">
+                        <table className="w-full border-collapse text-left text-xs">
+                          <thead>
+                            <tr className="bg-surface border-b border-border-subtle text-text-secondary font-bold uppercase text-[10px]">
+                              <th className="py-2.5 px-3">Supplier Name</th>
+                              <th className="py-2.5 px-3">Quality Lead</th>
+                              <th className="py-2.5 px-3">Quality Rating</th>
+                              <th className="py-2.5 px-3">PPM Rate</th>
+                              <th className="py-2.5 px-3">Inspected Pcs</th>
+                              <th className="py-2.5 px-3">Defects</th>
+                              <th className="py-2.5 px-3">Shift Hours</th>
+                              <th className="py-2.5 px-3">Open Incidents</th>
+                              <th className="py-2.5 px-3 text-right">Status Tier</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-border-subtle text-text-primary">
+                            {scorecards.map(sc => (
+                              <tr key={sc.supplierId} className="hover:bg-surface transition-colors">
+                                <td className="py-3 px-3 font-bold text-text-primary">
+                                  {sc.supplierName}
+                                </td>
+                                <td className="py-3 px-3">
+                                  <div className="font-semibold text-text-primary">{sc.contactPerson}</div>
+                                  <div className="text-[10.5px] text-text-secondary font-mono">{sc.email}</div>
+                                </td>
+                                <td className="py-3 px-3">
+                                  <span className={`w-7 h-7 rounded-xl font-black text-xs flex items-center justify-center shadow-xs ${
+                                    sc.grade === 'A' ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : (sc.grade === 'B' ? 'bg-blue-100 text-blue-800 border border-blue-300' : 'bg-rose-100 text-rose-800 border border-rose-300')
+                                  }`}>
+                                    {sc.grade}
+                                  </span>
+                                </td>
+                                <td className="py-3 px-3 font-mono font-bold text-text-primary">
+                                  {sc.ppm} PPM
+                                </td>
+                                <td className="py-3 px-3 font-mono">
+                                  {sc.totalInspectedPieces.toLocaleString()}
+                                </td>
+                                <td className="py-3 px-3 font-mono font-bold text-rose-600">
+                                  {sc.totalDefectivePieces}
+                                </td>
+                                <td className="py-3 px-3 font-mono">
+                                  {sc.totalHoursLogged} hrs
+                                </td>
+                                <td className="py-3 px-3 font-bold">
+                                  {sc.openIncidentsCount > 0 ? (
+                                    <span className="text-amber-600 font-bold">{sc.openIncidentsCount} Open</span>
+                                  ) : (
+                                    <span className="text-emerald-600 font-medium">0 Clean</span>
+                                  )}
+                                </td>
+                                <td className="py-3 px-3 text-right">
+                                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${
+                                    sc.statusTier === 'world_class' ? 'bg-emerald-100 text-emerald-800' : (sc.statusTier === 'acceptable' ? 'bg-blue-100 text-blue-800' : 'bg-rose-100 text-rose-800')
+                                  }`}>
+                                    {sc.statusLabel}
+                                  </span>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
             </div>
           )}
 

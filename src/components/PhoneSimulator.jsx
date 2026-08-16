@@ -18,6 +18,7 @@ import { getFormattedLocationTime, getFormattedLocationDate } from '../utils/loc
 import BusinessDropdown from './common/BusinessDropdown';
 import { formatAreaName, normalizeAndMergeShiftAreas } from '../utils/shiftAreaUtils';
 import { submitRepHours, reviewClientOvertime, resubmitReturnedOvertime, HoursSplitModal, HoursStatus } from '../features/hours';
+import { parseAutomotiveBarcode } from '../services/barcodeScannerService';
 
 // Reusable AutoGrowTextarea component (Section 3)
 const AutoGrowTextarea = ({
@@ -1910,7 +1911,8 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
     setScanningType(null);
     playBeep('scan');
 
-    const trimmed = (pn || '').trim().toUpperCase();
+    const parsed = parseAutomotiveBarcode(pn);
+    const trimmed = (parsed.partNumber || pn || '').trim().toUpperCase();
 
     if (activeScanType === 'qr' && (trimmed.startsWith('BIN') || trimmed.includes('BOX') || activeScanType === 'tote_bin' || replacingContainerId)) {
       if (replacingContainerId) {
@@ -2328,7 +2330,10 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
 
   const addPartToList = () => {
     if (!scannedPN) return;
-    const isDuplicate = scannedPartsList.some(p => p.part_number === scannedPN && p.bin === (scannedBin || 'N/A'));
+    const parsed = parseAutomotiveBarcode(scannedPN);
+    const targetPN = parsed.partNumber || scannedPN;
+
+    const isDuplicate = scannedPartsList.some(p => p.part_number === targetPN && p.bin === (scannedBin || 'N/A'));
     if (isDuplicate) {
       showToast("This part number & bin location is already added!", "warning");
       return;
@@ -2336,11 +2341,14 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
     
     const newItem = {
       id: `sp_${Date.now()}`,
-      part_number: scannedPN,
-      description: partInfo ? partInfo.description : 'Custom/Other Defective Part',
+      part_number: targetPN,
+      description: partInfo ? partInfo.description : (parsed.isVIN ? `Automotive VIN (${parsed.format})` : 'Custom/Other Defective Part'),
       supplier_id: partInfo ? partInfo.supplier_id : 'magna',
       bin: scannedBin || 'BIN-GEN-01',
-      qty: 1
+      qty: parsed.quantity || 1,
+      isVIN: parsed.isVIN,
+      lot: parsed.lotNumber !== 'N/A' ? parsed.lotNumber : undefined,
+      serial: parsed.serialNumber !== 'N/A' ? parsed.serialNumber : undefined
     };
     setScannedPartsList(prev => [...prev, newItem]);
     playBeep('success');

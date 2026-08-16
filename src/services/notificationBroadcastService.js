@@ -6,6 +6,7 @@
 import { saveEntity, getEntities, supabase } from '../components/SharedDatabase.js';
 import { LOGO_BASE64 } from '../components/LogoBase64.js';
 import { resolveAssignmentContacts, buildRecipientSnapshot } from './incidentWorkflowService.js';
+import { notifyCriticalSpillDesktop } from './webPushNotificationService.js';
 
 /**
  * Checks whether an incident qualifies for an automated urgent multi-channel broadcast.
@@ -347,7 +348,7 @@ export async function sendCriticalIncidentBroadcast({
       console.warn('[NotificationBroadcast] Supabase cloud upsert skipped:', err);
     }
 
-    // 6. Dispatch In-App Live Notification Event for React listeners
+    // 6. Dispatch In-App Live Notification Event & Native Desktop Alert
     if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
       window.dispatchEvent(new CustomEvent('ids-pulse-notification', {
         detail: {
@@ -357,6 +358,7 @@ export async function sendCriticalIncidentBroadcast({
         }
       }));
     }
+    notifyCriticalSpillDesktop(incident);
 
     return {
       success: true,

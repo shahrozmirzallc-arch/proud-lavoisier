@@ -828,15 +828,26 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
     // 1. Read from rates table
     const dbRates = getEntities('rates') || [];
+    const isSupMatch = (rSup, targetSup) => {
+      if (!rSup || !targetSup) return false;
+      if (rSup === targetSup) return true;
+      const s1 = String(rSup).toLowerCase().trim();
+      const s2 = String(targetSup).toLowerCase().trim();
+      if (s1 === s2) return true;
+      const clean1 = s1.replace(/^sup_|^supplier_/, '').replace(/_/g, ' ');
+      const clean2 = s2.replace(/^sup_|^supplier_/, '').replace(/_/g, ' ');
+      return clean1 === clean2 || clean1.includes(clean2) || clean2.includes(clean1);
+    };
+
     let rateMatch = null;
     if (plant_id) {
-      rateMatch = dbRates.find(r => r && (r.supplier_id === supplier_id || r.client_id === supplier_id) && (r.rep_id === rep_id || !r.rep_id) && r.plant_id === plant_id);
+      rateMatch = dbRates.find(r => r && isSupMatch(r.supplier_id || r.client_id, supplier_id) && (r.rep_id === rep_id || !r.rep_id) && (r.plant_id === plant_id || !r.plant_id));
     }
     if (!rateMatch) {
-      rateMatch = dbRates.find(r => r && (r.supplier_id === supplier_id || r.client_id === supplier_id) && (r.rep_id === rep_id || !r.rep_id));
+      rateMatch = dbRates.find(r => r && isSupMatch(r.supplier_id || r.client_id, supplier_id) && (r.rep_id === rep_id || !r.rep_id));
     }
     if (!rateMatch) {
-      rateMatch = dbRates.find(r => r && (r.supplier_id === supplier_id || r.client_id === supplier_id));
+      rateMatch = dbRates.find(r => r && isSupMatch(r.supplier_id || r.client_id, supplier_id));
     }
 
     if (rateMatch && (rateMatch.billing_rate !== undefined && rateMatch.billing_rate !== null && rateMatch.billing_rate !== '')) {
@@ -854,10 +865,10 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     const dbProjects = getEntities('projects') || [];
     let projMatch = null;
     if (plant_id) {
-      projMatch = dbProjects.find(p => p && (p.supplier_id === supplier_id || p.client_id === supplier_id) && p.plant_id === plant_id);
+      projMatch = dbProjects.find(p => p && isSupMatch(p.supplier_id || p.client_id, supplier_id) && (p.plant_id === plant_id || !p.plant_id));
     }
     if (!projMatch) {
-      projMatch = dbProjects.find(p => p && (p.supplier_id === supplier_id || p.client_id === supplier_id));
+      projMatch = dbProjects.find(p => p && isSupMatch(p.supplier_id || p.client_id, supplier_id));
     }
 
     if (projMatch && (projMatch.billing_rate !== undefined && projMatch.billing_rate !== null && projMatch.billing_rate !== '')) {

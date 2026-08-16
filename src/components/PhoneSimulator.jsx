@@ -760,6 +760,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
   const [incidentSentConfirmation, setIncidentSentConfirmation] = useState(false);
   const [sentIncidentId, setSentIncidentId] = useState(null);
   const [isOfflineRelease, setIsOfflineRelease] = useState(false);
+  const [lastBroadcastInfo, setLastBroadcastInfo] = useState(null);
 
   // Offline Confirmation Modal & Media Help state
   const [showOfflineModal, setShowOfflineModal] = useState(false);
@@ -2310,6 +2311,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
 
       setSentIncidentId(releaseResult.tracking_ref || releaseResult.incident?.id);
       setIsOfflineRelease(!!releaseResult.isOffline);
+      setLastBroadcastInfo(releaseResult.broadcast || null);
       setIncidentSentConfirmation(true);
       
       const activityMsg = releaseResult.isOffline
@@ -5964,15 +5966,24 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
               </h2>
               <p className="text-xs text-slate-600 leading-relaxed max-w-[260px] font-medium">
                 {isOfflineRelease
-                  ? 'Report safely saved. It will be released to the Client Dashboard automatically when your internet connection returns.'
-                  : 'Report released to the Client Dashboard. External email was not sent.'}
+                  ? 'Report safely saved. It will be released and broadcast automatically when your internet connection returns.'
+                  : (lastBroadcastInfo?.success 
+                      ? `Report released and critical alerts dispatched to ${lastBroadcastInfo.emailCount} Email(s) and ${lastBroadcastInfo.smsCount} SMS phone(s).`
+                      : 'Report released to the Client Dashboard.')}
               </p>
 
               <div className="bg-white rounded-xl p-3 border border-slate-200 w-full max-w-[290px] text-[11px] text-slate-600 mt-4 flex flex-col gap-1.5 text-left shadow-xs">
                 <div><span className="text-slate-400 font-bold uppercase">Tracking Ref:</span> <span className="text-slate-900 font-mono font-bold">{sentIncidentId || 'INC-LOCAL'}</span></div>
                 <div><span className="text-slate-400 font-bold uppercase">Released At:</span> <span className="text-slate-900 font-mono font-bold">{new Date().toLocaleTimeString()}</span></div>
                 <div><span className="text-slate-400 font-bold uppercase">Delivery Channel:</span> <span className="text-emerald-700 font-bold">Client Dashboard</span></div>
-                <div><span className="text-slate-400 font-bold uppercase">Email Status:</span> <span className="text-amber-800 font-bold bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">Inactive — prototype</span></div>
+                <div>
+                  <span className="text-slate-400 font-bold uppercase">Emergency Alert:</span>{' '}
+                  <span className={`font-bold ${lastBroadcastInfo?.success ? 'text-emerald-700 font-black' : 'text-slate-700'}`}>
+                    {lastBroadcastInfo?.success 
+                      ? `Dispatched (${lastBroadcastInfo.emailCount} Emails, ${lastBroadcastInfo.smsCount} SMS)` 
+                      : (isOfflineRelease ? 'Queued Offline' : 'Logged in Audit Hub')}
+                  </span>
+                </div>
               </div>
             </div>
 

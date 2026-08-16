@@ -37,6 +37,7 @@ const ESSENTIAL_ADMIN_USERS = [
   { id: 'acct_1', name: 'Colleen Boyd', email: 'colleen@goto-ids.com', username: 'colleen', phone: '+1 (416) 555-0002', role: 'accountant', title: 'Financial Accountant / Controller', pay_currency: 'CAD', avatar: 'CB' },
   { id: 'admin_1', name: 'Shahroz Mirza', email: 'shahrozmirzallc@gmail.com', username: 'shahroz', password: 'Shahroz121$', phone: '+1 (416) 555-0000', role: 'super_admin', title: 'System Super Admin', pay_currency: 'CAD', avatar: 'SM' },
   { id: 'lead_diana', name: 'Diana Operations Lead', email: 'diana@goto-ids.com', username: 'diana', phone: '+1 (416) 555-0088', role: 'lead', title: 'Operations Lead Supervisor', pay_currency: 'CAD', avatar: 'DL' },
+  { id: 'usr_monica', name: 'Monica Alonso', email: 'monica@goto-ids.com', username: 'monica', phone: '+1 (416) 555-0077', role: 'admin', title: 'Quality Operations Admin', pay_currency: 'CAD', avatar: 'MA' },
   { id: 'rep_clarence', name: 'Clarence Kuiken', email: 'clarence.k@goto-ids.com', username: 'clarence', phone: '+1 (416) 555-0099', role: 'rep', title: 'IDS Field Rep', pay_currency: 'CAD', avatar: 'CK' },
   { id: 'rep_test', name: 'Rep Test Inspector', email: 'rep_test@integritydriven.com', username: 'rep_test', password: 'RepTestPass2026!', phone: '+1 (416) 555-0199', role: 'rep', title: 'IDS Field Rep', pay_currency: 'CAD', avatar: 'RT' }
 ];

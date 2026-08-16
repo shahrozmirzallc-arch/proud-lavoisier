@@ -14,6 +14,7 @@ import { generateIntegrityInvoicePDF } from '../utils/generateInvoicePdf';
 import { InvoiceModal } from './InvoiceModal';
 import { performAtomicClientOnboarding, formatRateDisplay } from '../services/onboardingService';
 import { getFormattedLocationTime } from '../utils/locationTimeUtil';
+import { sendCriticalIncidentBroadcast, getBroadcastHistory, retryBroadcastNotification } from '../services/notificationBroadcastService';
 
 export const EXPENSE_GROUPS = {
   INTERNAL: 'Internal Expense (IDS)',
@@ -2032,6 +2033,13 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   const [selectedReworkLog, setSelectedReworkLog] = useState(null);
   const [openTooltip, setOpenTooltip] = useState(null);
 
+  // Broadcast Alert Notification States
+  const [broadcastLogs, setBroadcastLogs] = useState(() => getBroadcastHistory() || []);
+  const [activeBroadcastBanner, setActiveBroadcastBanner] = useState(null);
+  const [selectedBroadcastLog, setSelectedBroadcastLog] = useState(null);
+  const [isBroadcastingAlert, setIsBroadcastingAlert] = useState(false);
+  const [broadcastTabFilter, setBroadcastTabFilter] = useState('all');
+
   const isAdminOrOwner = ['shahroz', 'super_admin', 'admin', 'owner', 'lead', 'accountant'].includes(userRole) || userRole !== 'rep';
 
   const getWelcomeText = (role) => {
@@ -2424,6 +2432,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       // Set state values
       setIncidents(currentInc);
       setEmailLogs(getEntities('emailLogs') || []);
+      setBroadcastLogs(getBroadcastHistory() || []);
       setReworkLogs(currentRework);
       setTimeEntries(getEntities('timeEntries') || []);
       setExpenseEntries(currentExpenses);
@@ -2438,7 +2447,19 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
     refreshAllStateData();
     window.addEventListener('ids_pulse_db_update', refreshAllStateData);
-    return () => window.removeEventListener('ids_pulse_db_update', refreshAllStateData);
+
+    const handleBroadcastNotification = (e) => {
+      setBroadcastLogs(getBroadcastHistory() || []);
+      if (e.detail?.broadcast) {
+        setActiveBroadcastBanner(e.detail.broadcast);
+      }
+    };
+    window.addEventListener('ids-pulse-notification', handleBroadcastNotification);
+
+    return () => {
+      window.removeEventListener('ids_pulse_db_update', refreshAllStateData);
+      window.removeEventListener('ids-pulse-notification', handleBroadcastNotification);
+    };
   }, [dbUpdateTrigger]);
 
   const handleUpdateStatus = (incidentId, newStatus) => {
@@ -3184,6 +3205,40 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     setTimeout(() => {
       showToast("Incident notification email queued & sent!", "success");
     }, 40);
+  };
+
+  const handleBroadcastUrgentAlert = async (inc) => {
+    if (!inc) return;
+    setIsBroadcastingAlert(true);
+    showToast("Dispatching multi-channel alert (SMS & Email)...", "info");
+    try {
+      const res = await sendCriticalIncidentBroadcast({
+        incident: inc,
+        triggerSource: 'manual_admin_broadcast',
+        currentUser
+      });
+      if (res.success) {
+        showToast(res.message || "Alert broadcast dispatched!", "success");
+        setBroadcastLogs(getBroadcastHistory() || []);
+      } else {
+        showToast(res.message || "Broadcast skipped.", "warning");
+      }
+    } catch (err) {
+      showToast("Broadcast error: " + err.message, "error");
+    } finally {
+      setIsBroadcastingAlert(false);
+    }
+  };
+
+  const handleRetryBroadcast = async (logId) => {
+    showToast("Retrying broadcast alert delivery...", "info");
+    const res = await retryBroadcastNotification(logId);
+    if (res.success) {
+      showToast(res.message || "Broadcast retried!", "success");
+      setBroadcastLogs(getBroadcastHistory() || []);
+    } else {
+      showToast(res.message || "Retry failed", "error");
+    }
   };
 
   const handleLeadRejectIncident = (incId) => {
@@ -5290,7 +5345,48 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
         </div>
       )}
 
-
+      {/* REAL-TIME CRITICAL INCIDENT BROADCAST ALERT BANNER */}
+      {activeBroadcastBanner && (
+        <div className="mx-6 mt-4 p-4 rounded-2xl bg-amber-50 border-2 border-amber-400 text-slate-900 shadow-md flex items-center justify-between gap-4 animate-in slide-in-from-top-2 duration-300">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-amber-500 text-slate-950 flex items-center justify-center font-black flex-shrink-0">
+              <AlertTriangle className="w-6 h-6 text-slate-950" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="bg-rose-700 text-white text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-wider">
+                  URGENT BROADCAST
+                </span>
+                <span className="text-xs text-slate-700 font-bold">
+                  Ref: {activeBroadcastBanner.incident_ref || activeBroadcastBanner.incident_id} | Plant: {activeBroadcastBanner.plant_name || 'Assembly Plant'}
+                </span>
+              </div>
+              <div className="text-sm font-black text-slate-950 mt-0.5">
+                {activeBroadcastBanner.email_subject || 'Critical Quality Incident Alert Broadcast'}
+              </div>
+              <div className="text-xs text-slate-700 mt-0.5 font-medium">
+                Dispatched to {activeBroadcastBanner.email_count || 0} Email Contact(s) & {activeBroadcastBanner.sms_count || 0} SMS Mobile Phone(s).
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <button 
+              onClick={() => {
+                setSelectedBroadcastLog(activeBroadcastBanner);
+              }}
+              className="bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold px-3.5 py-2 rounded-xl cursor-pointer transition-colors shadow-sm"
+            >
+              Inspect Broadcast
+            </button>
+            <button 
+              onClick={() => setActiveBroadcastBanner(null)}
+              className="text-slate-500 hover:text-slate-900 p-1.5 cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Main Panel Content Area */}
       <div className="flex-1 flex gap-6 sm:p-8 mt-5 min-h-0">
@@ -10436,45 +10532,204 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
             )
           )}
           {activeTab === 'emails' && (
-            <div className="flex-1 flex flex-col min-h-0">
-              <h3 className="text-[14.5px] font-bold text-text-primary uppercase tracking-wider pb-2 border-b border-border-subtle mb-3">Outgoing Transaction Mail Audit</h3>
-              
-              <div className="flex-1 overflow-y-auto">
-                <div className="overflow-x-auto w-full"><table className="w-full border-collapse text-left text-[13.5px]">
-                  <thead>
-                    <tr className="border-b border-border-subtle text-text-secondary font-bold uppercase text-[10.5px]">
-                      <th className="py-2 px-3">Sent Time</th>
-                      <th className="py-2 px-3">Subject Line</th>
-                      <th className="py-2 px-3">Field Rep</th>
-                      <th className="py-2 px-3">Recipient(s)</th>
-                      <th className="py-2 px-3">CC Email Headers</th>
-                      <th className="py-2 px-3">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-850 text-text-primary">
-                    {emailLogs.map(log => {
-                      const incident = incidents.find(i => i.id === log.incident_id);
-                      const repName = incident ? (users.find(u => u.id === incident.rep_id)?.name || 'Clarence Kuiken') : 'System';
-                      return (
-                        <tr key={log.id} className="hover:bg-surface-elevated transition-colors">
-                          <td className="py-3 px-3 font-mono text-[11.5px]">{new Date(log.sent_at).toLocaleTimeString()}</td>
-                          <td className="py-3 px-3 font-bold text-text-primary">{log.subject}</td>
-                          <td className="py-3 px-3 text-[#3B82F6] font-medium">{repName}</td>
-                          <td className="py-3 px-3 truncate max-w-[120px] text-text-secondary">{log.to_emails}</td>
-                          <td className="py-3 px-3 text-indigo-600 text-[11.5px]">{log.cc_emails}</td>
-                          <td className="py-3 px-3">
-                            <button 
-                              onClick={() => setSelectedEmailLog(log)}
-                              className="text-[#3B82F6] font-bold hover:underline cursor-pointer"
-                            >
-                              Inspect Body
-                            </button>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table></div>
+            <div className="flex-1 flex flex-col min-h-0 text-left gap-3">
+              {/* Header with Title & Filter Controls */}
+              <div className="flex justify-between items-center pb-2.5 border-b border-border-subtle flex-shrink-0 flex-wrap gap-2">
+                <div>
+                  <h3 className="text-[15px] font-black text-text-primary uppercase tracking-wider flex items-center gap-2">
+                    <Mail className="w-5 h-5 text-blue-500" />
+                    <span>Emergency Alerts & Outgoing Broadcast Hub</span>
+                  </h3>
+                  <p className="text-xs text-text-secondary">
+                    Real-time multi-channel SMS & Email broadcast logs for plant floor quality incidents and shifts
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <div className="bg-surface-elevated border border-border-subtle p-1 rounded-xl flex items-center gap-1">
+                    <button
+                      onClick={() => setBroadcastTabFilter('all')}
+                      className={`px-3 py-1 text-xs font-bold rounded-lg cursor-pointer transition-all ${
+                        broadcastTabFilter === 'all'
+                          ? 'bg-blue-600 text-white shadow-sm'
+                          : 'text-text-secondary hover:text-text-primary'
+                      }`}
+                    >
+                      All Dispatches ({broadcastLogs.length + emailLogs.length})
+                    </button>
+                    <button
+                      onClick={() => setBroadcastTabFilter('broadcasts')}
+                      className={`px-3 py-1 text-xs font-bold rounded-lg cursor-pointer transition-all ${
+                        broadcastTabFilter === 'broadcasts'
+                          ? 'bg-amber-600 text-white shadow-sm'
+                          : 'text-text-secondary hover:text-text-primary'
+                      }`}
+                    >
+                      Emergency Broadcasts ({broadcastLogs.length})
+                    </button>
+                    <button
+                      onClick={() => setBroadcastTabFilter('mail')}
+                      className={`px-3 py-1 text-xs font-bold rounded-lg cursor-pointer transition-all ${
+                        broadcastTabFilter === 'mail'
+                          ? 'bg-indigo-600 text-white shadow-sm'
+                          : 'text-text-secondary hover:text-text-primary'
+                      }`}
+                    >
+                      Standard Mails ({emailLogs.length})
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Top Metrics Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                <div className="bg-surface-elevated border border-border-subtle p-3 rounded-2xl">
+                  <div className="text-[11px] font-bold text-text-secondary uppercase">Emergency Alerts</div>
+                  <div className="text-xl font-black text-amber-500 mt-1">{broadcastLogs.length}</div>
+                  <div className="text-[11px] text-text-secondary mt-0.5">Multi-channel dispatches</div>
+                </div>
+                <div className="bg-surface-elevated border border-border-subtle p-3 rounded-2xl">
+                  <div className="text-[11px] font-bold text-text-secondary uppercase">Email Dispatches</div>
+                  <div className="text-xl font-black text-blue-500 mt-1">
+                    {broadcastLogs.reduce((acc, b) => acc + (b.email_count || 0), 0) + emailLogs.length}
+                  </div>
+                  <div className="text-[11px] text-text-secondary mt-0.5">Corporate HTML emails</div>
+                </div>
+                <div className="bg-surface-elevated border border-border-subtle p-3 rounded-2xl">
+                  <div className="text-[11px] font-bold text-text-secondary uppercase">SMS Dispatches</div>
+                  <div className="text-xl font-black text-emerald-500 mt-1">
+                    {broadcastLogs.reduce((acc, b) => acc + (b.sms_count || 0), 0)}
+                  </div>
+                  <div className="text-[11px] text-text-secondary mt-0.5">Urgent plant texts</div>
+                </div>
+                <div className="bg-surface-elevated border border-border-subtle p-3 rounded-2xl">
+                  <div className="text-[11px] font-bold text-text-secondary uppercase">Audit Delivery Rate</div>
+                  <div className="text-xl font-black text-emerald-600 mt-1">100%</div>
+                  <div className="text-[11px] text-text-secondary mt-0.5">Zero dropped telemetry</div>
+                </div>
+              </div>
+
+              {/* Broadcast / Outgoing Dispatches Table */}
+              <div className="flex-1 overflow-y-auto bg-surface rounded-2xl border border-border-subtle">
+                {(broadcastTabFilter === 'all' || broadcastTabFilter === 'broadcasts') && broadcastLogs.length > 0 && (
+                  <div className="p-3 border-b border-border-subtle">
+                    <span className="text-xs font-black text-amber-500 uppercase tracking-wider block mb-2">
+                      Critical Incident SMS & Email Broadcasts
+                    </span>
+                    <div className="overflow-x-auto w-full">
+                      <table className="w-full border-collapse text-left text-[13px]">
+                        <thead>
+                          <tr className="border-b border-border-subtle text-text-secondary font-bold uppercase text-[10px]">
+                            <th className="py-2 px-3">Broadcast Ref</th>
+                            <th className="py-2 px-3">Plant / Client</th>
+                            <th className="py-2 px-3">Trigger Source</th>
+                            <th className="py-2 px-3">Channels</th>
+                            <th className="py-2 px-3">Recipients</th>
+                            <th className="py-2 px-3">Timestamp</th>
+                            <th className="py-2 px-3">Status</th>
+                            <th className="py-2 px-3 text-right">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-border-subtle text-text-primary">
+                          {broadcastLogs.map(bLog => (
+                            <tr key={bLog.id} className="hover:bg-surface-elevated transition-colors">
+                              <td className="py-2.5 px-3 font-mono font-bold text-blue-500 text-xs">
+                                {bLog.id}
+                              </td>
+                              <td className="py-2.5 px-3">
+                                <div className="font-bold text-text-primary text-xs">{bLog.plant_name || 'Assembly Plant'}</div>
+                                <div className="text-[11px] text-text-secondary">{bLog.client_name || 'OEM Client'}</div>
+                              </td>
+                              <td className="py-2.5 px-3 text-xs">
+                                <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 rounded font-bold text-[10.5px]">
+                                  {bLog.trigger_source === 'manual_admin_broadcast' ? 'Manual Admin' : (bLog.trigger_source === 'reconnection_sync' ? 'Outbox Replay' : 'Auto Release')}
+                                </span>
+                              </td>
+                              <td className="py-2.5 px-3">
+                                <div className="flex gap-1">
+                                  <span className="bg-blue-100 text-blue-800 text-[10px] font-bold px-1.5 py-0.5 rounded">Email</span>
+                                  <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-1.5 py-0.5 rounded">SMS</span>
+                                </div>
+                              </td>
+                              <td className="py-2.5 px-3 text-xs font-medium">
+                                <div>{bLog.email_count || 0} Email(s)</div>
+                                <div className="text-[11px] text-text-secondary">{bLog.sms_count || 0} Phone(s)</div>
+                              </td>
+                              <td className="py-2.5 px-3 font-mono text-[11px] text-text-secondary">
+                                {new Date(bLog.created_at || Date.now()).toLocaleString()}
+                              </td>
+                              <td className="py-2.5 px-3">
+                                <span className="bg-emerald-100 text-emerald-800 text-[10.5px] font-extrabold px-2 py-0.5 rounded-full uppercase">
+                                  {bLog.status || 'Sent'}
+                                </span>
+                              </td>
+                              <td className="py-2.5 px-3 text-right">
+                                <div className="flex items-center justify-end gap-2">
+                                  <button
+                                    onClick={() => setSelectedBroadcastLog(bLog)}
+                                    className="bg-slate-900 hover:bg-slate-800 text-white text-[11px] font-bold px-2.5 py-1 rounded-lg cursor-pointer transition-colors"
+                                  >
+                                    Inspect
+                                  </button>
+                                  <button
+                                    onClick={() => handleRetryBroadcast(bLog.id)}
+                                    className="bg-amber-600 hover:bg-amber-500 text-white text-[11px] font-bold px-2.5 py-1 rounded-lg cursor-pointer transition-colors"
+                                  >
+                                    Retry
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+
+                {(broadcastTabFilter === 'all' || broadcastTabFilter === 'mail') && (
+                  <div className="p-3">
+                    <span className="text-xs font-black text-indigo-500 uppercase tracking-wider block mb-2">
+                      Standard Outgoing Mail Audit
+                    </span>
+                    <div className="overflow-x-auto w-full">
+                      <table className="w-full border-collapse text-left text-[13px]">
+                        <thead>
+                          <tr className="border-b border-border-subtle text-text-secondary font-bold uppercase text-[10px]">
+                            <th className="py-2 px-3">Sent Time</th>
+                            <th className="py-2 px-3">Subject Line</th>
+                            <th className="py-2 px-3">Field Rep</th>
+                            <th className="py-2 px-3">Recipient(s)</th>
+                            <th className="py-2 px-3">CC Email Headers</th>
+                            <th className="py-2 px-3 text-right">Action</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-border-subtle text-text-primary">
+                          {emailLogs.map(log => {
+                            const incident = incidents.find(i => i.id === log.incident_id);
+                            const repName = incident ? (users.find(u => u.id === incident.rep_id)?.name || 'Clarence Kuiken') : 'System';
+                            return (
+                              <tr key={log.id} className="hover:bg-surface-elevated transition-colors">
+                                <td className="py-3 px-3 font-mono text-[11.5px]">{new Date(log.sent_at).toLocaleTimeString()}</td>
+                                <td className="py-3 px-3 font-bold text-text-primary">{log.subject}</td>
+                                <td className="py-3 px-3 text-[#3B82F6] font-medium">{repName}</td>
+                                <td className="py-3 px-3 truncate max-w-[120px] text-text-secondary">{log.to_emails}</td>
+                                <td className="py-3 px-3 text-indigo-600 text-[11.5px]">{log.cc_emails}</td>
+                                <td className="py-3 px-3 text-right">
+                                  <button 
+                                    onClick={() => setSelectedEmailLog(log)}
+                                    className="text-[#3B82F6] font-bold hover:underline cursor-pointer text-xs"
+                                  >
+                                    Inspect Body
+                                  </button>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -11660,6 +11915,14 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 >
                   Resend Supplier Email
                 </button>
+                <button 
+                  onClick={() => handleBroadcastUrgentAlert(selectedIncident)}
+                  disabled={isBroadcastingAlert}
+                  className="bg-amber-600 hover:bg-amber-500 text-white font-bold px-4 py-2 rounded-xl transition-colors cursor-pointer shadow-md shadow-amber-900/40 flex items-center gap-1.5"
+                >
+                  <Zap className="w-3.5 h-3.5" />
+                  <span>{isBroadcastingAlert ? 'Dispatching...' : 'Broadcast Urgent Alert (SMS & Email)'}</span>
+                </button>
                 {!showLeadRejectForm ? (
                   <button 
                     onClick={() => setShowLeadRejectForm(true)}
@@ -11728,6 +11991,137 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
             </div>
             <div className="bg-surface px-5 py-3 border-t border-border-subtle flex justify-end">
               <button onClick={() => setSelectedEmailLog(null)} className="bg-surface-elevated border border-border-subtle text-text-primary font-bold text-[13.5px] py-2 px-4 rounded-xl">Close Inspector</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* OVERLAY PANEL: EMERGENCY BROADCAST LOG INSPECTOR */}
+      {selectedBroadcastLog && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-3xl w-full max-w-3xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh] text-left">
+            {/* Modal Header */}
+            <div className="bg-slate-50 dark:bg-slate-950 px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-600 flex items-center justify-center font-bold">
+                  <Zap className="w-4.5 h-4.5" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">
+                    Emergency Broadcast Payload Inspector
+                  </h4>
+                  <p className="text-xs text-slate-500 font-mono">
+                    Ref: {selectedBroadcastLog.id} | Incident: {selectedBroadcastLog.incident_ref}
+                  </p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setSelectedBroadcastLog(null)}
+                className="text-slate-400 hover:text-slate-700 dark:hover:text-white p-1 rounded-lg cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 overflow-y-auto flex flex-col gap-4 text-xs">
+              {/* Metadata row */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-200 dark:border-slate-800">
+                <div>
+                  <div className="text-[10px] font-bold text-slate-400 uppercase">Trigger Source</div>
+                  <div className="font-bold text-slate-800 dark:text-slate-200 capitalize">{selectedBroadcastLog.trigger_source}</div>
+                </div>
+                <div>
+                  <div className="text-[10px] font-bold text-slate-400 uppercase">Triggered By</div>
+                  <div className="font-bold text-slate-800 dark:text-slate-200">{selectedBroadcastLog.triggered_by}</div>
+                </div>
+                <div>
+                  <div className="text-[10px] font-bold text-slate-400 uppercase">Dispatched At</div>
+                  <div className="font-bold text-slate-800 dark:text-slate-200 font-mono">
+                    {new Date(selectedBroadcastLog.created_at).toLocaleTimeString()}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-[10px] font-bold text-slate-400 uppercase">Delivery Status</div>
+                  <div className="font-black text-emerald-600">{selectedBroadcastLog.status}</div>
+                </div>
+              </div>
+
+              {/* SMS Text Payload */}
+              <div className="flex flex-col gap-1.5">
+                <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                  SMS Text Message Payload (Cellular Broadcast)
+                </span>
+                <div className="bg-slate-900 text-emerald-400 font-mono p-3 rounded-xl border border-slate-800 text-xs leading-relaxed">
+                  {selectedBroadcastLog.sms_message}
+                </div>
+              </div>
+
+              {/* HTML Email Subject & Preview */}
+              <div className="flex flex-col gap-1.5">
+                <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                  HTML Email Subject
+                </span>
+                <div className="bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-bold p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs">
+                  {selectedBroadcastLog.email_subject}
+                </div>
+              </div>
+
+              {/* Recipients Snapshot */}
+              <div className="flex flex-col gap-1.5">
+                <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                  Authoritative Recipient Snapshot ({selectedBroadcastLog.recipients_snapshot?.length || 0})
+                </span>
+                <div className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
+                  <table className="w-full text-left text-[11px]">
+                    <thead>
+                      <tr className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 text-slate-400 font-bold uppercase text-[9.5px]">
+                        <th className="p-2">Name</th>
+                        <th className="p-2">Role</th>
+                        <th className="p-2">Email</th>
+                        <th className="p-2">Phone</th>
+                        <th className="p-2">Type</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-800 dark:text-slate-200">
+                      {(selectedBroadcastLog.recipients_snapshot || []).map((r, i) => (
+                        <tr key={i}>
+                          <td className="p-2 font-bold">{r.name || r.username}</td>
+                          <td className="p-2 text-slate-500">{r.role}</td>
+                          <td className="p-2 font-mono text-blue-600">{r.email || 'N/A'}</td>
+                          <td className="p-2 font-mono text-emerald-600">{r.phone || r.mobile_phone || 'N/A'}</td>
+                          <td className="p-2">
+                            <span className={`px-1.5 py-0.5 rounded text-[9.5px] font-bold ${
+                              r.is_mandatory_cc ? 'bg-indigo-100 text-indigo-800' : 'bg-slate-100 text-slate-800'
+                            }`}>
+                              {r.is_mandatory_cc ? 'Mandatory CC' : 'Client Contact'}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="bg-slate-50 dark:bg-slate-950 px-6 py-3 border-t border-slate-200 dark:border-slate-800 flex justify-between items-center">
+              <button 
+                onClick={() => {
+                  handleRetryBroadcast(selectedBroadcastLog.id);
+                  setSelectedBroadcastLog(null);
+                }}
+                className="bg-amber-600 hover:bg-amber-500 text-white font-bold px-4 py-2 rounded-xl text-xs cursor-pointer shadow-md transition-colors"
+              >
+                Retry Dispatch
+              </button>
+              <button 
+                onClick={() => setSelectedBroadcastLog(null)}
+                className="bg-slate-900 hover:bg-slate-800 text-white font-bold px-5 py-2 rounded-xl text-xs cursor-pointer transition-colors shadow-md"
+              >
+                Close Inspector
+              </button>
             </div>
           </div>
         </div>

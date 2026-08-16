@@ -5,7 +5,7 @@ import {
   FileSpreadsheet, Calendar, ArrowRight, UserPlus, MapPin, Printer, Download, Eye, EyeOff, Sparkles, Key,
   Milestone, TrendingUp, FolderKanban, PlusCircle, Plus, ArrowLeft, Camera, ClipboardCheck, Zap, Building2, ShieldAlert, User, Cpu, Mic, Video, Trash2, History, Lock, BarChart3, Layers
 } from 'lucide-react';
-import { getEntities, saveEntity, logSystemEvent, deleteRate, isFieldRep, syncWithSupabase, supabase, addUser, provisionUser, isEntryAccountingEligible } from './SharedDatabase';
+import { getEntities, saveEntity, logSystemEvent, deleteRate, isFieldRep, syncWithSupabase, supabase, addUser, provisionUser, updateUser, deleteUser, isEntryAccountingEligible } from './SharedDatabase';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { LOGO_BASE64 } from './LogoBase64';
@@ -366,8 +366,21 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   const [newPasswordInput, setNewPasswordInput] = useState('');
   const [showResetPasswordToggle, setShowResetPasswordToggle] = useState(false);
 
-  // Universal Add User Modal State (User Directory Tab)
+  // Universal Add & Edit User Modal State (User Directory Tab)
   const [showAddUserModal, setShowAddUserModal] = useState(false);
+  const [showEditUserModal, setShowEditUserModal] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
+  const [editUserForm, setEditUserForm] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    role: 'rep',
+    title: '',
+    supplier_id: '',
+    plant_id: '',
+    pay_rate: '',
+    pay_currency: 'CAD'
+  });
   const [userCategoryTab, setUserCategoryTab] = useState('all'); // 'all', 'reps', 'clients', 'staff'
   const [expandedAlertIds, setExpandedAlertIds] = useState({});
   const [newUserForm, setNewUserForm] = useState({
@@ -1710,6 +1723,69 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       setShowAddUserModal(false);
 
       showToast(`User "${newUserObj.name}" created. Username: "${newUserObj.username}".`, "success");
+    } catch (err) {
+      showToast(err.message, "error");
+    }
+  };
+
+  const handleEditUserClick = (targetUser) => {
+    if (!targetUser) return;
+    setEditingUser(targetUser);
+    setEditUserForm({
+      name: targetUser.name || '',
+      email: targetUser.email || '',
+      phone: targetUser.phone || '',
+      role: targetUser.role || 'rep',
+      title: targetUser.title || '',
+      supplier_id: targetUser.supplier_id || targetUser.customer_id || '',
+      plant_id: targetUser.plant_id || '',
+      pay_rate: targetUser.pay_rate ? String(targetUser.pay_rate) : '',
+      pay_currency: targetUser.pay_currency || 'CAD'
+    });
+    setShowEditUserModal(true);
+  };
+
+  const handleEditUserSubmit = (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    if (!editingUser) return;
+
+    try {
+      const updated = updateUser(editingUser.id, {
+        name: editUserForm.name.trim(),
+        email: editUserForm.email.trim(),
+        phone: editUserForm.phone.trim(),
+        role: editUserForm.role,
+        title: editUserForm.title.trim(),
+        supplier_id: editUserForm.supplier_id || undefined,
+        customer_id: editUserForm.supplier_id || undefined,
+        plant_id: editUserForm.plant_id || undefined,
+        pay_rate: editUserForm.pay_rate ? parseFloat(editUserForm.pay_rate) : undefined,
+        pay_currency: editUserForm.pay_currency || 'CAD'
+      });
+
+      setUsers(getEntities('users') || []);
+      setShowEditUserModal(false);
+      setEditingUser(null);
+      showToast(`User "${updated.name}" profile updated successfully.`, "success");
+    } catch (err) {
+      showToast(err.message, "error");
+    }
+  };
+
+  const handleDeleteUserClick = (targetUser) => {
+    if (!targetUser) return;
+    if (['shahroz', 'donna', 'greg', 'colleen', 'owner', 'admin'].includes(targetUser.username?.toLowerCase().trim())) {
+      showToast(`Protected administrative user "${targetUser.name}" cannot be deleted.`, "error");
+      return;
+    }
+
+    const confirmed = window.confirm(`Are you sure you want to delete user "${targetUser.name}" (${targetUser.username})? This action will remove the account from both local storage and Supabase cloud.`);
+    if (!confirmed) return;
+
+    try {
+      deleteUser(targetUser.id);
+      setUsers(getEntities('users') || []);
+      showToast(`User "${targetUser.name}" deleted successfully.`, "success");
     } catch (err) {
       showToast(err.message, "error");
     }
@@ -11322,20 +11398,42 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                           )}
 
                           {/* Action Footer */}
-                          <div className="flex items-center justify-between pt-2 border-t border-border-subtle text-[11px]">
-                            <div className="text-text-secondary">
+                          <div className="flex flex-wrap items-center justify-between pt-2.5 border-t border-border-subtle text-[11px] gap-2">
+                            <div className="text-text-secondary text-[11px]">
                               Username: <strong className="text-cyan-400 font-mono">{u.username || u.email?.split('@')[0] || u.name?.toLowerCase().replace(/\s+/g, '')}</strong>
                             </div>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setResetPasswordUser(u);
-                                setNewPasswordInput(u.password || '');
-                              }}
-                              className="bg-amber-500/20 hover:bg-amber-600 border border-amber-500/40 text-amber-300 hover:text-white font-bold text-[11px] px-2.5 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1 shadow-sm"
-                            >
-                              <span>Reset Password</span>
-                            </button>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <button
+                                type="button"
+                                onClick={() => handleEditUserClick(u)}
+                                className="bg-blue-600/20 hover:bg-blue-600 border border-blue-500/40 text-blue-300 hover:text-white font-bold text-[11px] px-2.5 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1 shadow-sm"
+                                title="Edit User Details"
+                              >
+                                <span>Edit</span>
+                              </button>
+
+                              {!['shahroz', 'donna', 'greg', 'colleen', 'owner', 'admin'].includes(u.username?.toLowerCase().trim()) && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteUserClick(u)}
+                                  className="bg-red-600/20 hover:bg-red-600 border border-red-500/40 text-red-300 hover:text-white font-bold text-[11px] px-2.5 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1 shadow-sm"
+                                  title="Delete User"
+                                >
+                                  <span>Delete</span>
+                                </button>
+                              )}
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setResetPasswordUser(u);
+                                  setNewPasswordInput(u.password || '');
+                                }}
+                                className="bg-amber-500/20 hover:bg-amber-600 border border-amber-500/40 text-amber-300 hover:text-white font-bold text-[11px] px-2.5 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1 shadow-sm"
+                              >
+                                <span>Reset Password</span>
+                              </button>
+                            </div>
                           </div>
                         </div>
                       );
@@ -13011,6 +13109,192 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 className="h-10 px-5 bg-[#3B82F6] hover:bg-blue-600 text-white rounded-xl text-[13px] font-bold transition-all cursor-pointer shadow-md shadow-blue-500/20"
               >
                 Create Account
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* UNIVERSAL EDIT USER MODAL (USER DIRECTORY TAB) */}
+      {showEditUserModal && editingUser && (
+        <div className="absolute inset-0 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-3 z-50 animate-in fade-in duration-200">
+          <form onSubmit={handleEditUserSubmit} className="bg-surface-elevated border border-border-subtle rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col text-left">
+            <div className="bg-surface px-6 py-4 border-b border-border-subtle flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <Users className="w-5 h-5 text-blue-400" />
+                <h3 className="text-[14.5px] font-black text-text-primary uppercase tracking-wider">
+                  Edit User — {editingUser.name}
+                </h3>
+              </div>
+              <button 
+                type="button" 
+                onClick={() => { setShowEditUserModal(false); setEditingUser(null); }} 
+                className="text-text-secondary hover:text-text-primary cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 flex flex-col gap-4 max-h-[80vh] overflow-y-auto scrollbar-thin">
+              {/* Role Selection Tabs */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[11px] font-black text-text-secondary uppercase tracking-wider">Account Role</label>
+                <div className="grid grid-cols-3 gap-1.5 bg-surface p-1 rounded-2xl border border-border-subtle text-xs">
+                  <button
+                    type="button"
+                    onClick={() => setEditUserForm(prev => ({ ...prev, role: 'rep' }))}
+                    className={`py-2 px-2 rounded-xl font-bold transition-all cursor-pointer ${editUserForm.role === 'rep' ? 'bg-blue-600 text-white shadow-md' : 'text-text-secondary hover:text-text-primary'}`}
+                  >
+                    Field Rep
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEditUserForm(prev => ({ ...prev, role: 'customer' }))}
+                    className={`py-2 px-2 rounded-xl font-bold transition-all cursor-pointer ${editUserForm.role === 'customer' ? 'bg-amber-600 text-white shadow-md' : 'text-text-secondary hover:text-text-primary'}`}
+                  >
+                    Client Contact
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEditUserForm(prev => ({ ...prev, role: 'lead' }))}
+                    className={`py-2 px-2 rounded-xl font-bold transition-all cursor-pointer ${editUserForm.role === 'lead' ? 'bg-sky-600 text-white shadow-md' : 'text-text-secondary hover:text-text-primary'}`}
+                  >
+                    Quality Lead
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEditUserForm(prev => ({ ...prev, role: 'accountant' }))}
+                    className={`py-2 px-2 rounded-xl font-bold transition-all cursor-pointer ${editUserForm.role === 'accountant' ? 'bg-emerald-600 text-white shadow-md' : 'text-text-secondary hover:text-text-primary'}`}
+                  >
+                    Accountant
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEditUserForm(prev => ({ ...prev, role: 'admin' }))}
+                    className={`py-2 px-2 rounded-xl font-bold transition-all cursor-pointer ${editUserForm.role === 'admin' ? 'bg-purple-600 text-white shadow-md' : 'text-text-secondary hover:text-text-primary'}`}
+                  >
+                    Operations Admin
+                  </button>
+                </div>
+              </div>
+
+              {/* Full Name & Job Title */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="flex flex-col gap-1">
+                  <label className="text-[11px] font-bold text-text-secondary uppercase">Full Name</label>
+                  <input
+                    type="text"
+                    required
+                    value={editUserForm.name}
+                    onChange={(e) => setEditUserForm(prev => ({ ...prev, name: e.target.value }))}
+                    className="h-10 bg-surface border border-border-subtle rounded-xl px-3 text-[13px] text-text-primary focus:outline-none"
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-[11px] font-bold text-text-secondary uppercase">Job Title</label>
+                  <input
+                    type="text"
+                    value={editUserForm.title}
+                    onChange={(e) => setEditUserForm(prev => ({ ...prev, title: e.target.value }))}
+                    className="h-10 bg-surface border border-border-subtle rounded-xl px-3 text-[13px] text-text-primary focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Email & Phone */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="flex flex-col gap-1">
+                  <label className="text-[11px] font-bold text-text-secondary uppercase">Email Address</label>
+                  <input
+                    type="email"
+                    required
+                    value={editUserForm.email}
+                    onChange={(e) => setEditUserForm(prev => ({ ...prev, email: e.target.value }))}
+                    className="h-10 bg-surface border border-border-subtle rounded-xl px-3 text-[13px] text-text-primary focus:outline-none"
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-[11px] font-bold text-text-secondary uppercase">Phone Number</label>
+                  <input
+                    type="tel"
+                    value={editUserForm.phone}
+                    onChange={(e) => setEditUserForm(prev => ({ ...prev, phone: e.target.value }))}
+                    className="h-10 bg-surface border border-border-subtle rounded-xl px-3 text-[13px] text-text-primary focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Client Organization (If client contact) */}
+              {editUserForm.role === 'customer' && (
+                <div className="flex flex-col gap-1">
+                  <label className="text-[11px] font-bold text-text-secondary uppercase">Client Company</label>
+                  <select
+                    value={editUserForm.supplier_id}
+                    onChange={(e) => setEditUserForm(prev => ({ ...prev, supplier_id: e.target.value }))}
+                    className="h-10 bg-surface border border-border-subtle rounded-xl px-3 text-[13px] text-text-primary focus:outline-none"
+                  >
+                    <option value="">-- Select Client Organization --</option>
+                    {suppliers.map(s => (
+                      <option key={s.id} value={s.id}>{s.name} ({s.code || s.id})</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* Plant Location & Pay Rate (If Field Rep) */}
+              {editUserForm.role === 'rep' && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[11px] font-bold text-text-secondary uppercase">Host Assembly Plant</label>
+                    <select
+                      value={editUserForm.plant_id}
+                      onChange={(e) => setEditUserForm(prev => ({ ...prev, plant_id: e.target.value }))}
+                      className="h-10 bg-surface border border-border-subtle rounded-xl px-3 text-[13px] text-text-primary focus:outline-none"
+                    >
+                      <option value="">-- Select Plant Location --</option>
+                      {plants.map(p => (
+                        <option key={p.id} value={p.id}>{p.name} ({p.location || p.city})</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[11px] font-bold text-text-secondary uppercase">Hourly Pay Rate & Currency</label>
+                    <div className="flex gap-1.5">
+                      <input
+                        type="number"
+                        step="0.50"
+                        placeholder="e.g. 28.00"
+                        value={editUserForm.pay_rate}
+                        onChange={(e) => setEditUserForm(prev => ({ ...prev, pay_rate: e.target.value }))}
+                        className="h-10 flex-1 bg-surface border border-border-subtle rounded-xl px-3 text-[13px] text-text-primary focus:outline-none"
+                      />
+                      <select
+                        value={editUserForm.pay_currency}
+                        onChange={(e) => setEditUserForm(prev => ({ ...prev, pay_currency: e.target.value }))}
+                        className="h-10 w-24 bg-surface border border-border-subtle rounded-xl px-2 text-[12.5px] font-bold text-text-primary focus:outline-none"
+                      >
+                        <option value="CAD">CAD ($)</option>
+                        <option value="USD">USD ($)</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="bg-surface px-6 py-3.5 border-t border-border-subtle flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => { setShowEditUserModal(false); setEditingUser(null); }}
+                className="h-10 px-4 bg-surface-elevated border border-border-subtle text-text-secondary hover:text-text-primary rounded-xl text-[13px] font-bold transition-all cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="h-10 px-5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-[13px] font-bold transition-all cursor-pointer shadow-md shadow-blue-500/20"
+              >
+                Save Changes
               </button>
             </div>
           </form>

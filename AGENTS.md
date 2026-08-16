@@ -5,8 +5,9 @@ This repository houses the **IDS Pulse** platform by **Integrity Driven Solution
 ## Mandatory Reporting & Branding Directives
 
 Every AI coding agent and developer modifying this codebase MUST read and strictly adhere to:
-1. [.agents/rules/ids-pulse-reporting.md](file:///C:/Users/Sharoz/Documents/antigravity/proud-lavoisier/.agents/rules/ids-pulse-reporting.md)
-2. [docs/REPORT_BRANDING_STANDARD.md](file:///C:/Users/Sharoz/Documents/antigravity/proud-lavoisier/docs/REPORT_BRANDING_STANDARD.md)
+1. [.agents/rules/ids-pulse-enterprise-standards.md](file:///C:/Users/Sharoz/Documents/antigravity/proud-lavoisier/.agents/rules/ids-pulse-enterprise-standards.md)
+2. [.agents/rules/ids-pulse-reporting.md](file:///C:/Users/Sharoz/Documents/antigravity/proud-lavoisier/.agents/rules/ids-pulse-reporting.md)
+3. [docs/REPORT_BRANDING_STANDARD.md](file:///C:/Users/Sharoz/Documents/antigravity/proud-lavoisier/docs/REPORT_BRANDING_STANDARD.md)
 
 ---
 

@@ -36,7 +36,8 @@ To ensure historical mistakes are never repeated, the agent MUST obey the follow
 - **Logical Purpose First**: Whenever providing step-by-step testing or operational instructions, the agent MUST explicitly explain the **Logical Reason / Business Purpose** behind why the step is necessary before giving the action items (e.g., *"We start with Step 1 (Project & PO Onboarding) because without creating the client company, plant location, and allocated PO budget first, field quality inspectors will have no active project assignment or PO budget cap to log shift hours against"*).
 
 ## 6. Mandatory Permanent IDS Pulse Reporting & Branding Rule
-- **Mandatory Reporting Rule Inspection**: Every coding agent MUST read and obey:
+- **Mandatory Reporting & Enterprise Rule Inspection**: Every coding agent MUST read and obey:
+  - [.agents/rules/ids-pulse-enterprise-standards.md](file:///C:/Users/Sharoz/Documents/antigravity/proud-lavoisier/.agents/rules/ids-pulse-enterprise-standards.md)
   - [.agents/rules/ids-pulse-reporting.md](file:///C:/Users/Sharoz/Documents/antigravity/proud-lavoisier/.agents/rules/ids-pulse-reporting.md)
   - [docs/REPORT_BRANDING_STANDARD.md](file:///C:/Users/Sharoz/Documents/antigravity/proud-lavoisier/docs/REPORT_BRANDING_STANDARD.md)
 - **Logo Requirement**: Every human-readable IDS Pulse report and document MUST carry the approved official company logo (`src/config/brandingConfig.js` / `LOGO_BASE64`).

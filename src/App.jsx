@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import PhoneSimulator from './components/PhoneSimulator';
-import WebDashboard from './components/WebDashboard';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
+const PhoneSimulator = lazy(() => import('./components/PhoneSimulator'));
+const WebDashboard = lazy(() => import('./components/WebDashboard'));
 import { initializeDB, syncWithSupabase, supabase } from './components/SharedDatabase';
 import LoginScreen from './components/LoginScreen';
 import { SpinnerGap, LockKey, CheckCircle, WarningCircle } from '@phosphor-icons/react';
@@ -774,13 +774,20 @@ function App() {
                   <span className="text-[10px] text-text-secondary font-bold uppercase tracking-wider mb-2">IDS Rep Mobile App</span>
                 )}
                 <ErrorBoundary>
-                  <PhoneSimulator 
-                    isOffline={isOffline} 
-                    setIsOffline={setIsOffline}
-                    dbUpdateTrigger={dbUpdateTrigger}
-                    isNativeMobile={isMobileDevice}
-                    currentUser={currentUser}
-                  />
+                  <Suspense fallback={
+                    <div className="flex flex-col items-center justify-center p-8 text-slate-400 gap-2">
+                      <SpinnerGap className="spin text-2xl text-blue-500" />
+                      <span className="text-xs font-bold uppercase tracking-wider">Loading Mobile App...</span>
+                    </div>
+                  }>
+                    <PhoneSimulator 
+                      isOffline={isOffline} 
+                      setIsOffline={setIsOffline}
+                      dbUpdateTrigger={dbUpdateTrigger}
+                      isNativeMobile={isMobileDevice}
+                      currentUser={currentUser}
+                    />
+                  </Suspense>
                 </ErrorBoundary>
               </div>
             </div>
@@ -797,7 +804,16 @@ function App() {
                  userRole === 'shahroz' ? "Shahroz's Super Admin Dashboard (Web CRM Portal)" :
                  "Greg's Admin Dashboard (Web CRM Portal)"}
               </span>
-              <ErrorBoundary><WebDashboard dbUpdateTrigger={dbUpdateTrigger} userRole={userRole} currentUserRepId={currentUserRepId} currentUserCustomerId={currentUserCustomerId} currentUser={currentUser} layoutMode={layoutMode} /></ErrorBoundary>
+              <ErrorBoundary>
+                <Suspense fallback={
+                  <div className="flex flex-col items-center justify-center p-12 text-slate-400 gap-3 min-h-[400px]">
+                    <SpinnerGap className="spin text-3xl text-blue-500" />
+                    <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Loading Dashboard Operations...</span>
+                  </div>
+                }>
+                  <WebDashboard dbUpdateTrigger={dbUpdateTrigger} userRole={userRole} currentUserRepId={currentUserRepId} currentUserCustomerId={currentUserCustomerId} currentUser={currentUser} layoutMode={layoutMode} />
+                </Suspense>
+              </ErrorBoundary>
             </div>
           )}
 

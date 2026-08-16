@@ -742,15 +742,38 @@ const CLOUD_FIELD_MAP = {
 };
 
 export function toCloudShape(type, entity) {
-  const map = CLOUD_FIELD_MAP[type];
-  if (!map || !entity) return entity;
+  if (!entity) return entity;
   const out = { ...entity };
-  Object.entries(map).forEach(([localKey, cloudKey]) => {
-    if (localKey in out) {
-      out[cloudKey] = out[localKey];
-      delete out[localKey];
+
+  // Strip transient local/offline metadata before sending to Supabase
+  delete out.sync_error;
+  delete out.tracking_ref;
+  delete out.queue_type;
+  delete out.local_id;
+  delete out.is_offline_staged;
+  delete out.lastError;
+
+  // Schema reconciliation for specific tables: strip legacy columns
+  if (type === 'incidents') {
+    if (out.assignment_id && !out.project_id) {
+      out.project_id = out.assignment_id;
     }
-  });
+    delete out.assignment_id;
+  }
+
+  if (type === 'rates') {
+    delete out.assignment_id;
+  }
+
+  const map = CLOUD_FIELD_MAP[type];
+  if (map) {
+    Object.entries(map).forEach(([localKey, cloudKey]) => {
+      if (localKey in out) {
+        out[cloudKey] = out[localKey];
+        delete out[localKey];
+      }
+    });
+  }
   return out;
 }
 

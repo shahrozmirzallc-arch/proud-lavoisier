@@ -820,9 +820,10 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
   
   // SHIFT SUMMARY STATE (Canonical 5 Daily Quality Report Areas)
   const [areasWalked, setAreasWalked] = useState(() => normalizeAndMergeShiftAreas([]));
-  const [bonusTasks, setBonusTasks] = useState([
-    { id: 'bt_1', task: 'Matt\'s bin check audit on PN 86291945', status: 'pending', notes: '' }
-  ]);
+  const [bonusTasks, setBonusTasks] = useState([]);
+  const [showAddBonusTask, setShowAddBonusTask] = useState(false);
+  const [newBonusTaskTitle, setNewBonusTaskTitle] = useState('');
+  const [newBonusTaskRequestor, setNewBonusTaskRequestor] = useState('');
   const [sendingShiftReport, setSendingShiftReport] = useState(false);
   const [dailyTasks, setDailyTasks] = useState([]);
 
@@ -6102,33 +6103,97 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                 ))}
               </div>
 
-              {/* Bonus tasks card */}
+              {/* Requested Sorts & Audits section */}
               <div className="flex flex-col gap-2 pt-2 border-t border-slate-200">
-                <span className="text-[11.5px] text-blue-700 font-bold uppercase tracking-wider">Requested Sorts & Audits</span>
-                {bonusTasks.map(task => (
-                  <div key={task.id} className="bg-white border border-slate-300 rounded-sm p-3 flex justify-between items-center shadow-sm">
-                    <div>
-                      <p className="text-[11.5px] font-bold text-slate-900">{task.task}</p>
-                      <p className="text-[12.5px] text-text-secondary mt-0.5">Matt request</p>
+                <div className="flex items-center justify-between">
+                  <span className="text-[11.5px] text-blue-700 font-bold uppercase tracking-wider">Requested Sorts & Audits</span>
+                  <button 
+                    type="button"
+                    onClick={() => setShowAddBonusTask(prev => !prev)}
+                    className="text-[11px] text-blue-600 hover:text-blue-800 font-bold flex items-center gap-1 cursor-pointer"
+                  >
+                    <Plus className="w-3 h-3" />
+                    <span>{showAddBonusTask ? 'Cancel' : '+ Add Sort / Audit'}</span>
+                  </button>
+                </div>
+
+                {showAddBonusTask && (
+                  <div className="p-2.5 bg-blue-50/70 border border-blue-200 rounded-lg flex flex-col gap-2">
+                    <input 
+                      type="text"
+                      placeholder="Task description (e.g. Emergency bin containment on PN 84920194)..."
+                      value={newBonusTaskTitle}
+                      onChange={(e) => setNewBonusTaskTitle(e.target.value)}
+                      className="phone-input h-8 px-2.5 text-xs bg-white"
+                    />
+                    <div className="flex gap-2">
+                      <input 
+                        type="text"
+                        placeholder="Requestor (e.g. Quality Mgr, Floor Lead)..."
+                        value={newBonusTaskRequestor}
+                        onChange={(e) => setNewBonusTaskRequestor(e.target.value)}
+                        className="phone-input h-8 px-2.5 text-xs bg-white flex-1"
+                      />
+                      <button
+                        type="button"
+                        disabled={!newBonusTaskTitle.trim()}
+                        onClick={() => {
+                          if (!newBonusTaskTitle.trim()) return;
+                          const newTask = {
+                            id: `bt_${Date.now()}`,
+                            task: newBonusTaskTitle.trim(),
+                            requestor: newBonusTaskRequestor.trim() || 'Floor Request',
+                            status: 'pending',
+                            notes: ''
+                          };
+                          setBonusTasks(prev => {
+                            const next = [...prev, newTask];
+                            saveDraftShiftReport(null, next);
+                            return next;
+                          });
+                          setNewBonusTaskTitle('');
+                          setNewBonusTaskRequestor('');
+                          setShowAddBonusTask(false);
+                        }}
+                        className="px-3 py-1 bg-blue-600 text-white rounded text-xs font-bold disabled:opacity-50 cursor-pointer"
+                      >
+                        Add Task
+                      </button>
                     </div>
-                    <button 
-                      onClick={() => {
-                        setBonusTasks(prev => {
-                          const next = prev.map(bt => bt.id === task.id ? { ...bt, status: bt.status === 'completed' ? 'pending' : 'completed' } : bt);
-                          saveDraftShiftReport(null, next);
-                          return next;
-                        });
-                      }}
-                      className={`h-8 px-2.5 rounded-sm text-[10.5px] font-bold border transition-colors cursor-pointer ${
-                        task.status === 'completed' 
-                          ? 'bg-emerald-50 border-transparent text-emerald-700 shadow-sm' 
-                          : 'bg-slate-50 border-slate-300 text-slate-600 hover:text-slate-900 shadow-sm'
-                      }`}
-                    >
-                      {task.status === 'completed' ? 'Completed' : 'Audit'}
-                    </button>
                   </div>
-                ))}
+                )}
+
+                {bonusTasks.length === 0 ? (
+                  <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-center">
+                    <p className="text-xs text-slate-500 font-medium">No ad-hoc sorts or audits requested for this shift.</p>
+                  </div>
+                ) : (
+                  bonusTasks.map(task => (
+                    <div key={task.id} className="bg-white border border-slate-300 rounded-lg p-2.5 flex justify-between items-center shadow-xs">
+                      <div className="pr-2">
+                        <p className="text-xs font-bold text-slate-900 leading-snug">{task.task}</p>
+                        <p className="text-[11px] text-slate-500 mt-0.5">{task.requestor || 'Supervisor / Client Request'}</p>
+                      </div>
+                      <button 
+                        type="button"
+                        onClick={() => {
+                          setBonusTasks(prev => {
+                            const next = prev.map(bt => bt.id === task.id ? { ...bt, status: bt.status === 'completed' ? 'pending' : 'completed' } : bt);
+                            saveDraftShiftReport(null, next);
+                            return next;
+                          });
+                        }}
+                        className={`h-7 px-2.5 rounded text-[10.5px] font-bold border transition-colors cursor-pointer shrink-0 ${
+                          task.status === 'completed' 
+                            ? 'bg-emerald-50 border-emerald-300 text-emerald-700 shadow-xs' 
+                            : 'bg-slate-100 border-slate-300 text-slate-700 hover:bg-slate-200'
+                        }`}
+                      >
+                        {task.status === 'completed' ? 'Completed' : 'Pending Audit'}
+                      </button>
+                    </div>
+                  ))
+                )}
               </div>
 
               <button 

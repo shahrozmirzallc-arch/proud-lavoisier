@@ -12485,6 +12485,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     {(() => {
                       let mediaCount = 0;
                       if (Array.isArray(selectedIncident.photos)) mediaCount += selectedIncident.photos.length;
+                      if (Array.isArray(selectedIncident.attachments)) mediaCount += selectedIncident.attachments.length;
+                      if (Array.isArray(selectedIncident.media)) mediaCount += selectedIncident.media.length;
                       if (selectedIncident.capturedPhotos) mediaCount += Object.values(selectedIncident.capturedPhotos).filter(Boolean).length;
                       if (selectedIncident.photo_url) mediaCount += 1;
                       return `${mediaCount} Evidence Photo(s)`;
@@ -12495,7 +12497,13 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 {(() => {
                   let photos = [];
                   if (Array.isArray(selectedIncident.photos)) {
-                    photos.push(...selectedIncident.photos);
+                    photos.push(...selectedIncident.photos.map(p => typeof p === 'string' ? { type: 'PHOTO', url: p } : p));
+                  }
+                  if (Array.isArray(selectedIncident.attachments)) {
+                    photos.push(...selectedIncident.attachments.map(p => typeof p === 'string' ? { type: 'ATTACHMENT', url: p } : p));
+                  }
+                  if (Array.isArray(selectedIncident.media)) {
+                    photos.push(...selectedIncident.media.map(p => typeof p === 'string' ? { type: 'MEDIA', url: p } : p));
                   }
                   if (selectedIncident.capturedPhotos && typeof selectedIncident.capturedPhotos === 'object') {
                     Object.entries(selectedIncident.capturedPhotos).forEach(([key, val]) => {

@@ -84,3 +84,9 @@ To ensure historical mistakes are never repeated, the agent MUST obey the follow
 - **Smart ID & Fuzzy Supplier Matching**: Rate resolution functions MUST always perform normalized, case-insensitive supplier and representative matching (handling `sup_` / `supplier_` prefixes, underscores, and official company names) to prevent "Rate not configured" false negatives when project rows reference full client names.
 - **Zero Draft/Placeholder Code Exposure**: Internal draft placeholders (e.g. `__new__`, `undefined`, `null`, `[object Object]`) MUST NEVER be rendered to users in table cells, dropdowns, or summary cards. Unassigned entities must cleanly evaluate to **`Unassigned / Pending`** badges.
 
+## 16. MANDATORY MODAL & THEME CONTRAST GUARDRAIL (ZERO DARK-ON-LIGHT LEAKS & WCAG AAA 7:1 CONTRAST)
+- **Zero Dark Container Leaks**: All modal dialogs, drawers, popups, alert boxes, and onboarding containers MUST strictly follow the cohesive High-Contrast Light Theme design system. Nesting dark container classes (`bg-slate-950`, `bg-emerald-950`, `from-amber-950`, `bg-slate-900`) inside light modals or light dashboard surfaces is strictly prohibited.
+- **Strict Label & Text Contrast (>7:1 Ratio)**: Form labels, helper text, and subtitles MUST enforce high-contrast typography (`text-slate-800 font-black`, `text-slate-900 font-bold`, `text-emerald-950`). Faint, muted gray text (`text-slate-300`, `text-slate-400` on white or light backgrounds) is strictly forbidden.
+- **Consistent Pure White Form Inputs**: All `<input>`, `<select>`, and `<textarea>` controls across modals MUST render pure white backgrounds (`bg-white border-2 border-slate-300 hover:border-amber-500`) with dark crisp text (`text-slate-900`). Black or dark input boxes (`bg-slate-950`) are permanently banned.
+- **Automated Verification Gate**: Every commit MUST pass `npx vitest run tests/modal_and_theme_contrast_gate.test.js` to ensure zero theme contrast regressions.
+

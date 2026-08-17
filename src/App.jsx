@@ -821,10 +821,10 @@ function App() {
               <span className="text-[10px] text-text-secondary font-bold uppercase tracking-wider mb-2 pl-2">
                 {userRole === 'customer' ? "Customer Quality Portal" :
                  userRole === 'rep' ? "QRE Representative Portal" :
-                 userRole === 'accountant' ? "Colleen's Dashboard (Web CRM Portal)" :
-                 userRole === 'lead' ? "Donna's Dashboard (Web CRM Portal)" :
-                 userRole === 'shahroz' ? "Shahroz's Super Admin Dashboard (Web CRM Portal)" :
-                 "Greg's Admin Dashboard (Web CRM Portal)"}
+                 userRole === 'accountant' ? "Colleen's Financial & Timesheet Dashboard" :
+                 userRole === 'lead' ? "Donna's QA Operations Dashboard" :
+                 userRole === 'shahroz' ? "Shahroz's Super Admin Command Center" :
+                 "Greg's Admin Operations Dashboard"}
               </span>
               <ErrorBoundary>
                 <Suspense fallback={

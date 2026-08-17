@@ -5,7 +5,7 @@ import {
   FileSpreadsheet, Calendar, ArrowRight, UserPlus, MapPin, Printer, Download, Eye, EyeOff, Sparkles, Key,
   Milestone, TrendingUp, FolderKanban, PlusCircle, Plus, ArrowLeft, Camera, ClipboardCheck, Zap, Building2, ShieldAlert, User, Cpu, Mic, Video, Trash2, History, Lock, BarChart3, Layers
 } from 'lucide-react';
-import { getEntities, saveEntity, logSystemEvent, deleteRate, isFieldRep, syncWithSupabase, supabase, addUser, provisionUser, updateUser, deleteUser, isEntryAccountingEligible } from './SharedDatabase';
+import { getEntities, saveEntity, logSystemEvent, deleteRate, isFieldRep, syncWithSupabase, supabase, addUser, provisionUser, updateUser, deleteUser, isEntryAccountingEligible, addEmailLog } from './SharedDatabase';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { LOGO_BASE64 } from './LogoBase64';
@@ -200,9 +200,10 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     // BLOCKER 1 FIX: Toast names username only. Password shown in dismissible panel.
     showToast(`Client Rep created for ${addContactSupplier.name}. Username: "${provRes.user.username}".`, "success");
 
-    setCreatedUserCredentials({
+    showProvisionedCredentialsOverlay({
       companyName: addContactSupplier.name,
       contactName: newContactName.trim(),
+      email: newContactEmail.trim(),
       username: provRes.user.username,
       password: provRes.tempPassword,
       role: 'Client Portal (Customer Role)'
@@ -740,6 +741,105 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   const [newCustomerPassword, setNewCustomerPassword] = useState('');
   const [showNewCustPassword, setShowNewCustPassword] = useState(false);
   const [createdUserCredentials, setCreatedUserCredentials] = useState(null);
+  const [isSendingCredentialsEmail, setIsSendingCredentialsEmail] = useState(false);
+  const [credentialsEmailSent, setCredentialsEmailSent] = useState(false);
+  const [targetCredentialsEmail, setTargetCredentialsEmail] = useState('');
+  const [credentialsCopied, setCredentialsCopied] = useState(false);
+
+  const showProvisionedCredentialsOverlay = (data) => {
+    setCreatedUserCredentials(data);
+    setTargetCredentialsEmail(data.email || '');
+    setCredentialsEmailSent(false);
+    setCredentialsCopied(false);
+  };
+
+  const handleSendCredentialsEmail = () => {
+    if (!createdUserCredentials) return;
+    const recipient = (targetCredentialsEmail || createdUserCredentials.email || '').trim();
+    if (!recipient || !recipient.includes('@')) {
+      showToast("Please provide a valid recipient email address.", "error");
+      return;
+    }
+
+    setIsSendingCredentialsEmail(true);
+    try {
+      const subject = `[IDS PULSE] Welcome to IDS Pulse — Your Login Credentials`;
+      const appUrl = 'https://proud-lavoisier.vercel.app/';
+      const emailBody = `
+<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; background: #ffffff; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+  <div style="background-color: #008F72; padding: 24px; text-align: center; color: #ffffff;">
+    <h2 style="margin: 0; font-size: 20px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase;">IDS PULSE PLATFORM</h2>
+    <p style="margin: 6px 0 0 0; font-size: 13px; opacity: 0.95;">Integrity Driven Solutions Inc. — Quality Operations & Liaison Management</p>
+  </div>
+  <div style="padding: 28px; color: #0f172a; font-size: 14px; line-height: 1.6;">
+    <p style="font-size: 15px; margin-top: 0;">Hello <strong>${createdUserCredentials.contactName}</strong>,</p>
+    <p>Your user account on the <strong>IDS Pulse</strong> enterprise platform has been successfully provisioned. Below are your official login credentials:</p>
+    
+    <div style="background-color: #f8fafc; border: 1px solid #cbd5e1; border-radius: 12px; padding: 20px; margin: 20px 0;">
+      <table style="width: 100%; border-collapse: collapse; font-size: 13.5px;">
+        <tr>
+          <td style="padding: 6px 0; color: #64748b; font-weight: 600;">System URL:</td>
+          <td style="padding: 6px 0; text-align: right;"><a href="${appUrl}" style="color: #008F72; font-weight: bold; text-decoration: underline;">${appUrl}</a></td>
+        </tr>
+        <tr>
+          <td style="padding: 6px 0; color: #64748b; font-weight: 600;">Organization:</td>
+          <td style="padding: 6px 0; font-weight: bold; text-align: right;">${createdUserCredentials.companyName || 'IDS Pulse Platform'}</td>
+        </tr>
+        <tr>
+          <td style="padding: 6px 0; color: #64748b; font-weight: 600;">Assigned Role:</td>
+          <td style="padding: 6px 0; font-weight: bold; text-align: right; color: #008F72;">${createdUserCredentials.role}</td>
+        </tr>
+        <tr style="border-top: 1px solid #e2e8f0;">
+          <td style="padding: 10px 0 6px 0; color: #64748b; font-weight: 600;">Username:</td>
+          <td style="padding: 10px 0 6px 0; font-family: monospace; font-size: 15px; font-weight: bold; text-align: right;">${createdUserCredentials.username}</td>
+        </tr>
+        <tr>
+          <td style="padding: 6px 0; color: #64748b; font-weight: 600;">Temporary Password:</td>
+          <td style="padding: 6px 0; font-family: monospace; font-size: 15px; font-weight: bold; color: #008F72; text-align: right;">${createdUserCredentials.password}</td>
+        </tr>
+      </table>
+    </div>
+
+    <div style="background-color: #fef3c7; border: 1px solid #fde68a; border-radius: 8px; padding: 12px; margin: 16px 0; color: #92400e; font-size: 12px; line-height: 1.5;">
+      <strong>Security Notice:</strong> Please sign in to verify your access. You may change your password upon initial sign-in. Keep these credentials confidential.
+    </div>
+
+    <p style="margin-top: 24px; margin-bottom: 0;">Thank you,<br/><strong>Integrity Driven Solutions Administration</strong></p>
+  </div>
+  <div style="background-color: #f1f5f9; padding: 14px; text-align: center; color: #64748b; font-size: 11px; border-top: 1px solid #e2e8f0;">
+    Confidential • Integrity Driven Solutions Inc. • Automotive Quality Operations
+  </div>
+</div>`;
+
+      addEmailLog({
+        recipient_email: recipient,
+        recipient_name: createdUserCredentials.contactName,
+        subject: subject,
+        body: emailBody,
+        type: 'user_onboarding_credentials',
+        status: 'Sent',
+        sender: getActiveActorName()
+      });
+
+      logSystemEvent('system', 'send_credentials_email', `${getActiveActorName()} sent credentials email to ${createdUserCredentials.contactName} (${recipient}).`);
+
+      setCredentialsEmailSent(true);
+      showToast(`Credentials email dispatched to ${recipient}!`, "success");
+    } catch (err) {
+      showToast(`Failed to dispatch email: ${err.message}`, "error");
+    } finally {
+      setIsSendingCredentialsEmail(false);
+    }
+  };
+
+  const handleCopyCredentials = () => {
+    if (!createdUserCredentials) return;
+    const text = `IDS Pulse Platform Login Credentials\n------------------------------------\nRecipient: ${createdUserCredentials.contactName}\nOrganization: ${createdUserCredentials.companyName || 'IDS Pulse'}\nRole: ${createdUserCredentials.role}\nSystem URL: https://proud-lavoisier.vercel.app/\nUsername: ${createdUserCredentials.username}\nTemp Password: ${createdUserCredentials.password}`;
+    navigator.clipboard.writeText(text);
+    setCredentialsCopied(true);
+    showToast("Credentials copied to clipboard!", "success");
+    setTimeout(() => setCredentialsCopied(false), 3000);
+  };
   const [newCustomerInvoiceSchedule, setNewCustomerInvoiceSchedule] = useState('on-demand');
   const [newCustomerAllottedHours, setNewCustomerAllottedHours] = useState('20');
 
@@ -1500,9 +1600,10 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     const user = getActiveActorName();
     logSystemEvent('system', 'create_customer', `${user} onboarded new client/supplier ${newCustomerName} with Client Rep login (${createdUserObj?.username || finalUsername}).`);
     
-    setCreatedUserCredentials({
+    showProvisionedCredentialsOverlay({
       companyName: newCustomerName,
       contactName: newCustomerContactName || `${newCustomerName} Contact`,
+      email: newCustomerContactEmail ? newCustomerContactEmail.trim() : (createdUserObj?.email || ''),
       username: createdUserObj?.username || finalUsername,
       password: createdTempPassword || finalPassword,
       role: 'Client Portal (Customer Role)'
@@ -1583,9 +1684,10 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       const userRep = getActiveActorName();
       logSystemEvent('system', 'create_representative', `${userRep} onboarded representative ${cleanName} (${newRepPayCurrency}).`);
 
-      setCreatedUserCredentials({
+      showProvisionedCredentialsOverlay({
         companyName: 'IDS Pulse Staffing',
         contactName: cleanName,
+        email: newRepEmail.trim(),
         username: provRes.user.username,
         password: provRes.tempPassword,
         role: 'IDS Field Representative'
@@ -1631,9 +1733,10 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
         console.warn("[System Log Warning]:", lErr);
       }
 
-      setCreatedUserCredentials({
+      showProvisionedCredentialsOverlay({
         companyName: 'IDS Pulse Staffing',
         contactName: cleanName,
+        email: quickRepEmail.trim(),
         username: newRep.username,
         password: provRes.tempPassword,
         role: 'IDS Field Representative'
@@ -1712,9 +1815,10 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
         console.warn("[System Log Warning]:", lErr);
       }
 
-      setCreatedUserCredentials({
+      showProvisionedCredentialsOverlay({
         companyName: 'IDS Pulse Platform',
         contactName: newUserObj.name,
+        email: newUserObj.email || '',
         username: newUserObj.username,
         password: provRes.tempPassword,
         role: `${roleType.toUpperCase()} User Account`
@@ -14608,7 +14712,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       {/* GLOBAL CREATED USER CREDENTIALS OVERLAY (ACCESSIBLE FROM ALL TABS & MODALS) */}
       {createdUserCredentials && (
         <div className="fixed inset-0 bg-slate-950/75 backdrop-blur-sm flex items-center justify-center p-4 z-[100] animate-in fade-in duration-200">
-          <div className="bg-white border border-emerald-600/30 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col text-left">
+          <div className="bg-white border border-emerald-600/30 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col text-left">
             <div className="bg-emerald-800 px-6 py-4 border-b border-emerald-900/20 flex items-center justify-between">
               <div className="flex items-center gap-2.5">
                 <CheckCircle2 className="w-5 h-5 text-emerald-300" />
@@ -14625,7 +14729,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
             <div className="p-6 flex flex-col gap-4 text-xs font-sans bg-white">
               <p className="text-slate-700 text-xs leading-relaxed">
-                The user account for <strong className="text-slate-950 font-bold">{createdUserCredentials.contactName}</strong> has been created. Please copy these credentials for the recipient:
+                The user account for <strong className="text-slate-950 font-bold">{createdUserCredentials.contactName}</strong> has been created. You can dispatch their credentials directly via email or copy them below:
               </p>
 
               <div className="bg-emerald-50/60 p-4 rounded-2xl border border-emerald-200/80 flex flex-col gap-3 font-mono text-[12.5px]">
@@ -14649,17 +14753,60 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 </div>
               </div>
 
-              <div className="bg-amber-50 border border-amber-300/80 rounded-xl p-3.5 text-xs text-amber-950 font-semibold leading-relaxed flex items-start gap-2.5 shadow-xs">
+              {/* EMAIL DISPATCH SECTION */}
+              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex flex-col gap-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-900 font-bold text-xs flex items-center gap-1.5">
+                    <Mail className="w-4 h-4 text-emerald-700" />
+                    Recipient Email for Login Details:
+                  </span>
+                  {credentialsEmailSent && (
+                    <span className="text-[11px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-md flex items-center gap-1">
+                      <CheckCircle2 className="w-3.5 h-3.5" /> Email Dispatched
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <input
+                    type="email"
+                    value={targetCredentialsEmail}
+                    onChange={(e) => setTargetCredentialsEmail(e.target.value)}
+                    placeholder="recipient@company.com"
+                    className="flex-1 px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs text-slate-900 font-medium focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleSendCredentialsEmail}
+                    disabled={isSendingCredentialsEmail}
+                    className="px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 active:bg-emerald-900 disabled:opacity-50 text-white rounded-xl text-xs font-bold shadow-xs cursor-pointer transition-colors flex items-center justify-center gap-1.5 flex-shrink-0"
+                  >
+                    <Mail className="w-4 h-4" />
+                    {isSendingCredentialsEmail ? 'Sending...' : credentialsEmailSent ? 'Resend Email' : 'Send Username & Password to User'}
+                  </button>
+                </div>
+              </div>
+
+              <div className="bg-amber-50 border border-amber-300/80 rounded-xl p-3 text-xs text-amber-950 font-semibold leading-relaxed flex items-start gap-2.5 shadow-xs">
                 <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
                 <span>Save or copy these temporary login credentials before dismissing this panel.</span>
               </div>
             </div>
 
-            <div className="bg-slate-50 px-6 py-4 border-t border-slate-200 flex justify-end">
+            <div className="bg-slate-50 px-6 py-4 border-t border-slate-200 flex items-center justify-between gap-3">
+              <button
+                type="button"
+                onClick={handleCopyCredentials}
+                className="px-4 py-2.5 bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 rounded-xl text-xs font-bold shadow-xs cursor-pointer transition-colors flex items-center gap-1.5"
+              >
+                {credentialsCopied ? <CheckCircle2 className="w-4 h-4 text-emerald-600" /> : <ClipboardCheck className="w-4 h-4 text-slate-500" />}
+                {credentialsCopied ? 'Copied!' : 'Copy Credentials'}
+              </button>
+
               <button
                 type="button"
                 onClick={() => setCreatedUserCredentials(null)}
-                className="px-6 py-2.5 bg-emerald-700 hover:bg-emerald-800 active:bg-emerald-900 text-white rounded-xl text-xs font-extrabold shadow-md cursor-pointer transition-colors"
+                className="px-6 py-2.5 bg-slate-900 hover:bg-slate-800 active:bg-slate-950 text-white rounded-xl text-xs font-extrabold shadow-md cursor-pointer transition-colors"
               >
                 Dismiss Credentials Panel
               </button>

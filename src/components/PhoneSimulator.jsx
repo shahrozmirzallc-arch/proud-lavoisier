@@ -931,16 +931,45 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
     return 'No client assigned';
   };
 
+  // Helper to resolve project authorized budget hours across 3-tier fallbacks
+  const resolveProjectAuthorizedHours = (proj) => {
+    if (!proj) return null;
+    const directVals = [proj.po_hours, proj.allotted_hours, proj.authorized_hours, proj.authorized_regular_hours, proj.poHours];
+    for (const v of directVals) {
+      if (v !== undefined && v !== null && v !== '' && !isNaN(parseFloat(v)) && parseFloat(v) > 0) {
+        return parseFloat(v);
+      }
+    }
+    const dbSuppliers = getEntities('suppliers') || [];
+    const supId = proj.supplier_id || proj.client_id;
+    const sup = dbSuppliers.find(s => String(s.id) === String(supId) || s.name === supId || s.code === supId);
+    if (sup) {
+      const supVals = [sup.allotted_hours, sup.po_hours, sup.authorized_hours];
+      for (const sv of supVals) {
+        if (sv !== undefined && sv !== null && sv !== '' && !isNaN(parseFloat(sv)) && parseFloat(sv) > 0) {
+          return parseFloat(sv);
+        }
+      }
+    }
+    return null;
+  };
+
   // Helper to resolve active project assignments explicitly permitted for the logged-in rep
   const getRepAssignments = () => {
     if (!currentUser) return [];
     const dbProjects = getEntities('projects') || [];
     const repIdStr = String(currentUser.id || '');
-    return dbProjects.filter(p => p && (
+    const isSuperAdminOrStaff = currentUser.role === 'admin' || currentUser.role === 'owner' || currentUser.role === 'super_admin' || currentUser.role === 'lead';
+    
+    const assigned = dbProjects.filter(p => p && (
       String(p.rep_id) === repIdStr || 
       p.rep_id === currentUser.id || 
       (Array.isArray(p.rep_ids) && p.rep_ids.includes(currentUser.id))
     ));
+
+    if (assigned.length > 0) return assigned;
+    if (isSuperAdminOrStaff) return dbProjects.filter(p => p && p.status !== 'archived');
+    return [];
   };
 
   // Explicit Authoritative Assignment Resolver (Section 1)
@@ -1182,11 +1211,13 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
       };
     }
 
-    const hasAuthorizedLimit = Boolean(activeProject.po_hours !== undefined && activeProject.po_hours !== null && activeProject.po_hours !== '' && !isNaN(parseFloat(activeProject.po_hours)));
-    const authorizedHours = hasAuthorizedLimit ? parseFloat(activeProject.po_hours) : null;
+    const authHoursVal = resolveProjectAuthorizedHours(activeProject);
+    const hasAuthorizedLimit = authHoursVal !== null;
+    const authorizedHours = authHoursVal;
 
     const repIdStr = String(currentUser.id || '');
-    const repEntries = dbTimeEntries.filter(t => t && (String(t.rep_id) === repIdStr || t.rep_id === currentUser.id) && matchesAssignment(t, activeProject));
+    const isSuperAdminOrStaff = currentUser.role === 'admin' || currentUser.role === 'owner' || currentUser.role === 'super_admin' || currentUser.role === 'lead';
+    const repEntries = dbTimeEntries.filter(t => t && (isSuperAdminOrStaff || String(t.rep_id) === repIdStr || t.rep_id === currentUser.id) && matchesAssignment(t, activeProject));
 
     const recordedRegularHours = repEntries
       .filter(t => (t.hour_type === 'regular' || !t.hour_type) && isEntryAccountingEligible(t))
@@ -3217,7 +3248,11 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                               <div className="p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-left">
                                 <span className="text-xs font-bold text-slate-900 block">{repAssignments[0].title || repAssignments[0].name}</span>
                                 <span className="text-[10.5px] text-slate-500 block mt-0.5">
-                                  {getSupplierName(repAssignments[0].supplier_id || repAssignments[0].client_id)} • {repAssignments[0].authorized_hours ? `${repAssignments[0].authorized_hours}h authorized` : 'Hours allocation not configured'}
+                                  {(() => {
+                                    const hrs = resolveProjectAuthorizedHours(repAssignments[0]);
+                                    const clientName = getSupplierName(repAssignments[0].supplier_id || repAssignments[0].client_id);
+                                    return hrs ? `${clientName} • ${hrs}h authorized budget` : `${clientName} • Standard shift rate`;
+                                  })()}
                                 </span>
                               </div>
                             ) : (
@@ -3231,7 +3266,8 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                                 {repAssignments.map(asgn => {
                                   const pName = asgn.title || asgn.name || `Project ${asgn.id}`;
                                   const cName = getSupplierName(asgn.supplier_id || asgn.client_id);
-                                  const hrsLabel = asgn.authorized_hours ? `${asgn.authorized_hours}h alloc` : 'Hours allocation not configured';
+                                  const hrs = resolveProjectAuthorizedHours(asgn);
+                                  const hrsLabel = hrs ? `${hrs}h authorized` : 'Standard shift rate';
                                   return (
                                     <option key={asgn.id} value={asgn.id}>
                                       {pName} — {cName} [{hrsLabel}]

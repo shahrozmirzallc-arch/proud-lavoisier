@@ -66,8 +66,8 @@ export const HoursEntryForm = ({
             {assignments.map(asgn => {
               const pTitle = asgn.title || asgn.name || `Assignment ${asgn.id}`;
               const custName = getSupplierName(asgn.billing_customer_id || asgn.customer_id);
-              const alloc = parseFloat(asgn.authorized_regular_hours ?? asgn.authorized_hours ?? 0);
-              const allocText = alloc > 0 ? `${alloc}h authorized` : 'Allocation Not Configured';
+              const alloc = parseFloat(asgn.authorized_regular_hours ?? asgn.authorized_hours ?? asgn.po_hours ?? asgn.allotted_hours ?? 0);
+              const allocText = alloc > 0 ? `${alloc}h authorized` : 'Open Allocation';
               return (
                 <option key={asgn.id} value={asgn.id}>
                   {pTitle} — {custName} [{allocText}]

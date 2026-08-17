@@ -8030,17 +8030,19 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   {/* Top Row: Left Title/Badge + Right Action Controls */}
                   <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                     {/* Left: Branding & Title */}
-                    <div className="flex items-center gap-3.5">
+                    <div className="flex items-center gap-3.5 min-w-0">
                       <div className="p-2 rounded-xl bg-slate-50 border border-slate-200 shrink-0">
                         <img src={LOGO_BASE64} alt="IDS Logo" className="h-8 w-auto object-contain" />
                       </div>
-                      <div className="flex items-center gap-2.5 flex-wrap">
-                        <h3 className="text-base font-black text-slate-900 uppercase tracking-tight flex items-center gap-2">
-                          <Shield className="w-4.5 h-4.5 text-blue-600 shrink-0" /> Client Quality Executive Workspace
-                        </h3>
-                        <span className="px-2.5 py-0.5 rounded-full bg-blue-100 border border-blue-300 text-blue-900 text-[10.5px] font-black uppercase tracking-wider shrink-0">
-                          {clientCompany.name}
-                        </span>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h3 className="text-sm sm:text-[15px] font-black text-slate-900 uppercase tracking-tight flex items-center gap-2">
+                            <Shield className="w-4 h-4 text-blue-600 shrink-0" /> Client Quality Executive Workspace
+                          </h3>
+                          <span className="px-2.5 py-0.5 rounded-full bg-blue-100 border border-blue-300 text-blue-900 text-[10px] font-black uppercase tracking-wider shrink-0">
+                            {clientCompany.name}
+                          </span>
+                        </div>
                       </div>
                     </div>
 

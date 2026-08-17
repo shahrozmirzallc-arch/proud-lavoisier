@@ -105,8 +105,8 @@ export function initializeDB() {
     { id: 'plant_windsor', name: 'Windsor Assembly Plant', code: 'PLANT-202', location: 'Windsor, ON', supplier_id: 'sup_stellantis', supplier_ids: ['sup_stellantis'], status: 'active' }
   ];
   const brandNewProjects = [
-    { id: 'proj_oakville_900', name: 'Ford F-150 Lightning E-Motor Stator Containment', code: 'PRJ-OAKVILLE-900', client_id: 'sup_magna', billing_customer_id: 'sup_magna', supplier_id: 'sup_magna', plant_id: 'plant_oakville', rep_id: 'rep_clarence', po_hours: 10.0, currency: 'CAD', status: 'active' },
-    { id: 'proj_windsor_500', name: 'Stellantis Pacifica PHEV Battery Pack Isolation Project', code: 'PRJ-WINDSOR-500', client_id: 'sup_stellantis', billing_customer_id: 'sup_stellantis', supplier_id: 'sup_stellantis', plant_id: 'plant_windsor', rep_id: 'rep_test', po_hours: 8.0, currency: 'CAD', status: 'active' }
+    { id: 'proj_oakville_900', name: 'Ford F-150 Lightning E-Motor Stator Containment', code: 'PRJ-OAKVILLE-900', po_number: '00011000', part_number: '7T4Z-7000-A', client_id: 'sup_magna', billing_customer_id: 'sup_magna', supplier_id: 'sup_magna', plant_id: 'plant_oakville', rep_id: 'rep_clarence', po_hours: 10.0, currency: 'CAD', status: 'active' },
+    { id: 'proj_windsor_500', name: 'Stellantis Pacifica PHEV Battery Pack Isolation Project', code: 'PRJ-WINDSOR-500', po_number: '00011001', part_number: '68493012-AB', client_id: 'sup_stellantis', billing_customer_id: 'sup_stellantis', supplier_id: 'sup_stellantis', plant_id: 'plant_windsor', rep_id: 'rep_test', po_hours: 8.0, currency: 'CAD', status: 'active' }
   ];
   const brandNewParts = [
     { id: 'part_7t4z7000', part_number: '7T4Z-7000-A', part_name: 'E-Motor Stator Core Assembly', project_id: 'proj_oakville_900', supplier_id: 'sup_magna', status: 'active' },

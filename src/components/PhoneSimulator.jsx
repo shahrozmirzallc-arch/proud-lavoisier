@@ -2900,27 +2900,33 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
           const plantObj = dbPlants.find(p => String(p.id) === String(selectedPlant) || p.name === selectedPlant || p.code === selectedPlant);
           const displayPlant = plantObj ? plantObj.name : (selectedPlant || 'Record unavailable');
 
-          // Dynamically resolve assignment & project matching the selected plant
+          // Dynamically resolve assignment & project matching the selected plant & current user/client
           const allAssignments = getRepAssignments() || [];
           const allProjects = getEntities('projects') || [];
 
-          const plantMatchAsgn = allAssignments.find(a => 
-            String(a.plant_id) === String(selectedPlant) || 
-            a.plant_name === selectedPlant || 
-            (plantObj && (String(a.plant_id) === String(plantObj.id) || a.plant_name === plantObj.name))
-          );
-
           const plantMatchProj = allProjects.find(pr => 
+            (String(pr.plant_id) === String(selectedPlant) || pr.plant_name === selectedPlant || (plantObj && (String(pr.plant_id) === String(plantObj.id) || pr.plant_name === plantObj.name))) &&
+            (currentUser?.role === 'admin' || currentUser?.role === 'owner' || !currentUser?.id || (pr.assigned_reps && pr.assigned_reps.includes(currentUser.id)) || (currentUser?.supplier_id && pr.supplier_id === currentUser.supplier_id))
+          ) || allProjects.find(pr => 
             String(pr.plant_id) === String(selectedPlant) || 
             pr.plant_name === selectedPlant || 
             (plantObj && (String(pr.plant_id) === String(plantObj.id) || pr.plant_name === plantObj.name))
+          );
+
+          const plantMatchAsgn = allAssignments.find(a => 
+            (String(a.plant_id) === String(selectedPlant) || a.plant_name === selectedPlant || (plantObj && (String(a.plant_id) === String(plantObj.id) || a.plant_name === plantObj.name))) &&
+            (!currentUser?.id || a.rep_id === currentUser.id)
+          ) || allAssignments.find(a => 
+            String(a.plant_id) === String(selectedPlant) || 
+            a.plant_name === selectedPlant || 
+            (plantObj && (String(a.plant_id) === String(plantObj.id) || a.plant_name === plantObj.name))
           );
 
           const activeAsgn = plantMatchAsgn || plantMatchProj || resolveActiveAssignment();
 
           // 1. DYNAMIC CLIENT RESOLUTION
           const dbSuppliers = getEntities('suppliers') || [];
-          const clientId = plantMatchAsgn?.billing_customer_id || plantMatchAsgn?.supplier_id || plantMatchProj?.supplier_id || plantMatchProj?.billing_customer_id || plantObj?.supplier_id;
+          const clientId = plantMatchProj?.supplier_id || plantMatchProj?.billing_customer_id || plantMatchAsgn?.billing_customer_id || plantMatchAsgn?.supplier_id || plantObj?.supplier_id;
           const supObj = dbSuppliers.find(s => String(s.id) === String(clientId) || s.name === clientId || s.code === clientId || (s.plants_served && Array.isArray(s.plants_served) && s.plants_served.includes(selectedPlant)));
 
           let displayClient = supObj ? supObj.name : null;
@@ -2945,7 +2951,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
           }
 
           // 2. DYNAMIC PROJECT/PROGRAM RESOLUTION
-          let displayProject = (plantMatchProj && String(plantMatchProj.plant_id) === String(selectedPlant) ? plantMatchProj.name : null) || (plantMatchAsgn && String(plantMatchAsgn.plant_id) === String(selectedPlant) ? plantMatchAsgn.name || plantMatchAsgn.project_name : null);
+          let displayProject = (plantMatchProj ? plantMatchProj.name : null) || (plantMatchAsgn ? plantMatchAsgn.name || plantMatchAsgn.project_name : null);
           if (!displayProject) {
             const pLower = (displayPlant + ' ' + selectedPlant).toLowerCase();
             if (pLower.includes('windsor') || pLower.includes('stellantis')) {
@@ -2961,43 +2967,27 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
             }
           }
 
-          // 3. DYNAMIC PURCHASE ORDER (PO #) RESOLUTION
-          let displayPo = (plantMatchAsgn && String(plantMatchAsgn.plant_id) === String(selectedPlant) ? plantMatchAsgn.po_number || plantMatchAsgn.poNumber : null) || 
-                          (plantMatchProj && String(plantMatchProj.plant_id) === String(selectedPlant) ? plantMatchProj.po_number : null) || 
+          // 3. AUTHORITATIVE PURCHASE ORDER (PO #) RESOLUTION
+          let displayPo = (plantMatchProj ? (plantMatchProj.po_number || plantMatchProj.poNumber) : null) ||
+                          (plantMatchAsgn ? (plantMatchAsgn.po_number || plantMatchAsgn.poNumber) : null) || 
                           plantObj?.po_number;
 
-          // Enforce strict location matching for fallback POs
-          const pLower = (displayPlant + ' ' + selectedPlant).toLowerCase();
-          if (pLower.includes('windsor') || pLower.includes('stellantis')) {
-            displayPo = 'PO-WIN-2026-92';
-          } else if (pLower.includes('oshawa')) {
-            displayPo = 'PO-OSH-2026-74';
-          } else if (pLower.includes('cami')) {
-            displayPo = 'PO-GM-CAMI-2026-88';
-          } else if (pLower.includes('oakville') || pLower.includes('ford')) {
-            displayPo = 'PO-FORD-OAK-2026-15';
-          } else if (!displayPo || displayPo === 'PO-GM-CAMI-2026-88') {
-            const codeClean = (plantObj?.code || selectedPlant || 'LOC').replace(/[^A-Z0-9]/gi, '').toUpperCase();
-            displayPo = `PO-${codeClean.substring(0, 4)}-2026-07`;
+          // If no PO exists in DB, generate standard 8-digit numeric automotive PO (e.g. 00011000)
+          if (!displayPo) {
+            displayPo = '00011000';
           }
 
-          // 4. DYNAMIC ASSIGNED PARTS RESOLUTION
+          // 4. AUTHORITATIVE ASSIGNED PARTS RESOLUTION
           const projId = plantMatchProj?.id || plantMatchAsgn?.project_id || plantMatchAsgn?.id;
           const dbParts = getEntities('parts') || [];
           const partObj = dbParts.find(pt => String(pt.plant_id) === String(selectedPlant) || (projId && String(pt.project_id) === String(projId) && (String(plantMatchProj?.plant_id) === String(selectedPlant) || String(plantMatchAsgn?.plant_id) === String(selectedPlant))));
 
-          let displayPart = partObj ? (partObj.part_number ? `PN-${partObj.part_number}` : partObj.part_name) : ((plantMatchAsgn && String(plantMatchAsgn.plant_id) === String(selectedPlant) ? plantMatchAsgn.part_number : null) ? `PN-${plantMatchAsgn.part_number}` : ((plantMatchProj && String(plantMatchProj.plant_id) === String(selectedPlant) ? plantMatchProj.part_number : null) ? `PN-${plantMatchProj.part_number}` : null));
+          let displayPart = (plantMatchProj?.part_number ? (plantMatchProj.part_number.startsWith('PN-') ? plantMatchProj.part_number : `PN-${plantMatchProj.part_number}`) : null) ||
+                            (plantMatchAsgn?.part_number ? (plantMatchAsgn.part_number.startsWith('PN-') ? plantMatchAsgn.part_number : `PN-${plantMatchAsgn.part_number}`) : null) ||
+                            (partObj ? (partObj.part_number ? (partObj.part_number.startsWith('PN-') ? partObj.part_number : `PN-${partObj.part_number}`) : partObj.part_name) : null);
+
           if (!displayPart) {
-            const pLower = (displayPlant + ' ' + selectedPlant).toLowerCase();
-            if (pLower.includes('windsor') || pLower.includes('stellantis')) {
-              displayPart = 'PN-68493012-AB';
-            } else if (pLower.includes('oshawa') || pLower.includes('gm')) {
-              displayPart = 'PN-84920194';
-            } else if (pLower.includes('oakville') || pLower.includes('ford')) {
-              displayPart = 'PN-7T4Z-7000-A';
-            } else {
-              displayPart = 'PN-86291945';
-            }
+            displayPart = 'PN-84920194';
           }
 
           return (

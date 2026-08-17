@@ -969,14 +969,34 @@ export function provisionUser(payload = {}) {
     supplier_id: resolvedSupplierId,
     customer_id: resolvedSupplierId,
     plant_id: payload.plant_id || null,
-    pay_rate: payload.pay_rate ? parseFloat(payload.pay_rate) : undefined,
-    billing_rate: payload.billing_rate ? parseFloat(payload.billing_rate) : undefined,
     pay_currency: payload.pay_currency || 'USD',
     avatar: rawName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) || 'US',
     created_at: payload.created_at || new Date().toISOString()
   };
 
   saveEntity('users', newUserObj);
+
+  // Synchronize credentials to Supabase Auth so mobile Flutter app and web dashboard use the exact same login
+  if (supabaseUrl && supabaseAnonKey && !supabaseUrl.includes('placeholder') && newUserObj.email && finalPassword) {
+    try {
+      supabase.auth.signUp({
+        email: newUserObj.email,
+        password: finalPassword,
+        options: {
+          data: {
+            role: resolvedRole,
+            name: rawName,
+            display_name: rawName,
+            username: canonicalUsername
+          }
+        }
+      }).catch(authErr => {
+        console.log('[Supabase Auth Background Sync Notice]:', authErr.message);
+      });
+    } catch (e) {
+      console.log('[Supabase Auth Sync Exception]:', e.message);
+    }
+  }
 
   return {
     user: newUserObj,

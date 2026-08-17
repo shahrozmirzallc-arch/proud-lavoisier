@@ -1,0 +1,10 @@
+node_modules
+mobile_flutter
+tests
+scratch
+.git
+.agents
+.gemini
+*.apk
+*.zip
+*.log

@@ -8026,14 +8026,15 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
             return (
               <div className="flex-1 flex flex-col gap-5 min-h-0 text-left">
                 {/* Header & Controls Bar */}
-                <div className="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-200/90 flex flex-col xl:flex-row xl:items-center justify-between gap-4 flex-shrink-0">
-                  {/* Left: Branding & Title */}
-                  <div className="flex items-center gap-3.5 min-w-0">
-                    <div className="p-2 rounded-xl bg-slate-50 border border-slate-200 shrink-0">
-                      <img src={LOGO_BASE64} alt="IDS Logo" className="h-8 w-auto object-contain" />
-                    </div>
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
+                <div className="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-200/90 flex flex-col gap-3 flex-shrink-0">
+                  {/* Top Row: Left Title/Badge + Right Action Controls */}
+                  <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                    {/* Left: Branding & Title */}
+                    <div className="flex items-center gap-3.5">
+                      <div className="p-2 rounded-xl bg-slate-50 border border-slate-200 shrink-0">
+                        <img src={LOGO_BASE64} alt="IDS Logo" className="h-8 w-auto object-contain" />
+                      </div>
+                      <div className="flex items-center gap-2.5 flex-wrap">
                         <h3 className="text-base font-black text-slate-900 uppercase tracking-tight flex items-center gap-2">
                           <Shield className="w-4.5 h-4.5 text-blue-600 shrink-0" /> Client Quality Executive Workspace
                         </h3>
@@ -8041,37 +8042,42 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                           {clientCompany.name}
                         </span>
                       </div>
-                      <span className="text-xs text-slate-600 font-bold block mt-0.5 truncate">
-                        Authoritative Quality Intelligence & Live Assembly Containment Operations
-                      </span>
+                    </div>
+
+                    {/* Right: Symmetrically Matched Action Controls */}
+                    <div className="flex items-center gap-2.5 shrink-0">
+                      <div className="h-10 flex items-center gap-2 bg-white hover:bg-slate-50 px-3.5 rounded-xl border border-slate-300 shadow-2xs transition-colors">
+                        <MapPin className="w-4 h-4 text-blue-600 shrink-0" />
+                        <select 
+                          value={selectedClientPlantFilter}
+                          onChange={(e) => setSelectedClientPlantFilter(e.target.value)}
+                          className="bg-transparent text-xs font-black text-slate-900 focus:outline-none cursor-pointer pr-1 h-full"
+                        >
+                          <option value="all">All Plant Locations ({clientPlants.length || 1})</option>
+                          {(clientPlants.length > 0 ? clientPlants : ['plant_oakville']).map(pId => {
+                            const pl = plants.find(p => p.id === pId) || { name: pId };
+                            return <option key={pId} value={pId}>{pl.name}</option>;
+                          })}
+                        </select>
+                      </div>
+
+                      <button 
+                        type="button"
+                        onClick={() => handleDownloadWeeklyQualityDigest(currentUserCustomerId)}
+                        className="h-10 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-xl transition-all shadow-sm hover:shadow-md flex items-center gap-2 cursor-pointer whitespace-nowrap"
+                        title="Download Compiled Weekly Executive Digest in CSV/Excel"
+                      >
+                        <FileSpreadsheet className="w-4 h-4" /> Download Weekly Digest
+                      </button>
                     </div>
                   </div>
 
-                  {/* Right: Symmetrically Matched Action Controls */}
-                  <div className="flex items-center gap-2.5 shrink-0">
-                    <div className="h-10 flex items-center gap-2 bg-white hover:bg-slate-50 px-3.5 rounded-xl border border-slate-300 shadow-2xs transition-colors">
-                      <MapPin className="w-4 h-4 text-blue-600 shrink-0" />
-                      <select 
-                        value={selectedClientPlantFilter}
-                        onChange={(e) => setSelectedClientPlantFilter(e.target.value)}
-                        className="bg-transparent text-xs font-black text-slate-900 focus:outline-none cursor-pointer pr-1 h-full"
-                      >
-                        <option value="all">All Plant Locations ({clientPlants.length || 1})</option>
-                        {(clientPlants.length > 0 ? clientPlants : ['plant_oakville']).map(pId => {
-                          const pl = plants.find(p => p.id === pId) || { name: pId };
-                          return <option key={pId} value={pId}>{pl.name}</option>;
-                        })}
-                      </select>
-                    </div>
-
-                    <button 
-                      type="button"
-                      onClick={() => handleDownloadWeeklyQualityDigest(currentUserCustomerId)}
-                      className="h-10 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-xl transition-all shadow-sm hover:shadow-md flex items-center gap-2 cursor-pointer whitespace-nowrap"
-                      title="Download Compiled Weekly Executive Digest in CSV/Excel"
-                    >
-                      <FileSpreadsheet className="w-4 h-4" /> Download Weekly Digest
-                    </button>
+                  {/* Bottom Subtitle Row: Full un-truncated narrative */}
+                  <div className="pt-2.5 border-t border-slate-100 flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-blue-600 shrink-0"></span>
+                    <span className="text-xs text-slate-600 font-bold tracking-wide">
+                      Authoritative Quality Intelligence & Live Assembly Containment Operations
+                    </span>
                   </div>
                 </div>
 

@@ -837,6 +837,8 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
     const allPlants = getEntities('plants');
     setPlants(allPlants);
     window.__openDailyQualityReport = () => setActiveScreen('summary');
+    window.__openRoutineInspection = () => setActiveScreen('inspection');
+    window.__openLogRework = () => setActiveScreen('rework');
 
     if (propUser) {
       setCurrentUser(propUser);

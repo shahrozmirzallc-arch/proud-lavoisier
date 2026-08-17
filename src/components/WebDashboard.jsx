@@ -8047,14 +8047,14 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     </div>
                   </div>
 
-                  {/* Right: Controls Aligned on the Right */}
-                  <div className="flex items-center gap-2.5 flex-wrap sm:flex-nowrap shrink-0">
-                    <div className="flex items-center gap-2 bg-slate-50 px-3 py-2 rounded-xl border border-slate-300 shadow-2xs">
+                  {/* Right: Symmetrically Matched Action Controls */}
+                  <div className="flex items-center gap-2.5 shrink-0">
+                    <div className="h-10 flex items-center gap-2 bg-white hover:bg-slate-50 px-3.5 rounded-xl border border-slate-300 shadow-2xs transition-colors">
                       <MapPin className="w-4 h-4 text-blue-600 shrink-0" />
                       <select 
                         value={selectedClientPlantFilter}
                         onChange={(e) => setSelectedClientPlantFilter(e.target.value)}
-                        className="bg-transparent text-xs font-black text-slate-900 focus:outline-none cursor-pointer pr-2"
+                        className="bg-transparent text-xs font-black text-slate-900 focus:outline-none cursor-pointer pr-1 h-full"
                       >
                         <option value="all">All Plant Locations ({clientPlants.length || 1})</option>
                         {(clientPlants.length > 0 ? clientPlants : ['plant_oakville']).map(pId => {
@@ -8067,7 +8067,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     <button 
                       type="button"
                       onClick={() => handleDownloadWeeklyQualityDigest(currentUserCustomerId)}
-                      className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-xl transition-all shadow-sm hover:shadow-md flex items-center gap-2 cursor-pointer whitespace-nowrap"
+                      className="h-10 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-xl transition-all shadow-sm hover:shadow-md flex items-center gap-2 cursor-pointer whitespace-nowrap"
                       title="Download Compiled Weekly Executive Digest in CSV/Excel"
                     >
                       <FileSpreadsheet className="w-4 h-4" /> Download Weekly Digest

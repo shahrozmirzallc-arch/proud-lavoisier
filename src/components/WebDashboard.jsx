@@ -5810,68 +5810,74 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
             {/* CUSTOMER SIDEBAR BUTTONS */}
             {userRole === 'customer' && (
               <div className="flex flex-col gap-3">
-                <div className="p-2.5 rounded-2xl bg-amber-50 border border-amber-200 shadow-sm flex flex-col gap-1.5">
-                  <div className="text-[11px] font-extrabold text-amber-900 uppercase tracking-wider px-2 py-0.5 flex items-center gap-2">
-                    <Shield className="w-3.5 h-3.5 text-amber-700" />
-                    <span>Client Portal Suite</span>
+                <div className="p-2.5 rounded-2xl bg-slate-50 border border-slate-200/90 shadow-sm flex flex-col gap-1.5">
+                  <div className="text-[11px] font-black text-slate-900 uppercase tracking-wider px-2 py-0.5 flex items-center justify-between">
+                    <span className="flex items-center gap-1.5 text-blue-700">
+                      <Shield className="w-3.5 h-3.5" /> Client Portal Suite
+                    </span>
+                    <span className="w-2 h-2 rounded-full bg-blue-600"></span>
                   </div>
                   <button 
+                    type="button"
                     onClick={() => { setActiveTab('customer-portal'); setClientActiveSubTab('overview'); }}
-                    className={`w-full h-10 px-3 rounded-xl font-extrabold text-[13.5px] transition-all cursor-pointer flex items-center justify-between border ${
+                    className={`w-full h-10 px-3 rounded-xl font-black text-[13px] transition-all cursor-pointer flex items-center justify-between border ${
                       activeTab === 'customer-portal' && clientActiveSubTab === 'overview'
-                        ? 'bg-amber-600 text-white border-amber-700 shadow-md shadow-amber-600/20' 
-                        : 'bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900 border-slate-200'
+                        ? 'bg-blue-600 text-white border-blue-700 shadow-md shadow-blue-600/25' 
+                        : 'bg-white text-slate-800 hover:bg-slate-100 hover:text-slate-950 border-slate-200 shadow-2xs'
                     }`}
                   >
                     <div className="flex items-center gap-2">
-                      <Shield className={`w-4 h-4 ${activeTab === 'customer-portal' && clientActiveSubTab === 'overview' ? 'text-white' : 'text-amber-700'}`} />
+                      <Shield className={`w-4 h-4 ${activeTab === 'customer-portal' && clientActiveSubTab === 'overview' ? 'text-white' : 'text-blue-600'}`} />
                       <span>Executive Overview</span>
                     </div>
                   </button>
 
                   <button 
+                    type="button"
                     onClick={() => { setActiveTab('customer-portal'); setClientActiveSubTab('reports'); }}
-                    className={`w-full h-10 px-3 rounded-xl font-extrabold text-[13.5px] transition-all cursor-pointer flex items-center justify-between border ${
+                    className={`w-full h-10 px-3 rounded-xl font-black text-[13px] transition-all cursor-pointer flex items-center justify-between border ${
                       activeTab === 'customer-portal' && clientActiveSubTab === 'reports'
-                        ? 'bg-amber-600 text-white border-amber-700 shadow-md shadow-amber-600/20' 
-                        : 'bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900 border-slate-200'
+                        ? 'bg-blue-600 text-white border-blue-700 shadow-md shadow-blue-600/25' 
+                        : 'bg-white text-slate-800 hover:bg-slate-100 hover:text-slate-950 border-slate-200 shadow-2xs'
                     }`}
                   >
                     <div className="flex items-center gap-2">
-                      <Calendar className={`w-4 h-4 ${activeTab === 'customer-portal' && clientActiveSubTab === 'reports' ? 'text-white' : 'text-amber-700'}`} />
+                      <FileText className={`w-4 h-4 ${activeTab === 'customer-portal' && clientActiveSubTab === 'reports' ? 'text-white' : 'text-blue-600'}`} />
                       <span>Shift Reports Feed</span>
                     </div>
                   </button>
 
                   <button 
+                    type="button"
                     onClick={() => { setActiveTab('customer-portal'); setClientActiveSubTab('incidents'); }}
-                    className={`w-full h-10 px-3 rounded-xl font-extrabold text-[13.5px] transition-all cursor-pointer flex items-center justify-between border ${
+                    className={`w-full h-10 px-3 rounded-xl font-black text-[13px] transition-all cursor-pointer flex items-center justify-between border ${
                       activeTab === 'customer-portal' && clientActiveSubTab === 'incidents'
-                        ? 'bg-amber-600 text-white border-amber-700 shadow-md shadow-amber-600/20' 
-                        : 'bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900 border-slate-200'
+                        ? 'bg-blue-600 text-white border-blue-700 shadow-md shadow-blue-600/25' 
+                        : 'bg-white text-slate-800 hover:bg-slate-100 hover:text-slate-950 border-slate-200 shadow-2xs'
                     }`}
                   >
                     <div className="flex items-center gap-2">
-                      <AlertTriangle className={`w-4 h-4 ${activeTab === 'customer-portal' && clientActiveSubTab === 'incidents' ? 'text-white' : 'text-amber-700'}`} />
+                      <AlertCircle className={`w-4 h-4 ${activeTab === 'customer-portal' && clientActiveSubTab === 'incidents' ? 'text-white' : 'text-rose-600'}`} />
                       <span>Containments & 8D</span>
                     </div>
                   </button>
 
                   <button 
+                    type="button"
                     onClick={() => { setActiveTab('customer-portal'); setClientActiveSubTab('budget'); }}
-                    className={`w-full h-10 px-3 rounded-xl font-extrabold text-[13.5px] transition-all cursor-pointer flex items-center justify-between border ${
+                    className={`w-full h-10 px-3 rounded-xl font-black text-[13px] transition-all cursor-pointer flex items-center justify-between border ${
                       activeTab === 'customer-portal' && clientActiveSubTab === 'budget'
-                        ? 'bg-amber-600 text-white border-amber-700 shadow-md shadow-amber-600/20' 
-                        : 'bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900 border-slate-200'
+                        ? 'bg-blue-600 text-white border-blue-700 shadow-md shadow-blue-600/25' 
+                        : 'bg-white text-slate-800 hover:bg-slate-100 hover:text-slate-950 border-slate-200 shadow-2xs'
                     }`}
                   >
                     <div className="flex items-center gap-2">
-                      <Clock className={`w-4 h-4 ${activeTab === 'customer-portal' && clientActiveSubTab === 'budget' ? 'text-white' : 'text-amber-700'}`} />
+                      <DollarSign className={`w-4 h-4 ${activeTab === 'customer-portal' && clientActiveSubTab === 'budget' ? 'text-white' : 'text-emerald-600'}`} />
                       <span>PO Budget & OT</span>
                     </div>
-                    {expenseEntries.filter(e => e.status === 'pending_customer').length > 0 && (
-                      <span className="bg-amber-500 text-slate-950 text-[10.5px] px-1.5 py-0.5 rounded-full font-extrabold shadow-sm">
-                        {expenseEntries.filter(e => e.status === 'pending_customer').length}
+                    {timeEntries.filter(t => t && t.supplier_id === currentUserCustomerId && (t.hour_type === 'overtime' || t.overtime_hours > 0) && (t.status === 'client_pending' || !t.client_review_status || t.client_review_status === 'pending')).length > 0 && (
+                      <span className="bg-amber-500 text-slate-950 text-[10px] px-1.5 py-0.5 rounded-full font-black shadow-sm">
+                        {timeEntries.filter(t => t && t.supplier_id === currentUserCustomerId && (t.hour_type === 'overtime' || t.overtime_hours > 0) && (t.status === 'client_pending' || !t.client_review_status || t.client_review_status === 'pending')).length}
                       </span>
                     )}
                   </button>
@@ -5886,18 +5892,18 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                   </div>
                   <div className="space-y-1.5 text-xs text-slate-700">
-                    <div className="p-2 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
+                    <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-between">
                       <div>
-                        <p className="font-extrabold text-slate-900 text-xs">Clarence Kuiken</p>
-                        <p className="text-[10px] text-slate-500 font-semibold">IDS Senior Quality Rep</p>
+                        <p className="font-black text-slate-900 text-xs">Clarence Kuiken</p>
+                        <p className="text-[10px] text-slate-500 font-bold">IDS Senior Quality Liaison Rep</p>
                       </div>
-                      <span className="bg-emerald-100 text-emerald-800 text-[9.5px] px-1.5 py-0.5 rounded-md font-black">ON-SITE</span>
+                      <span className="bg-emerald-100 border border-emerald-300 text-emerald-900 text-[9.5px] px-2 py-0.5 rounded-md font-black">ON-SITE</span>
                     </div>
                   </div>
                 </div>
 
                 {/* 24/7 IDS QUALITY HOTLINE WIDGET */}
-                <div className="p-3.5 rounded-2xl bg-gradient-to-br from-slate-900 to-slate-800 text-white shadow-md flex flex-col gap-2 border border-slate-700">
+                <div className="p-3.5 rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white shadow-md flex flex-col gap-2 border border-slate-700">
                   <div className="flex items-center gap-2">
                     <PhoneCall className="w-4 h-4 text-emerald-400 shrink-0" />
                     <span className="text-xs font-black uppercase tracking-wide">24/7 IDS Quality Line</span>
@@ -5905,13 +5911,14 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   <p className="text-[11px] text-slate-300 leading-tight">
                     Direct urgent containment line for floor escalations and rep dispatches.
                   </p>
-                  <a href="tel:18005554371" className="text-xs font-black text-emerald-400 hover:underline block pt-1">
+                  <a href="tel:18005554371" className="text-xs font-black text-emerald-400 hover:underline block pt-1 font-mono">
                     1-800-555-IDS1
                   </a>
                 </div>
 
               </div>
             )}
+
 
             {/* ADMIN / MANAGEMENT GROUPED SIDEBAR BUTTONS */}
             {['admin', 'owner', 'accountant', 'lead', 'shahroz', 'super_admin']?.includes(userRole) && (
@@ -8018,14 +8025,21 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
               <div className="flex-1 flex flex-col gap-5 min-h-0 text-left">
                 {/* Header & Controls Bar */}
                 <div className="flex flex-col gap-3 sm:gap-4 pb-4 border-b border-slate-200 flex-shrink-0 bg-white p-4 sm:p-5 rounded-2xl shadow-sm">
-                  <div className="flex justify-between items-center flex-wrap gap-3">
-                    <div className="flex items-center gap-3">
-                      <img src={LOGO_BASE64} alt="IDS Logo" className="h-8 w-auto object-contain shrink-0" />
+                  <div className="flex justify-between items-center flex-wrap gap-4">
+                    <div className="flex items-center gap-3.5">
+                      <div className="p-2 rounded-xl bg-slate-50 border border-slate-200 shrink-0">
+                        <img src={LOGO_BASE64} alt="IDS Logo" className="h-8 w-auto object-contain" />
+                      </div>
                       <div>
-                        <h3 className="text-base font-black text-slate-900 uppercase tracking-tight flex items-center gap-2">
-                          <Shield className="w-4 h-4 text-blue-600 shrink-0" /> Client Quality Executive Workspace — {clientCompany.name}
-                        </h3>
-                        <span className="text-xs text-slate-600 font-semibold block mt-0.5">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h3 className="text-base font-black text-slate-900 uppercase tracking-tight flex items-center gap-2">
+                            <Shield className="w-4.5 h-4.5 text-blue-600 shrink-0" /> Client Quality Executive Workspace
+                          </h3>
+                          <span className="px-2.5 py-0.5 rounded-full bg-blue-100 border border-blue-300 text-blue-900 text-[10px] font-black uppercase tracking-wider">
+                            {clientCompany.name}
+                          </span>
+                        </div>
+                        <span className="text-xs text-slate-600 font-bold block mt-0.5">
                           Authoritative Quality Intelligence & Live Assembly Containment Operations
                         </span>
                       </div>
@@ -8033,8 +8047,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
                     {/* Controls: Plant Location Switcher & 1-Click Digest Export */}
                     <div className="flex items-center gap-2.5 flex-wrap">
-                      <div className="flex items-center gap-1.5 bg-slate-100 p-2 rounded-xl border border-slate-300 shadow-2xs">
-                        <MapPin className="w-4 h-4 text-blue-600 shrink-0 ml-1" />
+                      <div className="flex items-center gap-2 bg-slate-50 px-3 py-2 rounded-xl border border-slate-300 shadow-2xs">
+                        <MapPin className="w-4 h-4 text-blue-600 shrink-0" />
                         <select 
                           value={selectedClientPlantFilter}
                           onChange={(e) => setSelectedClientPlantFilter(e.target.value)}
@@ -8049,8 +8063,9 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                       </div>
 
                       <button 
+                        type="button"
                         onClick={() => handleDownloadWeeklyQualityDigest(currentUserCustomerId)}
-                        className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-xl transition-all shadow-sm flex items-center gap-2 cursor-pointer"
+                        className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-xl transition-all shadow-sm hover:shadow-md flex items-center gap-2 cursor-pointer"
                         title="Download Compiled Weekly Executive Digest in CSV/Excel"
                       >
                         <FileSpreadsheet className="w-4 h-4" /> Download Weekly Digest
@@ -8065,90 +8080,123 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   {/* SUB-TAB 1: OVERVIEW & ANALYTICS */}
                   {clientActiveSubTab === 'overview' && (
                     <div className="flex flex-col gap-5">
-                      {/* Top Floor Summary Banner - 5 Perfectly Aligned KPI Cards */}
+                      {/* Top Floor Summary Banner - 5 High-Contrast KPI Cards */}
                       {(() => {
                         const clientPpmStats = calculateSupplierPPM({ supplierId: currentUserCustomerId });
                         return (
                           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-                            <div className="bg-white border border-slate-200/90 shadow-2xs p-4 rounded-2xl flex flex-col justify-between h-full transition-all hover:border-blue-300">
-                              <div className="flex justify-between items-center text-slate-600 text-[11px] font-extrabold uppercase tracking-wider">
+                            {/* Card 1: Active Inspectors */}
+                            <div className="bg-white border border-slate-200/90 border-t-4 border-t-emerald-500 shadow-sm p-4 rounded-2xl flex flex-col justify-between h-full transition-all hover:shadow-md hover:border-slate-300">
+                              <div className="flex justify-between items-center text-slate-600 text-[11px] font-black uppercase tracking-wider">
                                 <span>Active Inspectors</span>
-                                <UserCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+                                <UserCheck className="w-4.5 h-4.5 text-emerald-600 shrink-0" />
                               </div>
-                              <div className="text-xl font-black text-slate-900 mt-2">{activeOnSiteReps.length} Reps</div>
-                              <span className="text-[10.5px] text-emerald-700 font-extrabold mt-1.5 flex items-center gap-1.5">
-                                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> On-Site Coverage
-                              </span>
+                              <div className="text-2xl font-black text-slate-900 mt-2">{activeOnSiteReps.length} Reps</div>
+                              <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between">
+                                <span className="text-[11px] text-emerald-700 font-black flex items-center gap-1.5">
+                                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> On-Site Coverage
+                                </span>
+                                <span className="text-[10px] text-slate-500 font-bold">100% Active</span>
+                              </div>
                             </div>
 
-                            <div className="bg-white border border-slate-200/90 shadow-2xs p-4 rounded-2xl flex flex-col justify-between h-full transition-all hover:border-blue-300">
-                              <div className="flex justify-between items-center text-slate-600 text-[11px] font-extrabold uppercase tracking-wider">
+                            {/* Card 2: Inspected Volume */}
+                            <div className="bg-white border border-slate-200/90 border-t-4 border-t-blue-500 shadow-sm p-4 rounded-2xl flex flex-col justify-between h-full transition-all hover:shadow-md hover:border-slate-300">
+                              <div className="flex justify-between items-center text-slate-600 text-[11px] font-black uppercase tracking-wider">
                                 <span>Inspected Volume</span>
-                                <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
+                                <CheckCircle2 className="w-4.5 h-4.5 text-blue-600 shrink-0" />
                               </div>
-                              <div className="text-xl font-black text-slate-900 mt-2">{totalShiftPiecesToday} Pcs</div>
-                              <span className="text-[10.5px] text-blue-700 font-extrabold mt-1.5">Authoritative Pieces</span>
+                              <div className="text-2xl font-black text-slate-900 mt-2">{totalShiftPiecesToday} Pcs</div>
+                              <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between">
+                                <span className="text-[11px] text-blue-700 font-black">Authoritative Pieces</span>
+                                <span className="text-[10px] text-slate-500 font-bold">Verified</span>
+                              </div>
                             </div>
 
-                            <div className="bg-white border border-slate-200/90 shadow-2xs p-4 rounded-2xl flex flex-col justify-between h-full transition-all hover:border-blue-300">
-                              <div className="flex justify-between items-center text-slate-600 text-[11px] font-extrabold uppercase tracking-wider">
+                            {/* Card 3: Defect Rate (PPM) */}
+                            <div className="bg-white border border-slate-200/90 border-t-4 border-t-purple-500 shadow-sm p-4 rounded-2xl flex flex-col justify-between h-full transition-all hover:shadow-md hover:border-slate-300">
+                              <div className="flex justify-between items-center text-slate-600 text-[11px] font-black uppercase tracking-wider">
                                 <span>Defect Rate (PPM)</span>
-                                <span className={`text-[9.5px] font-bold px-1.5 py-0.2 rounded uppercase ${
-                                  clientPpmStats.tier === 'world_class' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
+                                <span className={`text-[9.5px] font-black px-2 py-0.5 rounded uppercase ${
+                                  clientPpmStats.tier === 'world_class' ? 'bg-emerald-100 text-emerald-900 border border-emerald-300' : 'bg-amber-100 text-amber-900 border border-amber-300'
                                 }`}>
                                   Grade {clientPpmStats.ratingGrade}
                                 </span>
                               </div>
-                              <div className="text-xl font-black text-slate-900 mt-2 font-mono">{clientPpmStats.ppm} <span className="text-xs font-semibold text-slate-500">PPM</span></div>
-                              <span className="text-[10.5px] text-emerald-700 font-bold mt-1.5">{clientPpmStats.statusText}</span>
+                              <div className="text-2xl font-black text-slate-900 mt-2 font-mono">{clientPpmStats.ppm} <span className="text-xs font-bold text-slate-500">PPM</span></div>
+                              <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between">
+                                <span className="text-[11px] text-emerald-700 font-black">{clientPpmStats.statusText}</span>
+                                <span className="text-[10px] text-slate-500 font-bold">ISO Spec</span>
+                              </div>
                             </div>
 
-                            <div className="bg-white border border-slate-200/90 shadow-2xs p-4 rounded-2xl flex flex-col justify-between h-full transition-all hover:border-blue-300">
-                              <div className="flex justify-between items-center text-slate-600 text-[11px] font-extrabold uppercase tracking-wider">
+                            {/* Card 4: Defect-Free Yield */}
+                            <div className="bg-white border border-slate-200/90 border-t-4 border-t-amber-500 shadow-sm p-4 rounded-2xl flex flex-col justify-between h-full transition-all hover:shadow-md hover:border-slate-300">
+                              <div className="flex justify-between items-center text-slate-600 text-[11px] font-black uppercase tracking-wider">
                                 <span>Defect-Free Yield</span>
-                                <Zap className="w-4 h-4 text-amber-600 shrink-0" />
+                                <Zap className="w-4.5 h-4.5 text-amber-600 shrink-0" />
                               </div>
-                              <div className="text-xl font-black text-emerald-600 mt-2">{yieldRate}%</div>
-                              <span className="text-[10.5px] text-slate-600 font-bold mt-1.5">Shielded Line Yield</span>
+                              <div className="text-2xl font-black text-emerald-600 mt-2">{yieldRate}%</div>
+                              <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between">
+                                <span className="text-[11px] text-slate-700 font-black">Shielded Line Yield</span>
+                                <span className="text-[10px] text-emerald-600 font-bold">Target 99%+</span>
+                              </div>
                             </div>
 
-                            <div className="bg-white border border-slate-200/90 shadow-2xs p-4 rounded-2xl flex flex-col justify-between h-full transition-all hover:border-blue-300">
-                              <div className="flex justify-between items-center text-slate-600 text-[11px] font-extrabold uppercase tracking-wider">
+                            {/* Card 5: Containments */}
+                            <div className="bg-white border border-slate-200/90 border-t-4 border-t-rose-500 shadow-sm p-4 rounded-2xl flex flex-col justify-between h-full transition-all hover:shadow-md hover:border-slate-300">
+                              <div className="flex justify-between items-center text-slate-600 text-[11px] font-black uppercase tracking-wider">
                                 <span>Containments</span>
-                                <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                                <AlertCircle className="w-4.5 h-4.5 text-rose-600 shrink-0" />
                               </div>
-                              <div className="text-xl font-black text-rose-600 mt-2">
+                              <div className="text-2xl font-black text-rose-600 mt-2">
                                 {(incidents || []).filter(i => (i.supplier_id === currentUserCustomerId || i.customer_id === currentUserCustomerId || i.client_id === currentUserCustomerId)).length}
                               </div>
-                              <span className="text-[10.5px] text-rose-700 font-extrabold mt-1.5">Active Spill Alerts</span>
+                              <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between">
+                                <span className="text-[11px] text-rose-700 font-black">Active Spill Alerts</span>
+                                <span className="text-[10px] text-slate-500 font-bold">PRR Log</span>
+                              </div>
                             </div>
                           </div>
                         );
                       })()}
 
                       {/* PO Budget Consumption Meter Card */}
-                      <div className="bg-white border border-slate-200/90 shadow-2xs p-5 sm:p-6 rounded-2xl flex flex-col gap-4">
+                      <div className="bg-white border border-slate-200/90 shadow-sm p-5 sm:p-6 rounded-2xl flex flex-col gap-4">
                         <div className="flex justify-between items-center flex-wrap gap-2">
                           <div>
                             <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                              <DollarSign className="w-4 h-4 text-emerald-600 shrink-0" /> Purchase Order (PO) Budget Consumption Tracker
+                              <DollarSign className="w-4.5 h-4.5 text-emerald-600 shrink-0" /> Purchase Order (PO) Budget Consumption Tracker
                             </h4>
-                            <span className="text-[11px] text-slate-500 font-medium">Authoritative sort budget monitoring for active PO allocations</span>
+                            <span className="text-[11px] text-slate-600 font-bold block mt-0.5">Authoritative sort budget monitoring for active PO allocations</span>
                           </div>
-                          <span className="px-3 py-1 bg-blue-100 text-blue-900 border border-blue-300 font-black text-xs rounded-full">
+                          <span className="px-3.5 py-1 bg-blue-100 text-blue-900 border border-blue-300 font-black text-xs rounded-full">
                             PO # {activePoCode}
                           </span>
                         </div>
 
-                        <div className="flex flex-col gap-2.5 bg-slate-50 p-4 rounded-xl border border-slate-200/80">
-                          <div className="flex justify-between items-center text-xs font-bold text-slate-700 flex-wrap gap-2">
-                            <span>Allocated Budget: <strong className="text-slate-900">${allocatedPoBudgetVal.toLocaleString('en-US', { minimumFractionDigits: 2 })}</strong></span>
-                            <span>Consumed: <strong className="text-blue-700">${consumedPoBudgetVal.toLocaleString('en-US', { minimumFractionDigits: 2 })} ({poConsumedPercentage}%)</strong></span>
-                            <span>Remaining: <strong className="text-emerald-700">${remainingPoBudgetVal.toLocaleString('en-US', { minimumFractionDigits: 2 })} Balance</strong></span>
+                        <div className="flex flex-col gap-3 bg-slate-50 p-4 rounded-xl border border-slate-200/80">
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                            <div className="bg-white p-3 rounded-lg border border-slate-200">
+                              <span className="text-[10px] font-black text-slate-500 uppercase block">Allocated Budget</span>
+                              <span className="text-sm font-black text-slate-900">${allocatedPoBudgetVal.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                            </div>
+                            <div className="bg-white p-3 rounded-lg border border-slate-200">
+                              <span className="text-[10px] font-black text-slate-500 uppercase block">Consumed to Date</span>
+                              <span className="text-sm font-black text-blue-700">${consumedPoBudgetVal.toLocaleString('en-US', { minimumFractionDigits: 2 })} ({poConsumedPercentage}%)</span>
+                            </div>
+                            <div className="bg-white p-3 rounded-lg border border-slate-200">
+                              <span className="text-[10px] font-black text-slate-500 uppercase block">Remaining Balance</span>
+                              <span className="text-sm font-black text-emerald-700">${remainingPoBudgetVal.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                            </div>
                           </div>
+                          
                           {/* Progress Meter Bar */}
-                          <div className="w-full h-3.5 bg-slate-200 rounded-full overflow-hidden border border-slate-300/80">
-                            <div className="h-full bg-gradient-to-r from-blue-600 to-emerald-500 rounded-full transition-all" style={{ width: `${poConsumedPercentage}%` }}></div>
+                          <div className="w-full h-4 bg-slate-200 rounded-full overflow-hidden border border-slate-300">
+                            <div 
+                              className="h-full bg-gradient-to-r from-blue-600 to-emerald-500 rounded-full transition-all duration-500" 
+                              style={{ width: `${Math.max(2, Math.min(100, poConsumedPercentage))}%` }}
+                            ></div>
                           </div>
                         </div>
                       </div>
@@ -8156,29 +8204,29 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                       {/* Quality Pareto & Daily Yield Trend Cards - Equal Height Grid */}
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-stretch">
                         {/* Daily Inspection Trend Card */}
-                        <div className="bg-white border border-slate-200/90 shadow-2xs p-5 sm:p-6 rounded-2xl flex flex-col justify-between h-full gap-4">
-                          <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                            <TrendingUp className="w-4 h-4 text-blue-600 shrink-0" /> Daily Inspection Volume & Defect Trend (7 Days)
+                        <div className="bg-white border border-slate-200/90 shadow-sm p-5 sm:p-6 rounded-2xl flex flex-col justify-between h-full gap-4">
+                          <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 pb-3">
+                            <TrendingUp className="w-4.5 h-4.5 text-blue-600 shrink-0" /> Daily Inspection Volume & Defect Trend (7 Days)
                           </h4>
                           <div className="space-y-3 pt-1 flex-1 flex flex-col justify-between">
                             {dynamic7DayTrend.map((item) => (
-                              <div key={item.dayLabel} className="flex items-center gap-3 text-xs font-bold">
-                                <span className="w-10 text-slate-600 font-mono shrink-0">{item.dayLabel}</span>
+                              <div key={item.dayLabel} className="flex items-center gap-3 text-xs font-bold p-2 rounded-lg hover:bg-slate-50 transition-colors">
+                                <span className="w-12 text-slate-700 font-mono font-black shrink-0">{item.dayLabel}</span>
                                 <div className="flex-1 h-3.5 bg-slate-100 rounded-full overflow-hidden border border-slate-200 flex">
                                   <div className="h-full bg-blue-600 rounded-l-full" style={{ width: `${Math.min(100, item.vol / 8)}%` }}></div>
-                                  {item.def > 0 && <div className="h-full bg-rose-500" style={{ width: '4%' }}></div>}
+                                  {item.def > 0 && <div className="h-full bg-rose-500" style={{ width: '6%' }}></div>}
                                 </div>
-                                <span className="w-20 text-right font-mono text-slate-900 shrink-0">{item.vol} pcs</span>
-                                <span className="w-16 text-right font-mono text-emerald-600 font-black shrink-0">{item.pct}%</span>
+                                <span className="w-20 text-right font-mono text-slate-900 font-bold shrink-0">{item.vol} pcs</span>
+                                <span className="w-16 text-right font-mono text-emerald-700 font-black shrink-0">{item.pct}%</span>
                               </div>
                             ))}
                           </div>
                         </div>
 
                         {/* Part Number Quality Pareto Table */}
-                        <div className="bg-white border border-slate-200/90 shadow-2xs p-5 sm:p-6 rounded-2xl flex flex-col justify-between h-full gap-4">
-                          <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                            <Layers className="w-4 h-4 text-purple-600 shrink-0" /> Part Number Quality Pareto Breakdown
+                        <div className="bg-white border border-slate-200/90 shadow-sm p-5 sm:p-6 rounded-2xl flex flex-col justify-between h-full gap-4">
+                          <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 pb-3">
+                            <Layers className="w-4.5 h-4.5 text-purple-600 shrink-0" /> Part Number Quality Pareto Breakdown
                           </h4>
                           <div className="space-y-3 pt-1 flex-1 flex flex-col justify-between">
                             {dynamicPartPareto.length === 0 ? (
@@ -8187,10 +8235,10 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                               </div>
                             ) : (
                               dynamicPartPareto.map((item) => (
-                                <div key={item.pn} className="p-3.5 bg-slate-50 rounded-xl border border-slate-200/80 flex justify-between items-center gap-3 transition-all hover:bg-white hover:border-blue-300">
+                                <div key={item.pn} className="p-3.5 bg-slate-50 rounded-xl border border-slate-200/80 flex justify-between items-center gap-3 transition-all hover:bg-white hover:border-blue-300 hover:shadow-2xs">
                                   <div>
                                     <div className="text-xs font-black text-slate-900">PN {item.pn} — {item.name}</div>
-                                    <div className="text-[11px] text-slate-500 font-medium mt-0.5">{item.qty} Inspected • {item.defects} Defect Concerns</div>
+                                    <div className="text-[11px] text-slate-600 font-bold mt-0.5">{item.qty} Inspected • {item.defects} Defect Concerns</div>
                                   </div>
                                   <span className="px-3 py-1 rounded-lg bg-emerald-100 border border-emerald-300 text-emerald-900 font-black text-xs shrink-0">
                                     {item.yield}
@@ -8208,7 +8256,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   {clientActiveSubTab === 'reports' && (
                     <div className="flex flex-col gap-4">
                       {/* Search & Filter Bar */}
-                      <div className="bg-white border border-slate-200 shadow-sm p-3 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3">
+                      <div className="bg-white border border-slate-200 shadow-sm p-3.5 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3">
                         <div className="flex items-center gap-2 w-full sm:w-auto flex-1 max-w-md">
                           <Search className="w-4 h-4 text-slate-500 shrink-0" />
                           <input 
@@ -8216,16 +8264,16 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                             value={clientSearchQuery} 
                             onChange={(e) => setClientSearchQuery(e.target.value)}
                             placeholder="Search shift reports, part numbers, or reps..." 
-                            className="bg-slate-50 border border-slate-300 rounded-xl px-3 py-1.5 text-xs text-slate-900 placeholder-slate-500 focus:outline-none focus:border-blue-600 w-full font-medium"
+                            className="bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 placeholder-slate-500 focus:outline-none focus:border-blue-600 w-full font-bold"
                           />
                         </div>
 
                         <div className="flex items-center gap-2 w-full sm:w-auto">
-                          <span className="text-[10.5px] font-extrabold text-slate-600 uppercase tracking-wider">Date Period:</span>
+                          <span className="text-[11px] font-black text-slate-700 uppercase tracking-wider">Date Period:</span>
                           <select 
                             value={clientDateFilter} 
                             onChange={(e) => setClientDateFilter(e.target.value)}
-                            className="bg-slate-50 border border-slate-300 rounded-xl px-3 py-1.5 text-xs text-slate-900 font-bold focus:outline-none focus:border-blue-600 cursor-pointer"
+                            className="bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 font-black focus:outline-none focus:border-blue-600 cursor-pointer"
                           >
                             <option value="all">All Dates & Periods</option>
                             <option value="today">Today Only</option>
@@ -8238,7 +8286,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                       {/* Reports Feed */}
                       <div className="bg-white border border-slate-200 shadow-sm p-5 rounded-2xl flex flex-col gap-3">
                         <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider border-b border-slate-200 pb-3 flex items-center gap-2">
-                          <FileText className="w-4 h-4 text-blue-600" /> Published Daily Quality Reports Feed
+                          <FileText className="w-4.5 h-4.5 text-blue-600" /> Published Daily Quality Reports Feed
                         </h4>
 
                         {(() => {
@@ -8252,8 +8300,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
                           if (customerReports.length === 0) {
                             return (
-                              <div className="py-8 text-center text-slate-500 bg-slate-50 rounded-xl border border-dashed border-slate-300">
-                                <div className="text-xl mb-1"></div>
+                              <div className="py-12 text-center text-slate-500 bg-slate-50 rounded-xl border border-dashed border-slate-300">
                                 <div className="text-xs font-black text-slate-800">No published daily quality reports match filter criteria.</div>
                               </div>
                             );
@@ -8266,34 +8313,37 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                             const plantName = plant?.name || 'Oakville Assembly';
 
                             return (
-                              <div key={report.id} className="p-4 bg-slate-50 hover:bg-slate-100/80 transition-colors rounded-xl border border-slate-200 flex flex-col sm:flex-row justify-between sm:items-center gap-3">
-                                <div className="flex flex-col gap-1">
+                              <div key={report.id} className="p-4 bg-slate-50 hover:bg-white transition-all rounded-xl border border-slate-200/90 hover:border-blue-300 hover:shadow-2xs flex flex-col sm:flex-row justify-between sm:items-center gap-3">
+                                <div className="flex flex-col gap-1.5">
                                   <div className="flex items-center gap-2 flex-wrap">
                                     <span className="font-black text-slate-900 text-sm">{plantName}</span>
-                                    <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 border border-emerald-300 text-emerald-900 font-black text-[10px] uppercase"> Published Report</span>
-                                    <span className="text-xs text-slate-500 font-mono font-bold">{report.date}</span>
+                                    <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 border border-emerald-300 text-emerald-900 font-black text-[10px] uppercase">Published Report</span>
+                                    <span className="text-xs text-slate-600 font-mono font-black">{report.date}</span>
                                   </div>
-                                  <div className="text-xs text-slate-600 font-medium">
-                                    Inspector: <strong className="text-slate-900">{repName}</strong> • Walked Areas: <strong>{report.areas_walked?.length || 4} Checked</strong> • Incidents: <strong className="text-rose-600">{report.incidents_count || 0} Concerns</strong>
+                                  <div className="text-xs text-slate-700 font-bold">
+                                    Inspector: <strong className="text-slate-900 font-black">{repName}</strong> • Walked Areas: <strong>{report.areas_walked?.length || 4} Checked</strong> • Incidents: <strong className="text-rose-600">{report.incidents_count || 0} Concerns</strong>
                                   </div>
                                 </div>
 
                                 <div className="flex items-center gap-2 shrink-0">
                                   <button 
+                                    type="button"
                                     onClick={() => setSelectedShiftReport(report)}
-                                    className="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-900 font-bold text-xs rounded-xl cursor-pointer"
+                                    className="px-3.5 py-2 bg-slate-200 hover:bg-slate-300 text-slate-900 font-black text-xs rounded-xl cursor-pointer transition-colors"
                                   >
                                     View Details
                                   </button>
                                   <button 
+                                    type="button"
                                     onClick={() => handleDownloadShiftReport(report)}
-                                    className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs rounded-xl cursor-pointer flex items-center gap-1 shadow-sm"
+                                    className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-black text-xs rounded-xl cursor-pointer flex items-center gap-1.5 shadow-sm transition-colors"
                                   >
                                     <Download className="w-3.5 h-3.5" /> PDF
                                   </button>
                                   <button 
+                                    type="button"
                                     onClick={() => handleDownloadShiftReportExcel(report)}
-                                    className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs rounded-xl cursor-pointer flex items-center gap-1 shadow-sm"
+                                    className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-xl cursor-pointer flex items-center gap-1.5 shadow-sm transition-colors"
                                   >
                                     <FileSpreadsheet className="w-3.5 h-3.5" /> Excel
                                   </button>
@@ -8313,7 +8363,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
                           <AlertCircle className="w-4.5 h-4.5 text-rose-600" /> Active Quality Containment Alerts & 8D Defect Reports
                         </h4>
-                        <span className="bg-rose-100 text-rose-900 border border-rose-300 text-[10.5px] font-black px-2.5 py-0.5 rounded-full uppercase">
+                        <span className="bg-rose-100 text-rose-900 border border-rose-300 text-[10.5px] font-black px-3 py-1 rounded-full uppercase">
                           {(incidents || []).filter(i => (i.supplier_id === currentUserCustomerId || i.customer_id === currentUserCustomerId || i.client_id === currentUserCustomerId)).length} Active Incidents
                         </span>
                       </div>
@@ -8329,65 +8379,66 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
                           if (custIncidents.length === 0) {
                             return (
-                              <div className="py-8 text-center text-slate-500 bg-slate-50 rounded-xl border border-dashed border-slate-300">
-                                <div className="text-xl mb-1"></div>
+                              <div className="py-12 text-center text-slate-500 bg-slate-50 rounded-xl border border-dashed border-slate-300">
                                 <div className="text-xs font-black text-slate-800">No quality incidents logged for your plant locations.</div>
                               </div>
                             );
                           }
 
                           return custIncidents.map(inc => (
-                            <div key={inc.id} className="p-4 bg-slate-50 hover:bg-slate-100/90 transition-all rounded-xl border border-slate-200 flex flex-col gap-3 text-left">
+                            <div key={inc.id} className="p-4.5 bg-slate-50 hover:bg-white transition-all rounded-xl border border-slate-200/90 hover:border-rose-300 hover:shadow-2xs flex flex-col gap-3 text-left">
                               <div className="flex justify-between items-start flex-wrap gap-2">
                                 <div>
-                                  <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                  <div className="flex items-center gap-2 mb-1.5 flex-wrap">
                                     <span className="font-black text-blue-700 text-sm">PN {inc.part_number}</span>
-                                    <span className="bg-rose-100 text-rose-900 border border-rose-300 text-[10px] font-black px-2 py-0.5 rounded uppercase">
+                                    <span className="bg-rose-100 text-rose-900 border border-rose-300 text-[10px] font-black px-2.5 py-0.5 rounded uppercase">
                                       {inc.defect_type || 'Quality Audit Defect'}
                                     </span>
                                     {inc.client_acknowledged && (
-                                      <span className="bg-emerald-100 border border-emerald-300 text-emerald-900 text-[10px] font-black px-2 py-0.5 rounded uppercase flex items-center gap-1">
-                                         Client Signed Off by {inc.client_acknowledged_by || 'Client Quality Mgr'}
+                                      <span className="bg-emerald-100 border border-emerald-300 text-emerald-900 text-[10px] font-black px-2.5 py-0.5 rounded uppercase flex items-center gap-1">
+                                        Client Signed Off by {inc.client_acknowledged_by || 'Client Quality Mgr'}
                                       </span>
                                     )}
                                   </div>
-                                  <span className="text-xs text-slate-700 font-bold">{inc.description}</span>
+                                  <span className="text-xs text-slate-800 font-bold">{inc.description}</span>
                                 </div>
 
                                 <div className="flex items-center gap-2">
                                   <button 
+                                    type="button"
                                     onClick={() => setSelectedZoomImage(inc.photos?.[0] || 'https://via.placeholder.com/600x400?text=Inspection+Proof+Photo')}
-                                    className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-extrabold px-3 py-1.5 rounded-xl transition-colors shadow-sm cursor-pointer"
+                                    className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-black px-3.5 py-2 rounded-xl transition-colors shadow-sm cursor-pointer"
                                   >
                                     Inspect HD Proofs
                                   </button>
                                   {!inc.client_acknowledged && (
                                     <button 
+                                      type="button"
                                       onClick={() => setClientIncidentAckModal({ show: true, incident: inc, comment: '' })}
-                                      className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold px-3 py-1.5 rounded-xl transition-colors shadow-sm cursor-pointer"
+                                      className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black px-3.5 py-2 rounded-xl transition-colors shadow-sm cursor-pointer"
                                     >
-                                       Acknowledge & Sign-Off
+                                      Acknowledge & Sign-Off
                                     </button>
                                   )}
                                 </div>
                               </div>
 
-                              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-slate-200 text-xs font-medium">
-                                <div className="bg-white p-2 rounded-lg border border-slate-200">
-                                  <span className="text-slate-500 block text-[9.5px] uppercase font-bold">Plant Location</span>
+                              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-slate-200 text-xs">
+                                <div className="bg-white p-2.5 rounded-lg border border-slate-200">
+                                  <span className="text-slate-500 block text-[9.5px] uppercase font-black">Plant Location</span>
                                   <span className="text-slate-900 font-black">{inc.area || 'Assembly Line'}</span>
                                 </div>
-                                <div className="bg-white p-2 rounded-lg border border-slate-200">
-                                  <span className="text-slate-500 block text-[9.5px] uppercase font-bold">Defect Quantity</span>
-                                  <span className="text-amber-800 font-black">{inc.quantity || 1} Pcs</span>
+                                <div className="bg-white p-2.5 rounded-lg border border-slate-200">
+                                  <span className="text-slate-500 block text-[9.5px] uppercase font-black">Defect Quantity</span>
+                                  <span className="text-amber-900 font-black">{inc.quantity || 1} Pcs</span>
                                 </div>
-                                <div className="bg-white p-2 rounded-lg border border-slate-200">
-                                  <span className="text-slate-500 block text-[9.5px] uppercase font-bold">Reporting Inspector</span>
-                                  <span className="text-blue-800 font-black">{inc.rep_name || 'Clarence Kuiken'}</span>
+                                <div className="bg-white p-2.5 rounded-lg border border-slate-200">
+                                  <span className="text-slate-500 block text-[9.5px] uppercase font-black">Reporting Inspector</span>
+                                  <span className="text-blue-900 font-black">{inc.rep_name || 'Clarence Kuiken'}</span>
                                 </div>
-                                <div className="bg-white p-2 rounded-lg border border-slate-200">
-                                  <span className="text-slate-500 block text-[9.5px] uppercase font-bold">Level of Concern</span>
-                                  <span className="text-rose-800 font-black">{inc.concern_classification || 'PRR Containment'}</span>
+                                <div className="bg-white p-2.5 rounded-lg border border-slate-200">
+                                  <span className="text-slate-500 block text-[9.5px] uppercase font-black">Level of Concern</span>
+                                  <span className="text-rose-900 font-black">{inc.concern_classification || 'PRR Containment'}</span>
                                 </div>
                               </div>
                             </div>
@@ -8403,14 +8454,14 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                       {/* Overtime Approvals Queue */}
                       <div className="bg-white border border-slate-200 shadow-sm p-5 rounded-2xl flex flex-col gap-3">
                         <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider border-b border-slate-200 pb-2 flex items-center gap-2">
-                          <Clock className="w-4 h-4 text-amber-600" /> Overtime & Extra Shift Hours Approvals Queue
+                          <Clock className="w-4.5 h-4.5 text-amber-600" /> Overtime & Extra Shift Hours Approvals Queue
                         </h4>
                         <div className="flex flex-col gap-3">
                           {(() => {
                             const pendingOtList = timeEntries.filter(t => t && t.supplier_id === currentUserCustomerId && (t.hour_type === 'overtime' || t.overtime_hours > 0) && (t.status === 'client_pending' || !t.client_review_status || t.client_review_status === 'pending'));
 
                             if (pendingOtList.length === 0) {
-                              return <div className="text-center py-6 text-slate-500 bg-slate-50 rounded-xl border border-dashed border-slate-300 text-xs font-bold">No pending overtime entries requiring review.</div>;
+                              return <div className="text-center py-8 text-slate-500 bg-slate-50 rounded-xl border border-dashed border-slate-300 text-xs font-black">No pending overtime entries requiring review.</div>;
                             }
 
                             return pendingOtList.map(entry => {
@@ -8418,30 +8469,33 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                               const repName = repObj?.name || entry.rep_id || 'Clarence Kuiken';
 
                               return (
-                                <div key={entry.id} className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 flex flex-col gap-2">
+                                <div key={entry.id} className="p-4 bg-slate-50 rounded-xl border border-slate-200 flex flex-col gap-2.5">
                                   <div className="flex justify-between items-center text-xs">
                                     <span className="font-black text-slate-900 uppercase">{repName}</span>
-                                    <span className="text-amber-800 font-black">+{parseFloat(entry.overtime_hours || entry.hours || 0).toFixed(1)} hrs OT</span>
+                                    <span className="text-amber-900 font-black bg-amber-100 border border-amber-300 px-2.5 py-0.5 rounded-full">+{parseFloat(entry.overtime_hours || entry.hours || 0).toFixed(1)} hrs OT</span>
                                   </div>
-                                  <div className="text-xs text-slate-600"><strong className="text-slate-800 uppercase tracking-wider">Project:</strong> {resolveProjectTitle(entry.project_id)}</div>
-                                  <div className="text-xs text-slate-600"><strong className="text-slate-800 uppercase tracking-wider">Summary:</strong> "{entry.work_summary || entry.work_type || 'Routine Floor Inspection'}"</div>
+                                  <div className="text-xs text-slate-700"><strong className="text-slate-900 uppercase tracking-wider font-black">Project:</strong> {resolveProjectTitle(entry.project_id)}</div>
+                                  <div className="text-xs text-slate-700"><strong className="text-slate-900 uppercase tracking-wider font-black">Summary:</strong> "{entry.work_summary || entry.work_type || 'Routine Floor Inspection'}"</div>
                                   
                                   <div className="flex gap-2 justify-end mt-2 pt-2 border-t border-slate-200">
                                     <button 
+                                      type="button"
                                       onClick={() => setClientReviewModalState({ show: true, action: 'returned', entry, comment: '' })}
-                                      className="px-3 py-1.5 bg-amber-100 border border-amber-300 text-amber-900 font-bold text-xs rounded-xl cursor-pointer"
+                                      className="px-3.5 py-1.5 bg-amber-100 border border-amber-300 text-amber-900 font-black text-xs rounded-xl cursor-pointer hover:bg-amber-200 transition-colors"
                                     >
                                       Return
                                     </button>
                                     <button 
+                                      type="button"
                                       onClick={() => setClientReviewModalState({ show: true, action: 'rejected', entry, comment: '' })}
-                                      className="px-3 py-1.5 bg-rose-100 border border-rose-300 text-rose-900 font-bold text-xs rounded-xl cursor-pointer"
+                                      className="px-3.5 py-1.5 bg-rose-100 border border-rose-300 text-rose-900 font-black text-xs rounded-xl cursor-pointer hover:bg-rose-200 transition-colors"
                                     >
                                       Reject
                                     </button>
                                     <button 
+                                      type="button"
                                       onClick={() => handleClientApproveOvertime(entry)}
-                                      className="px-3 py-1.5 bg-emerald-600 text-white font-extrabold text-xs rounded-xl cursor-pointer shadow-sm"
+                                      className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-xl cursor-pointer shadow-sm transition-colors"
                                     >
                                       Approve OT
                                     </button>
@@ -8456,7 +8510,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                       {/* Plant Location & Contract Rate Specs */}
                       <div className="bg-white border border-slate-200 shadow-sm p-5 rounded-2xl flex flex-col gap-3">
                         <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider border-b border-slate-200 pb-2 flex items-center gap-2">
-                          <MapPin className="w-4 h-4 text-blue-600" /> Authorized Plant Locations & Rate Schedule
+                          <MapPin className="w-4.5 h-4.5 text-blue-600" /> Authorized Plant Locations & Rate Schedule
                         </h4>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                           {(filteredPlantIds).map(pId => {
@@ -8468,8 +8522,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                   <span className="font-black text-slate-900 text-xs">{plant.name}</span>
                                   <span className="px-2 py-0.5 rounded bg-blue-100 text-blue-900 text-[10px] font-black uppercase">{plant.oem_brand || 'OEM'}</span>
                                 </div>
-                                <div className="text-xs text-slate-600 font-medium">{plant.address}</div>
-                                <div className="text-xs font-bold text-blue-700 pt-1 border-t border-slate-200">
+                                <div className="text-xs text-slate-700 font-medium">{plant.address}</div>
+                                <div className="text-xs font-black text-blue-700 pt-1 border-t border-slate-200">
                                   Rate: {plantRate?.billing_rate ? `$${parseFloat(plantRate.billing_rate).toFixed(2)}/hr` : '$95.00/hr (Approved)'}
                                 </div>
                               </div>
@@ -8492,8 +8546,9 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                           <span className="font-black text-sm uppercase tracking-wider">HD Inspection Proof Lightbox</span>
                         </div>
                         <button 
+                          type="button"
                           onClick={() => setSelectedZoomImage(null)} 
-                          className="px-3 py-1 bg-slate-800 hover:bg-slate-700 rounded-xl text-xs font-bold cursor-pointer"
+                          className="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-xl text-xs font-black cursor-pointer"
                         >
                           Close 
                         </button>
@@ -8507,9 +8562,9 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         />
                       </div>
 
-                      <div className="w-full flex justify-between items-center text-xs text-slate-400 pt-2 border-t border-slate-800">
-                        <span>High-Resolution Photo Artifact • Stamped by Field Rep</span>
-                        <span className="text-emerald-400 font-bold">100% Verified Quality Proof</span>
+                      <div className="w-full flex justify-between items-center text-xs text-slate-300 pt-2 border-t border-slate-800">
+                        <span className="font-bold">High-Resolution Photo Artifact • Stamped by Field Rep</span>
+                        <span className="text-emerald-400 font-black">100% Verified Quality Proof</span>
                       </div>
                     </div>
                   </div>
@@ -8523,32 +8578,34 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
                           <CheckCircle2 className="w-5 h-5 text-emerald-600" /> Client Quality Incident Acknowledgment
                         </h3>
-                        <button onClick={() => setClientIncidentAckModal({ show: false, incident: null, comment: '' })} className="text-slate-400 hover:text-slate-700"><X className="w-5 h-5" /></button>
+                        <button type="button" onClick={() => setClientIncidentAckModal({ show: false, incident: null, comment: '' })} className="text-slate-500 hover:text-slate-800"><X className="w-5 h-5" /></button>
                       </div>
 
-                      <p className="text-xs text-slate-600 leading-relaxed font-medium">
-                        You are signing off as <strong>{currentUser?.name || 'Client Quality Manager'}</strong> for Part Number <strong>PN {clientIncidentAckModal.incident?.part_number}</strong>.
+                      <p className="text-xs text-slate-700 leading-relaxed font-medium">
+                        You are signing off as <strong className="text-slate-950 font-black">{currentUser?.name || 'Client Quality Manager'}</strong> for Part Number <strong className="text-slate-950 font-black">PN {clientIncidentAckModal.incident?.part_number}</strong>.
                       </p>
 
-                      <div className="flex flex-col gap-1">
-                        <label className="text-[10.5px] font-extrabold text-slate-700 uppercase tracking-wider">Client Sign-Off Comment / Action Note</label>
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-[10.5px] font-black text-slate-800 uppercase tracking-wider">Client Sign-Off Comment / Action Note</label>
                         <textarea
                           rows={3}
                           value={clientIncidentAckModal.comment}
                           onChange={(e) => setClientIncidentAckModal(prev => ({ ...prev, comment: e.target.value }))}
                           placeholder="e.g. Acknowledged by Quality Team. Containment approved."
-                          className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600 font-medium"
+                          className="w-full bg-white border-2 border-slate-300 rounded-xl p-3 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600 font-bold"
                         />
                       </div>
 
                       <div className="flex justify-end gap-2 pt-2 border-t border-slate-200">
                         <button
+                          type="button"
                           onClick={() => setClientIncidentAckModal({ show: false, incident: null, comment: '' })}
-                          className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl"
+                          className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 font-black text-xs rounded-xl"
                         >
                           Cancel
                         </button>
                         <button
+                          type="button"
                           onClick={handleClientAcknowledgeIncident}
                           className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-xl shadow-md"
                         >

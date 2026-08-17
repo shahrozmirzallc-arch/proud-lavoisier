@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useDeferredValue, useMemo } from 'react';
 import { 
-  Shield, Activity, Server, FileText, Users, Mail, DollarSign, Database, 
+  Shield, ShieldCheck, Activity, Server, FileText, Users, Mail, DollarSign, Database, 
   Search, Filter, ChevronRight, ChevronDown, ChevronUp, Globe, Building, X, Clock, CheckCircle, CheckCircle2, UserCheck, AlertCircle, AlertTriangle, PhoneCall, 
   FileSpreadsheet, Calendar, ArrowRight, UserPlus, MapPin, Printer, Download, Eye, EyeOff, Sparkles, Key,
   Milestone, TrendingUp, FolderKanban, PlusCircle, Plus, ArrowLeft, Camera, ClipboardCheck, Zap, Building2, ShieldAlert, User, Cpu, Mic, Video, Trash2, History, Lock, BarChart3, Layers
@@ -13580,41 +13580,53 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
       {/* RULE 2: EMERGENCY JOB HANDOVER & SHIFT TRANSFER MODAL ( ZERO HOURS WASTE ) */}
       {showHandoverModal && (
-        <div className="absolute inset-0 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-3 z-50 animate-in fade-in duration-200">
-          <div className="bg-surface-elevated border-2 border-amber-500/60 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col text-left">
-            <div className="bg-gradient-to-r from-amber-950 via-slate-900 to-slate-950 px-6 py-4 border-b border-amber-500/40 flex items-center justify-between">
+        <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-3 z-50 animate-in fade-in duration-200">
+          <div className="bg-white border-2 border-amber-400 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col text-left">
+            <div className="bg-gradient-to-r from-amber-500 to-amber-600 px-6 py-4 border-b border-amber-600 flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-amber-500 flex items-center justify-center text-slate-950 font-black"></div>
+                <div className="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center text-white font-black">
+                  <AlertTriangle className="w-5 h-5 text-white" />
+                </div>
                 <div>
-                  <h3 className="text-[14px] font-black text-amber-300 uppercase tracking-wider">Emergency Shift Transfer & Re-assign</h3>
-                  <span className="text-[11px] text-slate-300 font-medium">Zero-Hours-Waste Seamless Handover Protocol</span>
+                  <h3 className="text-[14px] font-black text-white uppercase tracking-wider">Emergency Shift Transfer & Re-assign</h3>
+                  <span className="text-[11.5px] text-amber-100 font-bold">Zero-Hours-Waste Seamless Handover Protocol</span>
                 </div>
               </div>
-              <button type="button" onClick={() => setShowHandoverModal(false)} className="text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
+              <button 
+                type="button" 
+                onClick={() => setShowHandoverModal(false)} 
+                className="text-white/80 hover:text-white transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
 
-            <div className="p-6 flex flex-col gap-4 text-left">
+            <div className="p-6 flex flex-col gap-4 text-left bg-white">
               {/* Handover Summary Banner */}
-              <div className="bg-slate-950/70 border border-slate-800 rounded-2xl p-4 space-y-2">
-                <div className="flex justify-between items-center text-xs text-slate-400 font-bold uppercase tracking-wider">
+              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-2">
+                <div className="flex justify-between items-center text-xs text-slate-600 font-black uppercase tracking-wider">
                   <span>Current Active Inspector</span>
-                  <span className="text-amber-400 font-black">Transferred Out</span>
+                  <span className="bg-amber-100 text-amber-900 border border-amber-300 px-2 py-0.5 rounded-full text-[10px] font-black tracking-wider">
+                    Transferred Out
+                  </span>
                 </div>
-                <div className="text-base font-black text-white">{handoverTargetRep?.name || 'Clarence Kuiken'}</div>
-                <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-800 text-[11.5px] font-bold">
-                  <div>Logged: <span className="text-emerald-400">4.5 hrs</span></div>
-                  <div>Inspected: <span className="text-cyan-400">380 pcs</span></div>
-                  <div>Defects: <span className="text-red-400">12 logged</span></div>
+                <div className="text-base font-black text-slate-900">{handoverTargetRep?.name || 'Clarence Kuiken'}</div>
+                <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-200 text-[11.5px] font-extrabold text-slate-700">
+                  <div>Logged: <span className="text-emerald-700 font-black">4.5 hrs</span></div>
+                  <div>Inspected: <span className="text-blue-700 font-black">380 pcs</span></div>
+                  <div>Defects: <span className="text-red-700 font-black">12 logged</span></div>
                 </div>
               </div>
 
               {/* Senior Inspector Selection */}
               <div className="flex flex-col gap-1.5">
-                <label className="text-[11px] font-bold text-amber-400 uppercase tracking-wider pl-0.5">Select Replacement Senior Inspector</label>
+                <label className="text-[11px] font-black text-slate-800 uppercase tracking-wider pl-0.5">
+                  Select Replacement Senior Inspector
+                </label>
                 <select 
                   value={handoverNewSeniorRepId}
                   onChange={(e) => setHandoverNewSeniorRepId(e.target.value)}
-                  className="h-11 w-full bg-slate-950 border border-amber-500/40 hover:border-amber-400 rounded-xl px-3.5 text-sm text-white font-bold focus:outline-none focus:ring-2 focus:ring-amber-500/30 transition-all"
+                  className="h-11 w-full bg-white border-2 border-slate-300 hover:border-amber-500 rounded-xl px-3.5 text-sm text-slate-900 font-extrabold focus:outline-none focus:ring-2 focus:ring-amber-500/30 transition-all cursor-pointer shadow-2xs"
                 >
                   {users.filter(u => u.name !== handoverTargetRep?.name && (u.role === 'rep' || u.role === 'lead' || isFieldRep(u))).map(u => (
                     <option key={u.id} value={u.name}>{u.name} — {u.title || u.role || 'Senior Inspector'}</option>
@@ -13624,32 +13636,35 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
               {/* Handover Reason */}
               <div className="flex flex-col gap-1.5">
-                <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider pl-0.5">Handover Rationale / Notes</label>
+                <label className="text-[11px] font-black text-slate-800 uppercase tracking-wider pl-0.5">
+                  Handover Rationale / Notes
+                </label>
                 <input 
                   type="text" 
                   value={handoverReason}
                   onChange={(e) => setHandoverReason(e.target.value)}
                   placeholder="Reason for emergency handover..."
-                  className="h-10 w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 text-xs text-white focus:outline-none focus:border-amber-500/60"
+                  className="h-11 w-full bg-white border-2 border-slate-300 hover:border-amber-500 rounded-xl px-3.5 text-xs text-slate-900 font-bold placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500/30 shadow-2xs"
                 />
               </div>
 
               {/* Rule Summary Box */}
-              <div className="bg-emerald-950/40 border border-emerald-500/30 rounded-2xl p-3.5 text-[11.5px] text-emerald-200 space-y-1">
-                <div className="font-black text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
-                  <span> Billing Integrity & Handover Guarantee</span>
+              <div className="bg-emerald-50 border-2 border-emerald-200 rounded-2xl p-4 text-[11.5px] text-emerald-950 space-y-1">
+                <div className="font-black text-emerald-800 uppercase tracking-wider flex items-center gap-1.5">
+                  <ShieldCheck className="w-4 h-4 text-emerald-700" />
+                  <span>Billing Integrity & Handover Guarantee</span>
                 </div>
-                <p className="leading-relaxed font-medium">
+                <p className="leading-relaxed font-semibold text-emerald-900">
                   {handoverTargetRep?.name || 'Current Rep'}'s worked hours will be snapshot in sub-timesheets at their billing rate. Senior Inspector will inherit active containment instructions & running counts seamlessly.
                 </p>
               </div>
             </div>
 
-            <div className="bg-slate-950 px-6 py-4 border-t border-slate-800 flex justify-end gap-3">
+            <div className="bg-slate-50 px-6 py-4 border-t border-slate-200 flex justify-end gap-3">
               <button 
                 type="button" 
                 onClick={() => setShowHandoverModal(false)} 
-                className="h-10 px-4 bg-slate-900 border border-slate-700 hover:bg-slate-800 text-slate-300 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                className="h-10 px-4 bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-2xs"
               >
                 Cancel
               </button>
@@ -13664,7 +13679,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     reason: handoverReason
                   });
                 }}
-                className="h-10 px-5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs rounded-xl transition-all cursor-pointer shadow-lg shadow-amber-500/20 uppercase tracking-wider flex items-center gap-1.5"
+                className="h-10 px-5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-black text-xs rounded-xl transition-all cursor-pointer shadow-md shadow-amber-500/20 uppercase tracking-wider flex items-center gap-1.5"
               >
                 <span>Execute Seamless Transfer</span>
               </button>

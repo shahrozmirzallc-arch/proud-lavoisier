@@ -973,6 +973,63 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
     return [];
   };
 
+  // Helper to dynamically resolve authoritative parts list for active plant/project
+  const getAvailablePartsList = () => {
+    const dbParts = getEntities('parts') || [];
+    const dbProjects = getEntities('projects') || [];
+    const activeAsgn = resolveActiveAssignment();
+    const activePlantId = selectedPlant || activeAsgn?.plant_id;
+    const activeSupplierId = activeAsgn?.supplier_id || activeAsgn?.client_id;
+    const activeProjId = activeAsgn?.project_id || activeAsgn?.id;
+
+    const partsMap = new Map();
+
+    // 1. Check direct active project part
+    const activeProj = dbProjects.find(p => String(p.id) === String(activeProjId)) || activeAsgn;
+    if (activeProj?.part_number) {
+      const cleanPN = String(activeProj.part_number).replace(/^PN-?/i, '');
+      partsMap.set(cleanPN, {
+        part_number: cleanPN,
+        part_name: activeProj.name || 'Assigned Project Component'
+      });
+    }
+
+    // 2. Filter parts for this project, supplier, or plant from parts database
+    dbParts.forEach(pt => {
+      const isMatch = (activeProjId && String(pt.project_id) === String(activeProjId)) ||
+                      (activeSupplierId && String(pt.supplier_id) === String(activeSupplierId)) ||
+                      (activePlantId && String(pt.plant_id) === String(activePlantId));
+      if (isMatch) {
+        const pn = String(pt.part_number || pt.partNumber || pt.code || pt.id).replace(/^PN-?/i, '');
+        const name = pt.part_name || pt.name || pt.description || 'Quality Inspected Component';
+        if (pn && !partsMap.has(pn)) {
+          partsMap.set(pn, { part_number: pn, part_name: name });
+        }
+      }
+    });
+
+    // 3. Fallback to all parts in parts table if plant-specific search is empty
+    if (partsMap.size === 0) {
+      dbParts.forEach(pt => {
+        const pn = String(pt.part_number || pt.partNumber || pt.code || pt.id).replace(/^PN-?/i, '');
+        const name = pt.part_name || pt.name || pt.description || 'Quality Inspected Component';
+        if (pn && !partsMap.has(pn)) {
+          partsMap.set(pn, { part_number: pn, part_name: name });
+        }
+      });
+    }
+
+    if (partsMap.size === 0) {
+      return [
+        { part_number: '84920194', part_name: 'Main Quality Component' },
+        { part_number: '7T4Z-7000-A', part_name: 'Stator Core Sub-Assembly' },
+        { part_number: '68493012-AB', part_name: 'Busbar Connector' }
+      ];
+    }
+
+    return Array.from(partsMap.values());
+  };
+
   // Explicit Authoritative Assignment Resolver (Section 1)
   const resolveActiveAssignment = () => {
     if (!currentUser) return null;
@@ -6288,9 +6345,11 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                     onChange={(e) => setInspPartNumber(e.target.value)}
                     className="phone-select text-[12.5px] font-bold"
                   >
-                    <option value="86286761">PN 86286761 (Tail Light Assembly)</option>
-                    <option value="86291945">PN 86291945 (Headlight Bin)</option>
-                    <option value="86300412">PN 86300412 (Harness Bracket)</option>
+                    {getAvailablePartsList().map(p => (
+                      <option key={p.part_number} value={p.part_number}>
+                        PN {p.part_number} ({p.part_name})
+                      </option>
+                    ))}
                   </select>
                 ) : (
                   <input 
@@ -6592,23 +6651,26 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                 <div className="bg-slate-900 border border-slate-800 rounded-2xl p-3 flex flex-col gap-2">
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Instant Scan Options (Unlimited):</span>
                   <div className="grid grid-cols-3 gap-1.5">
-                    {["PN-86286761", "PN-86291945", "PN-86300412"].map((code) => (
-                      <button
-                        key={code}
-                        type="button"
-                        onClick={() => {
-                          const tag = `${code}-${Date.now().toString().slice(-4)}`;
-                          const updated = [...inspScannedBarcodes, tag];
-                          setInspScannedBarcodes(updated);
-                          setInspPassQty(updated.length);
-                          if (inspPNMode === 'dropdown') setInspPartNumber(code.replace('PN-', ''));
-                          showToast(`Scanned ${tag}!`, "success");
-                        }}
-                        className="py-1.5 px-2 bg-slate-800 hover:bg-slate-700 text-emerald-300 rounded text-[10.5px] font-mono border border-slate-700 text-center cursor-pointer"
-                      >
-                        + {code}
-                      </button>
-                    ))}
+                    {getAvailablePartsList().slice(0, 3).map((p) => {
+                      const code = `PN-${p.part_number}`;
+                      return (
+                        <button
+                          key={p.part_number}
+                          type="button"
+                          onClick={() => {
+                            const tag = `${code}-${Date.now().toString().slice(-4)}`;
+                            const updated = [...inspScannedBarcodes, tag];
+                            setInspScannedBarcodes(updated);
+                            setInspPassQty(updated.length);
+                            if (inspPNMode === 'dropdown') setInspPartNumber(p.part_number);
+                            showToast(`Scanned ${tag}!`, "success");
+                          }}
+                          className="py-1.5 px-2 bg-slate-800 hover:bg-slate-700 text-emerald-300 rounded text-[10.5px] font-mono border border-slate-700 text-center cursor-pointer"
+                        >
+                          + {code}
+                        </button>
+                      );
+                    })}
                   </div>
 
                   <div className="flex items-center gap-2 pt-1 border-t border-slate-800 mt-1">
@@ -6692,9 +6754,11 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                     onChange={(e) => setReworkPN(e.target.value)}
                     className="phone-select text-[12.5px] font-bold"
                   >
-                    <option value="86286761">PN 86286761 (Tail Light Assembly)</option>
-                    <option value="86291945">PN 86291945 (Headlight Bin)</option>
-                    <option value="86300412">PN 86300412 (Harness Bracket)</option>
+                    {getAvailablePartsList().map(p => (
+                      <option key={p.part_number} value={p.part_number}>
+                        PN {p.part_number} ({p.part_name})
+                      </option>
+                    ))}
                   </select>
                 ) : (
                   <input 
@@ -6912,23 +6976,26 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                 <div className="bg-slate-900 border border-slate-800 rounded-2xl p-3 flex flex-col gap-2">
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Instant Scan Options (Unlimited):</span>
                   <div className="grid grid-cols-3 gap-1.5">
-                    {["PN-86286761", "PN-86291945", "PN-86300412"].map((code) => (
-                      <button
-                        key={code}
-                        type="button"
-                        onClick={() => {
-                          const tag = `${code}-${Date.now().toString().slice(-4)}`;
-                          const updated = [...reworkScannedBarcodes, tag];
-                          setReworkScannedBarcodes(updated);
-                          setReworkQty(updated.length);
-                          if (reworkPNMode === 'dropdown') setReworkPN(code.replace('PN-', ''));
-                          showToast(`Scanned ${tag}!`, "success");
-                        }}
-                        className="py-1.5 px-2 bg-slate-800 hover:bg-slate-700 text-amber-300 rounded text-[10.5px] font-mono border border-slate-700 text-center cursor-pointer"
-                      >
-                        + {code}
-                      </button>
-                    ))}
+                    {getAvailablePartsList().slice(0, 3).map((p) => {
+                      const code = `PN-${p.part_number}`;
+                      return (
+                        <button
+                          key={p.part_number}
+                          type="button"
+                          onClick={() => {
+                            const tag = `${code}-${Date.now().toString().slice(-4)}`;
+                            const updated = [...reworkScannedBarcodes, tag];
+                            setReworkScannedBarcodes(updated);
+                            setReworkQty(updated.length);
+                            if (reworkPNMode === 'dropdown') setReworkPN(p.part_number);
+                            showToast(`Scanned ${tag}!`, "success");
+                          }}
+                          className="py-1.5 px-2 bg-slate-800 hover:bg-slate-700 text-amber-300 rounded text-[10.5px] font-mono border border-slate-700 text-center cursor-pointer"
+                        >
+                          + {code}
+                        </button>
+                      );
+                    })}
                   </div>
 
                   <div className="flex items-center gap-2 pt-1 border-t border-slate-800 mt-1">

@@ -433,6 +433,183 @@
           <strong>Mission:</strong> IDS Pulse is the mission-critical digital operating platform for Integrity Driven Solutions Inc. (IDS), powering real-time quality containment, defect inspection, and liaison engineering across major Tier-1 automotive assembly plants (GM, Ford, Stellantis, Tesla, Magna) in the US and Canada.
         </div>
         <p>In high-volume automotive manufacturing, a defect containment delay of even 15 minutes can halt an assembly line costing upwards of $50,000 per minute. The design of IDS Pulse must prioritize <strong>immediate legibility, high contrast, zero ambiguity, and frictionless speed</strong>.</p>
+
+        <!-- Master High-Clarity Vector Architectural Diagram -->
+        <div class="connected-diagram-container" style="background:#FFFFFF; border:2px solid #CBD5E1; padding:20px; border-radius:14px; box-shadow:0 4px 16px rgba(0,0,0,0.04); margin-top:20px;">
+          <div style="font-size:13.5px; font-weight:900; color:#10284A; letter-spacing:0.06em; margin-bottom:16px; text-align:center;">
+            CONNECTED DUAL-ENGINE ARCHITECTURE & DATA FLOW
+          </div>
+          
+          <svg viewBox="0 0 980 560" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg" style="font-family:'Inter', sans-serif; display:block;">
+            <defs>
+              <marker id="arrow-blue-des" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M 0 1 L 10 5 L 0 9 z" fill="#1769E0"/>
+              </marker>
+              <marker id="arrow-green-des" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M 0 1 L 10 5 L 0 9 z" fill="#059669"/>
+              </marker>
+              <marker id="arrow-purple-des" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M 0 1 L 10 5 L 0 9 z" fill="#7C3AED"/>
+              </marker>
+              <marker id="arrow-amber-des" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M 0 1 L 10 5 L 0 9 z" fill="#D97706"/>
+              </marker>
+            </defs>
+
+            <!-- SURFACE 1: WEB OPERATIONS SUITE (LEFT) -->
+            <rect x="15" y="15" width="280" height="530" rx="12" fill="#F8FAFC" stroke="#10284A" stroke-width="2.5"/>
+            <rect x="15" y="15" width="280" height="46" rx="12" fill="#10284A"/>
+            <rect x="15" y="45" width="280" height="16" fill="#10284A"/>
+            <text x="155" y="42" fill="#FFFFFF" font-size="13" font-weight="900" text-anchor="middle" letter-spacing="0.05em">WEB OPERATIONS SUITE</text>
+            <text x="155" y="74" fill="#64748B" font-size="10.5" font-weight="700" text-anchor="middle">Desktop Web (Admin & Client Portal)</text>
+
+            <!-- Box 1 -->
+            <rect x="28" y="90" width="254" height="95" rx="8" fill="#FFFFFF" stroke="#93C5FD" stroke-width="1.5"/>
+            <rect x="36" y="98" width="72" height="18" rx="4" fill="#1769E0"/>
+            <text x="72" y="111" fill="#FFFFFF" font-size="9" font-weight="900" text-anchor="middle">DASH-01 / 04</text>
+            <text x="116" y="112" fill="#10284A" font-size="11" font-weight="800">1-Stop Operations Hub</text>
+            <text x="36" y="132" fill="#475569" font-size="9.5" font-weight="600">• Master Matrix & Rep Dispatch</text>
+            <text x="36" y="148" fill="#475569" font-size="9.5" font-weight="600">• Client, Plant & PO Onboarding</text>
+            <text x="36" y="164" fill="#475569" font-size="9.5" font-weight="600">• User Provisioning & Permissions</text>
+
+            <!-- Box 2 -->
+            <rect x="28" y="198" width="254" height="95" rx="8" fill="#FFFFFF" stroke="#6EE7B7" stroke-width="1.5"/>
+            <rect x="36" y="206" width="72" height="18" rx="4" fill="#059669"/>
+            <text x="72" y="219" fill="#FFFFFF" font-size="9" font-weight="900" text-anchor="middle">DASH-02 / 06</text>
+            <text x="116" y="220" fill="#10284A" font-size="11" font-weight="800">Live Command Center</text>
+            <text x="36" y="240" fill="#475569" font-size="9.5" font-weight="600">• Real-Time Plant Floor Feed</text>
+            <text x="36" y="256" fill="#475569" font-size="9.5" font-weight="600">• Inspector Clock-In & Piece Counts</text>
+            <text x="36" y="272" fill="#475569" font-size="9.5" font-weight="600">• 1-Click Publishing Gate to Client</text>
+
+            <!-- Box 3 -->
+            <rect x="28" y="306" width="254" height="95" rx="8" fill="#FFFFFF" stroke="#C4B5FD" stroke-width="1.5"/>
+            <rect x="36" y="314" width="72" height="18" rx="4" fill="#7C3AED"/>
+            <text x="72" y="327" fill="#FFFFFF" font-size="9" font-weight="900" text-anchor="middle">DASH-03 / 08</text>
+            <text x="116" y="328" fill="#10284A" font-size="11" font-weight="800">Client Executive Portal</text>
+            <text x="36" y="348" fill="#475569" font-size="9.5" font-weight="600">• Live Certified Lot Containment</text>
+            <text x="36" y="364" fill="#475569" font-size="9.5" font-weight="600">• Defect PPM Analytics & Charts</text>
+            <text x="36" y="380" fill="#475569" font-size="9.5" font-weight="600">• Overtime Authorization Drawer</text>
+
+            <!-- Box 4 -->
+            <rect x="28" y="414" width="254" height="115" rx="8" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5"/>
+            <rect x="36" y="422" width="72" height="18" rx="4" fill="#10284A"/>
+            <text x="72" y="435" fill="#FFFFFF" font-size="9" font-weight="900" text-anchor="middle">DASH-05 / 11</text>
+            <text x="116" y="436" fill="#10284A" font-size="11" font-weight="800">Financials & Invoicing</text>
+            <text x="36" y="456" fill="#475569" font-size="9.5" font-weight="600">• Unified Rate Engine (CAD / USD)</text>
+            <text x="36" y="472" fill="#475569" font-size="9.5" font-weight="600">• PO Budget Cap Telemetry</text>
+            <text x="36" y="488" fill="#475569" font-size="9.5" font-weight="600">• Batch PDF Invoicing Engine</text>
+            <text x="36" y="504" fill="#475569" font-size="9.5" font-weight="600">• Payroll & QuickBooks CSV Export</text>
+
+            <!-- CENTER: REAL-TIME CLOUD SYNC BRIDGE -->
+            <rect x="330" y="15" width="320" height="530" rx="12" fill="#F1F5F9" stroke="#1769E0" stroke-width="2" stroke-dasharray="6,4"/>
+            <rect x="330" y="15" width="320" height="40" rx="12" fill="#1769E0"/>
+            <rect x="330" y="40" width="320" height="15" fill="#1769E0"/>
+            <text x="490" y="40" fill="#FFFFFF" font-size="12" font-weight="900" text-anchor="middle" letter-spacing="0.05em">AUTHORITATIVE CLOUD SYNC BRIDGE</text>
+
+            <!-- Flow 1 -->
+            <g>
+              <line x1="282" y1="135" x2="360" y2="135" stroke="#1769E0" stroke-width="2.5" marker-end="url(#arrow-blue-des)"/>
+              <rect x="350" y="95" width="280" height="60" rx="8" fill="#FFFFFF" stroke="#1769E0" stroke-width="1.5"/>
+              <rect x="360" y="103" width="55" height="16" rx="3" fill="#1769E0"/>
+              <text x="387" y="115" fill="#FFFFFF" font-size="8.5" font-weight="900" text-anchor="middle">FLOW 1</text>
+              <text x="424" y="116" fill="#10284A" font-size="10.5" font-weight="800">Setup & Dispatch Sync</text>
+              <text x="360" y="132" fill="#475569" font-size="9" font-weight="600">Client, Plant, PO & Rep Rates pushed</text>
+              <text x="360" y="145" fill="#1769E0" font-size="8.5" font-weight="700">Dashboard &rarr; Supabase &rarr; Mobile App</text>
+              <line x1="630" y1="135" x2="683" y2="135" stroke="#1769E0" stroke-width="2.5" marker-end="url(#arrow-blue-des)"/>
+            </g>
+
+            <!-- Flow 2 -->
+            <g>
+              <line x1="685" y1="235" x2="640" y2="235" stroke="#059669" stroke-width="2.5" marker-end="url(#arrow-green-des)"/>
+              <rect x="350" y="180" width="280" height="60" rx="8" fill="#FFFFFF" stroke="#059669" stroke-width="1.5"/>
+              <rect x="360" y="188" width="55" height="16" rx="3" fill="#059669"/>
+              <text x="387" y="200" fill="#FFFFFF" font-size="8.5" font-weight="900" text-anchor="middle">FLOW 2</text>
+              <text x="424" y="201" fill="#10284A" font-size="10.5" font-weight="800">Live Shift Telemetry</text>
+              <text x="360" y="217" fill="#475569" font-size="9" font-weight="600">Clock-Ins, Piece Counts & Rework logged</text>
+              <text x="360" y="230" fill="#059669" font-size="8.5" font-weight="700">Mobile App &rarr; Realtime Stream &rarr; Command Center</text>
+              <line x1="350" y1="235" x2="292" y2="235" stroke="#059669" stroke-width="2.5" marker-end="url(#arrow-green-des)"/>
+            </g>
+
+            <!-- Flow 3 -->
+            <g>
+              <line x1="685" y1="335" x2="640" y2="335" stroke="#7C3AED" stroke-width="2.5" marker-end="url(#arrow-purple-des)"/>
+              <rect x="350" y="265" width="280" height="65" rx="8" fill="#FFFFFF" stroke="#7C3AED" stroke-width="1.5"/>
+              <rect x="360" y="273" width="55" height="16" rx="3" fill="#7C3AED"/>
+              <text x="387" y="285" fill="#FFFFFF" font-size="8.5" font-weight="900" text-anchor="middle">FLOW 3</text>
+              <text x="424" y="286" fill="#10284A" font-size="10.5" font-weight="800">QA Publishing Gate</text>
+              <text x="360" y="302" fill="#475569" font-size="9" font-weight="600">Draft Incident &rarr; QA Director Review</text>
+              <text x="360" y="316" fill="#7C3AED" font-size="8.5" font-weight="700">1-Click Publish &rarr; Live in Client Portal</text>
+              <line x1="350" y1="335" x2="292" y2="335" stroke="#7C3AED" stroke-width="2.5" marker-end="url(#arrow-purple-des)"/>
+            </g>
+
+            <!-- Flow 4 -->
+            <g>
+              <line x1="685" y1="410" x2="640" y2="410" stroke="#D97706" stroke-width="2.5" marker-end="url(#arrow-amber-des)"/>
+              <rect x="350" y="355" width="280" height="55" rx="8" fill="#FFFFFF" stroke="#D97706" stroke-width="1.5"/>
+              <rect x="360" y="363" width="55" height="16" rx="3" fill="#D97706"/>
+              <text x="387" y="375" fill="#FFFFFF" font-size="8.5" font-weight="900" text-anchor="middle">FLOW 4</text>
+              <text x="424" y="376" fill="#10284A" font-size="10.5" font-weight="800">Overtime Sign-Off Bus</text>
+              <text x="360" y="392" fill="#475569" font-size="9" font-weight="600">Field Request &rarr; Customer Authorization</text>
+              <line x1="350" y1="380" x2="292" y2="380" stroke="#D97706" stroke-width="2.5" marker-end="url(#arrow-amber-des)"/>
+            </g>
+
+            <!-- Center DB -->
+            <g>
+              <rect x="350" y="430" width="280" height="98" rx="8" fill="#10284A"/>
+              <text x="490" y="452" fill="#93C5FD" font-size="10.5" font-weight="900" text-anchor="middle" letter-spacing="0.05em">AUTHORITATIVE DATABASE & BUS</text>
+              <text x="365" y="472" fill="#FFFFFF" font-size="9.5" font-weight="700">• Supabase PostgreSQL Cloud DB</text>
+              <text x="365" y="488" fill="#FFFFFF" font-size="9.5" font-weight="700">• Offline LocalStorage Queue Worker</text>
+              <text x="365" y="504" fill="#FFFFFF" font-size="9.5" font-weight="700">• SharedDatabase.js Access Layer</text>
+              <text x="365" y="520" fill="#93C5FD" font-size="9" font-weight="600">Strict Tenant & Client Role Isolation</text>
+            </g>
+
+            <!-- SURFACE 2: MOBILE QUALITY APP (RIGHT) -->
+            <rect x="685" y="15" width="280" height="530" rx="12" fill="#FFFBEB" stroke="#D97706" stroke-width="2.5"/>
+            <rect x="685" y="15" width="280" height="46" rx="12" fill="#D97706"/>
+            <rect x="685" y="45" width="280" height="16" fill="#D97706"/>
+            <text x="825" y="42" fill="#FFFFFF" font-size="13" font-weight="900" text-anchor="middle" letter-spacing="0.05em">MOBILE QUALITY APP</text>
+            <text x="825" y="74" fill="#78350F" font-size="10.5" font-weight="700" text-anchor="middle">Plant Floor Field Inspector (Android / PWA)</text>
+
+            <!-- Mobile Sub-Boxes -->
+            <!-- Box 1 -->
+            <rect x="698" y="90" width="254" height="95" rx="8" fill="#FFFFFF" stroke="#FCD34D" stroke-width="1.5"/>
+            <rect x="706" y="98" width="65" height="18" rx="4" fill="#D97706"/>
+            <text x="738" y="111" fill="#FFFFFF" font-size="9" font-weight="900" text-anchor="middle">APP-01</text>
+            <text x="778" y="112" fill="#10284A" font-size="11" font-weight="800">1-Tap Shift Clock-In</text>
+            <text x="706" y="132" fill="#475569" font-size="9.5" font-weight="600">• Single-Tap Shift Activation</text>
+            <text x="706" y="148" fill="#475569" font-size="9.5" font-weight="600">• Pre-Selected Plant Assignment</text>
+            <text x="706" y="164" fill="#475569" font-size="9.5" font-weight="600">• Live Running Elapsed Hours Timer</text>
+
+            <!-- Box 2 -->
+            <rect x="698" y="198" width="254" height="95" rx="8" fill="#FFFFFF" stroke="#FCD34D" stroke-width="1.5"/>
+            <rect x="706" y="206" width="65" height="18" rx="4" fill="#D97706"/>
+            <text x="738" y="219" fill="#FFFFFF" font-size="9" font-weight="900" text-anchor="middle">APP-02</text>
+            <text x="778" y="220" fill="#10284A" font-size="11" font-weight="800">4-Step Incident Wizard</text>
+            <text x="706" y="240" fill="#475569" font-size="9.5" font-weight="600">• Step 1 Details & Part Numbers</text>
+            <text x="706" y="256" fill="#475569" font-size="9.5" font-weight="600">• Step 2 Defect Counts & Concern Level</text>
+            <text x="706" y="272" fill="#475569" font-size="9.5" font-weight="600">• Step 3 Action Taken & Spoke With</text>
+
+            <!-- Box 3 -->
+            <rect x="698" y="306" width="254" height="105" rx="8" fill="#FFFFFF" stroke="#FCD34D" stroke-width="1.5"/>
+            <rect x="706" y="314" width="65" height="18" rx="4" fill="#D97706"/>
+            <text x="738" y="327" fill="#FFFFFF" font-size="9" font-weight="900" text-anchor="middle">APP-03/04</text>
+            <text x="778" y="328" fill="#10284A" font-size="11" font-weight="800">Visual Evidence & Scanner</text>
+            <text x="706" y="348" fill="#475569" font-size="9.5" font-weight="600">• Camera Capture + Canvas Markup</text>
+            <text x="706" y="364" fill="#475569" font-size="9.5" font-weight="600">• Defect Arrows, Circles & Notes</text>
+            <text x="706" y="380" fill="#475569" font-size="9.5" font-weight="600">• Barcode Container Scanner</text>
+            <text x="706" y="396" fill="#475569" font-size="9.5" font-weight="600">• Rework Counter & Scrap Quantities</text>
+
+            <!-- Box 4 -->
+            <rect x="698" y="424" width="254" height="105" rx="8" fill="#FFFFFF" stroke="#FCD34D" stroke-width="1.5"/>
+            <rect x="706" y="432" width="65" height="18" rx="4" fill="#D97706"/>
+            <text x="738" y="445" fill="#FFFFFF" font-size="9" font-weight="900" text-anchor="middle">APP-06/08</text>
+            <text x="778" y="446" fill="#10284A" font-size="11" font-weight="800">Offline Queue & Routing</text>
+            <text x="706" y="466" fill="#475569" font-size="9.5" font-weight="600">• Plant Dead-Zone Offline Queue</text>
+            <text x="706" y="482" fill="#475569" font-size="9.5" font-weight="600">• Auto-Sync Background Retry Worker</text>
+            <text x="706" y="498" fill="#475569" font-size="9.5" font-weight="600">• 3-Way Client Contact Resolution</text>
+            <text x="706" y="514" fill="#475569" font-size="9.5" font-weight="600">• In-App Overtime Request Launcher</text>
+          </svg>
+        </div>
       </section>
 
       <!-- Section 2: User Personas -->

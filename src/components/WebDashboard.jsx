@@ -3,7 +3,7 @@ import {
   Shield, ShieldCheck, Activity, Server, FileText, Users, Mail, DollarSign, Database, 
   Search, Filter, ChevronRight, ChevronDown, ChevronUp, Globe, Building, X, Clock, CheckCircle, CheckCircle2, UserCheck, AlertCircle, AlertTriangle, PhoneCall, 
   FileSpreadsheet, Calendar, ArrowRight, UserPlus, MapPin, Printer, Download, Eye, EyeOff, Sparkles, Key,
-  Milestone, TrendingUp, FolderKanban, PlusCircle, Plus, ArrowLeft, Camera, ClipboardCheck, Zap, Building2, ShieldAlert, User, Cpu, Mic, Video, Trash2, History, Lock, BarChart3, Layers
+  Milestone, TrendingUp, FolderKanban, PlusCircle, Plus, ArrowLeft, Camera, ClipboardCheck, Zap, Building2, ShieldAlert, User, Cpu, Mic, Video, Trash2, History, Lock, BarChart3, Layers, LayoutGrid
 } from 'lucide-react';
 import { getEntities, saveEntity, logSystemEvent, deleteRate, isFieldRep, syncWithSupabase, supabase, addUser, provisionUser, updateUser, deleteUser, isEntryAccountingEligible, addEmailLog } from './SharedDatabase';
 import { jsPDF } from 'jspdf';
@@ -383,6 +383,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     pay_currency: 'CAD'
   });
   const [userCategoryTab, setUserCategoryTab] = useState('all'); // 'all', 'reps', 'clients', 'staff'
+  const [operationsViewMode, setOperationsViewMode] = useState('matrix'); // 'matrix', 'users', 'projects', 'clients'
+  const [opsMatrixSearchTerm, setOpsMatrixSearchTerm] = useState('');
   const [expandedAlertIds, setExpandedAlertIds] = useState({});
   const [showAllAlerts, setShowAllAlerts] = useState(false);
   const [newUserForm, setNewUserForm] = useState({
@@ -2489,18 +2491,58 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
     e.preventDefault();
     setAssignmentLockAlert(null);
 
-    const targetUser = users.find(u => u.name === assignRepName || u.id === assignRepName);
-    const activeProj = projects.find(p => (p.rep_id === targetUser?.id || p.rep_id === assignRepName) && (!p.status || String(p.status).trim().toLowerCase() === 'active' || String(p.status).trim().toLowerCase() === 'on-site'));
+    const targetUser = users.find(u => u.name === assignRepName || u.id === assignRepName || u.username === assignRepName);
+    const repId = targetUser?.id || assignRepName;
+    const repName = targetUser?.name || assignRepName;
+
+    const activeProj = projects.find(p => (p.rep_id === repId || p.rep_id === repName || (p.assigned_reps || []).includes(repId)) && (!p.status || String(p.status).trim().toLowerCase() === 'active' || String(p.status).trim().toLowerCase() === 'on-site'));
 
     // Rule 1: Strict Active Assignment Lock Alert
     if (activeProj) {
-      const warningMsg = `${assignRepName} is currently active on [${activeProj.name || assignPlant}]. Please complete or transfer the active session before re-assigning.`;
+      const warningMsg = `${repName} is currently active on [${activeProj.name || assignPlant}]. Please complete or transfer the active session before re-assigning.`;
       setAssignmentLockAlert(warningMsg);
       showToast(warningMsg, "error");
       return;
     }
 
-    showToast(`Assigned ${assignRepName} to active dispatch!`, "success");
+    const allProjects = projects || [];
+    let targetProj = allProjects.find(p => p.plant_id === assignPlant && (!p.rep_id || p.rep_id === '__new__' || p.rep_id === 'unassigned'));
+    if (!targetProj) {
+      targetProj = allProjects.find(p => p.plant_id === assignPlant);
+    }
+
+    if (targetProj) {
+      const updated = {
+        ...targetProj,
+        rep_id: repId,
+        rep_name: repName,
+        assigned_rep_id: repId,
+        assigned_rep: repName,
+        status: 'active'
+      };
+      saveEntity('projects', updated);
+    } else {
+      const matchedPlant = plants.find(pl => pl.id === assignPlant);
+      const supplierId = matchedPlant?.supplier_ids?.[0] || 'sup_1785219515851_8234v';
+      const newProj = {
+        id: `proj_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+        name: `${matchedPlant?.name || 'Plant'} Quality Liaison`,
+        plant_id: assignPlant,
+        plant_name: matchedPlant?.name || 'Assembly Plant',
+        supplier_id: supplierId,
+        rep_id: repId,
+        rep_name: repName,
+        assigned_rep_id: repId,
+        assigned_rep: repName,
+        status: 'active',
+        created_at: new Date().toISOString()
+      };
+      saveEntity('projects', newProj);
+    }
+
+    setProjects(getEntities('projects') || []);
+    window.dispatchEvent(new Event('ids_pulse_db_update'));
+    showToast(`Assigned ${repName} to active dispatch!`, "success");
     setShowAssignRepModal(false);
   };
 
@@ -6234,33 +6276,54 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                       </button>
 
                       <button 
-                        onClick={() => setActiveTab('projects')}
-                        className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14.5px] transition-all cursor-pointer flex items-center justify-between border ${
-                          activeTab === 'projects' 
-                            ? 'bg-cyan-950/70 text-cyan-300 border-cyan-500/50 shadow-md shadow-cyan-500/20' 
-                            : 'bg-surface-elevated text-text-secondary hover:bg-surface hover:text-text-primary border-border-subtle/70'
+                        onClick={() => {
+                          setActiveTab('users');
+                          setOperationsViewMode('matrix');
+                        }}
+                        className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14px] transition-all cursor-pointer flex items-center justify-between border ${
+                          (activeTab === 'users' || activeTab === 'operations-hub') && operationsViewMode === 'matrix'
+                            ? 'bg-[#10284A] text-white border-[#10284A] shadow-md font-extrabold' 
+                            : 'bg-white text-slate-700 hover:bg-[#F5F8FC] hover:text-[#10284A] border-slate-200'
                         }`}
                       >
                         <div className="flex items-center gap-2.5">
-                          <FolderKanban className="w-4.5 h-4.5 text-cyan-400" />
-                          <span>Projects Registry</span>
+                          <LayoutGrid className={`w-4.5 h-4.5 ${(activeTab === 'users' || activeTab === 'operations-hub') && operationsViewMode === 'matrix' ? 'text-cyan-300' : 'text-[#1769E0]'}`} />
+                          <span>Operations Hub</span>
                         </div>
-                        {activeTab === 'projects' && <div className="w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_6px_#22d3ee]"></div>}
+                        <span className="text-[9px] bg-emerald-100 text-emerald-900 border border-emerald-300 px-1.5 py-0.5 rounded font-black">ALL-IN-1</span>
                       </button>
 
                       <button 
-                        onClick={() => setActiveTab('users')}
-                        className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14.5px] transition-all cursor-pointer flex items-center justify-between border ${
-                          activeTab === 'users' 
-                            ? 'bg-cyan-950/70 text-cyan-300 border-cyan-500/50 shadow-md shadow-cyan-500/20' 
-                            : 'bg-surface-elevated text-text-secondary hover:bg-surface hover:text-text-primary border-border-subtle/70'
+                        onClick={() => setActiveTab('projects')}
+                        className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14px] transition-all cursor-pointer flex items-center justify-between border ${
+                          activeTab === 'projects' 
+                            ? 'bg-[#10284A] text-white border-[#10284A] shadow-md font-extrabold' 
+                            : 'bg-white text-slate-700 hover:bg-[#F5F8FC] hover:text-[#10284A] border-slate-200'
                         }`}
                       >
                         <div className="flex items-center gap-2.5">
-                          <Users className="w-4.5 h-4.5 text-cyan-400" />
+                          <FolderKanban className={`w-4.5 h-4.5 ${activeTab === 'projects' ? 'text-white' : 'text-[#1769E0]'}`} />
+                          <span>Projects Registry</span>
+                        </div>
+                        {activeTab === 'projects' && <div className="w-2 h-2 rounded-full bg-cyan-400"></div>}
+                      </button>
+
+                      <button 
+                        onClick={() => {
+                          setActiveTab('users');
+                          setOperationsViewMode('users');
+                        }}
+                        className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14px] transition-all cursor-pointer flex items-center justify-between border ${
+                          activeTab === 'users' && operationsViewMode === 'users'
+                            ? 'bg-[#10284A] text-white border-[#10284A] shadow-md font-extrabold' 
+                            : 'bg-white text-slate-700 hover:bg-[#F5F8FC] hover:text-[#10284A] border-slate-200'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <Users className={`w-4.5 h-4.5 ${activeTab === 'users' && operationsViewMode === 'users' ? 'text-white' : 'text-[#1769E0]'}`} />
                           <span>User Directory</span>
                         </div>
-                        {activeTab === 'users' && <div className="w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_6px_#22d3ee]"></div>}
+                        {activeTab === 'users' && operationsViewMode === 'users' && <div className="w-2 h-2 rounded-full bg-cyan-400"></div>}
                       </button>
 
                       {isAdminOrOwner && (
@@ -11405,19 +11468,28 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
             </div>
           )}
 
-          {/* TAB 5: UNIFIED USER DIRECTORY & MANAGEMENT HUB */}
-          {activeTab === 'users' && (
+          {/* TAB 5: UNIFIED OPERATIONS & USER SETUP HUB */}
+          {(activeTab === 'users' || activeTab === 'operations-hub') && (
             <div className="flex-1 flex flex-col gap-3 min-h-0 text-left">
-              {/* Header Action Bar */}
+              {/* Universal Header Action Bar */}
               <div className="flex justify-between items-center pb-2.5 border-b border-border-subtle flex-shrink-0 flex-wrap gap-2">
                 <div>
                   <h3 className="text-[15px] font-black text-text-primary uppercase tracking-wider flex items-center gap-2">
-                    <Users className="w-5 h-5 text-cyan-400" />
-                    <span>User Management & Account Directory</span>
+                    <LayoutGrid className="w-5 h-5 text-blue-500" />
+                    <span>Operations & Directory Hub</span>
                   </h3>
-                  <p className="text-xs text-text-secondary">Centralized account provisioning for IDS Field Reps, Client Contacts, Leads & Staff</p>
+                  <p className="text-xs text-text-secondary">Centralized 1-stop workspace for Client Onboarding, Field Reps, Plant Projects & Rates</p>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
+                  <button 
+                    onClick={() => setShowQuickAddClient(true)}
+                    className="bg-[#10284A] hover:bg-[#173868] text-white font-extrabold py-2 px-3.5 rounded-xl text-[13px] cursor-pointer flex items-center gap-1.5 shadow-md transition-all border border-blue-400/40"
+                    title="Onboard New Automotive Client Company & PO Hours"
+                  >
+                    <Building2 className="w-4 h-4 text-cyan-300" />
+                    <span>+ Onboard Client & Plant</span>
+                  </button>
+
                   <button 
                     onClick={() => setShowAddUserModal(true)}
                     className="bg-[#3B82F6] hover:bg-blue-600 text-white font-extrabold py-2 px-3.5 rounded-xl text-[13px] cursor-pointer flex items-center gap-1.5 shadow-md transition-all border border-blue-400/40"
@@ -11444,83 +11516,285 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 </div>
               </div>
 
-              {/* Statistics & Category Pills Header */}
-              <div className="flex flex-col gap-3 flex-shrink-0">
-                {/* Stats Cards */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  <div className="bg-surface-elevated border border-border-subtle p-3 rounded-2xl text-left shadow-sm">
-                    <span className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider block">Total System Users</span>
-                    <span className="text-2xl font-black text-text-primary mt-1 block leading-none">{users.length} Users</span>
-                  </div>
-                  <div className="bg-surface-elevated border border-border-subtle p-3 rounded-2xl text-left shadow-sm">
-                    <span className="text-[10.5px] font-bold text-emerald-400 uppercase tracking-wider block">IDS Field Inspectors</span>
-                    <span className="text-2xl font-black text-emerald-350 mt-1 block leading-none">{users.filter(u => u.role === 'rep' || isFieldRep(u)).length} Reps</span>
-                  </div>
-                  <div className="bg-surface-elevated border border-border-subtle p-3 rounded-2xl text-left shadow-sm">
-                    <span className="text-[10.5px] font-bold text-amber-400 uppercase tracking-wider block">Client Quality Contacts</span>
-                    <span className="text-2xl font-black text-amber-350 mt-1 block leading-none">{users.filter(u => u.role === 'customer' || u.role === 'client' || !!u.customer_id).length} Contacts</span>
-                  </div>
-                  <div className="bg-surface-elevated border border-border-subtle p-3 rounded-2xl text-left shadow-sm">
-                    <span className="text-[10.5px] font-bold text-purple-400 uppercase tracking-wider block">Management & Staff</span>
-                    <span className="text-2xl font-black text-purple-350 mt-1 block leading-none">{users.filter(u => ['admin', 'owner', 'lead', 'accountant', 'shahroz'].includes(u.role)).length} Staff</span>
-                  </div>
-                </div>
+              {/* Master Operations Sub-View Switcher Pills */}
+              <div className="flex items-center gap-1.5 p-1.5 rounded-2xl bg-surface border border-border-subtle overflow-x-auto scrollbar-none flex-shrink-0">
+                <button
+                  onClick={() => setOperationsViewMode('matrix')}
+                  className={`px-3.5 py-1.5 rounded-xl font-extrabold text-[12.5px] cursor-pointer transition-all flex items-center gap-1.5 ${
+                    operationsViewMode === 'matrix'
+                      ? 'bg-[#10284A] text-white shadow-md'
+                      : 'text-text-secondary hover:text-text-primary hover:bg-surface-elevated'
+                  }`}
+                >
+                  <LayoutGrid className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>Master Operations Matrix</span>
+                  <span className="bg-cyan-500/20 text-cyan-300 text-[10px] px-1.5 py-0.5 rounded-md font-bold">{projects.length}</span>
+                </button>
 
-                {/* Sub-Tab Filter Pills */}
-                <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-surface border border-border-subtle overflow-x-auto scrollbar-none">
-                  <button
-                    onClick={() => setUserCategoryTab('all')}
-                    className={`px-3.5 py-1.5 rounded-xl font-extrabold text-[12.5px] cursor-pointer transition-all flex items-center gap-1.5 ${
-                      userCategoryTab === 'all'
-                        ? 'bg-[#3B82F6] text-white shadow-md'
-                        : 'text-text-secondary hover:text-text-primary hover:bg-surface-elevated'
-                    }`}
-                  >
-                    <Globe className="w-3.5 h-3.5" />
-                    <span>All Registered Users</span>
-                    <span className="bg-black/20 text-white text-[10px] px-1.5 py-0.5 rounded-md font-bold">{users.length}</span>
-                  </button>
+                <button
+                  onClick={() => setOperationsViewMode('users')}
+                  className={`px-3.5 py-1.5 rounded-xl font-extrabold text-[12.5px] cursor-pointer transition-all flex items-center gap-1.5 ${
+                    operationsViewMode === 'users'
+                      ? 'bg-[#10284A] text-white shadow-md'
+                      : 'text-text-secondary hover:text-text-primary hover:bg-surface-elevated'
+                  }`}
+                >
+                  <Users className="w-3.5 h-3.5 text-blue-400" />
+                  <span>User Accounts & Logins</span>
+                  <span className="bg-blue-500/20 text-blue-300 text-[10px] px-1.5 py-0.5 rounded-md font-bold">{users.length}</span>
+                </button>
 
-                  <button
-                    onClick={() => setUserCategoryTab('reps')}
-                    className={`px-3.5 py-1.5 rounded-xl font-extrabold text-[12.5px] cursor-pointer transition-all flex items-center gap-1.5 ${
-                      userCategoryTab === 'reps'
-                        ? 'bg-emerald-600 text-white shadow-md'
-                        : 'text-text-secondary hover:text-text-primary hover:bg-surface-elevated'
-                    }`}
-                  >
-                    <UserCheck className="w-3.5 h-3.5" />
-                    <span>IDS Field Reps</span>
-                    <span className="bg-black/20 text-white text-[10px] px-1.5 py-0.5 rounded-md font-bold">{users.filter(u => u.role === 'rep' || isFieldRep(u)).length}</span>
-                  </button>
+                <button
+                  onClick={() => setOperationsViewMode('projects')}
+                  className={`px-3.5 py-1.5 rounded-xl font-extrabold text-[12.5px] cursor-pointer transition-all flex items-center gap-1.5 ${
+                    operationsViewMode === 'projects'
+                      ? 'bg-[#10284A] text-white shadow-md'
+                      : 'text-text-secondary hover:text-text-primary hover:bg-surface-elevated'
+                  }`}
+                >
+                  <FolderKanban className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Projects & PO Budgets</span>
+                </button>
 
-                  <button
-                    onClick={() => setUserCategoryTab('clients')}
-                    className={`px-3.5 py-1.5 rounded-xl font-extrabold text-[12.5px] cursor-pointer transition-all flex items-center gap-1.5 ${
-                      userCategoryTab === 'clients'
-                        ? 'bg-amber-600 text-white shadow-md'
-                        : 'text-text-secondary hover:text-text-primary hover:bg-surface-elevated'
-                    }`}
-                  >
-                    <Building className="w-3.5 h-3.5" />
-                    <span>Client Contacts</span>
-                    <span className="bg-black/20 text-white text-[10px] px-1.5 py-0.5 rounded-md font-bold">{users.filter(u => u.role === 'customer' || u.role === 'client' || !!u.customer_id).length}</span>
-                  </button>
-
-                  <button
-                    onClick={() => setUserCategoryTab('staff')}
-                    className={`px-3.5 py-1.5 rounded-xl font-extrabold text-[12.5px] cursor-pointer transition-all flex items-center gap-1.5 ${
-                      userCategoryTab === 'staff'
-                        ? 'bg-purple-600 text-white shadow-md'
-                        : 'text-text-secondary hover:text-text-primary hover:bg-surface-elevated'
-                    }`}
-                  >
-                    <Shield className="w-3.5 h-3.5" />
-                    <span>Staff & Admin</span>
-                    <span className="bg-black/20 text-white text-[10px] px-1.5 py-0.5 rounded-md font-bold">{users.filter(u => ['admin', 'owner', 'lead', 'accountant', 'shahroz'].includes(u.role)).length}</span>
-                  </button>
-                </div>
+                <button
+                  onClick={() => setOperationsViewMode('clients')}
+                  className={`px-3.5 py-1.5 rounded-xl font-extrabold text-[12.5px] cursor-pointer transition-all flex items-center gap-1.5 ${
+                    operationsViewMode === 'clients'
+                      ? 'bg-[#10284A] text-white shadow-md'
+                      : 'text-text-secondary hover:text-text-primary hover:bg-surface-elevated'
+                  }`}
+                >
+                  <Building2 className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Clients & Plants Directory</span>
+                  <span className="bg-amber-500/20 text-amber-300 text-[10px] px-1.5 py-0.5 rounded-md font-bold">{suppliers.length}</span>
+                </button>
               </div>
+
+              {/* VIEW 1: MASTER OPERATIONS MATRIX */}
+              {operationsViewMode === 'matrix' && (
+                <div className="flex-1 flex flex-col gap-3 min-h-0 overflow-y-auto scrollbar-thin pr-1">
+                  {/* KPI Summary Cards */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 flex-shrink-0">
+                    <div className="bg-surface-elevated border border-border-subtle p-3 rounded-2xl text-left shadow-sm">
+                      <span className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider block">Active Plant Projects</span>
+                      <span className="text-2xl font-black text-text-primary mt-1 block leading-none">{projects.length} Projects</span>
+                    </div>
+                    <div className="bg-surface-elevated border border-border-subtle p-3 rounded-2xl text-left shadow-sm">
+                      <span className="text-[10.5px] font-bold text-emerald-400 uppercase tracking-wider block">Dispatched Field Reps</span>
+                      <span className="text-2xl font-black text-emerald-350 mt-1 block leading-none">{users.filter(u => u.role === 'rep' || isFieldRep(u)).length} Reps</span>
+                    </div>
+                    <div className="bg-surface-elevated border border-border-subtle p-3 rounded-2xl text-left shadow-sm">
+                      <span className="text-[10.5px] font-bold text-amber-400 uppercase tracking-wider block">Allocated PO Hours</span>
+                      <span className="text-2xl font-black text-amber-350 mt-1 block leading-none">{projects.reduce((acc, p) => acc + (parseFloat(p.allocated_hours) || 0), 0).toFixed(1)} hrs</span>
+                    </div>
+                    <div className="bg-surface-elevated border border-border-subtle p-3 rounded-2xl text-left shadow-sm">
+                      <span className="text-[10.5px] font-bold text-cyan-400 uppercase tracking-wider block">Currency Coverage</span>
+                      <span className="text-2xl font-black text-cyan-350 mt-1 block leading-none">CAD & USD</span>
+                    </div>
+                  </div>
+
+                  {/* Search Bar */}
+                  <div className="flex justify-between items-center bg-surface-elevated p-2.5 rounded-xl border border-border-subtle flex-wrap gap-2 flex-shrink-0">
+                    <div className="relative flex-1 min-w-[240px]">
+                      <Search className="w-4 h-4 text-text-secondary absolute left-3 top-1/2 -translate-y-1/2" />
+                      <input 
+                        type="text"
+                        placeholder="Search operations by Client, Plant, Rep Name, Part Number, PO..."
+                        value={opsMatrixSearchTerm}
+                        onChange={(e) => setOpsMatrixSearchTerm(e.target.value)}
+                        className="w-full pl-9 pr-4 py-1.5 bg-surface border border-border-subtle rounded-lg text-xs text-text-primary focus:outline-none focus:border-blue-500"
+                      />
+                    </div>
+                    <span className="text-xs font-bold text-text-secondary">
+                      Showing {projects.filter(p => {
+                        if (!opsMatrixSearchTerm.trim()) return true;
+                        const term = opsMatrixSearchTerm.toLowerCase();
+                        const sName = (resolveSupplierName(p.supplier_id) || p.supplier_id || '').toLowerCase();
+                        const pName = (resolvePlantName(p.plant_id) || p.plant_id || '').toLowerCase();
+                        const projName = (p.name || '').toLowerCase();
+                        const partNum = (p.part_number || '').toLowerCase();
+                        const poNum = (p.po_number || '').toLowerCase();
+                        const repName = (p.assigned_rep_name || p.rep_name || users.find(u => String(u.id) === String(p.rep_id) || u.username === p.rep_id)?.name || '').toLowerCase();
+                        return sName.includes(term) || pName.includes(term) || projName.includes(term) || partNum.includes(term) || poNum.includes(term) || repName.includes(term);
+                      }).length} of {projects.length} operational assignments
+                    </span>
+                  </div>
+
+                  {/* Master Matrix Table */}
+                  <div className="overflow-x-auto w-full bg-surface-elevated rounded-2xl border border-border-subtle shadow-sm">
+                    <table className="w-full border-collapse text-[13px] text-left">
+                      <thead>
+                        <tr className="bg-surface border-b border-border-subtle text-text-secondary font-extrabold uppercase tracking-wider text-[11px]">
+                          <th className="py-3 px-3.5">Client Company</th>
+                          <th className="py-3 px-3.5">Assembly Plant</th>
+                          <th className="py-3 px-3.5">Project Scope / Part</th>
+                          <th className="py-3 px-3.5">PO & Hours</th>
+                          <th className="py-3 px-3.5">Assigned Field Rep</th>
+                          <th className="py-3 px-3.5 text-right">Billing Rate</th>
+                          <th className="py-3 px-3.5 text-right">Pay Rate</th>
+                          <th className="py-3 px-3.5 text-center">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border-subtle text-text-primary">
+                        {projects.filter(p => {
+                          if (!opsMatrixSearchTerm.trim()) return true;
+                          const term = opsMatrixSearchTerm.toLowerCase();
+                          const sName = (resolveSupplierName(p.supplier_id) || p.supplier_id || '').toLowerCase();
+                          const pName = (resolvePlantName(p.plant_id) || p.plant_id || '').toLowerCase();
+                          const projName = (p.name || '').toLowerCase();
+                          const partNum = (p.part_number || '').toLowerCase();
+                          const poNum = (p.po_number || '').toLowerCase();
+                          const repName = (p.assigned_rep_name || p.rep_name || users.find(u => String(u.id) === String(p.rep_id) || u.username === p.rep_id)?.name || '').toLowerCase();
+                          return sName.includes(term) || pName.includes(term) || projName.includes(term) || partNum.includes(term) || poNum.includes(term) || repName.includes(term);
+                        }).map(p => {
+                          const supName = resolveSupplierName(p.supplier_id) || p.supplier_id || 'Client Company';
+                          const plantName = resolvePlantName(p.plant_id) || p.plant_id || 'Plant Location';
+                          const assignedRepName = p.assigned_rep_name || p.rep_name || (users.find(u => String(u.id) === String(p.rep_id) || u.username === p.rep_id)?.name) || 'Unassigned / Pending';
+                          const billRate = p.billing_rate ? `$${parseFloat(p.billing_rate).toFixed(2)}/hr ${p.currency || 'CAD'}` : '$65.00/hr CAD';
+                          const payRate = p.pay_rate ? `$${parseFloat(p.pay_rate).toFixed(2)}/hr ${p.currency || 'CAD'}` : '$32.00/hr CAD';
+                          return (
+                            <tr key={p.id} className="hover:bg-surface transition-colors">
+                              <td className="py-3 px-3.5 font-bold text-text-primary">
+                                <div className="flex items-center gap-2">
+                                  <Building2 className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                                  <span>{supName}</span>
+                                </div>
+                              </td>
+                              <td className="py-3 px-3.5 font-medium text-text-primary">
+                                <div>{plantName}</div>
+                                <span className="text-[10px] bg-slate-200 dark:bg-slate-700 text-text-primary px-1.5 py-0.5 rounded font-bold">{p.currency || 'CAD'}</span>
+                              </td>
+                              <td className="py-3 px-3.5">
+                                <div className="font-bold text-text-primary">{p.name || 'Quality Containment'}</div>
+                                <div className="text-[11px] text-text-secondary">{p.part_number ? `PN ${p.part_number}` : 'General Inspection'}</div>
+                              </td>
+                              <td className="py-3 px-3.5">
+                                <div className="font-bold text-text-primary">{p.po_number || 'PO-OPEN-2026'}</div>
+                                <div className="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold">{p.allocated_hours ? `${p.allocated_hours} hrs cap` : 'Open'}</div>
+                              </td>
+                              <td className="py-3 px-3.5">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <span className={`px-2 py-0.5 rounded-md text-[11.5px] font-bold ${
+                                    assignedRepName.includes('Unassigned') 
+                                      ? 'bg-amber-100 text-amber-900 border border-amber-300' 
+                                      : 'bg-emerald-100 text-emerald-950 border border-emerald-300'
+                                  }`}>
+                                    {assignedRepName}
+                                  </span>
+                                  <button
+                                    onClick={() => {
+                                      setAssignPlant(p.plant_id || 'gm_oshawa');
+                                      setShowAssignRepModal(true);
+                                    }}
+                                    className="px-2 py-0.5 bg-surface border border-border-subtle hover:bg-surface-elevated text-text-primary text-[10.5px] font-bold rounded cursor-pointer transition-all"
+                                  >
+                                    Reassign
+                                  </button>
+                                </div>
+                              </td>
+                              <td className="py-3 px-3.5 text-right font-bold text-text-primary">{billRate}</td>
+                              <td className="py-3 px-3.5 text-right font-bold text-emerald-600 dark:text-emerald-400">{payRate}</td>
+                              <td className="py-3 px-3.5 text-center">
+                                <button
+                                  onClick={() => {
+                                    setAssignPlant(p.plant_id || 'gm_oshawa');
+                                    setShowAssignRepModal(true);
+                                  }}
+                                  className="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white font-bold text-[11.5px] rounded-lg shadow-sm cursor-pointer transition-all flex items-center gap-1 mx-auto"
+                                >
+                                  <UserCheck className="w-3.5 h-3.5" />
+                                  <span>Dispatch</span>
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* VIEW 2: USER ACCOUNTS & LOGINS */}
+              {operationsViewMode === 'users' && (
+                <div className="flex-1 flex flex-col gap-3 min-h-0">
+                  {/* Statistics & Category Pills Header */}
+                  <div className="flex flex-col gap-3 flex-shrink-0">
+                    {/* Stats Cards */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      <div className="bg-surface-elevated border border-border-subtle p-3 rounded-2xl text-left shadow-sm">
+                        <span className="text-[10.5px] font-bold text-text-secondary uppercase tracking-wider block">Total System Users</span>
+                        <span className="text-2xl font-black text-text-primary mt-1 block leading-none">{users.length} Users</span>
+                      </div>
+                      <div className="bg-surface-elevated border border-border-subtle p-3 rounded-2xl text-left shadow-sm">
+                        <span className="text-[10.5px] font-bold text-emerald-400 uppercase tracking-wider block">IDS Field Inspectors</span>
+                        <span className="text-2xl font-black text-emerald-350 mt-1 block leading-none">{users.filter(u => u.role === 'rep' || isFieldRep(u)).length} Reps</span>
+                      </div>
+                      <div className="bg-surface-elevated border border-border-subtle p-3 rounded-2xl text-left shadow-sm">
+                        <span className="text-[10.5px] font-bold text-amber-400 uppercase tracking-wider block">Client Quality Contacts</span>
+                        <span className="text-2xl font-black text-amber-350 mt-1 block leading-none">{users.filter(u => u.role === 'customer' || u.role === 'client' || !!u.customer_id).length} Contacts</span>
+                      </div>
+                      <div className="bg-surface-elevated border border-border-subtle p-3 rounded-2xl text-left shadow-sm">
+                        <span className="text-[10.5px] font-bold text-purple-400 uppercase tracking-wider block">Management & Staff</span>
+                        <span className="text-2xl font-black text-purple-350 mt-1 block leading-none">{users.filter(u => ['admin', 'owner', 'lead', 'accountant', 'shahroz'].includes(u.role)).length} Staff</span>
+                      </div>
+                    </div>
+
+                    {/* Sub-Tab Filter Pills */}
+                    <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-surface border border-border-subtle overflow-x-auto scrollbar-none">
+                      <button
+                        onClick={() => setUserCategoryTab('all')}
+                        className={`px-3.5 py-1.5 rounded-xl font-extrabold text-[12.5px] cursor-pointer transition-all flex items-center gap-1.5 ${
+                          userCategoryTab === 'all'
+                            ? 'bg-[#3B82F6] text-white shadow-md'
+                            : 'text-text-secondary hover:text-text-primary hover:bg-surface-elevated'
+                        }`}
+                      >
+                        <Globe className="w-3.5 h-3.5" />
+                        <span>All Registered Users</span>
+                        <span className="bg-black/20 text-white text-[10px] px-1.5 py-0.5 rounded-md font-bold">{users.length}</span>
+                      </button>
+
+                      <button
+                        onClick={() => setUserCategoryTab('reps')}
+                        className={`px-3.5 py-1.5 rounded-xl font-extrabold text-[12.5px] cursor-pointer transition-all flex items-center gap-1.5 ${
+                          userCategoryTab === 'reps'
+                            ? 'bg-emerald-600 text-white shadow-md'
+                            : 'text-text-secondary hover:text-text-primary hover:bg-surface-elevated'
+                        }`}
+                      >
+                        <UserCheck className="w-3.5 h-3.5" />
+                        <span>IDS Field Reps</span>
+                        <span className="bg-black/20 text-white text-[10px] px-1.5 py-0.5 rounded-md font-bold">{users.filter(u => u.role === 'rep' || isFieldRep(u)).length}</span>
+                      </button>
+
+                      <button
+                        onClick={() => setUserCategoryTab('clients')}
+                        className={`px-3.5 py-1.5 rounded-xl font-extrabold text-[12.5px] cursor-pointer transition-all flex items-center gap-1.5 ${
+                          userCategoryTab === 'clients'
+                            ? 'bg-amber-600 text-white shadow-md'
+                            : 'text-text-secondary hover:text-text-primary hover:bg-surface-elevated'
+                        }`}
+                      >
+                        <Building className="w-3.5 h-3.5" />
+                        <span>Client Contacts</span>
+                        <span className="bg-black/20 text-white text-[10px] px-1.5 py-0.5 rounded-md font-bold">{users.filter(u => u.role === 'customer' || u.role === 'client' || !!u.customer_id).length}</span>
+                      </button>
+
+                      <button
+                        onClick={() => setUserCategoryTab('staff')}
+                        className={`px-3.5 py-1.5 rounded-xl font-extrabold text-[12.5px] cursor-pointer transition-all flex items-center gap-1.5 ${
+                          userCategoryTab === 'staff'
+                            ? 'bg-purple-600 text-white shadow-md'
+                            : 'text-text-secondary hover:text-text-primary hover:bg-surface-elevated'
+                        }`}
+                      >
+                        <Shield className="w-3.5 h-3.5" />
+                        <span>Staff & Admin</span>
+                        <span className="bg-black/20 text-white text-[10px] px-1.5 py-0.5 rounded-md font-bold">{users.filter(u => ['admin', 'owner', 'lead', 'accountant', 'shahroz'].includes(u.role)).length}</span>
+                      </button>
+                    </div>
+                  </div>
 
               {/* Users Grid */}
               <div className="flex-1 overflow-y-auto scrollbar-thin pr-1 flex flex-col gap-3">
@@ -11679,8 +11953,163 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         </div>
                       );
                     })}
+                  </div>
                 </div>
               </div>
+            )}
+
+              {/* VIEW 3: PROJECTS REGISTRY & PO BUDGETS */}
+              {operationsViewMode === 'projects' && (
+                <div className="flex-1 flex flex-col gap-3 min-h-0 overflow-y-auto scrollbar-thin pr-1">
+                  <div className="flex justify-between items-center bg-surface-elevated p-3 rounded-xl border border-border-subtle flex-wrap gap-2">
+                    <div>
+                      <h4 className="text-[14px] font-black text-text-primary uppercase tracking-wider flex items-center gap-2">
+                        <FolderKanban className="w-4 h-4 text-emerald-400" />
+                        <span>Projects & PO Budget Allocations</span>
+                      </h4>
+                      <p className="text-xs text-text-secondary">Authoritative registry of active plant inspection projects, client PO caps, and hourly billing rates</p>
+                    </div>
+                    <button
+                      onClick={() => setShowQuickAddClient(true)}
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-1.5 px-3 rounded-lg text-xs cursor-pointer flex items-center gap-1"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>+ Onboard Project Scope</span>
+                    </button>
+                  </div>
+
+                  {/* Projects Registry Cards */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {projects.map(p => {
+                      const sup = suppliers.find(s => s.id === p.supplier_id) || { name: p.supplier_id || 'Client Company' };
+                      const plant = plants.find(pl => pl.id === p.plant_id) || { name: p.plant_id || 'Plant Location' };
+                      const rep = users.find(u => String(u.id) === String(p.rep_id) || u.username === p.rep_id) || { name: p.rep_name || 'Unassigned / Pending' };
+                      const billRate = p.billing_rate ? `$${parseFloat(p.billing_rate).toFixed(2)}/hr ${p.currency || 'CAD'}` : '$65.00/hr CAD';
+                      const payRate = p.pay_rate ? `$${parseFloat(p.pay_rate).toFixed(2)}/hr ${p.currency || 'CAD'}` : '$32.00/hr CAD';
+                      return (
+                        <div key={p.id} className="bg-surface-elevated border border-border-subtle p-4 rounded-2xl flex flex-col justify-between gap-3 shadow-sm hover:border-emerald-500/50 transition-all">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <div className="text-[11px] font-black text-blue-400 uppercase tracking-wider">{sup.name}</div>
+                              <div className="text-base font-black text-text-primary mt-0.5">{p.name || 'Quality Containment Scope'}</div>
+                              <div className="text-xs text-text-secondary font-medium mt-0.5 flex items-center gap-1.5">
+                                <MapPin className="w-3 h-3 text-emerald-400" />
+                                <span>{plant.name}</span>
+                              </div>
+                            </div>
+                            <span className="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-full font-bold uppercase">
+                              {p.status || 'Active'}
+                            </span>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-2 bg-surface p-2.5 rounded-xl border border-border-subtle text-xs">
+                            <div>
+                              <span className="text-[10px] text-text-secondary uppercase font-bold block">Purchase Order</span>
+                              <span className="font-bold text-text-primary">{p.po_number || 'PO-OPEN-2026'}</span>
+                            </div>
+                            <div>
+                              <span className="text-[10px] text-text-secondary uppercase font-bold block">Budget Hours</span>
+                              <span className="font-bold text-emerald-400">{p.allocated_hours ? `${p.allocated_hours} hrs cap` : 'Open budget'}</span>
+                            </div>
+                            <div>
+                              <span className="text-[10px] text-text-secondary uppercase font-bold block">Billing Rate</span>
+                              <span className="font-bold text-text-primary">{billRate}</span>
+                            </div>
+                            <div>
+                              <span className="text-[10px] text-text-secondary uppercase font-bold block">Pay Rate</span>
+                              <span className="font-bold text-emerald-400">{payRate}</span>
+                            </div>
+                          </div>
+
+                          <div className="flex justify-between items-center pt-2 border-t border-border-subtle">
+                            <div className="text-xs">
+                              <span className="text-text-secondary">Assigned: </span>
+                              <strong className="text-text-primary font-bold">{rep.name}</strong>
+                            </div>
+                            <button
+                              onClick={() => {
+                                setAssignPlant(p.plant_id || 'gm_oshawa');
+                                setShowAssignRepModal(true);
+                              }}
+                              className="px-2.5 py-1 bg-surface border border-border-subtle hover:bg-surface-elevated text-text-primary font-bold text-xs rounded-lg transition-all"
+                            >
+                              Dispatch Rep
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* VIEW 4: SUPPLIERS & CLIENT DIRECTORY */}
+              {operationsViewMode === 'clients' && (
+                <div className="flex-1 flex flex-col gap-3 min-h-0 overflow-y-auto scrollbar-thin pr-1">
+                  <div className="flex justify-between items-center bg-surface-elevated p-3 rounded-xl border border-border-subtle flex-wrap gap-2">
+                    <div>
+                      <h4 className="text-[14px] font-black text-text-primary uppercase tracking-wider flex items-center gap-2">
+                        <Building2 className="w-4 h-4 text-amber-400" />
+                        <span>Client Companies & Quality Contacts Directory</span>
+                      </h4>
+                      <p className="text-xs text-text-secondary">Registered Tier-1 automotive suppliers, assembly plants, and authorized Client Quality Managers</p>
+                    </div>
+                    <button
+                      onClick={() => setShowQuickAddClient(true)}
+                      className="bg-amber-600 hover:bg-amber-700 text-white font-bold py-1.5 px-3 rounded-lg text-xs cursor-pointer flex items-center gap-1"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>+ Onboard Client</span>
+                    </button>
+                  </div>
+
+                  {/* Supplier Cards */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {suppliers.map(s => {
+                      const supPlants = plants.filter(pl => pl.supplier_id === s.id || pl.id === s.plant_id || s.plants?.includes(pl.id));
+                      const supUsers = users.filter(u => u.supplier_id === s.id || u.customer_id === s.id || (u.role === 'customer' && u.name?.toLowerCase().includes((s.name || '').toLowerCase())));
+                      return (
+                        <div key={s.id} className="bg-surface-elevated border border-border-subtle p-4 rounded-2xl flex flex-col justify-between gap-3 shadow-sm hover:border-amber-500/50 transition-all">
+                          <div>
+                            <div className="flex justify-between items-start">
+                              <div className="flex items-center gap-2.5">
+                                <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center font-black text-amber-400 text-sm">
+                                  {s.name?.substring(0, 2)?.toUpperCase() || 'SU'}
+                                </div>
+                                <div>
+                                  <div className="text-base font-black text-text-primary">{s.name}</div>
+                                  <div className="text-xs text-text-secondary font-medium">{s.code || s.id}</div>
+                                </div>
+                              </div>
+                              <span className="text-[10px] bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded-full font-bold">
+                                {supPlants.length} Plants
+                              </span>
+                            </div>
+
+                            <div className="mt-3 flex flex-col gap-1 text-xs text-text-secondary">
+                              <div><strong>Primary Contact:</strong> {s.contact_person || s.contact_name || (supUsers[0]?.name) || 'Robert Sterling'}</div>
+                              <div><strong>Contact Email:</strong> {s.contact_email || (supUsers[0]?.email) || `${(s.code || 'client').toLowerCase()}@quality.com`}</div>
+                            </div>
+                          </div>
+
+                          <div className="pt-2 border-t border-border-subtle flex justify-between items-center">
+                            <span className="text-xs text-text-secondary">{supUsers.length} Portal Logins Configured</span>
+                            <button
+                              onClick={() => {
+                                setOperationsViewMode('users');
+                                setUserCategoryTab('clients');
+                              }}
+                              className="text-xs text-blue-400 font-bold hover:underline"
+                            >
+                              Manage Portal Logins &rarr;
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

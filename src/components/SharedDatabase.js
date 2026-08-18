@@ -957,6 +957,10 @@ export function provisionUser(payload = {}) {
   const resolvedRole = (payload.role || 'rep').toLowerCase().trim();
   const resolvedSupplierId = payload.supplier_id || payload.customer_id || null;
 
+  const parsedPayRate = payload.pay_rate !== undefined && payload.pay_rate !== null && payload.pay_rate !== ''
+    ? parseFloat(payload.pay_rate)
+    : (payload.hourly_rate !== undefined && payload.hourly_rate !== null && payload.hourly_rate !== '' ? parseFloat(payload.hourly_rate) : undefined);
+
   const newUserObj = {
     id: payload.id || `usr_${Date.now()}_${Math.random().toString(36)?.substring(2, 7)}`,
     name: rawName,
@@ -969,6 +973,7 @@ export function provisionUser(payload = {}) {
     supplier_id: resolvedSupplierId,
     customer_id: resolvedSupplierId,
     plant_id: payload.plant_id || null,
+    pay_rate: parsedPayRate,
     pay_currency: payload.pay_currency || 'USD',
     avatar: rawName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) || 'US',
     created_at: payload.created_at || new Date().toISOString()

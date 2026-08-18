@@ -662,24 +662,35 @@
         </div>
       </section>
 
-      <!-- Section 6: Engineering Handoff & Testing -->
+      <!-- Section 6: Engineering Collaboration -->
       <section class="section">
-        <h2 class="section-title"><span class="section-title-num">06</span> Engineering Handoff & Testing Gates</h2>
-        <p>Designs are implemented using <strong>React 19 + Vite 8 + Tailwind CSS 4</strong>. Every PR must pass automated design verification suites:</p>
+        <h2 class="section-title"><span class="section-title-num">06</span> Engineering Collaboration & Quality Standards</h2>
+        <p>Design prototypes are seamlessly translated into production components using a centralized design system:</p>
 
-        <div class="card" style="background-color: var(--surface-slate);">
-          <pre style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--primary-navy); line-height: 1.5;">
-# 1. Run Complete Automated Test Suite (305 Tests Passing)
-npm test
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-title">
+              <span>Component Architecture</span>
+              <span class="badge badge-pass">Standards</span>
+            </div>
+            <ul>
+              <li><strong>Atomic Components:</strong> Shared buttons, badges, modals, and tables in dedicated component directories.</li>
+              <li><strong>High-Contrast Enforcement:</strong> Contrast ratio &ge; 7:1 across all themes and interactive states.</li>
+              <li><strong>Responsive Breakpoints:</strong> Seamless layout scaling from mobile viewports (375px) to dual-monitor desktop (1920px).</li>
+            </ul>
+          </div>
 
-# 2. Run Theme Contrast & Modal Gate Test
-npx vitest run tests/modal_and_theme_contrast_gate.test.js
-
-# 3. Run Report Layout & Branding Gate
-node tests/report_branding_and_layout_gate.test.js
-
-# 4. Production Build Verification
-npm run build</pre>
+          <div class="card">
+            <div class="card-title">
+              <span>Quality Assurance</span>
+              <span class="badge badge-pass">Enterprise</span>
+            </div>
+            <ul>
+              <li><strong>Visual Regression Guard:</strong> Automated theme contrast and modal accessibility validation.</li>
+              <li><strong>Zero-Clipping Standard:</strong> Multiline text safety across all on-screen tables and exported reports.</li>
+              <li><strong>Production Verification:</strong> Continuous testing and instantaneous live deployment.</li>
+            </ul>
+          </div>
         </div>
       </section>
 

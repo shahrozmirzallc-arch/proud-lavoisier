@@ -262,23 +262,6 @@ All generated PDF, Excel, and CSV documents must adhere to strict enterprise lay
 * `src/utils/generateInvoicePdf.js`: Canonical billing invoice PDF engine.
 * `src/utils/generateDailyReportPdf.js`: Shift & containment audit PDF engine.
 * `src/config/brandingConfig.js`: Canonical logo asset (`LOGO_BASE64`) and enterprise branding constants.
-
-### 6.3 Automated Quality & Design Gate Tests
-Before any design or code change is merged, the following automated tests MUST pass:
-```bash
-# Run complete test suite (305 tests across 31 test suites)
-npm test
-
-# Run Modal & Theme Contrast Verification Gate
-npx vitest run tests/modal_and_theme_contrast_gate.test.js
-
-# Run Report Branding & Layout Gate
-node tests/report_branding_and_layout_gate.test.js
-
-# Verify Production Build (Zero lint errors, zero undeclared variables)
-npm run build
-```
-
 ---
 
 ## 7. Designer Checklist for New Feature Specs

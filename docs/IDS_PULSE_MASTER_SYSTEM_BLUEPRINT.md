@@ -239,23 +239,4 @@ The platform adheres to strict visual and typographic standards:
 ```
 
 ---
-
-## 8. Automated Verification & Testing Commands
-
-To verify platform stability and prevent regressions:
-```bash
-# Execute entire test suite (305 automated unit and integration tests)
-npm test
-
-# Run Modal & Theme Contrast Verification Gate
-npx vitest run tests/modal_and_theme_contrast_gate.test.js
-
-# Run Report Layout & Branding Standard Verification Gate
-node tests/report_branding_and_layout_gate.test.js
-
-# Execute Production Build Verification (Zero ESLint errors)
-npm run build
-```
-
----
 *Document approved by Integrity Driven Solutions Inc. (IDS) Engineering & Product Operations.*

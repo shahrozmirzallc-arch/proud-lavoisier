@@ -548,176 +548,286 @@
           <strong>System Overview:</strong> IDS Pulse bridges physical plant-floor quality containment with digital executive command. The <strong>Web Operations Suite</strong> and the <strong>Mobile Quality App</strong> share an authoritative, bidirectional data synchronization bridge.
         </div>
 
-        <!-- Master High-Clarity Vector Architectural Diagram -->
-        <div class="connected-diagram-container" style="background:#FFFFFF; border:2px solid #CBD5E1; padding:20px; border-radius:14px; box-shadow:0 4px 16px rgba(0,0,0,0.04); margin-bottom:25px;">
-          <div class="diagram-title" style="font-size:14px; font-weight:900; color:#10284A; letter-spacing:0.06em; margin-bottom:16px;">
-            MASTER SYSTEM ARCHITECTURE & CONNECTED DUAL-ENGINE DATA FLOW
+        <!-- Master Infographic Network Hub & Spoke Architecture Diagram -->
+        <div class="connected-diagram-container" style="background:#F8FAFC; border:2px solid #CBD5E1; padding:24px; border-radius:18px; box-shadow:0 8px 30px rgba(0,0,0,0.06); margin-bottom:30px;">
+          <div class="diagram-title" style="font-size:15px; font-weight:900; color:#10284A; letter-spacing:0.06em; margin-bottom:18px; text-align:center;">
+            IDS PULSE PLATFORM ECOSYSTEM: CONNECTED HUB & SPOKE NETWORK BLUEPRINT
           </div>
           
-          <svg viewBox="0 0 980 560" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg" style="font-family:'Inter', sans-serif; display:block;">
+          <svg viewBox="0 0 1000 880" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg" style="font-family:'Inter', sans-serif; display:block;">
             <defs>
-              <marker id="arrow-blue" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-                <path d="M 0 1 L 10 5 L 0 9 z" fill="#1769E0"/>
-              </marker>
-              <marker id="arrow-green" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-                <path d="M 0 1 L 10 5 L 0 9 z" fill="#059669"/>
-              </marker>
-              <marker id="arrow-purple" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-                <path d="M 0 1 L 10 5 L 0 9 z" fill="#7C3AED"/>
-              </marker>
-              <marker id="arrow-amber" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-                <path d="M 0 1 L 10 5 L 0 9 z" fill="#D97706"/>
-              </marker>
-              <marker id="arrow-navy" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-                <path d="M 0 1 L 10 5 L 0 9 z" fill="#10284A"/>
-              </marker>
+              <!-- 3D Soft Shadow Filter -->
+              <filter id="soft-shadow" x="-30%" y="-30%" width="160%" height="160%">
+                <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#0F172A" flood-opacity="0.12"/>
+              </filter>
+              <filter id="hub-shadow" x="-30%" y="-30%" width="160%" height="160%">
+                <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#EA580C" flood-opacity="0.22"/>
+              </filter>
             </defs>
 
-            <!-- SURFACE 1: WEB OPERATIONS SUITE (LEFT) -->
-            <rect x="15" y="15" width="280" height="530" rx="12" fill="#F8FAFC" stroke="#10284A" stroke-width="2.5"/>
-            <rect x="15" y="15" width="280" height="46" rx="12" fill="#10284A"/>
-            <rect x="15" y="45" width="280" height="16" fill="#10284A"/>
-            <text x="155" y="42" fill="#FFFFFF" font-size="13" font-weight="900" text-anchor="middle" letter-spacing="0.05em">WEB OPERATIONS SUITE</text>
-            <text x="155" y="74" fill="#64748B" font-size="10.5" font-weight="700" text-anchor="middle">Desktop Web (Admin & Client Portal)</text>
+            <!-- PRIMARY SPOKES (Connecting Center Hub to 4 Major Pillars) -->
+            <line x1="500" y1="430" x2="230" y2="230" stroke="#94A3B8" stroke-width="4.5" stroke-linecap="round"/>
+            <line x1="500" y1="430" x2="770" y2="210" stroke="#94A3B8" stroke-width="4.5" stroke-linecap="round"/>
+            <line x1="500" y1="430" x2="710" y2="650" stroke="#94A3B8" stroke-width="4.5" stroke-linecap="round"/>
+            <line x1="500" y1="430" x2="270" y2="630" stroke="#94A3B8" stroke-width="4.5" stroke-linecap="round"/>
 
-            <!-- Dashboard Sub-Boxes -->
-            <rect x="28" y="90" width="254" height="95" rx="8" fill="#FFFFFF" stroke="#93C5FD" stroke-width="1.5"/>
-            <rect x="36" y="98" width="72" height="18" rx="4" fill="#1769E0"/>
-            <text x="72" y="111" fill="#FFFFFF" font-size="9" font-weight="900" text-anchor="middle">DASH-01 / 04</text>
-            <text x="116" y="112" fill="#10284A" font-size="11" font-weight="800">1-Stop Operations Hub</text>
-            <text x="36" y="132" fill="#475569" font-size="9.5" font-weight="600">• Master Matrix & Rep Dispatch</text>
-            <text x="36" y="148" fill="#475569" font-size="9.5" font-weight="600">• Client, Plant & PO Onboarding</text>
-            <text x="36" y="164" fill="#475569" font-size="9.5" font-weight="600">• User Provisioning & Permissions</text>
+            <!-- SECONDARY SATELLITE SPOKES (Thin Branching Spokes) -->
+            <!-- Around Purple (Mobile App) -->
+            <line x1="230" y1="230" x2="90" y2="130" stroke="#CBD5E1" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="230" y1="230" x2="250" y2="75" stroke="#CBD5E1" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="230" y1="230" x2="70" y2="270" stroke="#CBD5E1" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="230" y1="230" x2="115" y2="390" stroke="#CBD5E1" stroke-width="2.5" stroke-linecap="round"/>
 
-            <rect x="28" y="198" width="254" height="95" rx="8" fill="#FFFFFF" stroke="#6EE7B7" stroke-width="1.5"/>
-            <rect x="36" y="206" width="72" height="18" rx="4" fill="#059669"/>
-            <text x="72" y="219" fill="#FFFFFF" font-size="9" font-weight="900" text-anchor="middle">DASH-02 / 06</text>
-            <text x="116" y="220" fill="#10284A" font-size="11" font-weight="800">Live Command Center</text>
-            <text x="36" y="240" fill="#475569" font-size="9.5" font-weight="600">• Real-Time Plant Floor Feed</text>
-            <text x="36" y="256" fill="#475569" font-size="9.5" font-weight="600">• Inspector Clock-In & Piece Counts</text>
-            <text x="36" y="272" fill="#475569" font-size="9.5" font-weight="600">• 1-Click Publishing Gate to Client</text>
+            <!-- Around Blue (Web Suite) -->
+            <line x1="770" y1="210" x2="620" y2="95" stroke="#CBD5E1" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="770" y1="210" x2="910" y2="105" stroke="#CBD5E1" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="770" y1="210" x2="930" y2="260" stroke="#CBD5E1" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="770" y1="210" x2="875" y2="375" stroke="#CBD5E1" stroke-width="2.5" stroke-linecap="round"/>
 
-            <rect x="28" y="306" width="254" height="95" rx="8" fill="#FFFFFF" stroke="#C4B5FD" stroke-width="1.5"/>
-            <rect x="36" y="314" width="72" height="18" rx="4" fill="#7C3AED"/>
-            <text x="72" y="327" fill="#FFFFFF" font-size="9" font-weight="900" text-anchor="middle">DASH-03 / 08</text>
-            <text x="116" y="328" fill="#10284A" font-size="11" font-weight="800">Client Executive Portal</text>
-            <text x="36" y="348" fill="#475569" font-size="9.5" font-weight="600">• Live Certified Lot Containment</text>
-            <text x="36" y="364" fill="#475569" font-size="9.5" font-weight="600">• Defect PPM Analytics & Charts</text>
-            <text x="36" y="380" fill="#475569" font-size="9.5" font-weight="600">• Overtime Authorization Drawer</text>
+            <!-- Around Green (Client Portal) -->
+            <line x1="710" y1="650" x2="880" y2="555" stroke="#CBD5E1" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="710" y1="650" x2="880" y2="735" stroke="#CBD5E1" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="710" y1="650" x2="740" y2="810" stroke="#CBD5E1" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="710" y1="650" x2="570" y2="775" stroke="#CBD5E1" stroke-width="2.5" stroke-linecap="round"/>
 
-            <rect x="28" y="414" width="254" height="115" rx="8" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5"/>
-            <rect x="36" y="422" width="72" height="18" rx="4" fill="#10284A"/>
-            <text x="72" y="435" fill="#FFFFFF" font-size="9" font-weight="900" text-anchor="middle">DASH-05 / 11</text>
-            <text x="116" y="436" fill="#10284A" font-size="11" font-weight="800">Financials & Invoicing</text>
-            <text x="36" y="456" fill="#475569" font-size="9.5" font-weight="600">• Unified Rate Engine (CAD / USD)</text>
-            <text x="36" y="472" fill="#475569" font-size="9.5" font-weight="600">• PO Budget Cap Telemetry</text>
-            <text x="36" y="488" fill="#475569" font-size="9.5" font-weight="600">• Batch PDF Invoicing Engine</text>
-            <text x="36" y="504" fill="#475569" font-size="9.5" font-weight="600">• Payroll & QuickBooks CSV Export</text>
+            <!-- Around Slate (Cloud Engine & Rates) -->
+            <line x1="270" y1="630" x2="125" y2="530" stroke="#CBD5E1" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="270" y1="630" x2="95" y2="670" stroke="#CBD5E1" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="270" y1="630" x2="185" y2="795" stroke="#CBD5E1" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="270" y1="630" x2="370" y2="795" stroke="#CBD5E1" stroke-width="2.5" stroke-linecap="round"/>
 
-            <!-- CENTER: REAL-TIME CLOUD SYNC BRIDGE -->
-            <rect x="330" y="15" width="320" height="530" rx="12" fill="#F1F5F9" stroke="#1769E0" stroke-width="2" stroke-dasharray="6,4"/>
-            <rect x="330" y="15" width="320" height="40" rx="12" fill="#1769E0"/>
-            <rect x="330" y="40" width="320" height="15" fill="#1769E0"/>
-            <text x="490" y="40" fill="#FFFFFF" font-size="12" font-weight="900" text-anchor="middle" letter-spacing="0.05em">AUTHORITATIVE CLOUD SYNC BRIDGE</text>
 
-            <!-- Flow 1 -->
-            <g>
-              <line x1="282" y1="135" x2="360" y2="135" stroke="#1769E0" stroke-width="2.5" marker-end="url(#arrow-blue)"/>
-              <rect x="350" y="95" width="280" height="60" rx="8" fill="#FFFFFF" stroke="#1769E0" stroke-width="1.5"/>
-              <rect x="360" y="103" width="55" height="16" rx="3" fill="#1769E0"/>
-              <text x="387" y="115" fill="#FFFFFF" font-size="8.5" font-weight="900" text-anchor="middle">FLOW 1</text>
-              <text x="424" y="116" fill="#10284A" font-size="10.5" font-weight="800">Setup & Dispatch Sync</text>
-              <text x="360" y="132" fill="#475569" font-size="9" font-weight="600">Client, Plant, PO & Rep Rates pushed</text>
-              <text x="360" y="145" fill="#1769E0" font-size="8.5" font-weight="700">Dashboard &rarr; Supabase &rarr; Mobile App</text>
-              <line x1="630" y1="135" x2="683" y2="135" stroke="#1769E0" stroke-width="2.5" marker-end="url(#arrow-blue)"/>
+            <!-- ================= SATELLITE NODES (WHITE FLOATING CIRCLES) ================= -->
+            
+            <!-- --- SATELLITES FOR MOBILE QUALITY APP (PURPLE) --- -->
+            <!-- Satellite 1: Photo Markup -->
+            <g filter="url(#soft-shadow)">
+              <circle cx="90" cy="130" r="38" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="2"/>
+              <!-- Camera Icon -->
+              <circle cx="90" cy="120" r="14" fill="#F3E8FF"/>
+              <path d="M 83 118 L 86 114 L 94 114 L 97 118 L 99 118 C 100.5 118 101 118.5 101 120 L 101 126 C 101 127.5 100.5 128 99 128 L 81 128 C 79.5 128 79 127.5 79 126 L 79 120 C 79 118.5 79.5 118 81 118 Z" fill="#7C3AED"/>
+              <circle cx="90" cy="123" r="3.5" fill="#FFFFFF"/>
+              <text x="90" y="146" fill="#10284A" font-size="8.5" font-weight="800" text-anchor="middle">Photo Markup</text>
+              <text x="90" y="156" fill="#64748B" font-size="7" font-weight="700" text-anchor="middle">Visual Canvas</text>
             </g>
 
-            <!-- Flow 2 -->
-            <g>
-              <line x1="685" y1="235" x2="640" y2="235" stroke="#059669" stroke-width="2.5" marker-end="url(#arrow-green)"/>
-              <rect x="350" y="180" width="280" height="60" rx="8" fill="#FFFFFF" stroke="#059669" stroke-width="1.5"/>
-              <rect x="360" y="188" width="55" height="16" rx="3" fill="#059669"/>
-              <text x="387" y="200" fill="#FFFFFF" font-size="8.5" font-weight="900" text-anchor="middle">FLOW 2</text>
-              <text x="424" y="201" fill="#10284A" font-size="10.5" font-weight="800">Live Shift Telemetry</text>
-              <text x="360" y="217" fill="#475569" font-size="9" font-weight="600">Clock-Ins, Piece Counts & Rework logged</text>
-              <text x="360" y="230" fill="#059669" font-size="8.5" font-weight="700">Mobile App &rarr; Realtime Stream &rarr; Command Center</text>
-              <line x1="350" y1="235" x2="292" y2="235" stroke="#059669" stroke-width="2.5" marker-end="url(#arrow-green)"/>
+            <!-- Satellite 2: 4-Step Incident Wizard -->
+            <g filter="url(#soft-shadow)">
+              <circle cx="250" cy="75" r="38" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="2"/>
+              <circle cx="250" cy="65" r="14" fill="#F3E8FF"/>
+              <!-- Wizard / List Icon -->
+              <rect x="244" y="60" width="12" height="11" rx="2" fill="#7C3AED"/>
+              <line x1="247" y1="63" x2="253" y2="63" stroke="#FFFFFF" stroke-width="1.2"/>
+              <line x1="247" y1="66" x2="253" y2="66" stroke="#FFFFFF" stroke-width="1.2"/>
+              <line x1="247" y1="69" x2="251" y2="69" stroke="#FFFFFF" stroke-width="1.2"/>
+              <text x="250" y="91" fill="#10284A" font-size="8.5" font-weight="800" text-anchor="middle">4-Step Wizard</text>
+              <text x="250" y="101" fill="#64748B" font-size="7" font-weight="700" text-anchor="middle">Defect Logging</text>
             </g>
 
-            <!-- Flow 3 -->
-            <g>
-              <line x1="685" y1="335" x2="640" y2="335" stroke="#7C3AED" stroke-width="2.5" marker-end="url(#arrow-purple)"/>
-              <rect x="350" y="265" width="280" height="65" rx="8" fill="#FFFFFF" stroke="#7C3AED" stroke-width="1.5"/>
-              <rect x="360" y="273" width="55" height="16" rx="3" fill="#7C3AED"/>
-              <text x="387" y="285" fill="#FFFFFF" font-size="8.5" font-weight="900" text-anchor="middle">FLOW 3</text>
-              <text x="424" y="286" fill="#10284A" font-size="10.5" font-weight="800">QA Publishing Gate</text>
-              <text x="360" y="302" fill="#475569" font-size="9" font-weight="600">Draft Incident &rarr; QA Director Review</text>
-              <text x="360" y="316" fill="#7C3AED" font-size="8.5" font-weight="700">1-Click Publish &rarr; Live in Client Portal</text>
-              <line x1="350" y1="335" x2="292" y2="335" stroke="#7C3AED" stroke-width="2.5" marker-end="url(#arrow-purple)"/>
+            <!-- Satellite 3: 1-Tap Clock-in -->
+            <g filter="url(#soft-shadow)">
+              <circle cx="70" cy="270" r="38" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="2"/>
+              <circle cx="70" cy="260" r="14" fill="#F3E8FF"/>
+              <!-- Clock Icon -->
+              <circle cx="70" cy="260" r="7" fill="none" stroke="#7C3AED" stroke-width="1.8"/>
+              <polyline points="70,256 70,260 73,262" fill="none" stroke="#7C3AED" stroke-width="1.5" stroke-linecap="round"/>
+              <text x="70" y="286" fill="#10284A" font-size="8.5" font-weight="800" text-anchor="middle">1-Tap Shift</text>
+              <text x="70" y="296" fill="#64748B" font-size="7" font-weight="700" text-anchor="middle">Clock-In & Time</text>
             </g>
 
-            <!-- Flow 4 -->
-            <g>
-              <line x1="685" y1="410" x2="640" y2="410" stroke="#D97706" stroke-width="2.5" marker-end="url(#arrow-amber)"/>
-              <rect x="350" y="355" width="280" height="55" rx="8" fill="#FFFFFF" stroke="#D97706" stroke-width="1.5"/>
-              <rect x="360" y="363" width="55" height="16" rx="3" fill="#D97706"/>
-              <text x="387" y="375" fill="#FFFFFF" font-size="8.5" font-weight="900" text-anchor="middle">FLOW 4</text>
-              <text x="424" y="376" fill="#10284A" font-size="10.5" font-weight="800">Overtime Sign-Off Bus</text>
-              <text x="360" y="392" fill="#475569" font-size="9" font-weight="600">Field Request &rarr; Customer Authorization</text>
-              <line x1="350" y1="380" x2="292" y2="380" stroke="#D97706" stroke-width="2.5" marker-end="url(#arrow-amber)"/>
+            <!-- Satellite 4: Offline Queue -->
+            <g filter="url(#soft-shadow)">
+              <circle cx="115" cy="390" r="38" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="2"/>
+              <circle cx="115" cy="380" r="14" fill="#F3E8FF"/>
+              <!-- Lock / Sync Icon -->
+              <rect x="110" y="378" width="10" height="8" rx="1.5" fill="#7C3AED"/>
+              <path d="M 112 378 L 112 375 C 112 373.3 113.3 372 115 372 C 116.7 372 118 373.3 118 375 L 118 378" fill="none" stroke="#7C3AED" stroke-width="1.5"/>
+              <text x="115" y="406" fill="#10284A" font-size="8.5" font-weight="800" text-anchor="middle">Offline Queue</text>
+              <text x="115" y="416" fill="#64748B" font-size="7" font-weight="700" text-anchor="middle">Background Sync</text>
             </g>
 
-            <!-- Center DB -->
-            <g>
-              <rect x="350" y="430" width="280" height="98" rx="8" fill="#10284A"/>
-              <text x="490" y="452" fill="#93C5FD" font-size="10.5" font-weight="900" text-anchor="middle" letter-spacing="0.05em">AUTHORITATIVE DATABASE & BUS</text>
-              <text x="365" y="472" fill="#FFFFFF" font-size="9.5" font-weight="700">• Supabase PostgreSQL Cloud DB</text>
-              <text x="365" y="488" fill="#FFFFFF" font-size="9.5" font-weight="700">• Offline LocalStorage Queue Worker</text>
-              <text x="365" y="504" fill="#FFFFFF" font-size="9.5" font-weight="700">• SharedDatabase.js Access Layer</text>
-              <text x="365" y="520" fill="#93C5FD" font-size="9" font-weight="600">Strict Tenant & Client Role Isolation</text>
+
+            <!-- --- SATELLITES FOR WEB OPERATIONS SUITE (BLUE) --- -->
+            <!-- Satellite 5: Live Command Center -->
+            <g filter="url(#soft-shadow)">
+              <circle cx="620" cy="95" r="38" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="2"/>
+              <circle cx="620" cy="85" r="14" fill="#E0F2FE"/>
+              <!-- Activity Wave Icon -->
+              <path d="M 611 86 L 615 86 L 618 78 L 622 92 L 625 84 L 627 86 L 630 86" fill="none" stroke="#0284C7" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              <text x="620" y="111" fill="#10284A" font-size="8.5" font-weight="800" text-anchor="middle">Command Feed</text>
+              <text x="620" y="121" fill="#64748B" font-size="7" font-weight="700" text-anchor="middle">Live Plant Triage</text>
             </g>
 
-            <!-- SURFACE 2: MOBILE QUALITY APP (RIGHT) -->
-            <rect x="685" y="15" width="280" height="530" rx="12" fill="#FFFBEB" stroke="#D97706" stroke-width="2.5"/>
-            <rect x="685" y="15" width="280" height="46" rx="12" fill="#D97706"/>
-            <rect x="685" y="45" width="280" height="16" fill="#D97706"/>
-            <text x="825" y="42" fill="#FFFFFF" font-size="13" font-weight="900" text-anchor="middle" letter-spacing="0.05em">MOBILE QUALITY APP</text>
-            <text x="825" y="74" fill="#78350F" font-size="10.5" font-weight="700" text-anchor="middle">Plant Floor Field Inspector (Android / PWA)</text>
+            <!-- Satellite 6: Plant Floor Dispatch -->
+            <g filter="url(#soft-shadow)">
+              <circle cx="910" cy="105" r="38" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="2"/>
+              <circle cx="910" cy="95" r="14" fill="#E0F2FE"/>
+              <!-- Map Pin Icon -->
+              <path d="M 910 89 C 907.2 89 905 91.2 905 94 C 905 97.8 910 102 910 102 C 910 102 915 97.8 915 94 C 915 91.2 912.8 89 910 89 Z" fill="#0284C7"/>
+              <circle cx="910" cy="93.5" r="2" fill="#FFFFFF"/>
+              <text x="910" y="121" fill="#10284A" font-size="8.5" font-weight="800" text-anchor="middle">Rep Dispatch</text>
+              <text x="910" y="131" fill="#64748B" font-size="7" font-weight="700" text-anchor="middle">Daily Assignment</text>
+            </g>
 
-            <!-- Mobile Sub-Boxes -->
-            <rect x="698" y="90" width="254" height="95" rx="8" fill="#FFFFFF" stroke="#FCD34D" stroke-width="1.5"/>
-            <rect x="706" y="98" width="65" height="18" rx="4" fill="#D97706"/>
-            <text x="738" y="111" fill="#FFFFFF" font-size="9" font-weight="900" text-anchor="middle">APP-01</text>
-            <text x="778" y="112" fill="#10284A" font-size="11" font-weight="800">1-Tap Shift Clock-In</text>
-            <text x="706" y="132" fill="#475569" font-size="9.5" font-weight="600">• Single-Tap Shift Activation</text>
-            <text x="706" y="148" fill="#475569" font-size="9.5" font-weight="600">• Pre-Selected Plant Assignment</text>
-            <text x="706" y="164" fill="#475569" font-size="9.5" font-weight="600">• Live Running Elapsed Hours Timer</text>
+            <!-- Satellite 7: 1-Stop Setup Hub -->
+            <g filter="url(#soft-shadow)">
+              <circle cx="930" cy="260" r="38" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="2"/>
+              <circle cx="930" cy="250" r="14" fill="#E0F2FE"/>
+              <!-- Grid / Matrix Icon -->
+              <rect x="923" y="244" width="5" height="5" rx="1" fill="#0284C7"/>
+              <rect x="931" y="244" width="5" height="5" rx="1" fill="#0284C7"/>
+              <rect x="923" y="252" width="5" height="5" rx="1" fill="#0284C7"/>
+              <rect x="931" y="252" width="5" height="5" rx="1" fill="#0284C7"/>
+              <text x="930" y="276" fill="#10284A" font-size="8.5" font-weight="800" text-anchor="middle">Operations Hub</text>
+              <text x="930" y="286" fill="#64748B" font-size="7" font-weight="700" text-anchor="middle">Master Matrix</text>
+            </g>
 
-            <rect x="698" y="198" width="254" height="95" rx="8" fill="#FFFFFF" stroke="#FCD34D" stroke-width="1.5"/>
-            <rect x="706" y="206" width="65" height="18" rx="4" fill="#D97706"/>
-            <text x="738" y="219" fill="#FFFFFF" font-size="9" font-weight="900" text-anchor="middle">APP-02</text>
-            <text x="778" y="220" fill="#10284A" font-size="11" font-weight="800">4-Step Incident Wizard</text>
-            <text x="706" y="240" fill="#475569" font-size="9.5" font-weight="600">• Step 1 Details & Part Numbers</text>
-            <text x="706" y="256" fill="#475569" font-size="9.5" font-weight="600">• Step 2 Defect Counts & Concern Level</text>
-            <text x="706" y="272" fill="#475569" font-size="9.5" font-weight="600">• Step 3 Action Taken & Spoke With</text>
+            <!-- Satellite 8: User Provisioning -->
+            <g filter="url(#soft-shadow)">
+              <circle cx="875" cy="375" r="38" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="2"/>
+              <circle cx="875" cy="365" r="14" fill="#E0F2FE"/>
+              <!-- Users Icon -->
+              <circle cx="875" cy="362" r="3.5" fill="#0284C7"/>
+              <path d="M 868 372 C 868 368.5 871 367 875 367 C 879 367 882 368.5 882 372 Z" fill="#0284C7"/>
+              <text x="875" y="391" fill="#10284A" font-size="8.5" font-weight="800" text-anchor="middle">User Accounts</text>
+              <text x="875" y="401" fill="#64748B" font-size="7" font-weight="700" text-anchor="middle">RBAC Permissions</text>
+            </g>
 
-            <rect x="698" y="306" width="254" height="105" rx="8" fill="#FFFFFF" stroke="#FCD34D" stroke-width="1.5"/>
-            <rect x="706" y="314" width="65" height="18" rx="4" fill="#D97706"/>
-            <text x="738" y="327" fill="#FFFFFF" font-size="9" font-weight="900" text-anchor="middle">APP-03/04</text>
-            <text x="778" y="328" fill="#10284A" font-size="11" font-weight="800">Visual Evidence & Scanner</text>
-            <text x="706" y="348" fill="#475569" font-size="9.5" font-weight="600">• Camera Capture + Canvas Markup</text>
-            <text x="706" y="364" fill="#475569" font-size="9.5" font-weight="600">• Defect Arrows, Circles & Notes</text>
-            <text x="706" y="380" fill="#475569" font-size="9.5" font-weight="600">• Barcode Container Scanner</text>
-            <text x="706" y="396" fill="#475569" font-size="9.5" font-weight="600">• Rework Counter & Scrap Quantities</text>
 
-            <rect x="698" y="424" width="254" height="105" rx="8" fill="#FFFFFF" stroke="#FCD34D" stroke-width="1.5"/>
-            <rect x="706" y="432" width="65" height="18" rx="4" fill="#D97706"/>
-            <text x="738" y="445" fill="#FFFFFF" font-size="9" font-weight="900" text-anchor="middle">APP-06/08</text>
-            <text x="778" y="446" fill="#10284A" font-size="11" font-weight="800">Offline Queue & Routing</text>
-            <text x="706" y="466" fill="#475569" font-size="9.5" font-weight="600">• Plant Dead-Zone Offline Queue</text>
-            <text x="706" y="482" fill="#475569" font-size="9.5" font-weight="600">• Auto-Sync Background Retry Worker</text>
-            <text x="706" y="498" fill="#475569" font-size="9.5" font-weight="600">• 3-Way Client Contact Resolution</text>
-            <text x="706" y="514" fill="#475569" font-size="9.5" font-weight="600">• In-App Overtime Request Launcher</text>
+            <!-- --- SATELLITES FOR CLIENT QUALITY PORTAL (GREEN) --- -->
+            <!-- Satellite 9: Automated PDF Reports -->
+            <g filter="url(#soft-shadow)">
+              <circle cx="880" cy="555" r="38" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="2"/>
+              <circle cx="880" cy="545" r="14" fill="#DCFCE7"/>
+              <!-- Email / Doc Icon -->
+              <rect x="874" y="540" width="12" height="10" rx="1.5" fill="none" stroke="#16A34A" stroke-width="1.5"/>
+              <polyline points="874,541 880,546 886,541" fill="none" stroke="#16A34A" stroke-width="1.2"/>
+              <text x="880" y="571" fill="#10284A" font-size="8.5" font-weight="800" text-anchor="middle">Automated PDF</text>
+              <text x="880" y="581" fill="#64748B" font-size="7" font-weight="700" text-anchor="middle">Email Summaries</text>
+            </g>
+
+            <!-- Satellite 10: Lot Containment Feeds -->
+            <g filter="url(#soft-shadow)">
+              <circle cx="880" cy="735" r="38" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="2"/>
+              <circle cx="880" cy="725" r="14" fill="#DCFCE7"/>
+              <!-- Box / Clean Lot Icon -->
+              <rect x="874" y="720" width="12" height="10" rx="2" fill="#16A34A"/>
+              <path d="M 877 725 L 879 727 L 883 723" fill="none" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round"/>
+              <text x="880" y="751" fill="#10284A" font-size="8.5" font-weight="800" text-anchor="middle">Clean Lot Feeds</text>
+              <text x="880" y="761" fill="#64748B" font-size="7" font-weight="700" text-anchor="middle">Part Certification</text>
+            </g>
+
+            <!-- Satellite 11: Defect PPM Trends -->
+            <g filter="url(#soft-shadow)">
+              <circle cx="740" cy="810" r="38" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="2"/>
+              <circle cx="740" cy="800" r="14" fill="#DCFCE7"/>
+              <!-- Chart Icon -->
+              <path d="M 740 793 A 7 7 0 1 1 733 800 L 740 800 Z" fill="#16A34A"/>
+              <path d="M 741 792 A 7 7 0 0 1 747 798 L 741 798 Z" fill="#22C55E"/>
+              <text x="740" y="826" fill="#10284A" font-size="8.5" font-weight="800" text-anchor="middle">PPM Analytics</text>
+              <text x="740" y="836" fill="#64748B" font-size="7" font-weight="700" text-anchor="middle">Defect Telemetry</text>
+            </g>
+
+            <!-- Satellite 12: Overtime Sign-Off -->
+            <g filter="url(#soft-shadow)">
+              <circle cx="570" cy="775" r="38" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="2"/>
+              <circle cx="570" cy="765" r="14" fill="#DCFCE7"/>
+              <!-- Check / Sign-off Icon -->
+              <circle cx="570" cy="765" r="6" fill="none" stroke="#16A34A" stroke-width="1.5"/>
+              <polyline points="567,765 569,767 573,763" fill="none" stroke="#16A34A" stroke-width="1.5" stroke-linecap="round"/>
+              <text x="570" y="791" fill="#10284A" font-size="8.5" font-weight="800" text-anchor="middle">OT Approvals</text>
+              <text x="570" y="801" fill="#64748B" font-size="7" font-weight="700" text-anchor="middle">Customer Drawer</text>
+            </g>
+
+
+            <!-- --- SATELLITES FOR CLOUD DATA BUS & RATES (SLATE) --- -->
+            <!-- Satellite 13: PostgreSQL DB -->
+            <g filter="url(#soft-shadow)">
+              <circle cx="125" cy="530" r="38" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="2"/>
+              <circle cx="125" cy="520" r="14" fill="#F1F5F9"/>
+              <!-- Database Icon -->
+              <ellipse cx="125" cy="516" rx="6" ry="2.5" fill="#475569"/>
+              <path d="M 119 516 L 119 524 C 119 525.5 121.5 526.5 125 526.5 C 128.5 526.5 131 525.5 131 524 L 131 516" fill="none" stroke="#475569" stroke-width="1.2"/>
+              <path d="M 119 520 C 119 521.5 121.5 522.5 125 522.5 C 128.5 522.5 131 521.5 131 520" fill="none" stroke="#475569" stroke-width="1.2"/>
+              <text x="125" y="546" fill="#10284A" font-size="8.5" font-weight="800" text-anchor="middle">PostgreSQL DB</text>
+              <text x="125" y="556" fill="#64748B" font-size="7" font-weight="700" text-anchor="middle">Cloud Storage</text>
+            </g>
+
+            <!-- Satellite 14: Rate Engine CAD/USD -->
+            <g filter="url(#soft-shadow)">
+              <circle cx="95" cy="670" r="38" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="2"/>
+              <circle cx="95" cy="660" r="14" fill="#F1F5F9"/>
+              <!-- Currency Icon -->
+              <text x="95" y="665" fill="#475569" font-size="11" font-weight="900" text-anchor="middle">$</text>
+              <text x="95" y="686" fill="#10284A" font-size="8.5" font-weight="800" text-anchor="middle">Rate Resolver</text>
+              <text x="95" y="696" fill="#64748B" font-size="7" font-weight="700" text-anchor="middle">CAD / USD Rules</text>
+            </g>
+
+            <!-- Satellite 15: PO Budget Telemetry -->
+            <g filter="url(#soft-shadow)">
+              <circle cx="185" cy="795" r="38" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="2"/>
+              <circle cx="185" cy="785" r="14" fill="#F1F5F9"/>
+              <!-- Progress Shield Icon -->
+              <path d="M 185 778 L 191 781 L 191 786 C 191 789 185 792 185 792 C 185 792 179 789 179 786 L 179 781 Z" fill="#475569"/>
+              <text x="185" y="811" fill="#10284A" font-size="8.5" font-weight="800" text-anchor="middle">PO Budget Meter</text>
+              <text x="185" y="821" fill="#64748B" font-size="7" font-weight="700" text-anchor="middle">Burn Rate Telemetry</text>
+            </g>
+
+            <!-- Satellite 16: Invoicing Engine -->
+            <g filter="url(#soft-shadow)">
+              <circle cx="370" cy="795" r="38" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="2"/>
+              <circle cx="370" cy="785" r="14" fill="#F1F5F9"/>
+              <!-- Document / Bill Icon -->
+              <rect x="364" y="779" width="12" height="12" rx="2" fill="#475569"/>
+              <line x1="367" y1="783" x2="373" y2="783" stroke="#FFFFFF" stroke-width="1.2"/>
+              <line x1="367" y1="786" x2="373" y2="786" stroke="#FFFFFF" stroke-width="1.2"/>
+              <text x="370" y="811" fill="#10284A" font-size="8.5" font-weight="800" text-anchor="middle">Batch Invoicing</text>
+              <text x="370" y="821" fill="#64748B" font-size="7" font-weight="700" text-anchor="middle">Payroll & CSV Export</text>
+            </g>
+
+
+            <!-- ================= 4 PRIMARY PILLAR HUBS (COLORED RINGS) ================= -->
+
+            <!-- PILLAR 1: MOBILE QUALITY APP (PURPLE) -->
+            <g filter="url(#soft-shadow)">
+              <circle cx="230" cy="230" r="66" fill="#FFFFFF" stroke="#7C3AED" stroke-width="7"/>
+              <text x="230" y="215" fill="#7C3AED" font-size="12" font-weight="900" text-anchor="middle" letter-spacing="0.04em">MOBILE APP</text>
+              <text x="230" y="233" fill="#10284A" font-size="11" font-weight="800" text-anchor="middle">Plant Floor</text>
+              <text x="230" y="249" fill="#64748B" font-size="9" font-weight="700" text-anchor="middle">Field Inspector</text>
+            </g>
+
+            <!-- PILLAR 2: WEB OPERATIONS SUITE (SKY BLUE) -->
+            <g filter="url(#soft-shadow)">
+              <circle cx="770" cy="210" r="66" fill="#FFFFFF" stroke="#0284C7" stroke-width="7"/>
+              <text x="770" y="195" fill="#0284C7" font-size="12" font-weight="900" text-anchor="middle" letter-spacing="0.04em">WEB SUITE</text>
+              <text x="770" y="213" fill="#10284A" font-size="11" font-weight="800" text-anchor="middle">Command HQ</text>
+              <text x="770" y="229" fill="#64748B" font-size="9" font-weight="700" text-anchor="middle">Super-Admin Hub</text>
+            </g>
+
+            <!-- PILLAR 3: CLIENT EXECUTIVE PORTAL (EMERALD GREEN) -->
+            <g filter="url(#soft-shadow)">
+              <circle cx="710" cy="650" r="66" fill="#FFFFFF" stroke="#16A34A" stroke-width="7"/>
+              <text x="710" y="635" fill="#16A34A" font-size="12" font-weight="900" text-anchor="middle" letter-spacing="0.04em">CLIENT PORTAL</text>
+              <text x="710" y="653" fill="#10284A" font-size="11" font-weight="800" text-anchor="middle">Tier-1 Customer</text>
+              <text x="710" y="669" fill="#64748B" font-size="9" font-weight="700" text-anchor="middle">Executive Feeds</text>
+            </g>
+
+            <!-- PILLAR 4: CLOUD ENGINE & FINANCIALS (SLATE) -->
+            <g filter="url(#soft-shadow)">
+              <circle cx="270" cy="630" r="66" fill="#FFFFFF" stroke="#475569" stroke-width="7"/>
+              <text x="270" y="615" fill="#475569" font-size="12" font-weight="900" text-anchor="middle" letter-spacing="0.04em">CLOUD ENGINE</text>
+              <text x="270" y="633" fill="#10284A" font-size="11" font-weight="800" text-anchor="middle">Authoritative Bus</text>
+              <text x="270" y="649" fill="#64748B" font-size="9" font-weight="700" text-anchor="middle">Rates & Financials</text>
+            </g>
+
+
+            <!-- ================= CENTRAL CORE HUB (ORANGE RING) ================= -->
+            <g filter="url(#hub-shadow)">
+              <circle cx="500" cy="430" r="86" fill="#FFFFFF" stroke="#EA580C" stroke-width="9"/>
+              <text x="500" y="415" fill="#EA580C" font-size="18" font-weight="900" text-anchor="middle" letter-spacing="0.08em">IDS PULSE</text>
+              <text x="500" y="438" fill="#10284A" font-size="12" font-weight="800" text-anchor="middle">Quality Operations</text>
+              <text x="500" y="456" fill="#64748B" font-size="10" font-weight="700" text-anchor="middle">Master Ecosystem</text>
+            </g>
           </svg>
         </div>
 

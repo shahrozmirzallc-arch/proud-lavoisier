@@ -385,6 +385,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
   const [userCategoryTab, setUserCategoryTab] = useState('all'); // 'all', 'reps', 'clients', 'staff'
   const [operationsViewMode, setOperationsViewMode] = useState('matrix'); // 'matrix', 'users', 'projects', 'clients'
   const [opsMatrixSearchTerm, setOpsMatrixSearchTerm] = useState('');
+  const [showOperationsGuide, setShowOperationsGuide] = useState(true);
   const [expandedAlertIds, setExpandedAlertIds] = useState({});
   const [showAllAlerts, setShowAllAlerts] = useState(false);
   const [newUserForm, setNewUserForm] = useState({
@@ -11514,6 +11515,110 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     <span>Export PDF</span>
                   </button>
                 </div>
+              </div>
+
+              {/* Step-by-Step Operations Workflow Guide Banner */}
+              <div className="bg-white border-2 border-blue-200 shadow-sm rounded-2xl p-3.5 flex flex-col gap-2.5 flex-shrink-0">
+                <div className="flex justify-between items-center pb-2 border-b border-slate-100 flex-wrap gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="bg-[#10284A] text-white text-[10px] font-black uppercase px-2 py-0.5 rounded tracking-wider">HOW IT WORKS</span>
+                    <h4 className="text-[13.5px] font-black text-slate-900 uppercase tracking-wide flex items-center gap-1.5">
+                      <span>End-to-End Quality Operations Setup Lifecycle</span>
+                    </h4>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowOperationsGuide(!showOperationsGuide)}
+                    className="text-xs font-bold text-blue-600 hover:text-blue-800 cursor-pointer flex items-center gap-1"
+                  >
+                    <span>{showOperationsGuide ? 'Hide Step-by-Step Guide' : 'Show Step-by-Step Guide'}</span>
+                    {showOperationsGuide ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+
+                {showOperationsGuide && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 pt-1">
+                    {/* Step 1 */}
+                    <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 flex flex-col justify-between gap-2 text-left">
+                      <div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-black bg-blue-600 text-white px-1.5 py-0.5 rounded">STEP 1</span>
+                          <Building2 className="w-4 h-4 text-blue-600" />
+                        </div>
+                        <h5 className="text-xs font-black text-slate-900 mt-1.5 uppercase">Onboard Client & Plant</h5>
+                        <p className="text-[11px] text-slate-600 mt-1 leading-snug">
+                          Register Tier-1 supplier (e.g. Magna), assembly plant location (e.g. GM Oshawa), and authorized PO hours cap.
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => setShowQuickAddClient(true)}
+                        className="w-full mt-1 py-1 px-2 bg-white hover:bg-blue-50 border border-blue-300 text-blue-700 font-extrabold text-[11px] rounded-lg transition-all text-center cursor-pointer"
+                      >
+                        + Onboard Client
+                      </button>
+                    </div>
+
+                    {/* Step 2 */}
+                    <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 flex flex-col justify-between gap-2 text-left">
+                      <div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-black bg-emerald-600 text-white px-1.5 py-0.5 rounded">STEP 2</span>
+                          <UserPlus className="w-4 h-4 text-emerald-600" />
+                        </div>
+                        <h5 className="text-xs font-black text-slate-900 mt-1.5 uppercase">Provision User Logins</h5>
+                        <p className="text-[11px] text-slate-600 mt-1 leading-snug">
+                          Create login accounts for IDS Field Inspectors (Rep), Client Quality Contacts, or Admin staff.
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => setShowAddUserModal(true)}
+                        className="w-full mt-1 py-1 px-2 bg-white hover:bg-emerald-50 border border-emerald-300 text-emerald-700 font-extrabold text-[11px] rounded-lg transition-all text-center cursor-pointer"
+                      >
+                        + Create User
+                      </button>
+                    </div>
+
+                    {/* Step 3 */}
+                    <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 flex flex-col justify-between gap-2 text-left">
+                      <div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-black bg-amber-600 text-white px-1.5 py-0.5 rounded">STEP 3</span>
+                          <UserCheck className="w-4 h-4 text-amber-600" />
+                        </div>
+                        <h5 className="text-xs font-black text-slate-900 mt-1.5 uppercase">Dispatch Rep & Rates</h5>
+                        <p className="text-[11px] text-slate-600 mt-1 leading-snug">
+                          Assign the field inspector to the plant floor and lock in billing rates ($65/hr) and pay rates ($32/hr CAD/USD).
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => setShowAssignRepModal(true)}
+                        className="w-full mt-1 py-1 px-2 bg-white hover:bg-amber-50 border border-amber-300 text-amber-700 font-extrabold text-[11px] rounded-lg transition-all text-center cursor-pointer"
+                      >
+                        Assign Dispatch
+                      </button>
+                    </div>
+
+                    {/* Step 4 */}
+                    <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 flex flex-col justify-between gap-2 text-left">
+                      <div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-black bg-purple-600 text-white px-1.5 py-0.5 rounded">STEP 4</span>
+                          <Activity className="w-4 h-4 text-purple-600" />
+                        </div>
+                        <h5 className="text-xs font-black text-slate-900 mt-1.5 uppercase">Shift Reports & Portal</h5>
+                        <p className="text-[11px] text-slate-600 mt-1 leading-snug">
+                          Inspector logs shift parts & incidents on mobile. Admin reviews & publishes directly to the Client Portal.
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => setActiveTab('command-center')}
+                        className="w-full mt-1 py-1 px-2 bg-white hover:bg-purple-50 border border-purple-300 text-purple-700 font-extrabold text-[11px] rounded-lg transition-all text-center cursor-pointer"
+                      >
+                        View Live Feed
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Master Operations Sub-View Switcher Pills */}

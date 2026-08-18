@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IDS Pulse — Product Designer Specification & Design System Guide</title>
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary-navy: #10284A;
+      --secondary-navy: #173868;
+      --action-blue: #1769E0;
+      --action-blue-hover: #1355B5;
+      --emerald-pass: #059669;
+      --emerald-bg: #ECFDF5;
+      --emerald-border: #6EE7B7;
+      --amber-warn: #D97706;
+      --amber-bg: #FFFBEB;
+      --amber-border: #FCD34D;
+      --rose-defect: #DC2626;
+      --rose-bg: #FEF2F2;
+      --rose-border: #FCA5A5;
+      --surface-white: #FFFFFF;
+      --surface-slate: #F8FAFC;
+      --surface-elevated: #F1F5F9;
+      --border-subtle: #E2E8F0;
+      --border-strong: #CBD5E1;
+      --text-dark: #0F172A;
+      --text-body: #334155;
+      --text-muted: #64748B;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: #F1F5F9;
+      color: var(--text-dark);
+      line-height: 1.6;
+      padding: 40px 20px;
+    }
+
+    .document-wrapper {
+      max-width: 1040px;
+      margin: 0 auto;
+      background-color: var(--surface-white);
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+      overflow: hidden;
+    }
+
+    .doc-header {
+      background-color: var(--primary-navy);
+      color: #FFFFFF;
+      padding: 40px 45px 35px;
+      border-bottom: 4px solid var(--action-blue);
+      position: relative;
+    }
+
+    .doc-badge {
+      display: inline-block;
+      background-color: rgba(23, 105, 224, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      color: #93C5FD;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 6px;
+      margin-bottom: 12px;
+    }
+
+    .doc-header h1 {
+      font-size: 28px;
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      line-height: 1.25;
+      margin-bottom: 8px;
+    }
+
+    .doc-header p {
+      color: #CBD5E1;
+      font-size: 14px;
+      max-width: 780px;
+      line-height: 1.5;
+    }
+
+    .doc-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      margin-top: 25px;
+      padding-top: 20px;
+      border-top: 1px solid rgba(255, 255, 255, 0.15);
+      font-size: 12.5px;
+      color: #94A3B8;
+    }
+
+    .doc-meta strong {
+      color: #FFFFFF;
+    }
+
+    .print-button {
+      position: absolute;
+      top: 40px;
+      right: 45px;
+      background-color: var(--action-blue);
+      color: #FFFFFF;
+      border: none;
+      padding: 10px 18px;
+      font-size: 13px;
+      font-weight: 700;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+
+    .print-button:hover {
+      background-color: var(--action-blue-hover);
+      transform: translateY(-1px);
+    }
+
+    .doc-content {
+      padding: 45px 50px;
+    }
+
+    .section {
+      margin-bottom: 45px;
+    }
+
+    .section-title {
+      font-size: 18px;
+      font-weight: 900;
+      color: var(--primary-navy);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding-bottom: 10px;
+      border-bottom: 2px solid var(--border-subtle);
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .section-title-num {
+      background-color: var(--primary-navy);
+      color: #FFFFFF;
+      font-size: 12px;
+      font-weight: 900;
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+
+    p {
+      color: var(--text-body);
+      font-size: 14px;
+      margin-bottom: 14px;
+    }
+
+    .lead-box {
+      background-color: var(--surface-slate);
+      border-left: 4px solid var(--action-blue);
+      padding: 16px 20px;
+      border-radius: 0 8px 8px 0;
+      margin-bottom: 24px;
+      font-size: 14px;
+      color: var(--text-dark);
+      font-weight: 500;
+    }
+
+    /* Grid Layouts */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+      gap: 20px;
+      margin: 20px 0;
+    }
+
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin: 20px 0;
+    }
+
+    .card {
+      background-color: #FFFFFF;
+      border: 1.5px solid var(--border-strong);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+    }
+
+    .card-title {
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--primary-navy);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .card-subtitle {
+      font-size: 11.5px;
+      font-weight: 700;
+      color: var(--action-blue);
+      margin-bottom: 10px;
+      text-transform: uppercase;
+    }
+
+    .card ul {
+      list-style-type: none;
+      padding-left: 0;
+    }
+
+    .card li {
+      font-size: 12.5px;
+      color: var(--text-body);
+      margin-bottom: 6px;
+      padding-left: 16px;
+      position: relative;
+    }
+
+    .card li::before {
+      content: "•";
+      color: var(--action-blue);
+      font-weight: bold;
+      position: absolute;
+      left: 0;
+    }
+
+    /* Color Swatch Card */
+    .swatch {
+      height: 48px;
+      border-radius: 8px;
+      margin-bottom: 10px;
+      border: 1px solid rgba(0, 0, 0, 0.1);
+    }
+
+    .swatch-info {
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--text-dark);
+    }
+
+    .swatch-hex {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* Rule Banner */
+    .rule-box {
+      background-color: var(--surface-slate);
+      border: 1.5px solid var(--border-strong);
+      border-radius: 10px;
+      padding: 16px 20px;
+      margin-bottom: 14px;
+    }
+
+    .rule-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 6px;
+    }
+
+    .rule-tag {
+      font-size: 10px;
+      font-weight: 900;
+      text-transform: uppercase;
+      padding: 3px 7px;
+      border-radius: 4px;
+      background-color: var(--primary-navy);
+      color: #FFFFFF;
+    }
+
+    .rule-title {
+      font-size: 13.5px;
+      font-weight: 800;
+      color: var(--primary-navy);
+    }
+
+    .rule-desc {
+      font-size: 12.5px;
+      color: var(--text-body);
+      line-height: 1.5;
+    }
+
+    /* Table Standards */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 18px 0;
+      font-size: 13px;
+    }
+
+    th {
+      background-color: var(--primary-navy);
+      color: #FFFFFF;
+      text-align: left;
+      padding: 10px 14px;
+      font-weight: 800;
+      font-size: 11.5px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    td {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border-subtle);
+      color: var(--text-dark);
+      font-weight: 500;
+    }
+
+    tr:nth-child(even) {
+      background-color: var(--surface-slate);
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 10.5px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .badge-pass {
+      background-color: var(--emerald-bg);
+      color: var(--emerald-pass);
+      border: 1px solid var(--emerald-border);
+    }
+
+    .badge-warn {
+      background-color: var(--amber-bg);
+      color: var(--amber-warn);
+      border: 1px solid var(--amber-border);
+    }
+
+    .badge-defect {
+      background-color: var(--rose-bg);
+      color: var(--rose-defect);
+      border: 1px solid var(--rose-border);
+    }
+
+    .footer-note {
+      text-align: center;
+      padding: 25px;
+      border-top: 1px solid var(--border-subtle);
+      font-size: 12px;
+      color: var(--text-muted);
+      background-color: var(--surface-slate);
+    }
+
+    @media print {
+      body {
+        background-color: #FFFFFF;
+        padding: 0;
+      }
+      .document-wrapper {
+        border: none;
+        box-shadow: none;
+        max-width: 100%;
+      }
+      .print-button {
+        display: none;
+      }
+      .doc-content {
+        padding: 20px 30px;
+      }
+      .card, .rule-box {
+        break-inside: avoid;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="document-wrapper">
+    <!-- Header -->
+    <header class="doc-header">
+      <button class="print-button" onclick="window.print()">
+        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4H7v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+        Print / Save PDF
+      </button>
+      <div class="doc-badge">Official Design Specification • v3.4.0</div>
+      <h1>IDS Pulse — Product Designer Specification & Design System Guide</h1>
+      <p>A comprehensive visual language, user persona architecture, and engineering guardrail blueprint for product designers and UI/UX specialists building the IDS Pulse platform.</p>
+      
+      <div class="doc-meta">
+        <div><strong>Organization:</strong> Integrity Driven Solutions Inc. (IDS)</div>
+        <div><strong>Target:</strong> Desktop Web + Android Native PWA</div>
+        <div><strong>Production URL:</strong> https://proud-lavoisier.vercel.app</div>
+        <div><strong>Status:</strong> Active Standard</div>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="doc-content">
+      
+      <!-- Section 1: Introduction & Mission -->
+      <section class="section">
+        <h2 class="section-title"><span class="section-title-num">01</span> Executive Overview & Core Mission</h2>
+        <div class="lead-box">
+          <strong>Mission:</strong> IDS Pulse is the mission-critical digital operating platform for Integrity Driven Solutions Inc. (IDS), powering real-time quality containment, defect inspection, and liaison engineering across major Tier-1 automotive assembly plants (GM, Ford, Stellantis, Tesla, Magna) in the US and Canada.
+        </div>
+        <p>In high-volume automotive manufacturing, a defect containment delay of even 15 minutes can halt an assembly line costing upwards of $50,000 per minute. The design of IDS Pulse must prioritize <strong>immediate legibility, high contrast, zero ambiguity, and frictionless speed</strong>.</p>
+      </section>
+
+      <!-- Section 2: User Personas -->
+      <section class="section">
+        <h2 class="section-title"><span class="section-title-num">02</span> The 4 Core User Personas</h2>
+        <p>Every feature and UI element must be designed with the exact mental model of the target role:</p>
+
+        <div class="grid-2">
+          <!-- Persona 1 -->
+          <div class="card">
+            <div class="card-title">
+              <span>1. Field Quality Inspector</span>
+              <span class="badge badge-pass">Mobile App</span>
+            </div>
+            <div class="card-subtitle">Staff Dispatched On Plant Floors</div>
+            <ul>
+              <li><strong>Environment:</strong> Loud plant floor, safety gloves, dirty screens, one-handed operation.</li>
+              <li><strong>Key Tasks:</strong> 1-Tap Clock-in, count good/bad parts, photo markup, defect logs.</li>
+              <li><strong>Design Needs:</strong> Touch targets &ge; 44px, large fonts, offline queue resilience, zero nested menus.</li>
+            </ul>
+          </div>
+
+          <!-- Persona 2 -->
+          <div class="card">
+            <div class="card-title">
+              <span>2. Client Quality Manager</span>
+              <span class="badge badge-warn">Executive Portal</span>
+            </div>
+            <div class="card-subtitle">Tier-1 Supplier / OEM Contacts</div>
+            <ul>
+              <li><strong>Environment:</strong> Office/laptop or tablet on plant walk-throughs.</li>
+              <li><strong>Key Tasks:</strong> Track containment lots, inspect certified clean parts, approve overtime.</li>
+              <li><strong>Design Needs:</strong> High-level visual KPI feeds, instant overtime action drawer, zero internal cost data.</li>
+            </ul>
+          </div>
+
+          <!-- Persona 3 -->
+          <div class="card">
+            <div class="card-title">
+              <span>3. QA Director / Super-Admin</span>
+              <span class="badge" style="background:#EEF2FF; color:#4338CA; border:1px solid #C7D2FE;">Command Center</span>
+            </div>
+            <div class="card-subtitle">Donna / Greg / Shahroz</div>
+            <ul>
+              <li><strong>Environment:</strong> Dual-monitor HQ operations desk.</li>
+              <li><strong>Key Tasks:</strong> Onboard clients/plants, provision logins, dispatch reps, publish reports.</li>
+              <li><strong>Design Needs:</strong> 1-Stop Operations Hub with Master Matrix table, 1-click publishing gates.</li>
+            </ul>
+          </div>
+
+          <!-- Persona 4 -->
+          <div class="card">
+            <div class="card-title">
+              <span>4. Finance & Billing Controller</span>
+              <span class="badge" style="background:#F3E8FF; color:#7E22CE; border:1px solid #E9D5FF;">Accounting Hub</span>
+            </div>
+            <div class="card-subtitle">Back-Office Financial Auditor</div>
+            <ul>
+              <li><strong>Environment:</strong> Accounting spreadsheets & billing reconciliations.</li>
+              <li><strong>Key Tasks:</strong> Timesheet verification, PO cap tracking, batch invoice generation.</li>
+              <li><strong>Design Needs:</strong> Tabular financial drilldowns, CAD vs USD currency tags, PO cap alert bars.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 3: Visual Design System & Color Tokens -->
+      <section class="section">
+        <h2 class="section-title"><span class="section-title-num">03</span> Design Tokens & Color System</h2>
+        <p>All UI elements enforce strict high-contrast light theme standards with contrast ratios &ge; 7:1 (WCAG AAA compliant).</p>
+
+        <div class="grid-4">
+          <div class="card" style="padding: 14px;">
+            <div class="swatch" style="background-color: #10284A;"></div>
+            <div class="swatch-info">Industrial Navy</div>
+            <div class="swatch-hex">#10284A (Headers/Nav)</div>
+          </div>
+          <div class="card" style="padding: 14px;">
+            <div class="swatch" style="background-color: #1769E0;"></div>
+            <div class="swatch-info">Action Cobalt</div>
+            <div class="swatch-hex">#1769E0 (Buttons/Links)</div>
+          </div>
+          <div class="card" style="padding: 14px;">
+            <div class="swatch" style="background-color: #059669;"></div>
+            <div class="swatch-info">Quality Pass</div>
+            <div class="swatch-hex">#059669 (Approved/OK)</div>
+          </div>
+          <div class="card" style="padding: 14px;">
+            <div class="swatch" style="background-color: #DC2626;"></div>
+            <div class="swatch-info">Critical Defect</div>
+            <div class="swatch-hex">#DC2626 (Scrap/Alert)</div>
+          </div>
+        </div>
+
+        <h3 style="font-size: 14px; font-weight: 800; text-transform: uppercase; margin: 25px 0 12px; color: var(--primary-navy);">Typography Scale</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Role</th>
+              <th>CSS Size & Weight</th>
+              <th>Pixel Equiv</th>
+              <th>Usage</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Display Title (H1)</strong></td>
+              <td><code>text-2xl font-black</code></td>
+              <td>24px / Bold 900</td>
+              <td>Page headers, primary screen titles</td>
+            </tr>
+            <tr>
+              <td><strong>Section Title (H2)</strong></td>
+              <td><code>text-lg font-black uppercase</code></td>
+              <td>18px / Bold 900</td>
+              <td>Major card & table section headers</td>
+            </tr>
+            <tr>
+              <td><strong>Sub-Header (H3)</strong></td>
+              <td><code>text-[14px] font-extrabold uppercase</code></td>
+              <td>14px / Bold 800</td>
+              <td>Modal titles, widget header bars</td>
+            </tr>
+            <tr>
+              <td><strong>Body Text</strong></td>
+              <td><code>text-[13px] font-medium</code></td>
+              <td>13px / Medium 500</td>
+              <td>Standard descriptions, narratives, table cells</td>
+            </tr>
+            <tr>
+              <td><strong>Badges & Pills</strong></td>
+              <td><code>text-[10px] font-black uppercase</code></td>
+              <td>10px / Bold 900</td>
+              <td>Status tags, currency pills, role badges</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- Section 4: Mandatory Design Guardrails -->
+      <section class="section">
+        <h2 class="section-title"><span class="section-title-num">04</span> Mandatory Enterprise Design Guardrails</h2>
+        <p>Every mock-up, layout, and component MUST obey these non-negotiable rules:</p>
+
+        <div class="rule-box">
+          <div class="rule-header">
+            <span class="rule-tag">Rule 1</span>
+            <span class="rule-title">Zero Emoji Policy (Permanent)</span>
+          </div>
+          <div class="rule-desc">Emojis are strictly forbidden across all buttons, feeds, modals, reports, and badges. Use clean SVG icons from <code>lucide-react</code> or crisp typography.</div>
+        </div>
+
+        <div class="rule-box">
+          <div class="rule-header">
+            <span class="rule-tag">Rule 2</span>
+            <span class="rule-title">Zero Dark Container Leaks (High-Contrast Light Theme)</span>
+          </div>
+          <div class="rule-desc">Dark container classes (<code>bg-slate-950</code>, <code>bg-amber-950</code>) inside light surfaces are banned. All form inputs must render pure white backgrounds (<code>bg-white border-2 border-slate-300</code>) with dark text.</div>
+        </div>
+
+        <div class="rule-box">
+          <div class="rule-header">
+            <span class="rule-tag">Rule 3</span>
+            <span class="rule-title">Zero Text Truncation for Quality Data</span>
+          </div>
+          <div class="rule-desc">Ellipsis (<code>...</code>) is prohibited for defect narratives, containment actions, and shift summaries. Layouts must wrap text dynamically into multi-line rows.</div>
+        </div>
+
+        <div class="rule-box">
+          <div class="rule-header">
+            <span class="rule-tag">Rule 4</span>
+            <span class="rule-title">Strict Separation of IDS Rep vs Client Rep</span>
+          </div>
+          <div class="rule-desc">IDS Reps (Blue/Cyan staff badges) must never be conflated with Client Reps (Amber customer badges). Dropdowns must cleanly isolate field inspectors from customer contacts.</div>
+        </div>
+
+        <div class="rule-box">
+          <div class="rule-header">
+            <span class="rule-tag">Rule 5</span>
+            <span class="rule-title">Location-Based Currency Assignment</span>
+          </div>
+          <div class="rule-desc">US Plants & Clients evaluate in <strong>USD</strong> ($X/hr USD). Canadian Plants & Clients evaluate in <strong>CAD</strong> ($X/hr CAD). Currency tags must always be explicitly rendered.</div>
+        </div>
+      </section>
+
+      <!-- Section 5: Screen Blueprints & Architecture -->
+      <section class="section">
+        <h2 class="section-title"><span class="section-title-num">05</span> Key Screen Architectures</h2>
+
+        <div class="card" style="margin-bottom: 20px;">
+          <div class="card-title">
+            <span>A. The 1-Stop Operations Hub (Desktop Web)</span>
+            <span class="badge badge-pass">Admin Command</span>
+          </div>
+          <p style="font-size: 13px;">Unifies Client Onboarding, User Provisioning, Project Setup, and Rep Dispatch into a single control surface:</p>
+          <ul>
+            <li><strong>Universal Header:</strong> Instant 1-click triggers (<code>+ Onboard Client & Plant</code>, <code>+ Create New User</code>, <code>Assign Rep Dispatch</code>, <code>Export PDF</code>).</li>
+            <li><strong>4-Step Visual Lifecycle Banner:</strong> Step 1 (Client/Plant) &rarr; Step 2 (User Logins) &rarr; Step 3 (Dispatch & Rates) &rarr; Step 4 (Shift Reports & Portal).</li>
+            <li><strong>Master Operations Matrix:</strong> Connected table linking Client, Plant Location + Currency, Scope/Part, PO Cap, Assigned Rep, Billing Rate, and Pay Rate.</li>
+          </ul>
+        </div>
+
+        <div class="card" style="margin-bottom: 20px;">
+          <div class="card-title">
+            <span>B. Mobile Field Inspector App (375px Viewport)</span>
+            <span class="badge badge-warn">Plant Floor</span>
+          </div>
+          <p style="font-size: 13px;">Optimized for high-speed single-thumb execution on mobile screens and Android native APK:</p>
+          <ul>
+            <li><strong>Clock-In Hero:</strong> Large green shift launcher button with live running hours counter.</li>
+            <li><strong>4-Step Incident Flow:</strong> Step 1 Details &rarr; Step 2 Defect Quantities &rarr; Step 3 Action + Camera Canvas &rarr; Step 4 Client Routing.</li>
+            <li><strong>Offline Sync Indicator:</strong> Persistent badge showing offline queue status with auto-sync retry.</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <div class="card-title">
+            <span>C. Client Executive Portal</span>
+            <span class="badge" style="background:#EEF2FF; color:#4338CA; border:1px solid #C7D2FE;">Customer View</span>
+          </div>
+          <p style="font-size: 13px;">Dedicated portal for automotive Tier-1 supplier quality managers:</p>
+          <ul>
+            <li><strong>Containment Feed:</strong> Published inspection reports with real-time pass/fail counters.</li>
+            <li><strong>Lot Traceability:</strong> Status indicators for certified clean lots and active containment tags.</li>
+            <li><strong>Overtime Approval Drawer:</strong> 1-Click customer sign-off for inspector overtime requests.</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- Section 6: Engineering Handoff & Testing -->
+      <section class="section">
+        <h2 class="section-title"><span class="section-title-num">06</span> Engineering Handoff & Testing Gates</h2>
+        <p>Designs are implemented using <strong>React 19 + Vite 8 + Tailwind CSS 4</strong>. Every PR must pass automated design verification suites:</p>
+
+        <div class="card" style="background-color: var(--surface-slate);">
+          <pre style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--primary-navy); line-height: 1.5;">
+# 1. Run Complete Automated Test Suite (305 Tests Passing)
+npm test
+
+# 2. Run Theme Contrast & Modal Gate Test
+npx vitest run tests/modal_and_theme_contrast_gate.test.js
+
+# 3. Run Report Layout & Branding Gate
+node tests/report_branding_and_layout_gate.test.js
+
+# 4. Production Build Verification
+npm run build</pre>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer-note">
+      IDS Pulse Platform • Integrity Driven Solutions Inc. (IDS) • Confidential Product Design Specification
+    </footer>
+  </div>
+
+</body>
+</html>

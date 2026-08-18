@@ -870,122 +870,159 @@
 
       <!-- Master End-to-End Operational Lifecycle Pipeline (Dedicated Page) -->
       <div class="diagram-page">
-        <div class="connected-diagram-container" style="background:#FFFFFF; border:2px solid #CBD5E1; padding:24px 28px; border-radius:18px; box-shadow:0 8px 30px rgba(0,0,0,0.06); margin-bottom:20px;">
-          <div class="diagram-title" style="font-size:15px; font-weight:900; color:#10284A; letter-spacing:0.06em; margin-bottom:6px; text-align:center;">
-            END-TO-END OPERATIONAL LIFECYCLE: 5-STEP MASTER QUALITY PIPELINE
+        <div class="connected-diagram-container" style="background:#FFFFFF; border:2px solid #CBD5E1; padding:22px 24px; border-radius:18px; box-shadow:0 8px 30px rgba(0,0,0,0.06); margin-bottom:20px;">
+          <div class="diagram-title" style="font-size:15px; font-weight:900; color:#10284A; letter-spacing:0.06em; margin-bottom:4px; text-align:center;">
+            END-TO-END OPERATIONAL LIFECYCLE: 5-STEP MASTER PROCESS FLOWCHART
           </div>
-          <p style="text-align:center; font-size:11px; color:#64748B; margin-bottom:20px; font-weight:600;">
-            How data flows sequentially across all 4 User Roles from initial Project Onboarding to Final Invoicing & Payroll.
+          <p style="text-align:center; font-size:11px; color:#64748B; margin-bottom:16px; font-weight:600;">
+            Sequential data and operational handshake across all 4 User Roles from initial Project Onboarding to Final Invoicing & Payroll.
           </p>
           
-          <div style="display:flex; flex-direction:column; gap:14px;">
-            
-            <!-- STEP 1 -->
-            <div style="background:#F0F9FF; border:2px solid #38BDF8; border-radius:12px; padding:14px 18px; display:grid; grid-template-columns:130px 1fr 180px; gap:16px; align-items:center;">
-              <div>
-                <div style="background:#0284C7; color:#FFFFFF; font-size:10px; font-weight:900; padding:4px 8px; border-radius:6px; text-align:center; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:4px;">
-                  STEP 01
-                </div>
-                <div style="font-size:11px; font-weight:900; color:#0369A1; text-align:center;">Super-Admin</div>
-                <div style="font-size:9.5px; font-weight:700; color:#64748B; text-align:center;">(Web Operations Hub)</div>
-              </div>
-              <div>
-                <div style="font-size:12.5px; font-weight:900; color:#10284A; margin-bottom:3px;">1. Project Setup, PO Hours & Rep Dispatch</div>
-                <div style="font-size:10.5px; color:#334155; line-height:1.45; font-weight:600;">
-                  Admin registers Client Company (e.g. Magna), Plant (GM Oshawa), Purchase Order budget cap ($/Hours), sets USD/CAD billing rates, and dispatches Field Inspector.
-                </div>
-              </div>
-              <div style="background:#FFFFFF; border:1px solid #BAE6FD; border-radius:8px; padding:8px 10px; text-align:center;">
-                <div style="font-size:9px; font-weight:900; color:#0284C7; text-transform:uppercase;">Handshake Output &rarr;</div>
-                <div style="font-size:9.5px; font-weight:800; color:#10284A; margin-top:2px;">Pre-configures Mobile App Assignment</div>
-              </div>
-            </div>
+          <svg viewBox="0 0 940 770" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg" style="font-family:'Inter', sans-serif; display:block;">
+            <defs>
+              <filter id="flow-shadow" x="-5%" y="-10%" width="110%" height="130%">
+                <feDropShadow dx="0" dy="3" stdDeviation="5" flood-color="#0F172A" flood-opacity="0.08"/>
+              </filter>
+              <marker id="flow-arrow-blue" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M 0 1 L 10 5 L 0 9 z" fill="#0284C7"/>
+              </marker>
+              <marker id="flow-arrow-green" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M 0 1 L 10 5 L 0 9 z" fill="#16A34A"/>
+              </marker>
+              <marker id="flow-arrow-purple" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M 0 1 L 10 5 L 0 9 z" fill="#7C3AED"/>
+              </marker>
+              <marker id="flow-arrow-amber" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M 0 1 L 10 5 L 0 9 z" fill="#D97706"/>
+              </marker>
+            </defs>
 
-            <!-- STEP 2 -->
-            <div style="background:#F0FDF4; border:2px solid #4ADE80; border-radius:12px; padding:14px 18px; display:grid; grid-template-columns:130px 1fr 180px; gap:16px; align-items:center;">
-              <div>
-                <div style="background:#16A34A; color:#FFFFFF; font-size:10px; font-weight:900; padding:4px 8px; border-radius:6px; text-align:center; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:4px;">
-                  STEP 02
-                </div>
-                <div style="font-size:11px; font-weight:900; color:#15803D; text-align:center;">Field Inspector</div>
-                <div style="font-size:9.5px; font-weight:700; color:#64748B; text-align:center;">(Mobile Quality App)</div>
-              </div>
-              <div>
-                <div style="font-size:12.5px; font-weight:900; color:#10284A; margin-bottom:3px;">2. Plant Floor Containment & Defect Logging</div>
-                <div style="font-size:10.5px; color:#334155; line-height:1.45; font-weight:600;">
-                  Inspector clocks in with GPS timestamp, walks the 5 plant areas (Scrap, Chassis, SAC), scans container barcodes, logs inspected counts, rework units, and photo evidence.
-                </div>
-              </div>
-              <div style="background:#FFFFFF; border:1px solid #BBF7D0; border-radius:8px; padding:8px 10px; text-align:center;">
-                <div style="font-size:9px; font-weight:900; color:#16A34A; text-transform:uppercase;">Handshake Output &rarr;</div>
-                <div style="font-size:9.5px; font-weight:800; color:#10284A; margin-top:2px;">Streams Shift Telemetry to Live HQ Feed</div>
-              </div>
-            </div>
+            <!-- ================= STEP 01 ================= -->
+            <g filter="url(#flow-shadow)">
+              <rect x="15" y="10" width="910" height="115" rx="12" fill="#F0F9FF" stroke="#38BDF8" stroke-width="2"/>
+              <!-- Step Badge -->
+              <rect x="30" y="25" width="105" height="30" rx="6" fill="#0284C7"/>
+              <text x="82" y="44" fill="#FFFFFF" font-size="11" font-weight="900" text-anchor="middle" letter-spacing="0.04em">STEP 01</text>
+              <text x="82" y="72" fill="#0369A1" font-size="11" font-weight="900" text-anchor="middle">Super-Admin</text>
+              <text x="82" y="87" fill="#64748B" font-size="9.5" font-weight="700" text-anchor="middle">(Web Hub)</text>
 
-            <!-- STEP 3 -->
-            <div style="background:#FAF5FF; border:2px solid #C084FC; border-radius:12px; padding:14px 18px; display:grid; grid-template-columns:130px 1fr 180px; gap:16px; align-items:center;">
-              <div>
-                <div style="background:#7C3AED; color:#FFFFFF; font-size:10px; font-weight:900; padding:4px 8px; border-radius:6px; text-align:center; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:4px;">
-                  STEP 03
-                </div>
-                <div style="font-size:11px; font-weight:900; color:#6B21A8; text-align:center;">QA Director</div>
-                <div style="font-size:9.5px; font-weight:700; color:#64748B; text-align:center;">(Live Command Center)</div>
-              </div>
-              <div>
-                <div style="font-size:12.5px; font-weight:900; color:#10284A; margin-bottom:3px;">3. QA Review, Audit & 1-Click Publishing Gate</div>
-                <div style="font-size:10.5px; color:#334155; line-height:1.45; font-weight:600;">
-                  QA Director (Donna) audits incoming draft shift reports, checks defect piece counts and PO hour burn rate, and clicks "Publish to Client Portal", triggering automated PDF emails.
-                </div>
-              </div>
-              <div style="background:#FFFFFF; border:1px solid #E9D5FF; border-radius:8px; padding:8px 10px; text-align:center;">
-                <div style="font-size:9px; font-weight:900; color:#7C3AED; text-transform:uppercase;">Handshake Output &rarr;</div>
-                <div style="font-size:9.5px; font-weight:800; color:#10284A; margin-top:2px;">Grants Live Visibility to Customer</div>
-              </div>
-            </div>
+              <!-- Main Content -->
+              <text x="160" y="40" fill="#10284A" font-size="14" font-weight="900">1. Project Setup, PO Budget Hours & Field Rep Dispatch</text>
+              <text x="160" y="62" fill="#334155" font-size="11" font-weight="600">• Registers Client Company (e.g. Magna), Plant (GM Oshawa) & locks PO Budget cap ($/Hours).</text>
+              <text x="160" y="82" fill="#334155" font-size="11" font-weight="600">• Configures Plant Billing Rates (CAD/USD) and dispatches Field Quality Inspector to active project.</text>
 
-            <!-- STEP 4 -->
-            <div style="background:#FFFBEB; border:2px solid #FBBF24; border-radius:12px; padding:14px 18px; display:grid; grid-template-columns:130px 1fr 180px; gap:16px; align-items:center;">
-              <div>
-                <div style="background:#D97706; color:#FFFFFF; font-size:10px; font-weight:900; padding:4px 8px; border-radius:6px; text-align:center; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:4px;">
-                  STEP 04
-                </div>
-                <div style="font-size:11px; font-weight:900; color:#B45309; text-align:center;">Client Quality Mgr</div>
-                <div style="font-size:9.5px; font-weight:700; color:#64748B; text-align:center;">(Client Executive Portal)</div>
-              </div>
-              <div>
-                <div style="font-size:12.5px; font-weight:900; color:#10284A; margin-bottom:3px;">4. Certified Clean Lot Tracking & Overtime Sign-Off</div>
-                <div style="font-size:10.5px; color:#334155; line-height:1.45; font-weight:600;">
-                  Client Quality Manager (Robert @ Magna) views certified clean container lots, monitors defect PPM charts, and approves or declines field inspector overtime requests in the portal drawer.
-                </div>
-              </div>
-              <div style="background:#FFFFFF; border:1px solid #FDE68A; border-radius:8px; padding:8px 10px; text-align:center;">
-                <div style="font-size:9px; font-weight:900; color:#D97706; text-transform:uppercase;">Handshake Output &rarr;</div>
-                <div style="font-size:9.5px; font-weight:800; color:#10284A; margin-top:2px;">Releases Clean Parts & Locks Hours</div>
-              </div>
-            </div>
+              <!-- Output Pill -->
+              <rect x="710" y="32" width="200" height="68" rx="8" fill="#FFFFFF" stroke="#BAE6FD" stroke-width="1.5"/>
+              <text x="810" y="52" fill="#0284C7" font-size="9" font-weight="900" text-anchor="middle" letter-spacing="0.04em">HANDSHAKE OUTPUT &rarr;</text>
+              <text x="810" y="70" fill="#10284A" font-size="10" font-weight="800" text-anchor="middle">Pre-Configures Mobile Profile</text>
+              <text x="810" y="85" fill="#64748B" font-size="9" font-weight="700" text-anchor="middle">Plant & Parts Locked</text>
+            </g>
 
-            <!-- STEP 5 -->
-            <div style="background:#F8FAFC; border:2px solid #64748B; border-radius:12px; padding:14px 18px; display:grid; grid-template-columns:130px 1fr 180px; gap:16px; align-items:center;">
-              <div>
-                <div style="background:#10284A; color:#FFFFFF; font-size:10px; font-weight:900; padding:4px 8px; border-radius:6px; text-align:center; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:4px;">
-                  STEP 05
-                </div>
-                <div style="font-size:11px; font-weight:900; color:#10284A; text-align:center;">Accounting Center</div>
-                <div style="font-size:9.5px; font-weight:700; color:#64748B; text-align:center;">(Invoicing & Payroll)</div>
-              </div>
-              <div>
-                <div style="font-size:12.5px; font-weight:900; color:#10284A; margin-bottom:3px;">5. Automated PO Reconciliation, Invoicing & Payroll</div>
-                <div style="font-size:10.5px; color:#334155; line-height:1.45; font-weight:600;">
-                  System reconciles approved shift hours against the PO budget cap, applies CAD/USD rules ($65 CAD / $100 USD billing, $32 CAD / $70 USD pay), and exports official PDF invoices and payroll sheets.
-                </div>
-              </div>
-              <div style="background:#FFFFFF; border:1px solid #CBD5E1; border-radius:8px; padding:8px 10px; text-align:center;">
-                <div style="font-size:9px; font-weight:900; color:#10284A; text-transform:uppercase;">Final Execution &rarr;</div>
-                <div style="font-size:9.5px; font-weight:800; color:#10284A; margin-top:2px;">Dispatches PDF Invoices & Payroll</div>
-              </div>
-            </div>
+            <!-- CONNECTOR 1 -->
+            <line x1="470" y1="125" x2="470" y2="155" stroke="#0284C7" stroke-width="2.5" marker-end="url(#flow-arrow-blue)"/>
+            <rect x="360" y="130" width="220" height="20" rx="4" fill="#E0F2FE" stroke="#BAE6FD"/>
+            <text x="470" y="144" fill="#0369A1" font-size="9" font-weight="800" text-anchor="middle">Dispatches Plant Assignment & Scope</text>
 
-          </div>
+            <!-- ================= STEP 02 ================= -->
+            <g filter="url(#flow-shadow)">
+              <rect x="15" y="160" width="910" height="115" rx="12" fill="#F0FDF4" stroke="#4ADE80" stroke-width="2"/>
+              <!-- Step Badge -->
+              <rect x="30" y="175" width="105" height="30" rx="6" fill="#16A34A"/>
+              <text x="82" y="194" fill="#FFFFFF" font-size="11" font-weight="900" text-anchor="middle" letter-spacing="0.04em">STEP 02</text>
+              <text x="82" y="222" fill="#15803D" font-size="11" font-weight="900" text-anchor="middle">Field Inspector</text>
+              <text x="82" y="237" fill="#64748B" font-size="9.5" font-weight="700" text-anchor="middle">(Mobile App)</text>
+
+              <!-- Main Content -->
+              <text x="160" y="190" fill="#10284A" font-size="14" font-weight="900">2. Plant Floor Containment, Inspection & Defect Logging</text>
+              <text x="160" y="212" fill="#334155" font-size="11" font-weight="600">• 1-Tap Clock-in (GPS Timestamp) & audits 5 Plant Walk Areas (Scrap, Chassis, SAC, Stamping).</text>
+              <text x="160" y="232" fill="#334155" font-size="11" font-weight="600">• Scans container barcodes, logs good/bad counts, rework units, and annotates camera photos.</text>
+
+              <!-- Output Pill -->
+              <rect x="710" y="182" width="200" height="68" rx="8" fill="#FFFFFF" stroke="#BBF7D0" stroke-width="1.5"/>
+              <text x="810" y="202" fill="#16A34A" font-size="9" font-weight="900" text-anchor="middle" letter-spacing="0.04em">HANDSHAKE OUTPUT &rarr;</text>
+              <text x="810" y="220" fill="#10284A" font-size="10" font-weight="800" text-anchor="middle">Streams Live Shift Telemetry</text>
+              <text x="810" y="235" fill="#64748B" font-size="9" font-weight="700" text-anchor="middle">Real-Time HQ Queue</text>
+            </g>
+
+            <!-- CONNECTOR 2 -->
+            <line x1="470" y1="275" x2="470" y2="305" stroke="#16A34A" stroke-width="2.5" marker-end="url(#flow-arrow-green)"/>
+            <rect x="360" y="280" width="220" height="20" rx="4" fill="#DCFCE7" stroke="#BBF7D0"/>
+            <text x="470" y="294" fill="#15803D" font-size="9" font-weight="800" text-anchor="middle">Submits Shift Report & Incident Holds</text>
+
+            <!-- ================= STEP 03 ================= -->
+            <g filter="url(#flow-shadow)">
+              <rect x="15" y="310" width="910" height="115" rx="12" fill="#FAF5FF" stroke="#C084FC" stroke-width="2"/>
+              <!-- Step Badge -->
+              <rect x="30" y="325" width="105" height="30" rx="6" fill="#7C3AED"/>
+              <text x="82" y="344" fill="#FFFFFF" font-size="11" font-weight="900" text-anchor="middle" letter-spacing="0.04em">STEP 03</text>
+              <text x="82" y="372" fill="#6B21A8" font-size="11" font-weight="900" text-anchor="middle">QA Director</text>
+              <text x="82" y="387" fill="#64748B" font-size="9.5" font-weight="700" text-anchor="middle">(Command HQ)</text>
+
+              <!-- Main Content -->
+              <text x="160" y="340" fill="#10284A" font-size="14" font-weight="900">3. QA Audit, Defect Verification & 1-Click Publishing Gate</text>
+              <text x="160" y="362" fill="#334155" font-size="11" font-weight="600">• QA Director audits incoming shift containment reports, defect piece counts & PO hour burn.</text>
+              <text x="160" y="382" fill="#334155" font-size="11" font-weight="600">• Executes 1-Click "Publish to Client Portal" & dispatches automated PDF / HTML summary emails.</text>
+
+              <!-- Output Pill -->
+              <rect x="710" y="332" width="200" height="68" rx="8" fill="#FFFFFF" stroke="#E9D5FF" stroke-width="1.5"/>
+              <text x="810" y="352" fill="#7C3AED" font-size="9" font-weight="900" text-anchor="middle" letter-spacing="0.04em">HANDSHAKE OUTPUT &rarr;</text>
+              <text x="810" y="370" fill="#10284A" font-size="10" font-weight="800" text-anchor="middle">Live Client Portal Visibility</text>
+              <text x="810" y="385" fill="#64748B" font-size="9" font-weight="700" text-anchor="middle">Automated PDF Dispatch</text>
+            </g>
+
+            <!-- CONNECTOR 3 -->
+            <line x1="470" y1="425" x2="470" y2="455" stroke="#7C3AED" stroke-width="2.5" marker-end="url(#flow-arrow-purple)"/>
+            <rect x="360" y="430" width="220" height="20" rx="4" fill="#F3E8FF" stroke="#E9D5FF"/>
+            <text x="470" y="444" fill="#6B21A8" font-size="9" font-weight="800" text-anchor="middle">Publishes Clean Lot Feeds & Analytics</text>
+
+            <!-- ================= STEP 04 ================= -->
+            <g filter="url(#flow-shadow)">
+              <rect x="15" y="460" width="910" height="115" rx="12" fill="#FFFBEB" stroke="#FBBF24" stroke-width="2"/>
+              <!-- Step Badge -->
+              <rect x="30" y="475" width="105" height="30" rx="6" fill="#D97706"/>
+              <text x="82" y="494" fill="#FFFFFF" font-size="11" font-weight="900" text-anchor="middle" letter-spacing="0.04em">STEP 04</text>
+              <text x="82" y="522" fill="#B45309" font-size="11" font-weight="900" text-anchor="middle">Client Quality</text>
+              <text x="82" y="537" fill="#64748B" font-size="9.5" font-weight="700" text-anchor="middle">(Client Portal)</text>
+
+              <!-- Main Content -->
+              <text x="160" y="490" fill="#10284A" font-size="14" font-weight="900">4. Certified Clean Lot Tracking & Overtime Authorization</text>
+              <text x="160" y="512" fill="#334155" font-size="11" font-weight="600">• Client Quality Manager (Robert @ Magna) monitors certified clean container lot feeds.</text>
+              <text x="160" y="532" fill="#334155" font-size="11" font-weight="600">• Reviews PPM defect trend charts & authorizes / rejects Field Inspector Overtime in 1-Click.</text>
+
+              <!-- Output Pill -->
+              <rect x="710" y="482" width="200" height="68" rx="8" fill="#FFFFFF" stroke="#FDE68A" stroke-width="1.5"/>
+              <text x="810" y="502" fill="#D97706" font-size="9" font-weight="900" text-anchor="middle" letter-spacing="0.04em">HANDSHAKE OUTPUT &rarr;</text>
+              <text x="810" y="520" fill="#10284A" font-size="10" font-weight="800" text-anchor="middle">Releases Parts to Line</text>
+              <text x="810" y="535" fill="#64748B" font-size="9" font-weight="700" text-anchor="middle">Locks Approved OT Hours</text>
+            </g>
+
+            <!-- CONNECTOR 4 -->
+            <line x1="470" y1="575" x2="470" y2="605" stroke="#D97706" stroke-width="2.5" marker-end="url(#flow-arrow-amber)"/>
+            <rect x="360" y="580" width="220" height="20" rx="4" fill="#FEF3C7" stroke="#FDE68A"/>
+            <text x="470" y="594" fill="#B45309" font-size="9" font-weight="800" text-anchor="middle">Locks Billable Shift Hours in Financials</text>
+
+            <!-- ================= STEP 05 ================= -->
+            <g filter="url(#flow-shadow)">
+              <rect x="15" y="610" width="910" height="115" rx="12" fill="#F8FAFC" stroke="#64748B" stroke-width="2"/>
+              <!-- Step Badge -->
+              <rect x="30" y="625" width="105" height="30" rx="6" fill="#10284A"/>
+              <text x="82" y="644" fill="#FFFFFF" font-size="11" font-weight="900" text-anchor="middle" letter-spacing="0.04em">STEP 05</text>
+              <text x="82" y="672" fill="#10284A" font-size="11" font-weight="900" text-anchor="middle">Accounting</text>
+              <text x="82" y="687" fill="#64748B" font-size="9.5" font-weight="700" text-anchor="middle">(Financials Hub)</text>
+
+              <!-- Main Content -->
+              <text x="160" y="640" fill="#10284A" font-size="14" font-weight="900">5. Automated PO Reconciliation, Invoicing & Payroll</text>
+              <text x="160" y="662" fill="#334155" font-size="11" font-weight="600">• System reconciles approved shift hours against the PO budget cap (e.g. 500 hrs cap).</text>
+              <text x="160" y="682" fill="#334155" font-size="11" font-weight="600">• Calculates CAD/USD rates ($65 CAD / $100 USD billing, $32 CAD / $70 USD pay) & generates PDF Invoices.</text>
+
+              <!-- Output Pill -->
+              <rect x="710" y="632" width="200" height="68" rx="8" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5"/>
+              <text x="810" y="652" fill="#10284A" font-size="9" font-weight="900" text-anchor="middle" letter-spacing="0.04em">FINAL EXECUTION &rarr;</text>
+              <text x="810" y="670" fill="#10284A" font-size="10" font-weight="800" text-anchor="middle">Dispatches PDF Invoices</text>
+              <text x="810" y="685" fill="#64748B" font-size="9" font-weight="700" text-anchor="middle">QuickBooks Payroll CSV</text>
+            </g>
+
+          </svg>
         </div>
       </div>
     </section>

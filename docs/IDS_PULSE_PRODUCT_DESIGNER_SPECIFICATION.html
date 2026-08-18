@@ -607,7 +607,129 @@
             <text x="706" y="466" fill="#475569" font-size="9.5" font-weight="600">• Plant Dead-Zone Offline Queue</text>
             <text x="706" y="482" fill="#475569" font-size="9.5" font-weight="600">• Auto-Sync Background Retry Worker</text>
             <text x="706" y="498" fill="#475569" font-size="9.5" font-weight="600">• 3-Way Client Contact Resolution</text>
-            <text x="706" y="514" fill="#475569" font-size="9.5" font-weight="600">• In-App Overtime Request Launcher</text>
+        </div>
+
+        <!-- Master UML Sequence Diagram -->
+        <div class="connected-diagram-container" style="background:#FFFFFF; border:2px solid #CBD5E1; padding:20px; border-radius:14px; box-shadow:0 4px 16px rgba(0,0,0,0.04); margin-top:20px;">
+          <div style="font-size:13.5px; font-weight:900; color:#10284A; letter-spacing:0.06em; margin-bottom:16px; text-align:center;">
+            END-TO-END OPERATIONAL LIFECYCLE: UML SEQUENCE & SWIMLANE FLOWCHART
+          </div>
+          
+          <svg viewBox="0 0 960 920" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg" style="font-family:'Inter', sans-serif; display:block;">
+            <defs>
+              <marker id="seq-arrow-d" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M 0 1 L 10 5 L 0 9 z" fill="#10284A"/>
+              </marker>
+              <marker id="seq-arrow-blue-d" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M 0 1 L 10 5 L 0 9 z" fill="#1769E0"/>
+              </marker>
+            </defs>
+
+            <!-- Participant 1: Super Admin -->
+            <g>
+              <circle cx="120" cy="35" r="14" fill="#10284A"/>
+              <text x="120" y="39" fill="#FFFFFF" font-size="11" font-weight="900" text-anchor="middle">A</text>
+              <text x="120" y="65" fill="#10284A" font-size="11.5" font-weight="900" text-anchor="middle">1. IDS Super-Admin / Lead</text>
+              <text x="120" y="80" fill="#64748B" font-size="10" font-weight="700" text-anchor="middle">(Donna / Shahroz)</text>
+              <line x1="120" y1="90" x2="120" y2="900" stroke="#CBD5E1" stroke-width="1.5" stroke-dasharray="5,5"/>
+            </g>
+
+            <!-- Participant 2: Field Rep -->
+            <g>
+              <circle cx="370" cy="35" r="14" fill="#059669"/>
+              <text x="370" y="39" fill="#FFFFFF" font-size="11" font-weight="900" text-anchor="middle">R</text>
+              <text x="370" y="65" fill="#064E3B" font-size="11.5" font-weight="900" text-anchor="middle">2. IDS Field Inspector</text>
+              <text x="370" y="80" fill="#64748B" font-size="10" font-weight="700" text-anchor="middle">(Clarence / Hugo)</text>
+              <line x1="370" y1="90" x2="370" y2="900" stroke="#CBD5E1" stroke-width="1.5" stroke-dasharray="5,5"/>
+            </g>
+
+            <!-- Participant 3: Client Quality Manager -->
+            <g>
+              <circle cx="620" cy="35" r="14" fill="#7C3AED"/>
+              <text x="620" y="39" fill="#FFFFFF" font-size="11" font-weight="900" text-anchor="middle">C</text>
+              <text x="620" y="65" fill="#581C87" font-size="11.5" font-weight="900" text-anchor="middle">3. Client Quality Mgr</text>
+              <text x="620" y="80" fill="#64748B" font-size="10" font-weight="700" text-anchor="middle">(Robert Sterling @ Magna)</text>
+              <line x1="620" y1="90" x2="620" y2="900" stroke="#CBD5E1" stroke-width="1.5" stroke-dasharray="5,5"/>
+            </g>
+
+            <!-- Participant 4: Supplier Quality Lead -->
+            <g>
+              <circle cx="860" cy="35" r="14" fill="#D97706"/>
+              <text x="860" y="39" fill="#FFFFFF" font-size="11" font-weight="900" text-anchor="middle">S</text>
+              <text x="860" y="65" fill="#78350F" font-size="11.5" font-weight="900" text-anchor="middle">4. Supplier Quality Lead</text>
+              <text x="860" y="80" fill="#64748B" font-size="10" font-weight="700" text-anchor="middle">(Tier-1 Part Maker)</text>
+              <line x1="860" y1="90" x2="860" y2="900" stroke="#CBD5E1" stroke-width="1.5" stroke-dasharray="5,5"/>
+            </g>
+
+            <!-- PHASE 1: SETUP & ONBOARDING -->
+            <g>
+              <rect x="20" y="100" width="920" height="155" rx="6" fill="#F0F9FF" stroke="#38BDF8" stroke-width="1.5"/>
+              <rect x="20" y="100" width="220" height="22" rx="4" fill="#E0F2FE" stroke="#38BDF8"/>
+              <text x="30" y="115" fill="#0369A1" font-size="10.5" font-weight="900">Phase 1: Setup & Project Onboarding</text>
+
+              <path d="M 120 135 L 155 135 L 155 155 L 122 155" fill="none" stroke="#10284A" stroke-width="1.5" marker-end="url(#seq-arrow-d)"/>
+              <text x="162" y="148" fill="#10284A" font-size="10" font-weight="700">Onboard Client, Plant & PO Budget ($/Hrs)</text>
+
+              <path d="M 120 175 L 155 175 L 155 195 L 122 195" fill="none" stroke="#10284A" stroke-width="1.5" marker-end="url(#seq-arrow-d)"/>
+              <text x="162" y="188" fill="#10284A" font-size="10" font-weight="700">Configure Plant Billing Rates (CAD/USD)</text>
+
+              <line x1="120" y1="230" x2="368" y2="230" stroke="#1769E0" stroke-width="1.8" marker-end="url(#seq-arrow-blue-d)"/>
+              <text x="245" y="222" fill="#1769E0" font-size="10" font-weight="800" text-anchor="middle">Dispatch Daily Planner & Plant Assignment</text>
+            </g>
+
+            <!-- PHASE 2: PLANT FLOOR QUALITY OPERATIONS -->
+            <g>
+              <rect x="20" y="270" width="920" height="230" rx="6" fill="#F0FDF4" stroke="#4ADE80" stroke-width="1.5"/>
+              <rect x="20" y="270" width="240" height="22" rx="4" fill="#DCFCE7" stroke="#4ADE80"/>
+              <text x="30" y="285" fill="#15803D" font-size="10.5" font-weight="900">Phase 2: Plant Floor Quality Operations</text>
+
+              <path d="M 370 305 L 405 305 L 405 325 L 372 325" fill="none" stroke="#059669" stroke-width="1.5" marker-end="url(#seq-arrow-d)"/>
+              <text x="412" y="318" fill="#064E3B" font-size="10" font-weight="700">Clock In (GPS Timestamp & Shift Timer)</text>
+
+              <path d="M 370 345 L 405 345 L 405 365 L 372 365" fill="none" stroke="#059669" stroke-width="1.5" marker-end="url(#seq-arrow-d)"/>
+              <text x="412" y="358" fill="#064E3B" font-size="10" font-weight="700">Complete 5 Walk Areas (Scrap, SAC, Chassis, etc.)</text>
+
+              <path d="M 370 385 L 405 385 L 405 405 L 372 405" fill="none" stroke="#059669" stroke-width="1.5" marker-end="url(#seq-arrow-d)"/>
+              <text x="412" y="398" fill="#064E3B" font-size="10" font-weight="700">Log Routine Inspections & Barcode Scan Batch</text>
+
+              <path d="M 370 425 L 405 425 L 405 445 L 372 445" fill="none" stroke="#059669" stroke-width="1.5" marker-end="url(#seq-arrow-d)"/>
+              <text x="412" y="438" fill="#064E3B" font-size="10" font-weight="700">Log Rework & Floor Ad-hoc Sorts</text>
+
+              <line x1="370" y1="475" x2="122" y2="475" stroke="#059669" stroke-width="1.8" marker-end="url(#seq-arrow-d)"/>
+              <text x="245" y="468" fill="#064E3B" font-size="10" font-weight="800" text-anchor="middle">Submit Daily Quality Report & Incident Holds</text>
+            </g>
+
+            <!-- PHASE 3: REVIEW, GOVERNANCE & PUBLISHING -->
+            <g>
+              <rect x="20" y="515" width="920" height="165" rx="6" fill="#FFFBEB" stroke="#FBBF24" stroke-width="1.5"/>
+              <rect x="20" y="515" width="260" height="22" rx="4" fill="#FEF3C7" stroke="#FBBF24"/>
+              <text x="30" y="530" fill="#B45309" font-size="10.5" font-weight="900">Phase 3: Review, Governance & Publishing</text>
+
+              <path d="M 120 550 L 155 550 L 155 570 L 122 570" fill="none" stroke="#10284A" stroke-width="1.5" marker-end="url(#seq-arrow-d)"/>
+              <text x="162" y="563" fill="#10284A" font-size="10" font-weight="700">Review Shift Report & Verify PO Hour Burn</text>
+
+              <line x1="120" y1="605" x2="618" y2="605" stroke="#7C3AED" stroke-width="1.8" marker-end="url(#seq-arrow-d)"/>
+              <text x="370" y="598" fill="#581C87" font-size="10" font-weight="800" text-anchor="middle">Publish Daily Report & Trigger Incident Notification</text>
+
+              <line x1="120" y1="645" x2="618" y2="645" stroke="#7C3AED" stroke-width="1.8" marker-end="url(#seq-arrow-d)"/>
+              <text x="370" y="638" fill="#581C87" font-size="10" font-weight="800" text-anchor="middle">Send Automated PDF / HTML Email Summary</text>
+            </g>
+
+            <!-- PHASE 4: CLIENT PORTAL & SUPPLIER OVERSIGHT -->
+            <g>
+              <rect x="20" y="695" width="920" height="185" rx="6" fill="#FAF5FF" stroke="#C084FC" stroke-width="1.5"/>
+              <rect x="20" y="695" width="260" height="22" rx="4" fill="#F3E8FF" stroke="#C084FC"/>
+              <text x="30" y="710" fill="#7E22CE" font-size="10.5" font-weight="900">Phase 4: Client Portal & Supplier Oversight</text>
+
+              <path d="M 620 730 L 655 730 L 655 750 L 622 750" fill="none" stroke="#7C3AED" stroke-width="1.5" marker-end="url(#seq-arrow-d)"/>
+              <text x="662" y="743" fill="#581C87" font-size="10" font-weight="700">Access Client Executive Portal (Live Feed)</text>
+
+              <line x1="620" y1="785" x2="122" y2="785" stroke="#D97706" stroke-width="1.8" marker-end="url(#seq-arrow-d)"/>
+              <text x="370" y="777" fill="#78350F" font-size="10" font-weight="800" text-anchor="middle">Approve Overtime Requests & Sign-off Holds</text>
+
+              <path d="M 860 820 L 895 820 L 895 840 L 862 840" fill="none" stroke="#D97706" stroke-width="1.5" marker-end="url(#seq-arrow-d)"/>
+              <text x="898" y="833" fill="#78350F" font-size="9.5" font-weight="700">Review Defect PPM Scorecard & Part Containment Telemetry</text>
+            </g>
           </svg>
         </div>
       </section>

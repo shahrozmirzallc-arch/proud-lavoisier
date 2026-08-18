@@ -18,6 +18,7 @@ async function main() {
 
   try {
     const page = await browser.newPage();
+    await page.setViewport({ width: 1200, height: 1600, deviceScaleFactor: 2 });
     await page.goto(`file://${htmlPath}`, { waitUntil: 'networkidle0' });
 
     await page.pdf({
@@ -25,10 +26,10 @@ async function main() {
       format: 'A4',
       printBackground: true,
       margin: {
-        top: '15mm',
-        right: '15mm',
-        bottom: '15mm',
-        left: '15mm'
+        top: '8mm',
+        right: '8mm',
+        bottom: '8mm',
+        left: '8mm'
       }
     });
 

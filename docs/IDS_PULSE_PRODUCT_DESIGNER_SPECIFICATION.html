@@ -370,6 +370,10 @@
     }
 
     @media print {
+      @page {
+        size: A4 portrait;
+        margin: 8mm;
+      }
       body {
         background-color: #FFFFFF;
         padding: 0;
@@ -378,14 +382,21 @@
         border: none;
         box-shadow: none;
         max-width: 100%;
+        border-radius: 0;
       }
       .print-button {
         display: none;
       }
-      .doc-content {
-        padding: 20px 30px;
+      .doc-header {
+        padding: 24px 28px 20px;
       }
-      .card, .rule-box {
+      .doc-content {
+        padding: 16px 20px;
+      }
+      .section {
+        margin-bottom: 25px;
+      }
+      .card, .rule-box, table {
         break-inside: avoid;
       }
     }

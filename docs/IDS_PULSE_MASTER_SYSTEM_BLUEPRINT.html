@@ -23,6 +23,9 @@
       --rose-defect: #DC2626;
       --rose-bg: #FEF2F2;
       --rose-border: #FCA5A5;
+      --purple-accent: #6B21A8;
+      --purple-bg: #FAF5FF;
+      --purple-border: #D8B4FE;
       --surface-white: #FFFFFF;
       --surface-slate: #F8FAFC;
       --surface-elevated: #F1F5F9;
@@ -48,7 +51,7 @@
     }
 
     .document-wrapper {
-      max-width: 1060px;
+      max-width: 1080px;
       margin: 0 auto;
       background-color: var(--surface-white);
       border: 1px solid var(--border-subtle);
@@ -90,7 +93,7 @@
     .doc-header p {
       color: #CBD5E1;
       font-size: 14px;
-      max-width: 820px;
+      max-width: 840px;
       line-height: 1.5;
     }
 
@@ -180,92 +183,132 @@
       font-weight: 500;
     }
 
-    /* System Architecture Diagram Card */
-    .arch-container {
+    /* Master Connected Architecture Diagram */
+    .connected-diagram-container {
       background-color: var(--surface-slate);
       border: 2px solid var(--border-strong);
-      border-radius: 12px;
+      border-radius: 14px;
       padding: 24px;
-      margin: 24px 0;
+      margin: 25px 0;
     }
 
-    .arch-title {
-      font-size: 13px;
+    .diagram-title {
+      text-align: center;
+      font-size: 13.5px;
       font-weight: 900;
-      color: var(--primary-navy);
       text-transform: uppercase;
       letter-spacing: 0.08em;
-      text-align: center;
-      margin-bottom: 16px;
-    }
-
-    .arch-engines {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 20px;
+      color: var(--primary-navy);
       margin-bottom: 20px;
     }
 
-    .engine-box {
-      background-color: #FFFFFF;
-      border: 1.5px solid var(--border-strong);
-      border-radius: 10px;
-      padding: 18px;
+    .diagram-grid {
+      display: grid;
+      grid-template-columns: 1fr 180px 1fr;
+      gap: 16px;
+      align-items: stretch;
     }
 
-    .engine-header {
-      font-size: 13.5px;
+    .surface-card {
+      background-color: #FFFFFF;
+      border: 2px solid var(--border-strong);
+      border-radius: 12px;
+      padding: 18px;
+      display: flex;
+      flex-col: column;
+      justify-content: space-between;
+    }
+
+    .surface-card.dashboard-surface {
+      border-color: #93C5FD;
+      box-shadow: 0 4px 12px rgba(23, 105, 224, 0.06);
+    }
+
+    .surface-card.mobile-surface {
+      border-color: #FCD34D;
+      box-shadow: 0 4px 12px rgba(217, 119, 6, 0.06);
+    }
+
+    .surface-card-header {
+      border-bottom: 2px solid var(--border-subtle);
+      padding-bottom: 10px;
+      margin-bottom: 12px;
+    }
+
+    .surface-card-title {
+      font-size: 14px;
       font-weight: 900;
       color: var(--primary-navy);
-      border-bottom: 1.5px solid var(--border-subtle);
-      padding-bottom: 8px;
-      margin-bottom: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .surface-card-sub {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .feature-pill-list {
       display: flex;
-      justify-content: space-between;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .feature-pill {
+      background-color: var(--surface-slate);
+      border: 1px solid var(--border-strong);
+      border-radius: 6px;
+      padding: 8px 10px;
+      font-size: 11.5px;
+      font-weight: 600;
+      color: var(--text-dark);
+      display: flex;
       align-items: center;
+      gap: 8px;
     }
 
-    .engine-box ul {
-      list-style-type: none;
-      padding-left: 0;
+    .feature-pill span.code {
+      background-color: var(--primary-navy);
+      color: #FFFFFF;
+      font-size: 9px;
+      font-weight: 900;
+      padding: 2px 5px;
+      border-radius: 4px;
+      font-family: 'JetBrains Mono', monospace;
     }
 
-    .engine-box li {
-      font-size: 12px;
-      color: var(--text-body);
-      margin-bottom: 6px;
-      padding-left: 14px;
-      position: relative;
-    }
-
-    .engine-box li::before {
-      content: "•";
-      color: var(--action-blue);
-      position: absolute;
-      left: 0;
-      font-weight: bold;
-    }
-
-    .shared-db-box {
+    .sync-bridge-column {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 12px;
       background-color: #FFFFFF;
       border: 2px dashed var(--action-blue);
-      border-radius: 10px;
-      padding: 16px 20px;
+      border-radius: 12px;
+      padding: 14px 10px;
       text-align: center;
     }
 
-    .shared-db-title {
-      font-size: 12.5px;
+    .sync-bridge-title {
+      font-size: 11px;
       font-weight: 900;
       color: var(--action-blue);
       text-transform: uppercase;
-      letter-spacing: 0.05em;
-      margin-bottom: 4px;
+      letter-spacing: 0.06em;
     }
 
-    .shared-db-desc {
-      font-size: 11.5px;
-      color: var(--text-muted);
+    .sync-arrow-box {
+      background-color: var(--surface-slate);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      padding: 6px;
+      width: 100%;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--text-dark);
     }
 
     /* Grid Layouts */
@@ -374,7 +417,7 @@
       background-color: var(--primary-navy);
       color: #FFFFFF;
       text-align: center;
-      padding: 8px 4px;
+      padding: 8px 6px;
       font-weight: 800;
       font-size: 10px;
       text-transform: uppercase;
@@ -389,7 +432,7 @@
     }
 
     td {
-      padding: 7px 4px;
+      padding: 7px 5px;
       border-bottom: 1px solid var(--border-subtle);
       color: var(--text-dark);
       font-weight: 600;
@@ -468,7 +511,7 @@
       .section {
         margin-bottom: 25px;
       }
-      .card, .step-card, .arch-container, table {
+      .card, .step-card, .connected-diagram-container, table {
         break-inside: avoid;
       }
     }
@@ -485,7 +528,7 @@
       </button>
       <div class="doc-badge">Master Architectural Blueprint • v3.4.0</div>
       <h1>IDS Pulse — Master System Blueprint & Architecture Guide</h1>
-      <p>The definitive technical and operational specification uniting the Web Operations Suite (Command Center, Operations Hub & Client Portal) and the Mobile Quality App (Plant Floor Client).</p>
+      <p>Complete functional breakdown and connected architectural blueprint uniting the Web Operations Suite (Command Center, Operations Hub & Client Portal) and the Mobile Quality App (Plant Floor Client).</p>
       
       <div class="doc-meta">
         <div><strong>Organization:</strong> Integrity Driven Solutions Inc. (IDS)</div>
@@ -500,142 +543,280 @@
       
       <!-- Section 1: Executive Overview -->
       <section class="section">
-        <h2 class="section-title"><span class="section-title-num">01</span> System Overview & Ecosystem Architecture</h2>
+        <h2 class="section-title"><span class="section-title-num">01</span> Master Connected System Architecture</h2>
         <div class="lead-box">
-          <strong>System Mission:</strong> IDS Pulse is the central operating platform powering Integrity Driven Solutions Inc. (IDS). It unifies physical automotive quality containment on plant floors with real-time operational command, multi-role client transparency, and automated accounting reconciliation.
+          <strong>System Overview:</strong> IDS Pulse bridges physical plant-floor quality containment with digital executive command. The <strong>Web Operations Suite</strong> and the <strong>Mobile Quality App</strong> share an authoritative, bidirectional data synchronization bridge.
         </div>
 
-        <div class="arch-container">
-          <div class="arch-title">Unified Dual-Engine Platform Architecture</div>
-          <div class="arch-engines">
-            <div class="engine-box">
-              <div class="engine-header">
-                <span>ENGINE 1: WEB OPERATIONS SUITE</span>
-                <span class="badge badge-pass">Desktop/Tablet</span>
+        <!-- Master Connected Architecture Diagram -->
+        <div class="connected-diagram-container">
+          <div class="diagram-title">Connected Dual-Engine Data Pipeline & Synchronized Workflow</div>
+          
+          <div class="diagram-grid">
+            <!-- Left: Web Dashboard Surface -->
+            <div class="surface-card dashboard-surface">
+              <div>
+                <div class="surface-card-header">
+                  <div class="surface-card-title">Web Operations Suite</div>
+                  <div class="surface-card-sub">HQ Super-Admin & Client Portal</div>
+                </div>
+                <div class="feature-pill-list">
+                  <div class="feature-pill"><span class="code">DASH-01</span> 1-Stop Operations Hub & Master Matrix</div>
+                  <div class="feature-pill"><span class="code">DASH-02</span> Live Command Center & Incident Triage</div>
+                  <div class="feature-pill"><span class="code">DASH-03</span> Client Executive Portal & Lot Feeds</div>
+                  <div class="feature-pill"><span class="code">DASH-04</span> 1-Click Publishing Gate to Clients</div>
+                  <div class="feature-pill"><span class="code">DASH-05</span> Automated Rate Engine (CAD/USD)</div>
+                  <div class="feature-pill"><span class="code">DASH-06</span> Batch Invoicing & Payroll Exporter</div>
+                </div>
               </div>
-              <ul>
-                <li><strong>1-Stop Operations & Setup Hub:</strong> Master Matrix uniting Clients, Plants, POs, Reps, and Rates.</li>
-                <li><strong>Live Command Center:</strong> Real-time incident triage and 1-click Client Publishing Gate.</li>
-                <li><strong>Client Executive Quality Portal:</strong> Live lot containment feeds and overtime approvals.</li>
-                <li><strong>Financial & Invoicing Center:</strong> Automated billing engine, batch PDF invoices, and payroll sheets.</li>
-              </ul>
             </div>
 
-            <div class="engine-box">
-              <div class="engine-header">
-                <span>ENGINE 2: MOBILE QUALITY APP</span>
-                <span class="badge badge-warn">Plant Floor</span>
+            <!-- Center: Sync Bridge -->
+            <div class="sync-bridge-column">
+              <div class="sync-bridge-title">Authoritative Cloud Sync Bridge</div>
+              
+              <div class="sync-arrow-box">
+                <div style="color:var(--action-blue); font-weight:800;">1. Onboarding & Dispatch</div>
+                <div style="font-size:9px; color:var(--text-muted);">&rarr; Rates & Plant Projects</div>
               </div>
-              <ul>
-                <li><strong>1-Tap Shift Clock-In:</strong> Plant location launcher with running elapsed timer.</li>
-                <li><strong>4-Step Incident Wizard:</strong> Defect quantities, Level of Concern, Spoke With contact.</li>
-                <li><strong>Visual Evidence Canvas:</strong> Camera capture with integrated markup and defect highlights.</li>
-                <li><strong>Offline Outbox Queue:</strong> Uninterrupted plant-floor operation with auto-sync retry.</li>
-              </ul>
-            </div>
-          </div>
 
-          <div class="shared-db-box">
-            <div class="shared-db-title">Authoritative Shared Data & Event Layer</div>
-            <div class="shared-db-desc">SharedDatabase.js • Supabase PostgreSQL Cloud Database • Persistent LocalStorage Offline Resilience • Realtime Event Dispatcher</div>
+              <div class="sync-arrow-box">
+                <div style="color:var(--emerald-pass); font-weight:800;">2. Live Shift Data</div>
+                <div style="font-size:9px; color:var(--text-muted);">&larr; Clock-in & Piece Counts</div>
+              </div>
+
+              <div class="sync-arrow-box">
+                <div style="color:var(--purple-accent); font-weight:800;">3. Quality Gate</div>
+                <div style="font-size:9px; color:var(--text-muted);">&larr; Draft &rarr; Publish &rarr; Client</div>
+              </div>
+
+              <div class="sync-arrow-box">
+                <div style="color:var(--amber-warn); font-weight:800;">4. Overtime Approvals</div>
+                <div style="font-size:9px; color:var(--text-muted);">&larr; Request &rarr; Customer Signoff</div>
+              </div>
+
+              <div style="font-size:9.5px; font-weight:800; color:var(--primary-navy); margin-top:4px;">
+                PostgreSQL + Supabase + LocalStorage Queue
+              </div>
+            </div>
+
+            <!-- Right: Mobile App Surface -->
+            <div class="surface-card mobile-surface">
+              <div>
+                <div class="surface-card-header">
+                  <div class="surface-card-title">Mobile Quality App</div>
+                  <div class="surface-card-sub">Plant Floor Field Inspector Client</div>
+                </div>
+                <div class="feature-pill-list">
+                  <div class="feature-pill"><span class="code">APP-01</span> 1-Tap Shift Clock-In & Time Counter</div>
+                  <div class="feature-pill"><span class="code">APP-02</span> 4-Step Defect Incident Wizard</div>
+                  <div class="feature-pill"><span class="code">APP-03</span> Photo Capture & Canvas Markup</div>
+                  <div class="feature-pill"><span class="code">APP-04</span> Barcode Container Scanner</div>
+                  <div class="feature-pill"><span class="code">APP-05</span> Defect Rework & Scrap Counters</div>
+                  <div class="feature-pill"><span class="code">APP-06</span> Offline Outbox Queue & Auto-Sync</div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      <!-- Section 2: Detailed Engine Breakdown -->
+      <!-- Section 2: Complete Functions Inventory -->
       <section class="section">
-        <h2 class="section-title"><span class="section-title-num">02</span> Detailed Engine & Module Decomposition</h2>
+        <h2 class="section-title"><span class="section-title-num">02</span> Complete Functional Breakdown by Engine</h2>
         
-        <div class="grid-2">
-          <!-- Web Suite Modules -->
-          <div class="card">
-            <div class="card-title">
-              <span>Web Operations Suite (Engine 1)</span>
-              <span class="badge badge-pass">Super-Admin / Client</span>
-            </div>
-            <div class="card-subtitle">Headquarters Command & Client Experience</div>
-            <ul>
-              <li><strong>Master Operations Matrix:</strong> Central connected table linking Client, Plant, Currency (CAD/USD), Scope, PO Cap, Assigned Rep, Billing Rate, Pay Rate, and 1-click Dispatch/Reassign.</li>
-              <li><strong>User Directory & Access Hub:</strong> Searchable accounts for Field Reps, Client Managers, and Staff.</li>
-              <li><strong>Projects & PO Budgets Registry:</strong> Live hour consumption meters against purchase orders.</li>
-              <li><strong>Incident Publishing Gate:</strong> Strict review mechanism ensuring only approved records reach client portals.</li>
-              <li><strong>Client Portal Feed:</strong> Clean lot certificates and PPM analytics for OEM directors.</li>
-            </ul>
-          </div>
+        <!-- Web Dashboard Functions Table -->
+        <h3 style="font-size:14px; font-weight:900; color:var(--primary-navy); text-transform:uppercase; margin:20px 0 10px;">A. Web Operations Suite Functions</h3>
+        <table>
+          <thead>
+            <tr>
+              <th style="width:20%;">Function ID & Name</th>
+              <th style="width:16%;">Target Role</th>
+              <th style="width:34%;">Core Capability & Business Purpose</th>
+              <th style="width:30%;">Data Pipeline Connection</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Universal Client Onboarding</strong></td>
+              <td>Super-Admin</td>
+              <td>Registers Tier-1 Client Company, Assembly Plant Location, Purchase Order, and allocated Budget Hours cap in 1 modal.</td>
+              <td>Creates records in <code>suppliers</code>, <code>plants</code>, and <code>projects</code> collections.</td>
+            </tr>
+            <tr>
+              <td><strong>User Accounts Provisioning</strong></td>
+              <td>Super-Admin</td>
+              <td>Provisions authentication credentials for Field Inspectors, Client Quality Managers, and Staff with role presets.</td>
+              <td>Writes to <code>users</code> table; syncs RBAC session keys upon login.</td>
+            </tr>
+            <tr>
+              <td><strong>Field Rep Dispatch Engine</strong></td>
+              <td>Super-Admin</td>
+              <td>Dispatches Field Inspector to active plant project; locks in agreed hourly billing rate and field inspector pay rate.</td>
+              <td>Updates <code>projects.rep_id</code> and writes to authoritative <code>rates</code> table.</td>
+            </tr>
+            <tr>
+              <td><strong>Master Operations Matrix</strong></td>
+              <td>Admin / QA Dir</td>
+              <td>Central connected table linking Client, Plant, Currency (CAD/USD), Scope, PO Cap, Rep, Rates, with 1-click actions.</td>
+              <td>Queries unified data joins across clients, plants, projects, and rates.</td>
+            </tr>
+            <tr>
+              <td><strong>Live Command Center Feed</strong></td>
+              <td>QA Director</td>
+              <td>Real-time operations feed monitoring active inspector clock-ins, inspected piece counts, and open containment alerts.</td>
+              <td>Subscribes to live <code>shiftReports</code> and <code>incidents</code> event stream.</td>
+            </tr>
+            <tr>
+              <td><strong>1-Click Publishing Gate</strong></td>
+              <td>QA Director</td>
+              <td>Audit mechanism allowing QA Directors to inspect incoming draft shift reports and publish them directly to clients.</td>
+              <td>Transitions <code>shiftReports.status</code> from <code>Submitted</code> to <code>published</code>.</td>
+            </tr>
+            <tr>
+              <td><strong>Client Executive Portal</strong></td>
+              <td>Customer Mgr</td>
+              <td>Dedicated view for Tier-1 quality managers showing live certified clean lot tracking and PPM defect trends.</td>
+              <td>Strictly filtered by <code>supplier_id</code>; cost and pay rates permanently scrubbed.</td>
+            </tr>
+            <tr>
+              <td><strong>Client Overtime Approval</strong></td>
+              <td>Customer Mgr</td>
+              <td>Interactive drawer enabling customer managers to approve or decline field inspector overtime requests with notes.</td>
+              <td>Updates <code>overtimeRequests.status</code> to <code>Approved</code> / <code>Declined</code>.</td>
+            </tr>
+            <tr>
+              <td><strong>Unified Rate Resolver</strong></td>
+              <td>Accounting / Admin</td>
+              <td>3-Tier rate engine resolving billing and pay rates based on location (US = USD, Canada = CAD).</td>
+              <td>Executes <code>resolveRateValue()</code> fallback resolver across all tables.</td>
+            </tr>
+            <tr>
+              <td><strong>PO Budget Burn Rate Meter</strong></td>
+              <td>Accounting / Client</td>
+              <td>Visual progress bar tracking consumed labor hours against client PO caps with green/amber/red threshold alerts.</td>
+              <td>Calculates $\sum(\text{hours})$ from approved <code>shiftReports</code> against <code>projects.allocated_hours</code>.</td>
+            </tr>
+            <tr>
+              <td><strong>Batch Invoicing & Payroll</strong></td>
+              <td>Accounting</td>
+              <td>Generates canonical branded PDF billing invoices, QuickBooks CSV timesheets, and multi-tab payroll workbooks.</td>
+              <td>Draws directly from approved <code>timeEntries</code> using <code>generateInvoicePdf.js</code> and ExcelJS.</td>
+            </tr>
+          </tbody>
+        </table>
 
-          <!-- Mobile App Modules -->
-          <div class="card">
-            <div class="card-title">
-              <span>Mobile Quality App (Engine 2)</span>
-              <span class="badge badge-warn">Plant Floor Inspector</span>
-            </div>
-            <div class="card-subtitle">Field Inspection & Incident Logging</div>
-            <ul>
-              <li><strong>Shift Launcher:</strong> Pre-filled plant selection with single-tap clock-in (&ge;44px touch targets).</li>
-              <li><strong>4-Step Incident Wizard:</strong> Structured workflow preventing missing data on defect severity or plant contacts.</li>
-              <li><strong>Defect Rework Feed:</strong> Fast counters for reworked parts, rework labor hours, and scrap numbers.</li>
-              <li><strong>Barcode Scanner Integration:</strong> Instant part number recognition from physical container labels.</li>
-              <li><strong>Background Sync Worker:</strong> Automatic outbox queue retry upon network restoration.</li>
-            </ul>
-          </div>
-        </div>
+        <!-- Mobile Quality App Functions Table -->
+        <h3 style="font-size:14px; font-weight:900; color:var(--primary-navy); text-transform:uppercase; margin:30px 0 10px;">B. Mobile Quality App Functions</h3>
+        <table>
+          <thead>
+            <tr>
+              <th style="width:20%;">Function ID & Name</th>
+              <th style="width:16%;">Target Role</th>
+              <th style="width:34%;">Core Capability & Business Purpose</th>
+              <th style="width:30%;">Data Pipeline Connection</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>1-Tap Shift Clock-In</strong></td>
+              <td>Field Inspector</td>
+              <td>Single-tap shift activation with pre-selected plant location defaults and live running elapsed hours timer.</td>
+              <td>Initializes active shift session in local storage and cloud database.</td>
+            </tr>
+            <tr>
+              <td><strong>4-Step Incident Wizard</strong></td>
+              <td>Field Inspector</td>
+              <td>Structured defect capture workflow: Step 1 Details &rarr; Step 2 Defect Quantities &rarr; Step 3 Evidence &rarr; Step 4 Routing.</td>
+              <td>Generates atomic payload for <code>incidents</code> and <code>shiftReports</code>.</td>
+            </tr>
+            <tr>
+              <td><strong>Visual Evidence Canvas</strong></td>
+              <td>Field Inspector</td>
+              <td>Integrated camera capture with canvas annotation markup tool (draw defect circles, arrows, callouts).</td>
+              <td>Encodes annotated images as Base64/Blob and attaches to incident record.</td>
+            </tr>
+            <tr>
+              <td><strong>Barcode Container Scanner</strong></td>
+              <td>Field Inspector</td>
+              <td>Rapid optical recognition of automotive container barcode labels to auto-populate part numbers.</td>
+              <td>Injects scanned string directly into <code>part_number</code> input field.</td>
+            </tr>
+            <tr>
+              <td><strong>Defect Rework & Scrap Counter</strong></td>
+              <td>Field Inspector</td>
+              <td>Fast counters for logging reworked units, rework labor hours, defect categories, and scrap quantities.</td>
+              <td>Persists entries in <code>reworkLogs</code> and updates shift summary.</td>
+            </tr>
+            <tr>
+              <td><strong>3-Way Contact Routing</strong></td>
+              <td>Field Inspector</td>
+              <td>Dynamic resolution of authorized Client Quality Contacts for selected assembly plant to receive report dispatches.</td>
+              <td>Merges client contacts table, supplier contacts, and user records.</td>
+            </tr>
+            <tr>
+              <td><strong>Offline Outbox Queue</strong></td>
+              <td>Field Inspector</td>
+              <td>Ensures uninterrupted shift logging in cellular dead-zones with automated background synchronization upon reconnect.</td>
+              <td>Managed by <code>nativeStorageService.js</code> and <code>backgroundSyncWorker.js</code>.</td>
+            </tr>
+            <tr>
+              <td><strong>Overtime Request Launcher</strong></td>
+              <td>Field Inspector</td>
+              <td>Allows inspectors on plant floors to request overtime hours with business reason directly to customer managers.</td>
+              <td>Dispatches notification and mounts pending item in Client Portal drawer.</td>
+            </tr>
+          </tbody>
+        </table>
       </section>
 
-      <!-- Section 3: 6-Phase Operational Lifecycle -->
+      <!-- Section 3: How App & Dashboard Connect -->
       <section class="section">
-        <h2 class="section-title"><span class="section-title-num">03</span> End-to-End 6-Phase Operational Lifecycle</h2>
-        <p>How data flows through the entire system from initial customer onboarding to final invoicing:</p>
+        <h2 class="section-title"><span class="section-title-num">03</span> How Web Dashboard & Mobile App Connect</h2>
+        <p>The integration between the Web Operations Suite and Mobile Quality App follows an automated 5-step transaction lifecycle:</p>
 
         <div class="step-card">
-          <div class="step-badge">Phase 1</div>
+          <div class="step-badge">Step 1</div>
           <div class="step-content">
-            <h4>Client & Plant Onboarding (Operations Hub)</h4>
-            <p>Admin registers Tier-1 supplier (e.g. Magna), assembly plant location (e.g. GM Oshawa), purchase order number, and authorized PO budget hours cap.</p>
+            <h4>Onboarding & Rep Assignment (Dashboard &rarr; Mobile App)</h4>
+            <p>Admin onboards Client, Plant, PO Hours, and assigns the Field Rep in the <strong>Operations Hub</strong>. The Mobile App automatically syncs and pre-populates the inspector's plant assignment and authorized part numbers upon login.</p>
           </div>
         </div>
 
         <div class="step-card">
-          <div class="step-badge">Phase 2</div>
+          <div class="step-badge">Step 2</div>
           <div class="step-content">
-            <h4>User Provisioning & Field Rep Dispatch</h4>
-            <p>Admin provisions logins for inspectors and client managers, dispatches the field rep to the plant project, and locks in agreed billing and pay rates.</p>
+            <h4>Real-Time Shift Execution (Mobile App &rarr; Dashboard)</h4>
+            <p>Inspector clocks in on mobile and logs inspected parts, defect counts, rework hours, and photos. The <strong>Live Command Center</strong> on the dashboard updates in real time to show active plant coverage and pieces inspected.</p>
           </div>
         </div>
 
         <div class="step-card">
-          <div class="step-badge">Phase 3</div>
+          <div class="step-badge">Step 3</div>
           <div class="step-content">
-            <h4>Plant Floor Shift Execution (Mobile App)</h4>
-            <p>Field inspector clocks in, inspects components, logs defects and rework quantities, captures annotated photos, and submits the shift report.</p>
+            <h4>QA Review & 1-Click Publishing (Mobile App &rarr; Admin &rarr; Client)</h4>
+            <p>Inspector submits end-of-shift containment report. QA Director (Donna) reviews the draft in the Command Center and clicks <strong>Publish to Client Portal</strong>, instantly granting visibility to the automotive customer.</p>
           </div>
         </div>
 
         <div class="step-card">
-          <div class="step-badge">Phase 4</div>
+          <div class="step-badge">Step 4</div>
           <div class="step-content">
-            <h4>Super-Admin QA Review & Publishing Gate</h4>
-            <p>Director of QA inspects incoming reports in the Command Center and clicks "Publish to Client Portal" to authorize client visibility.</p>
+            <h4>Client Visibility & Overtime Sign-off (Client Portal &larr;&rarr; Mobile App)</h4>
+            <p>Client Quality Manager logs into the <strong>Client Portal</strong>, reviews certified clean lot numbers, and approves inspector overtime requests in the approval drawer. The approval status reflects back to the inspector's timesheet.</p>
           </div>
         </div>
 
         <div class="step-card">
-          <div class="step-badge">Phase 5</div>
+          <div class="step-badge">Step 5</div>
           <div class="step-content">
-            <h4>Client Quality Portal & Overtime Authorization</h4>
-            <p>Customer Quality Manager tracks real-time lot containment status and approves field inspector overtime requests with customer comments.</p>
-          </div>
-        </div>
-
-        <div class="step-card">
-          <div class="step-badge">Phase 6</div>
-          <div class="step-content">
-            <h4>Financial Reconciliation & Invoicing Export</h4>
-            <p>Timesheet hours are reconciled against PO budget caps; batch PDF invoices, payroll spreadsheets, and QuickBooks timesheets are exported.</p>
+            <h4>Automated Financial Reconciliation (Dashboard Accounting)</h4>
+            <p>Approved shift hours are reconciled against the PO budget cap. The dashboard calculates billing amounts ($65/hr CAD or $100/hr USD) and payroll ($32/hr CAD or $70/hr USD), generating single/batch PDF invoices and QuickBooks CSVs.</p>
           </div>
         </div>
       </section>
 
-      <!-- Section 4: Data Schema & Security -->
+      <!-- Section 4: Security Matrix -->
       <section class="section">
         <h2 class="section-title"><span class="section-title-num">04</span> Permissions & Access Control Matrix</h2>
         <table>
@@ -710,7 +891,7 @@
         </table>
       </section>
 
-      <!-- Section 5: Technical Stack -->
+      <!-- Section 5: Technical Infrastructure -->
       <section class="section">
         <h2 class="section-title"><span class="section-title-num">05</span> Technical Infrastructure & Quality Standards</h2>
         

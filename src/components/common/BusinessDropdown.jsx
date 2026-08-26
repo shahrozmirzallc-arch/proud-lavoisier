@@ -1,7 +1,7 @@
 // src/components/common/BusinessDropdown.jsx
 // Authoritative IDS Pulse Business Dropdown with "Other / Not listed" support
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { AlertCircle, HelpCircle } from 'lucide-react';
 
 /**

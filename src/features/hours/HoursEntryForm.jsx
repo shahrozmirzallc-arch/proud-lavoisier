@@ -1,5 +1,5 @@
 import React from 'react';
-import { AlertCircle, Clock, Calendar, FileText, CheckCircle2 } from 'lucide-react';
+import { AlertCircle, CheckCircle2 } from 'lucide-react';
 
 export const HoursEntryForm = ({
   assignments = [],
@@ -11,8 +11,8 @@ export const HoursEntryForm = ({
   onChangeHours,
   workSummary = '',
   onChangeSummary,
-  notes = '',
-  onChangeNotes,
+  _notes = '',
+  _onChangeNotes,
   onSubmit,
   isSubmitting = false,
   onCancel,

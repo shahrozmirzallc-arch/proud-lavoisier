@@ -1,4 +1,4 @@
-import { supabase, saveEntity, getDB, addUser, provisionUser } from '../components/SharedDatabase.js';
+import { supabase, saveEntity, getDB, provisionUser } from '../components/SharedDatabase.js';
 
 /**
  * Validates onboarding payload parameters.

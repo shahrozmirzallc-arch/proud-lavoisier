@@ -3,7 +3,6 @@
 // Uses Capacitor Filesystem & Encrypted SQLite with browser fallback
 
 const STORAGE_OUTBOX_KEY = 'ids_pulse_offline_queue';
-const STORAGE_MEDIA_KEY = 'ids_pulse_sqlite_media_outbox_v2';
 
 /**
  * Generates a collision-resistant tracking reference (UUID v7 format / LOCAL-INC-2026-XXXX)

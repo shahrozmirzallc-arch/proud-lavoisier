@@ -248,7 +248,9 @@ export const generateIntegrityInvoicePDF = ({
       doc.addPage();
       try {
         doc.addImage(LOGO_BASE64, 'PNG', marginX, 10, 50, 13);
-      } catch (err) {}
+      } catch (_err) {
+        // Fallback if image rendering fails
+      }
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(18);
       doc.setTextColor(0, 0, 0);
@@ -309,7 +311,7 @@ export const generateIntegrityInvoicePDF = ({
 
   // Complete table box and vertical dividers for the final page of items
   const isMultiPage = doc.internal.getNumberOfPages() > 1;
-  const availableSpaceOnPage = (pageH - 45) - pageStartY;
+  const _availableSpaceOnPage = (pageH - 45) - pageStartY;
   const finalTableHeight = isMultiPage 
     ? Math.max(120, (itemY + 4) - pageStartY)
     : Math.min(115, Math.max(80, (itemY + 4) - pageStartY));

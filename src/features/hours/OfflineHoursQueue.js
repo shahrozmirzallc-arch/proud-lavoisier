@@ -13,7 +13,7 @@ export const getOfflineQueue = () => {
       return raw ? JSON.parse(raw) : [];
     }
     return memoryStore;
-  } catch (err) {
+  } catch (_err) {
     return memoryStore;
   }
 };
@@ -24,7 +24,7 @@ export const saveOfflineQueue = (queue) => {
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem(OUTBOX_STORAGE_KEY, JSON.stringify(queue));
     }
-  } catch (err) {
+  } catch (_err) {
     memoryStore = queue;
   }
 };

@@ -1,5 +1,5 @@
 import React from 'react';
-import { AlertTriangle, Clock, CheckCircle2, X } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 
 export const HoursSplitModal = ({ isOpen, onClose, onConfirm, splitData }) => {
   if (!isOpen || !splitData) return null;

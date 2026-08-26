@@ -1,4 +1,3 @@
-import React from 'react';
 import { CheckCircle2, Clock, AlertTriangle, XCircle, RotateCcw, WifiOff } from 'lucide-react';
 
 export const HoursStatus = ({ status, hourType, clientReviewStatus }) => {

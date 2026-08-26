@@ -31,7 +31,7 @@ export const submitRepHoursRpc = async ({
 
     const res = await Promise.race([rpcPromise, timeoutPromise]);
     if (res && res.data) return res.data;
-  } catch (err) {
+  } catch (_err) {
     // Fallback for prototype / offline / test environment
   }
 

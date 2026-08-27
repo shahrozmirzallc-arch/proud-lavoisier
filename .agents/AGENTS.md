@@ -95,3 +95,8 @@ To ensure historical mistakes are never repeated, the agent MUST obey the follow
 - **Strict DOM Text Verification**: Before sending any navigation message to the user, the agent MUST grep or view the component code to extract the literal string on the target button or tab.
 - **Zero Invented Terminology**: Using marketing synonyms, mental shorthand, or paraphrased names for UI elements is strictly prohibited and treated as a critical operational failure.
 
+## 18. HARD RULE: ZERO DARK CONTAINER & LOW-CONTRAST TABLE BADGE LEAK GUARDRAIL (WCAG AAA 7:1 MINIMUM)
+- **Zero Dark-on-Dark or Low-Contrast Badges**: Every single badge, status pill, and currency tag across tables (e.g. `CAD`, `USD`, `PO status`, `Rep assignment`) MUST enforce high-contrast light theme tokens (`bg-blue-50 text-blue-950 border border-blue-300 font-black`, `bg-emerald-50 text-emerald-950 border border-emerald-300 font-black`). Dark background pills (`dark:bg-slate-700`, `bg-slate-800`) with dark/primary text are strictly forbidden.
+- **Automated Test Gate Enforcement**: Every change MUST pass `npx vitest run tests/modal_and_theme_contrast_gate.test.js` before deployment.
+
+

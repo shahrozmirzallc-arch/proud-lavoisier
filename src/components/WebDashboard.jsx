@@ -3,7 +3,7 @@ import {
   Shield, ShieldCheck, Activity, Server, FileText, Users, Mail, DollarSign, Database, 
   Search, Filter, ChevronRight, ChevronDown, ChevronUp, Globe, Building, X, Clock, CheckCircle, CheckCircle2, UserCheck, AlertCircle, AlertTriangle, PhoneCall, 
   FileSpreadsheet, Calendar, ArrowRight, UserPlus, MapPin, Printer, Download, Eye, EyeOff, Sparkles, Key,
-  Milestone, TrendingUp, FolderKanban, PlusCircle, Plus, ArrowLeft, Camera, ClipboardCheck, Zap, Building2, ShieldAlert, User, Cpu, Mic, Video, Trash2, History, Lock, BarChart3, Layers, LayoutGrid
+  Milestone, TrendingUp, FolderKanban, PlusCircle, Plus, ArrowLeft, Camera, ClipboardCheck, Zap, Building2, ShieldAlert, User, Cpu, Mic, Video, Trash2, History, Lock, BarChart3, Layers, LayoutGrid, Briefcase
 } from 'lucide-react';
 import { getEntities, saveEntity, logSystemEvent, deleteRate, isFieldRep, syncWithSupabase, supabase, addUser, provisionUser, updateUser, deleteUser, isEntryAccountingEligible, addEmailLog } from './SharedDatabase';
 import { jsPDF } from 'jspdf';
@@ -5624,6 +5624,125 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
               className="text-slate-500 hover:text-slate-900 p-1.5 cursor-pointer"
             >
               <X className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* GUIDED QUALITY OPERATIONS STEPPER PIPELINE (ADMIN / STAFF) */}
+      {!forceRoadmapOnly && userRole !== 'customer' && (
+        <div className="mx-6 mt-4 p-3.5 bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col gap-2.5 text-left">
+          <div className="flex items-center justify-between px-1">
+            <div className="flex items-center gap-2">
+              <div className="w-2.5 h-2.5 rounded-full bg-blue-600 animate-pulse"></div>
+              <span className="text-[11px] font-black uppercase tracking-wider text-slate-900">
+                Automotive Pulse — End-to-End Quality & Operations Pipeline
+              </span>
+            </div>
+            <span className="text-[10.5px] text-slate-500 font-semibold hidden sm:inline">
+              Click any step to jump to the workflow screen
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-5 gap-2 pt-0.5">
+            {/* Step 1: Onboard Client & Plant */}
+            <button
+              type="button"
+              onClick={() => { setPrimaryDomain('workforce'); setActiveTab('suppliers'); }}
+              className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col gap-1 ${
+                activeTab === 'suppliers' || activeTab === 'plants'
+                  ? 'bg-blue-50/90 border-blue-500 shadow-xs ring-1 ring-blue-400'
+                  : 'bg-slate-50 border-slate-200 hover:bg-slate-100'
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-black uppercase px-1.5 py-0.5 rounded bg-blue-600 text-white">
+                  Step 1
+                </span>
+                <Building2 className="w-3.5 h-3.5 text-blue-600" />
+              </div>
+              <div className="font-extrabold text-[12px] text-slate-900 leading-snug">1. Onboard Client</div>
+              <div className="text-[10px] text-slate-500 font-medium truncate">Clients & Host Plants</div>
+            </button>
+
+            {/* Step 2: Assign Rep & PO Budget */}
+            <button
+              type="button"
+              onClick={() => { setPrimaryDomain('operations'); setActiveTab('projects'); }}
+              className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col gap-1 ${
+                activeTab === 'projects' || activeTab === 'rates'
+                  ? 'bg-indigo-50/90 border-indigo-500 shadow-xs ring-1 ring-indigo-400'
+                  : 'bg-slate-50 border-slate-200 hover:bg-slate-100'
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-black uppercase px-1.5 py-0.5 rounded bg-indigo-600 text-white">
+                  Step 2
+                </span>
+                <Briefcase className="w-3.5 h-3.5 text-indigo-600" />
+              </div>
+              <div className="font-extrabold text-[12px] text-slate-900 leading-snug">2. Assign PO & Rep</div>
+              <div className="text-[10px] text-slate-500 font-medium truncate">PO Budgets & CAD/USD Rates</div>
+            </button>
+
+            {/* Step 3: Shift Reports & Live Telemetry */}
+            <button
+              type="button"
+              onClick={() => { setPrimaryDomain('reports'); setActiveTab('shift-logs'); }}
+              className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col gap-1 ${
+                activeTab === 'shift-logs' || activeTab === 'rework-logs'
+                  ? 'bg-emerald-50/90 border-emerald-500 shadow-xs ring-1 ring-emerald-400'
+                  : 'bg-slate-50 border-slate-200 hover:bg-slate-100'
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-black uppercase px-1.5 py-0.5 rounded bg-emerald-600 text-white">
+                  Step 3
+                </span>
+                <Activity className="w-3.5 h-3.5 text-emerald-600" />
+              </div>
+              <div className="font-extrabold text-[12px] text-slate-900 leading-snug">3. Floor Shift Logs</div>
+              <div className="text-[10px] text-slate-500 font-medium truncate">Live Telemetry & Inspected Pcs</div>
+            </button>
+
+            {/* Step 4: QA Review & Publish Gate */}
+            <button
+              type="button"
+              onClick={() => { setPrimaryDomain('operations'); setActiveTab('incidents'); }}
+              className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col gap-1 ${
+                activeTab === 'incidents'
+                  ? 'bg-amber-50/90 border-amber-500 shadow-xs ring-1 ring-amber-400'
+                  : 'bg-slate-50 border-slate-200 hover:bg-slate-100'
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-black uppercase px-1.5 py-0.5 rounded bg-amber-600 text-white">
+                  Step 4
+                </span>
+                <Shield className="w-3.5 h-3.5 text-amber-600" />
+              </div>
+              <div className="font-extrabold text-[12px] text-slate-900 leading-snug">4. QA Publish Gate</div>
+              <div className="text-[10px] text-slate-500 font-medium truncate">Audit & Release to Client</div>
+            </button>
+
+            {/* Step 5: Invoicing & Timesheets */}
+            <button
+              type="button"
+              onClick={() => { setPrimaryDomain('finance'); setActiveTab('invoicing'); }}
+              className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col gap-1 ${
+                activeTab === 'invoicing' || activeTab === 'time-tracking'
+                  ? 'bg-purple-50/90 border-purple-500 shadow-xs ring-1 ring-purple-400'
+                  : 'bg-slate-50 border-slate-200 hover:bg-slate-100'
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-black uppercase px-1.5 py-0.5 rounded bg-purple-600 text-white">
+                  Step 5
+                </span>
+                <DollarSign className="w-3.5 h-3.5 text-purple-600" />
+              </div>
+              <div className="font-extrabold text-[12px] text-slate-900 leading-snug">5. Client Invoicing</div>
+              <div className="text-[10px] text-slate-500 font-medium truncate">PDF Invoices & QuickBooks</div>
             </button>
           </div>
         </div>

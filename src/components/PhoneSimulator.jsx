@@ -3214,32 +3214,70 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                     </div>
                   </div>
 
-                  {/* PRIMARY ACTION BUTTON */}
-                  <button 
-                    type="button"
-                    onClick={() => {
-                      const activeAsgn = resolveActiveAssignment();
-                      if (activeAsgn && activeAsgn.id) {
-                        setSelectedAssignmentId(activeAsgn.id);
-                      }
-                      setShowAddHoursModal(true);
-                    }}
-                    className={`w-full h-11 text-white rounded-xl font-bold text-sm flex items-center justify-between px-3.5 transition-all cursor-pointer shadow-xs mt-1 ${
-                      authHours !== null && recHours >= authHours 
-                        ? 'bg-[#C66A00] hover:bg-[#B05D00]' 
-                        : 'bg-[#008F72] hover:bg-[#00765F]'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <Clock className="w-4 h-4 text-white" />
-                      <span>
-                        {authHours !== null && recHours >= authHours 
-                          ? 'PO Budget Cap Reached — Add Overtime Hours' 
-                          : "Add Today's Hours"}
-                      </span>
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-white" />
-                  </button>
+                  {/* 3 HIGH-SPEED QUICK ACTIONS */}
+                  <div className="flex flex-col gap-2 pt-1">
+                    {/* 1. ROUTINE QUALITY INSPECTION */}
+                    <button
+                      type="button"
+                      onClick={() => setActiveScreen('inspection')}
+                      className="w-full py-2.5 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs flex items-center justify-between transition-all cursor-pointer shadow-xs"
+                    >
+                      <div className="flex items-center gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-white shrink-0" />
+                        <div className="text-left">
+                          <div className="font-extrabold uppercase tracking-wide text-[11px]">1. Quick Piece Inspection</div>
+                          <div className="text-[10px] text-emerald-100 font-medium">Log inspected parts, barcodes & pass/reject</div>
+                        </div>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-white shrink-0" />
+                    </button>
+
+                    {/* 2. LOG TODAY'S SHIFT HOURS */}
+                    <button 
+                      type="button"
+                      onClick={() => {
+                        const activeAsgn = resolveActiveAssignment();
+                        if (activeAsgn && activeAsgn.id) {
+                          setSelectedAssignmentId(activeAsgn.id);
+                        }
+                        setShowAddHoursModal(true);
+                      }}
+                      className={`w-full py-2.5 px-3 text-white rounded-xl font-bold text-xs flex items-center justify-between transition-all cursor-pointer shadow-xs ${
+                        authHours !== null && recHours >= authHours 
+                          ? 'bg-[#C66A00] hover:bg-[#B05D00]' 
+                          : 'bg-[#10284A] hover:bg-[#1A3B66]'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <Clock className="w-4 h-4 text-white shrink-0" />
+                        <div className="text-left">
+                          <div className="font-extrabold uppercase tracking-wide text-[11px]">
+                            {authHours !== null && recHours >= authHours 
+                              ? '2. PO Cap Reached — Log Overtime' 
+                              : "2. Log Today's Shift Hours"}
+                          </div>
+                          <div className="text-[10px] text-slate-200 font-medium">Record daily shift time & supervisor notes</div>
+                        </div>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-white shrink-0" />
+                    </button>
+
+                    {/* 3. RAISE CONTAINMENT HOLD / INCIDENT */}
+                    <button
+                      type="button"
+                      onClick={() => setActiveScreen('incident-wizard')}
+                      className="w-full py-2.5 px-3 bg-amber-500 hover:bg-amber-600 text-slate-950 rounded-xl font-extrabold text-xs flex items-center justify-between transition-all cursor-pointer shadow-xs border border-amber-400"
+                    >
+                      <div className="flex items-center gap-2">
+                        <AlertTriangle className="w-4 h-4 text-slate-950 shrink-0" />
+                        <div className="text-left">
+                          <div className="font-black uppercase tracking-wide text-[11px]">3. Raise Defect Containment Hold</div>
+                          <div className="text-[10px] text-slate-900 font-semibold">Flag suspect lot, capture photos & notify client</div>
+                        </div>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-slate-950 shrink-0" />
+                    </button>
+                  </div>
                 </div>
               ) : (
                 /* EMPTY ASSIGNMENT STATE FOR SELECTED PLANT */

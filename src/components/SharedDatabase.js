@@ -7,7 +7,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 const STORAGE_KEY = 'ids_pulse_db';
 const DB_VERSION_KEY = 'ids_pulse_db_version';
-const CURRENT_DB_VERSION = 'v3.3.0_gca_audit_reports';
+const CURRENT_DB_VERSION = 'v3.4.0_invoicing_pipeline_seed';
 
 const EMPTY_SCHEMA = {
   users: [],
@@ -200,6 +200,74 @@ export function initializeDB() {
   if (!data.incidents) data.incidents = [];
   brandNewIncidents.forEach(inc => {
     if (!data.incidents.some(x => x.id === inc.id)) { data.incidents.push(inc); updated = true; }
+  });
+
+  const brandNewTimeEntries = [
+    {
+      id: 'te_magna_001',
+      rep_id: 'rep_clarence',
+      rep_name: 'Clarence Kuiken',
+      supplier_id: 'sup_magna',
+      client_id: 'sup_magna',
+      plant_id: 'plant_oakville',
+      project_id: 'proj_oakville_900',
+      date: '2026-06-20',
+      work_date: '2026-06-20',
+      hours: 8.0,
+      hour_type: 'regular',
+      mileage_km: 45.0,
+      billing_rate: 110.0,
+      currency: 'CAD',
+      status: 'recorded',
+      invoiced: false,
+      notes: '100% sorting and stator inspection for Ford Oakville line run.',
+      created_at: '2026-06-20T17:00:00Z'
+    },
+    {
+      id: 'te_magna_002',
+      rep_id: 'rep_clarence',
+      rep_name: 'Clarence Kuiken',
+      supplier_id: 'sup_magna',
+      client_id: 'sup_magna',
+      plant_id: 'plant_oakville',
+      project_id: 'proj_oakville_900',
+      date: '2026-06-21',
+      work_date: '2026-06-21',
+      hours: 8.0,
+      hour_type: 'regular',
+      mileage_km: 35.0,
+      billing_rate: 110.0,
+      currency: 'CAD',
+      status: 'recorded',
+      invoiced: false,
+      notes: 'GCA audit verification and LH HD light containment.',
+      created_at: '2026-06-21T17:00:00Z'
+    },
+    {
+      id: 'te_stellantis_001',
+      rep_id: 'rep_clarence',
+      rep_name: 'Clarence Kuiken',
+      supplier_id: 'sup_stellantis',
+      client_id: 'sup_stellantis',
+      plant_id: 'plant_windsor',
+      project_id: 'proj_windsor_500',
+      date: '2026-06-20',
+      work_date: '2026-06-20',
+      hours: 8.0,
+      hour_type: 'regular',
+      mileage_km: 25.0,
+      billing_rate: 95.0,
+      currency: 'CAD',
+      status: 'recorded',
+      invoiced: false,
+      notes: 'High voltage busbar containment audit at Windsor plant.',
+      created_at: '2026-06-20T17:00:00Z'
+    }
+  ];
+
+  if (!data.timeEntries) data.timeEntries = [];
+  brandNewTimeEntries.forEach(te => {
+    if (!data.timeEntries.some(x => x.id === te.id)) { data.timeEntries.push(te); updated = true; }
   });
 
   // Ensure customer accounts exist for all suppliers with valid contact emails so client portal logins work out of the box

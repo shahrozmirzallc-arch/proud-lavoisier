@@ -10301,8 +10301,26 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   {accountingSubTab === 'invoice-gen' && (() => {
                     const client = suppliers.filter(Boolean).find(s => s.id === selectedInvoiceSupplier) || suppliers.filter(Boolean)[0] || { id: 'unknown', name: 'Unknown Client', invoice_schedule: 'weekly' };
                     
-                    const clientEntries = timeEntries.filter(t => t && t.supplier_id === (client?.id || selectedInvoiceSupplier) && !t.invoiced && isEntryAccountingEligible(t) && (selectedInvoiceCurrency === 'all' || getRepSupplierRates(t.rep_id, t.supplier_id, t.plant_id).currency === selectedInvoiceCurrency));
-                    const clientExpenses = expenseEntries.filter(e => e && e.supplier_id === (client?.id || selectedInvoiceSupplier) && !e.invoiced && e.status === 'approved' && (selectedInvoiceCurrency === 'all' || getExpenseCurrency(e) === selectedInvoiceCurrency));
+                    const clientEntries = timeEntries.filter(t => {
+                      if (!t || t.invoiced || !isEntryAccountingEligible(t)) return false;
+                      const targetId = client?.id || selectedInvoiceSupplier;
+                      const targetName = client?.name?.toLowerCase() || '';
+                      const matchSup = t.supplier_id === targetId || t.client_id === targetId || t.billing_customer_id === targetId;
+                      const matchName = targetName && ((t.supplier_id === 'sup_magna' && targetName.includes('magna')) || (t.supplier_id === 'sup_stellantis' && targetName.includes('stellantis')));
+                      if (!matchSup && !matchName) return false;
+                      if (selectedInvoiceCurrency !== 'all' && getRepSupplierRates(t.rep_id, t.supplier_id, t.plant_id).currency !== selectedInvoiceCurrency) return false;
+                      return true;
+                    });
+                    const clientExpenses = expenseEntries.filter(e => {
+                      if (!e || e.invoiced || e.status !== 'approved') return false;
+                      const targetId = client?.id || selectedInvoiceSupplier;
+                      const targetName = client?.name?.toLowerCase() || '';
+                      const matchSup = e.supplier_id === targetId || e.client_id === targetId;
+                      const matchName = targetName && ((e.supplier_id === 'sup_magna' && targetName.includes('magna')) || (e.supplier_id === 'sup_stellantis' && targetName.includes('stellantis')));
+                      if (!matchSup && !matchName) return false;
+                      if (selectedInvoiceCurrency !== 'all' && getExpenseCurrency(e) !== selectedInvoiceCurrency) return false;
+                      return true;
+                    });
 
                     const includedEntries = clientEntries.filter(t => !excludedInvoiceEntryIds?.includes(t.id));
                     const includedExpenses = clientExpenses.filter(e => !excludedInvoiceExpenseIds?.includes(e.id));
@@ -10331,6 +10349,28 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
                     return (
                       <div className="flex flex-col gap-3 text-left">
+                        {/* DATA ORIGIN & FLOW TRANSPARENCY BANNER */}
+                        <div className="bg-blue-50/90 border border-blue-200 rounded-2xl p-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-left shadow-2xs">
+                          <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold shrink-0">
+                              <FileText className="w-5 h-5 text-white" />
+                            </div>
+                            <div>
+                              <div className="text-xs font-black uppercase tracking-wider text-blue-950">
+                                Invoicing Data Flow & Source Transparency
+                              </div>
+                              <p className="text-[11.5px] text-blue-900 font-medium mt-0.5">
+                                Hours below are aggregated in real-time from <strong>Field Inspector Routine Shifts</strong> & <strong>Rework Logs</strong>. Once audited, generate client PDF invoices or sync with QuickBooks.
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <span className="text-[11px] font-bold px-2.5 py-1 bg-white border border-blue-300 rounded-lg text-blue-900 shadow-2xs">
+                              {includedEntries.length} Active Shift Record(s) Ready
+                            </span>
+                          </div>
+                        </div>
+
                         {/* Approval Workflows alerts for Admin */}
                         <div className="grid grid-cols-2 gap-3">
                           <div className="bg-surface-elevated border border-border-subtle p-3 rounded-2xl">

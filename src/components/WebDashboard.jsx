@@ -11534,7 +11534,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                 <div className="text-[11px] text-text-secondary">{bLog.client_name || 'OEM Client'}</div>
                               </td>
                               <td className="py-2.5 px-3 text-xs">
-                                <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 rounded font-bold text-[10.5px]">
+                                <span className="px-2 py-0.5 bg-slate-100 text-slate-900 border border-slate-300 rounded font-black text-[10.5px]">
                                   {bLog.trigger_source === 'manual_admin_broadcast' ? 'Manual Admin' : (bLog.trigger_source === 'reconnection_sync' ? 'Outbox Replay' : 'Auto Release')}
                                 </span>
                               </td>
@@ -11888,7 +11888,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   <div className="overflow-x-auto w-full bg-surface-elevated rounded-2xl border border-border-subtle shadow-sm">
                     <table className="w-full border-collapse text-[13px] text-left">
                       <thead>
-                        <tr className="bg-surface border-b border-border-subtle text-text-secondary font-extrabold uppercase tracking-wider text-[11px]">
+                        <tr className="bg-slate-100 border-b-2 border-slate-300 text-slate-900 font-black uppercase tracking-wider text-[11px]">
                           <th className="py-3 px-3.5">Client Company</th>
                           <th className="py-3 px-3.5">Assembly Plant</th>
                           <th className="py-3 px-3.5">Project Scope / Part</th>
@@ -11916,25 +11916,32 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                           const assignedRepName = p.assigned_rep_name || p.rep_name || (users.find(u => String(u.id) === String(p.rep_id) || u.username === p.rep_id)?.name) || 'Unassigned / Pending';
                           const billRate = p.billing_rate ? `$${parseFloat(p.billing_rate).toFixed(2)}/hr ${p.currency || 'CAD'}` : '$65.00/hr CAD';
                           const payRate = p.pay_rate ? `$${parseFloat(p.pay_rate).toFixed(2)}/hr ${p.currency || 'CAD'}` : '$32.00/hr CAD';
+                          const curr = (p.currency || 'CAD').toUpperCase();
                           return (
-                            <tr key={p.id} className="hover:bg-surface transition-colors">
-                              <td className="py-3 px-3.5 font-bold text-text-primary">
+                            <tr key={p.id} className="hover:bg-slate-50 transition-colors">
+                              <td className="py-3 px-3.5 font-black text-slate-900">
                                 <div className="flex items-center gap-2">
-                                  <Building2 className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                                  <Building2 className="w-4 h-4 text-blue-600 flex-shrink-0" />
                                   <span>{supName}</span>
                                 </div>
                               </td>
-                              <td className="py-3 px-3.5 font-medium text-text-primary">
+                              <td className="py-3 px-3.5 font-bold text-slate-900">
                                 <div>{plantName}</div>
-                                <span className="text-[10px] bg-slate-200 dark:bg-slate-700 text-text-primary px-1.5 py-0.5 rounded font-bold">{p.currency || 'CAD'}</span>
+                                <span className={`inline-block mt-1 text-[11px] font-black tracking-wide px-2 py-0.5 rounded-md border ${
+                                  curr === 'USD'
+                                    ? 'bg-emerald-50 text-emerald-950 border-emerald-300'
+                                    : 'bg-blue-50 text-blue-950 border-blue-300'
+                                }`}>
+                                  {curr}
+                                </span>
                               </td>
                               <td className="py-3 px-3.5">
-                                <div className="font-bold text-text-primary">{p.name || 'Quality Containment'}</div>
-                                <div className="text-[11px] text-text-secondary">{p.part_number ? `PN ${p.part_number}` : 'General Inspection'}</div>
+                                <div className="font-bold text-slate-900">{p.name || 'Quality Containment'}</div>
+                                <div className="text-[11px] text-slate-600 font-semibold">{p.part_number ? `PN ${p.part_number}` : 'General Inspection'}</div>
                               </td>
                               <td className="py-3 px-3.5">
-                                <div className="font-bold text-text-primary">{p.po_number || 'PO-OPEN-2026'}</div>
-                                <div className="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold">{p.allocated_hours ? `${p.allocated_hours} hrs cap` : 'Open'}</div>
+                                <div className="font-bold text-slate-900">{p.po_number || 'PO-OPEN-2026'}</div>
+                                <div className="text-[11px] text-emerald-700 font-black">{p.allocated_hours ? `${p.allocated_hours} hrs cap` : 'Open'}</div>
                               </td>
                               <td className="py-3 px-3.5">
                                 <div className="flex items-center gap-1.5 flex-wrap">
@@ -11950,14 +11957,14 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                       setAssignPlant(p.plant_id || 'gm_oshawa');
                                       setShowAssignRepModal(true);
                                     }}
-                                    className="px-2 py-0.5 bg-surface border border-border-subtle hover:bg-surface-elevated text-text-primary text-[10.5px] font-bold rounded cursor-pointer transition-all"
+                                    className="px-2 py-0.5 bg-white border border-slate-300 hover:bg-slate-100 text-slate-900 text-[10.5px] font-bold rounded cursor-pointer transition-all"
                                   >
                                     Reassign
                                   </button>
                                 </div>
                               </td>
-                              <td className="py-3 px-3.5 text-right font-bold text-text-primary">{billRate}</td>
-                              <td className="py-3 px-3.5 text-right font-bold text-emerald-600 dark:text-emerald-400">{payRate}</td>
+                              <td className="py-3 px-3.5 text-right font-black text-slate-900">{billRate}</td>
+                              <td className="py-3 px-3.5 text-right font-black text-emerald-700">{payRate}</td>
                               <td className="py-3 px-3.5 text-center">
                                 <button
                                   onClick={() => {
@@ -13409,57 +13416,57 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       {/* OVERLAY PANEL: EMERGENCY BROADCAST LOG INSPECTOR */}
       {selectedBroadcastLog && (
         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-3xl w-full max-w-3xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh] text-left">
+          <div className="bg-white border-2 border-slate-300 rounded-3xl w-full max-w-3xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh] text-left">
             {/* Modal Header */}
-            <div className="bg-slate-50 dark:bg-slate-950 px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+            <div className="bg-slate-100 px-6 py-4 border-b border-slate-300 flex items-center justify-between">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-600 flex items-center justify-center font-bold">
                   <Zap className="w-4.5 h-4.5" />
                 </div>
                 <div>
-                  <h4 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">
+                  <h4 className="text-sm font-black text-slate-900 uppercase tracking-wider">
                     Emergency Broadcast Payload Inspector
                   </h4>
-                  <p className="text-xs text-slate-500 font-mono">
+                  <p className="text-xs text-slate-600 font-mono font-bold">
                     Ref: {selectedBroadcastLog.id} | Incident: {selectedBroadcastLog.incident_ref}
                   </p>
                 </div>
               </div>
               <button 
                 onClick={() => setSelectedBroadcastLog(null)}
-                className="text-slate-400 hover:text-slate-700 dark:hover:text-white p-1 rounded-lg cursor-pointer"
+                className="text-slate-500 hover:text-slate-900 p-1 rounded-lg cursor-pointer transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {/* Modal Body */}
-            <div className="p-6 overflow-y-auto flex flex-col gap-4 text-xs">
+            <div className="p-6 overflow-y-auto flex flex-col gap-4 text-xs bg-slate-50">
               {/* Metadata row */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-200 dark:border-slate-800">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-white p-3 rounded-xl border border-slate-300 shadow-2xs">
                 <div>
-                  <div className="text-[10px] font-bold text-slate-400 uppercase">Trigger Source</div>
-                  <div className="font-bold text-slate-800 dark:text-slate-200 capitalize">{selectedBroadcastLog.trigger_source}</div>
+                  <div className="text-[10px] font-black text-slate-500 uppercase">Trigger Source</div>
+                  <div className="font-bold text-slate-900 capitalize">{selectedBroadcastLog.trigger_source}</div>
                 </div>
                 <div>
-                  <div className="text-[10px] font-bold text-slate-400 uppercase">Triggered By</div>
-                  <div className="font-bold text-slate-800 dark:text-slate-200">{selectedBroadcastLog.triggered_by}</div>
+                  <div className="text-[10px] font-black text-slate-500 uppercase">Triggered By</div>
+                  <div className="font-bold text-slate-900">{selectedBroadcastLog.triggered_by}</div>
                 </div>
                 <div>
-                  <div className="text-[10px] font-bold text-slate-400 uppercase">Dispatched At</div>
-                  <div className="font-bold text-slate-800 dark:text-slate-200 font-mono">
+                  <div className="text-[10px] font-black text-slate-500 uppercase">Dispatched At</div>
+                  <div className="font-bold text-slate-900 font-mono">
                     {new Date(selectedBroadcastLog.created_at).toLocaleTimeString()}
                   </div>
                 </div>
                 <div>
-                  <div className="text-[10px] font-bold text-slate-400 uppercase">Delivery Status</div>
-                  <div className="font-black text-emerald-600">{selectedBroadcastLog.status}</div>
+                  <div className="text-[10px] font-black text-slate-500 uppercase">Delivery Status</div>
+                  <div className="font-black text-emerald-700">{selectedBroadcastLog.status}</div>
                 </div>
               </div>
 
               {/* SMS Text Payload */}
               <div className="flex flex-col gap-1.5">
-                <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                <span className="text-[11px] font-black text-slate-800 uppercase tracking-wider">
                   SMS Text Message Payload (Cellular Broadcast)
                 </span>
                 <div className="bg-slate-900 text-emerald-400 font-mono p-3 rounded-xl border border-slate-800 text-xs leading-relaxed">
@@ -13469,23 +13476,23 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
               {/* HTML Email Subject & Preview */}
               <div className="flex flex-col gap-1.5">
-                <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                <span className="text-[11px] font-black text-slate-800 uppercase tracking-wider">
                   HTML Email Subject
                 </span>
-                <div className="bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-bold p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs">
+                <div className="bg-white text-slate-900 font-black p-2.5 rounded-xl border border-slate-300 text-xs shadow-2xs">
                   {selectedBroadcastLog.email_subject}
                 </div>
               </div>
 
               {/* Recipients Snapshot */}
               <div className="flex flex-col gap-1.5">
-                <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                <span className="text-[11px] font-black text-slate-800 uppercase tracking-wider">
                   Authoritative Recipient Snapshot ({selectedBroadcastLog.recipients_snapshot?.length || 0})
                 </span>
-                <div className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
+                <div className="bg-white border border-slate-300 rounded-xl overflow-hidden shadow-2xs">
                   <table className="w-full text-left text-[11px]">
                     <thead>
-                      <tr className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 text-slate-400 font-bold uppercase text-[9.5px]">
+                      <tr className="bg-slate-100 border-b border-slate-300 text-slate-700 font-black uppercase text-[9.5px]">
                         <th className="p-2">Name</th>
                         <th className="p-2">Role</th>
                         <th className="p-2">Email</th>
@@ -13493,16 +13500,16 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         <th className="p-2">Type</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-800 dark:text-slate-200">
+                    <tbody className="divide-y divide-slate-200 text-slate-900">
                       {(selectedBroadcastLog.recipients_snapshot || []).map((r, i) => (
-                        <tr key={i}>
+                        <tr key={i} className="hover:bg-slate-50">
                           <td className="p-2 font-bold">{r.name || r.username}</td>
-                          <td className="p-2 text-slate-500">{r.role}</td>
-                          <td className="p-2 font-mono text-blue-600">{r.email || 'N/A'}</td>
-                          <td className="p-2 font-mono text-emerald-600">{r.phone || r.mobile_phone || 'N/A'}</td>
+                          <td className="p-2 text-slate-700 font-medium">{r.role}</td>
+                          <td className="p-2 font-mono text-blue-700 font-semibold">{r.email || 'N/A'}</td>
+                          <td className="p-2 font-mono text-emerald-700 font-semibold">{r.phone || r.mobile_phone || 'N/A'}</td>
                           <td className="p-2">
                             <span className={`px-1.5 py-0.5 rounded text-[9.5px] font-bold ${
-                              r.is_mandatory_cc ? 'bg-indigo-100 text-indigo-800' : 'bg-slate-100 text-slate-800'
+                              r.is_mandatory_cc ? 'bg-indigo-100 text-indigo-950 border border-indigo-200' : 'bg-slate-100 text-slate-950 border border-slate-300'
                             }`}>
                               {r.is_mandatory_cc ? 'Mandatory CC' : 'Client Contact'}
                             </span>
@@ -13516,7 +13523,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
             </div>
 
             {/* Modal Footer */}
-            <div className="bg-slate-50 dark:bg-slate-950 px-6 py-3 border-t border-slate-200 dark:border-slate-800 flex justify-between items-center">
+            <div className="bg-slate-100 px-6 py-3 border-t border-slate-300 flex justify-between items-center">
               <button 
                 onClick={() => {
                   handleRetryBroadcast(selectedBroadcastLog.id);

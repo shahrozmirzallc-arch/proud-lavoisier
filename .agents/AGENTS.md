@@ -90,3 +90,8 @@ To ensure historical mistakes are never repeated, the agent MUST obey the follow
 - **Consistent Pure White Form Inputs**: All `<input>`, `<select>`, and `<textarea>` controls across modals MUST render pure white backgrounds (`bg-white border-2 border-slate-300 hover:border-amber-500`) with dark crisp text (`text-slate-900`). Black or dark input boxes (`bg-slate-950`) are permanently banned.
 - **Automated Verification Gate**: Every commit MUST pass `npx vitest run tests/modal_and_theme_contrast_gate.test.js` to ensure zero theme contrast regressions.
 
+## 17. HARD RULE: STRICT VERBATIM UI TERMINOLOGY & ZERO SYNONYM/PARAPHRASE GUARDRAIL
+- **100% Verbatim UI Labels Only**: Whenever guiding the user, explaining workflows, or writing instructions, the AI agent MUST ALWAYS use the EXACT character-for-character text as rendered on the live UI buttons, tabs, and headers (e.g. `Live Command Center` NEVER `HQ Command Center` or `Headquarters Hub`; `Onboard Client & Hours +NEW` NEVER `Client Registration Wizard`; `Reports Hub` NEVER `Incident Management Feed`).
+- **Strict DOM Text Verification**: Before sending any navigation message to the user, the agent MUST grep or view the component code to extract the literal string on the target button or tab.
+- **Zero Invented Terminology**: Using marketing synonyms, mental shorthand, or paraphrased names for UI elements is strictly prohibited and treated as a critical operational failure.
+

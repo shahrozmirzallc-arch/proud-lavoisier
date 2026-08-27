@@ -5830,23 +5830,23 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
                 {/* MY WORK & LOGGING */}
                 <div className="flex flex-col gap-1.5 mb-1">
-                  <div className="text-[11px] font-extrabold text-emerald-400 uppercase tracking-wider px-2 py-0.5 flex items-center gap-2">
-                    <Clock className="w-3.5 h-3.5 text-emerald-400" />
+                  <div className="text-[11px] font-extrabold text-[#10284A] uppercase tracking-wider px-2 py-0.5 flex items-center gap-2">
+                    <Clock className="w-3.5 h-3.5 text-emerald-600" />
                     <span>My Work & Logging</span>
                   </div>
                   <button 
                     onClick={() => setActiveTab('time-tracking')}
-                    className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14.5px] transition-all cursor-pointer flex items-center justify-between border ${
+                    className={`w-full h-11 px-3.5 rounded-xl font-bold text-[14px] transition-all cursor-pointer flex items-center justify-between border ${
                       activeTab === 'time-tracking' 
-                        ? 'bg-emerald-950/70 text-emerald-300 border-emerald-500/50 shadow-md shadow-emerald-500/20' 
-                        : 'bg-surface-elevated text-text-secondary hover:bg-surface hover:text-text-primary border-border-subtle/70'
+                        ? 'bg-[#10284A] text-white border-[#10284A] shadow-md font-extrabold' 
+                        : 'bg-white text-slate-700 hover:bg-[#F5F8FC] hover:text-[#10284A] border-slate-200'
                     }`}
                   >
                     <div className="flex items-center gap-2.5">
-                      <Clock className="w-4.5 h-4.5 text-emerald-400" />
+                      <Clock className={`w-4.5 h-4.5 ${activeTab === 'time-tracking' ? 'text-white' : 'text-emerald-600'}`} />
                       <span>My Hours & Expenses</span>
                     </div>
-                    {activeTab === 'time-tracking' && <div className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_#34d399]"></div>}
+                    {activeTab === 'time-tracking' && <div className="w-2.5 h-2.5 rounded-full bg-emerald-400"></div>}
                   </button>
                 </div>
               </div>

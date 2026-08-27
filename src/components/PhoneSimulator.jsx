@@ -2953,7 +2953,7 @@ export default function PhoneSimulator({ isOffline, setIsOffline, dbUpdateTrigge
                 className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm rounded-xl transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 mt-2"
               >
                 <Lock className="w-4 h-4" />
-                {submittingAuth ? 'Signing in…' : 'Sign in to IDS Pulse'}
+                {submittingAuth ? 'Signing in…' : 'Sign in to Automotive Pulse'}
               </button>
             </form>
           </div>

@@ -1,5 +1,5 @@
-# IDS PULSE — Commercial Sales & Demo Playbook
-**Product:** IDS Pulse Platform  
+# AUTOMOTIVE PULSE — Commercial Sales & Demo Playbook
+**Product:** Automotive Pulse Platform  
 **Company:** Integrity Driven Solutions Inc. (IDS)  
 **Target Audience:** Tier-1 Quality Directors, Plant Operations Managers, OEM Supplier Quality Engineers (SQEs), Quality Liaison Agency Buyers  
 **Live Production Suite:** [https://proud-lavoisier.vercel.app](https://proud-lavoisier.vercel.app)  
@@ -7,7 +7,7 @@
 ---
 
 ## Executive Positioning Statement
-> *"IDS Pulse is the modern, real-time automotive quality containment and field inspection operating platform. It bridges the critical 24-to-48-hour reporting gap between plant floor field inspectors and client executive quality managers, preventing line-stoppage penalties ($50k/min) and eliminating unbilled PO budget leakage."*
+> *"Automotive Pulse is the modern, real-time automotive quality containment and field inspection operating platform. It bridges the critical 24-to-48-hour reporting gap between plant floor field inspectors and client executive quality managers, preventing line-stoppage penalties ($50k/min) and eliminating unbilled PO budget leakage."*
 
 ---
 

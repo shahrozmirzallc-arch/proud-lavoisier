@@ -5364,7 +5364,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-[13.5px] font-extrabold text-text-primary group-hover:text-blue-300 transition-colors leading-none m-0 tracking-tight">
-                {forceRoadmapOnly ? 'IDS Pulse Production Launch Roadmap' : 'IDS Pulse Portal'}
+                {forceRoadmapOnly ? 'Automotive Pulse Production Launch Roadmap' : 'Automotive Pulse Portal'}
               </h1>
               {forceRoadmapOnly && (
                 <span className="text-[10.5px] bg-[#3B82F6]/60 border border-[#3B82F6]/25 text-[#3B82F6] px-2 py-1 rounded font-bold uppercase tracking-wider">

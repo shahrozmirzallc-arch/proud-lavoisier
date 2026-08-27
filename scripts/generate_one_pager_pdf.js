@@ -300,10 +300,10 @@ async function main() {
 
   <!-- Hero Headline -->
   <div class="hero-title">
-    IDS PULSE — Automotive Quality & Containment Operating Platform
+    AUTOMOTIVE PULSE — Enterprise Quality & Containment Operating Platform
   </div>
   <div class="hero-sub">
-    The all-in-one digital operating platform engineered for Tier-1 automotive suppliers and OEM assembly plants. Eliminate containment blind spots, protect assembly line continuity, and automate daily shift reporting across the United States and Canada.
+    The all-in-one digital operating platform engineered for Tier-1 automotive suppliers and OEM assembly plants. Eliminate containment blind spots, protect assembly line continuity, and automate daily shift reporting across the United States and Canada. Powered by Integrity Driven Solutions Inc. (IDS).
   </div>
 
   <!-- KPI Highlights -->
@@ -407,7 +407,7 @@ async function main() {
       <tr>
         <th style="width: 25%;">Operational Vector</th>
         <th style="width: 35%;">Traditional Industry Baseline</th>
-        <th style="width: 40%;">IDS Pulse Enterprise Platform</th>
+        <th style="width: 40%;">Automotive Pulse Enterprise Platform</th>
       </tr>
     </thead>
     <tbody>

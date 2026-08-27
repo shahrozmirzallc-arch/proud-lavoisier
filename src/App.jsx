@@ -716,7 +716,7 @@ function App() {
               </div>
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
-                  <h1 className="text-sm sm:text-base font-black tracking-tight text-text-primary uppercase">IDS Pulse Operations Suite</h1>
+                  <h1 className="text-sm sm:text-base font-black tracking-tight text-text-primary uppercase">Automotive Pulse Operations Suite</h1>
                   <span className="px-2 py-0.5 text-[9px] font-extrabold uppercase bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 rounded-full">
                     Active
                   </span>

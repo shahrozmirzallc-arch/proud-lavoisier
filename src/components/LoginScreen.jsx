@@ -217,7 +217,7 @@ export default function LoginScreen({ onSignedIn, onResetPassword, demoEnabled =
               ) : (
                 <>
                   <LockKey weight="fill" />
-                  Sign in to IDS Pulse
+                  Sign in to Automotive Pulse
                 </>
               )}
             </button>
@@ -390,7 +390,7 @@ export default function LoginScreen({ onSignedIn, onResetPassword, demoEnabled =
 
           <div className="mt-5 text-center">
             <small className="text-xs text-slate-500 font-medium block">
-              Need access help? Contact your IDS Pulse administrator.
+              Need access help? Contact your Automotive Pulse administrator.
             </small>
             <div className="mt-2 text-[10px] text-slate-400 font-mono">
               Candidate Build SHA: <span className="font-bold text-sky-600">{candidateSha}</span>

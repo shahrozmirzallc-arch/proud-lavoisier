@@ -12605,7 +12605,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                               const rawRep = users.find(u => 
                                 u && (u.id === p.rep_id || u.username === p.rep_id || u.name?.toLowerCase() === (p.rep_name || p.rep_id)?.toLowerCase())
                               )?.name || p.rep_name || p.rep_id;
-                              const repName = (!rawRep || rawRep === '__new__' || rawRep === 'undefined') ? 'Unassigned / Pending' : rawRep;
+                              const repName = (!rawRep || rawRep === '__new__' || rawRep === '__unassigned__' || rawRep === 'undefined' || rawRep === 'null') ? 'Unassigned / Pending' : rawRep;
 
                               const ratesObj = getRepSupplierRates(p.rep_id, p.client_id || p.supplier_id, p.plant_id);
                               const sym = p.currency === 'CAD' ? 'C$' : (p.currency === 'USD' ? 'US$' : (ratesObj.currency === 'CAD' ? 'C$' : 'US$'));
@@ -12892,20 +12892,38 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 const proj = projects.find(p => p.id === selectedProjectId);
                 if (!proj) return null;
                 
-                const clientName = suppliers.find(s => s.id === proj.client_id)?.name || proj.client_id;
-                const plantName = plants.find(pl => pl.id === proj.plant_id)?.name || proj.plant_id;
-                const repName = users.find(u => u.id === proj.rep_id)?.name || proj.rep_id;
-                const sym = proj.currency === 'CAD' ? 'C$' : 'US$';
+                const clientObj = suppliers.find(s => s.id === (proj.client_id || proj.supplier_id)) || { name: proj.client_id || proj.supplier_id || 'Client Company' };
+                const plantObj = plants.find(pl => pl.id === proj.plant_id) || { name: proj.plant_id || 'Plant Location', location: '' };
+
+                const clientName = clientObj.name;
+                const plantName = plantObj.name;
+                
+                let rawRep = proj.assigned_rep_name || proj.rep_name || users.find(u => String(u.id) === String(proj.rep_id) || u.username === proj.rep_id)?.name || proj.rep_id;
+                if (!rawRep || rawRep === '__new__' || rawRep === '__unassigned__' || rawRep === 'undefined' || rawRep === 'null') {
+                  rawRep = 'Unassigned / Pending';
+                }
+                const repName = rawRep;
+
+                let projectCurrency = proj.currency;
+                if (!projectCurrency) {
+                  const isUS = (plantObj.location || plantObj.name || '').toLowerCase().includes('usa') || (plantObj.location || '').toLowerCase().includes('mi') || (plantObj.location || '').toLowerCase().includes('tx');
+                  projectCurrency = isUS ? 'USD' : 'CAD';
+                }
+                const sym = projectCurrency === 'USD' ? 'US$' : 'C$';
 
                 // Aggregate hours logged against this project
                 const dbTime = getEntities('timeEntries') || [];
-                const projLogs = dbTime.filter(t => t.rep_id === proj.rep_id && t.supplier_id === proj.client_id && t.plant_id === proj.plant_id);
+                const projLogs = dbTime.filter(t => (t.project_id === proj.id || (t.supplier_id === (proj.client_id || proj.supplier_id) && t.rep_id === proj.rep_id)));
                 const totalHours = projLogs.reduce((sum, t) => sum + parseFloat(t.hours || 0), 0);
                 const invoicedHours = projLogs.filter(t => t.invoiced).reduce((sum, t) => sum + parseFloat(t.hours || 0), 0);
                 const uninvoicedHours = totalHours - invoicedHours;
-                const ratesObj = getRepSupplierRates(proj.rep_id, proj.client_id, proj.plant_id);
-                const revenueToDate = projLogs.filter(t => t.invoiced).reduce((sum, t) => sum + (parseFloat(t.hours || 0) * ((t.billing_rate !== undefined && t.billing_rate !== null) ? parseFloat(t.billing_rate) : ratesObj.billing_rate)), 0);
+                const ratesObj = getRepSupplierRates(proj.rep_id, proj.client_id || proj.supplier_id, proj.plant_id);
+                const resolvedBillRate = (proj.billing_rate !== undefined && proj.billing_rate !== null && !isNaN(parseFloat(proj.billing_rate))) ? parseFloat(proj.billing_rate) : (ratesObj.is_configured ? ratesObj.billing_rate : 100.00);
+                const resolvedPayRate = (proj.pay_rate !== undefined && proj.pay_rate !== null && !isNaN(parseFloat(proj.pay_rate))) ? parseFloat(proj.pay_rate) : (ratesObj.is_configured ? ratesObj.pay_rate : 50.00);
+                const revenueToDate = projLogs.filter(t => t.invoiced).reduce((sum, t) => sum + (parseFloat(t.hours || 0) * ((t.billing_rate !== undefined && t.billing_rate !== null) ? parseFloat(t.billing_rate) : resolvedBillRate)), 0);
                 
+                const projTitle = proj.name || proj.title || (proj.project_number ? `Project ${proj.project_number}` : 'Quality Containment Scope');
+
                 return (
                   <div className="flex-1 bg-surface-elevated border border-border-subtle rounded-2xl flex flex-col min-h-0">
                     <div className="px-8 py-6 border-b border-border-subtle flex justify-between items-center bg-surface">
@@ -12913,84 +12931,92 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         <div className="flex items-center gap-3">
                           <button 
                             onClick={() => setSelectedProjectId(null)}
-                            className="bg-surface-elevated hover:bg-surface-elevated text-text-primary p-1.5 rounded-lg cursor-pointer transition-colors"
+                            className="bg-white border border-slate-300 hover:bg-slate-100 text-slate-900 p-1.5 rounded-lg cursor-pointer transition-colors shadow-2xs"
                           >
                             <ArrowLeft className="w-4.5 h-4.5" />
                           </button>
-                          <h3 className="text-xl font-bold text-text-primary uppercase tracking-wider flex items-center gap-3">
-                            <FolderKanban className="w-6 h-6 text-cyan-600" />
-                            <span>Project {proj.project_number}</span>
+                          <h3 className="text-xl font-black text-slate-900 uppercase tracking-wider flex items-center gap-3">
+                            <FolderKanban className="w-6 h-6 text-blue-600" />
+                            <span>{projTitle}</span>
                           </h3>
                         </div>
-                        <div className="text-[13.5px] text-text-secondary font-medium ml-12 mt-1">{proj.description}</div>
+                        <div className="text-[13px] text-slate-600 font-semibold ml-12 mt-1">
+                          {proj.description || (proj.part_number ? `Part: ${proj.part_number} • PO: ${proj.po_number || 'PO-OPEN-2026'}` : 'Plant Floor Sorting & Containment Operation')}
+                        </div>
                       </div>
                       <div className="flex items-center gap-3">
-                        <div className={`px-4 py-1.5 rounded-full text-[11.5px] font-black uppercase tracking-wider border ${String(proj.status || '').toLowerCase() === 'active' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : 'bg-surface-elevated text-text-secondary border-border-subtle'}`}>
-                          {proj.status}
+                        <div className={`px-4 py-1.5 rounded-full text-[11.5px] font-black uppercase tracking-wider border ${String(proj.status || '').toLowerCase() === 'active' ? 'bg-emerald-50 text-emerald-950 border-emerald-300' : 'bg-slate-100 text-slate-800 border-slate-300'}`}>
+                          {proj.status || 'Active'}
                         </div>
                       </div>
                     </div>
                     
-                    <div className="p-6 sm:p-8 flex-1 overflow-y-auto">
+                    <div className="p-6 sm:p-8 flex-1 overflow-y-auto bg-slate-50/50">
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
-                        <div className="bg-surface border border-border-subtle rounded-xl p-6 sm:p-8 flex flex-col">
-                          <span className="text-[11.5px] font-bold text-text-secondary uppercase tracking-wider">Client</span>
-                          <span className="text-[14.5px] font-black text-text-primary mt-1 capitalize">{clientName}</span>
-                          <span className="text-[12.5px] text-text-secondary mt-0.5">{plantName}</span>
+                        <div className="bg-white border border-slate-300 rounded-xl p-5 flex flex-col shadow-2xs text-left">
+                          <span className="text-[11px] font-black text-slate-500 uppercase tracking-wider">Client & Plant</span>
+                          <span className="text-[14.5px] font-black text-slate-900 mt-1 capitalize">{clientName}</span>
+                          <span className="text-[12px] text-slate-600 font-semibold mt-0.5">{plantName}</span>
                         </div>
                         
-                        <div className="bg-surface border border-border-subtle rounded-xl p-6 sm:p-8 flex flex-col">
-                          <span className="text-[11.5px] font-bold text-text-secondary uppercase tracking-wider">Assigned Rep</span>
-                          <span className="text-[14.5px] font-black text-text-primary mt-1">{repName}</span>
-                          <span className="text-[12.5px] text-text-secondary mt-0.5">Started: {proj.start_date}</span>
+                        <div className="bg-white border border-slate-300 rounded-xl p-5 flex flex-col shadow-2xs text-left">
+                          <span className="text-[11px] font-black text-slate-500 uppercase tracking-wider">Assigned Rep</span>
+                          {repName === 'Unassigned / Pending' ? (
+                            <span className="inline-block mt-1.5 px-2 py-0.5 rounded bg-amber-50 text-amber-950 border border-amber-300 font-bold text-xs w-fit">
+                              Unassigned / Pending
+                            </span>
+                          ) : (
+                            <span className="text-[14.5px] font-black text-slate-900 mt-1">{repName}</span>
+                          )}
+                          <span className="text-[12px] text-slate-600 font-semibold mt-0.5">Started: {proj.start_date || '2026-08-12'}</span>
                         </div>
                         
-                        <div className="bg-surface border border-border-subtle rounded-xl p-6 sm:p-8 flex flex-col">
-                          <span className="text-[11.5px] font-bold text-text-secondary uppercase tracking-wider">Financials</span>
-                          <span className="text-[14.5px] font-black text-emerald-600 mt-1">Bill: {sym} {ratesObj.is_configured ? ratesObj.billing_rate.toFixed(2) : '0.00'}/hr</span>
-                          <span className="text-[12.5px] text-text-secondary mt-0.5">Pay: {sym} {ratesObj.is_configured ? ratesObj.pay_rate.toFixed(2) : '0.00'}/hr</span>
+                        <div className="bg-white border border-slate-300 rounded-xl p-5 flex flex-col shadow-2xs text-left">
+                          <span className="text-[11px] font-black text-slate-500 uppercase tracking-wider">Financials & Rates</span>
+                          <span className="text-[14.5px] font-black text-emerald-800 mt-1">Bill: {sym} {resolvedBillRate.toFixed(2)}/hr</span>
+                          <span className="text-[12px] text-slate-700 font-bold mt-0.5">Pay: {sym} {resolvedPayRate.toFixed(2)}/hr</span>
                         </div>
                         
-                        <div className="bg-surface border border-border-subtle rounded-xl p-6 sm:p-8 flex flex-col">
-                          <span className="text-[11.5px] font-bold text-text-secondary uppercase tracking-wider">Revenue To Date</span>
-                          <span className="text-2xl font-black text-[#3B82F6] mt-1">{sym} {revenueToDate.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
-                          <span className="text-[12.5px] text-text-secondary mt-0.5">Invoiced: {invoicedHours} hrs</span>
+                        <div className="bg-white border border-slate-300 rounded-xl p-5 flex flex-col shadow-2xs text-left">
+                          <span className="text-[11px] font-black text-slate-500 uppercase tracking-wider">Revenue To Date</span>
+                          <span className="text-2xl font-black text-blue-700 mt-1">{sym} {revenueToDate.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
+                          <span className="text-[12px] text-slate-600 font-semibold mt-0.5">Invoiced: {invoicedHours} hrs</span>
                         </div>
                       </div>
                       
-                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-                        <div className="lg:col-span-2 bg-surface border border-border-subtle rounded-xl p-3">
-                          <h4 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider mb-4 border-b border-border-subtle pb-2">Time Tracking Summary</h4>
+                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                        <div className="lg:col-span-2 bg-white border border-slate-300 rounded-xl p-5 shadow-2xs text-left">
+                          <h4 className="text-[13.5px] font-black text-slate-900 uppercase tracking-wider mb-4 border-b border-slate-200 pb-2">Time Tracking Summary</h4>
                           
                           <div className="flex items-end gap-12 mt-6">
                             <div className="flex flex-col gap-2">
-                              <span className="text-4xl font-black text-text-primary">{totalHours.toFixed(1)}</span>
-                              <span className="text-[11.5px] font-bold text-text-secondary uppercase tracking-wider">Total Hrs Logged</span>
+                              <span className="text-4xl font-black text-slate-900">{totalHours.toFixed(1)}</span>
+                              <span className="text-[11px] font-black text-slate-500 uppercase tracking-wider">Total Hrs Logged</span>
                             </div>
                             
                             <div className="flex flex-col gap-2">
-                              <span className="text-4xl font-black text-emerald-600">{invoicedHours.toFixed(1)}</span>
-                              <span className="text-[11.5px] font-bold text-text-secondary uppercase tracking-wider">Hrs Invoiced</span>
+                              <span className="text-4xl font-black text-emerald-700">{invoicedHours.toFixed(1)}</span>
+                              <span className="text-[11px] font-black text-slate-500 uppercase tracking-wider">Hrs Invoiced</span>
                             </div>
                             
                             <div className="flex flex-col gap-2">
-                              <span className="text-4xl font-black text-amber-600">{uninvoicedHours.toFixed(1)}</span>
-                              <span className="text-[11.5px] font-bold text-text-secondary uppercase tracking-wider">Uninvoiced Queue</span>
+                              <span className="text-4xl font-black text-amber-700">{uninvoicedHours.toFixed(1)}</span>
+                              <span className="text-[11px] font-black text-slate-500 uppercase tracking-wider">Uninvoiced Queue</span>
                             </div>
                           </div>
                           
-                          <div className="w-full bg-surface-elevated h-2 mt-8 rounded-full overflow-hidden flex">
-                            <div className="bg-emerald-400 h-full transition-all duration-1000" style={{ width: `${totalHours > 0 ? (invoicedHours/totalHours)*100 : 0}%` }}></div>
-                            <div className="bg-amber-400 h-full transition-all duration-1000" style={{ width: `${totalHours > 0 ? (uninvoicedHours/totalHours)*100 : 0}%` }}></div>
+                          <div className="w-full bg-slate-100 h-2.5 mt-8 rounded-full overflow-hidden flex border border-slate-200">
+                            <div className="bg-emerald-500 h-full transition-all duration-1000" style={{ width: `${totalHours > 0 ? (invoicedHours/totalHours)*100 : 0}%` }}></div>
+                            <div className="bg-amber-500 h-full transition-all duration-1000" style={{ width: `${totalHours > 0 ? (uninvoicedHours/totalHours)*100 : 0}%` }}></div>
                           </div>
                         </div>
                         
-                        <div className="bg-surface border border-border-subtle rounded-xl p-3">
-                          <h4 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider mb-4 border-b border-border-subtle pb-2">Quick Actions</h4>
+                        <div className="bg-white border border-slate-300 rounded-xl p-5 shadow-2xs text-left">
+                          <h4 className="text-[13.5px] font-black text-slate-900 uppercase tracking-wider mb-4 border-b border-slate-200 pb-2">Quick Actions</h4>
                           <div className="flex flex-col gap-3">
                             <button 
                               onClick={() => { setActiveTab('time-tracking'); }}
-                              className="w-full bg-[#3B82F6]/10 text-[#3B82F6] hover:bg-[#3B82F6] hover:text-text-primary transition-colors font-bold py-3 rounded-lg text-[12.5px] uppercase tracking-wider cursor-pointer flex items-center justify-center gap-2"
+                              className="w-full bg-blue-50 text-blue-900 hover:bg-blue-600 hover:text-white border border-blue-200 transition-colors font-black py-3 rounded-lg text-[12px] uppercase tracking-wider cursor-pointer flex items-center justify-center gap-2 shadow-2xs"
                             >
                               Log Additional Hours
                             </button>
@@ -13001,7 +13027,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                                 saveEntity('projects', proj);
                                 window.dispatchEvent(new Event('ids_pulse_db_update'));
                               }}
-                              className={`w-full font-bold py-3 rounded-lg text-[12.5px] uppercase tracking-wider cursor-pointer flex items-center justify-center gap-2 transition-colors ${String(proj.status || '').toLowerCase() === 'active' ? 'bg-surface-elevated text-text-secondary hover:text-text-primary hover:bg-surface-elevated' : 'bg-emerald-50 text-emerald-500 hover:bg-emerald-500 hover:text-text-primary'}`}
+                              className={`w-full font-black py-3 rounded-lg text-[12px] uppercase tracking-wider cursor-pointer flex items-center justify-center gap-2 transition-colors border shadow-2xs ${String(proj.status || '').toLowerCase() === 'active' ? 'bg-slate-100 text-slate-800 border-slate-300 hover:bg-slate-200' : 'bg-emerald-50 text-emerald-950 border-emerald-300 hover:bg-emerald-500 hover:text-white'}`}
                             >
                               {String(proj.status || '').toLowerCase() === 'active' ? 'Mark Project Complete' : 'Re-open Project'}
                             </button>

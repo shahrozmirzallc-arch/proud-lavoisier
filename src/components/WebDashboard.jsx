@@ -7064,25 +7064,25 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
               {/* DISPATCH / RE-ASSIGNMENT MODAL */}
               {selectedDispatchRep && (
-                <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-in fade-in duration-200" onClick={() => setSelectedDispatchRep(null)}>
-                  <div className="bg-slate-900 border border-blue-500/40 rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4 text-left" onClick={e => e.stopPropagation()}>
-                    <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                      <h3 className="text-lg font-black text-white flex items-center gap-2">
-                        <Activity className="w-5 h-5 text-blue-400" />
+                <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200" onClick={() => setSelectedDispatchRep(null)}>
+                  <div className="bg-white border-2 border-slate-300 rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4 text-left" onClick={e => e.stopPropagation()}>
+                    <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+                      <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
+                        <Activity className="w-5 h-5 text-blue-600" />
                         <span>Quick Dispatch / Re-Assign Rep</span>
                       </h3>
-                      <button type="button" onClick={() => setSelectedDispatchRep(null)} className="text-slate-400 hover:text-white font-bold text-lg cursor-pointer">&times;</button>
+                      <button type="button" onClick={() => setSelectedDispatchRep(null)} className="text-slate-400 hover:text-slate-900 font-bold text-xl cursor-pointer p-1 rounded-lg hover:bg-slate-100">&times;</button>
                     </div>
 
-                    <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-1">
-                      <div className="text-xs text-slate-400 font-bold uppercase">Rep Name</div>
-                      <strong className="text-base text-white block">{selectedDispatchRep.name}</strong>
-                      <div className="text-xs text-blue-400 font-semibold">Currently at: {selectedDispatchRep.plant} ({selectedDispatchRep.location})</div>
+                    <div className="bg-blue-50 p-4 rounded-2xl border border-blue-200 space-y-1">
+                      <div className="text-[11px] text-slate-600 font-black uppercase tracking-wider">Representative Name</div>
+                      <strong className="text-base text-slate-950 font-black block">{selectedDispatchRep.name}</strong>
+                      <div className="text-xs text-blue-900 font-bold">Currently at: {selectedDispatchRep.plant} ({selectedDispatchRep.location})</div>
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block">Target Plant & Location</label>
-                      <select className="w-full h-11 bg-slate-950 border border-slate-800 rounded-xl px-3 text-xs font-bold text-white focus:outline-none focus:border-blue-500">
+                      <label className="text-xs font-black text-slate-800 uppercase tracking-wider block">Target Plant & Location</label>
+                      <select className="w-full h-11 bg-white border-2 border-slate-300 rounded-xl px-3 text-xs font-bold text-slate-900 focus:outline-none focus:border-blue-600">
                         {suppliers && suppliers.length > 0 ? (
                           suppliers.map(s => (
                             <option key={s.id} value={s.id}>
@@ -7102,14 +7102,14 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                           showToast(`Dispatch command sent to ${selectedDispatchRep?.name}!`, "success");
                           setSelectedDispatchRep(null);
                         }}
-                        className="flex-1 h-11 bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl cursor-pointer shadow-lg transition-all"
+                        className="flex-1 h-11 bg-blue-600 hover:bg-blue-700 text-white font-black text-xs uppercase tracking-wider rounded-xl cursor-pointer shadow-md transition-all"
                       >
                         Confirm Dispatch
                       </button>
                       <button
                         type="button"
                         onClick={() => setSelectedDispatchRep(null)}
-                        className="h-11 px-4 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs uppercase rounded-xl cursor-pointer transition-all"
+                        className="h-11 px-5 bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-800 font-bold text-xs uppercase rounded-xl cursor-pointer transition-all"
                       >
                         Cancel
                       </button>
@@ -12473,41 +12473,57 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
               {(() => {
                 const activeProjects = projects.filter(p => !p.status || String(p.status).trim().toLowerCase() === 'active' || String(p.status).trim().toLowerCase() === 'on-site');
                 const cadBilled = activeProjects
-                  .filter(p => p.currency === 'CAD')
-                  .reduce((sum, p) => sum + (parseFloat(p.billing_rate) || 0) * 160, 0);
+                  .filter(p => {
+                    const rates = getRepSupplierRates(p.rep_id, p.client_id || p.supplier_id, p.plant_id);
+                    const curr = p.currency || rates.currency || 'CAD';
+                    return curr === 'CAD';
+                  })
+                  .reduce((sum, p) => {
+                    const rates = getRepSupplierRates(p.rep_id, p.client_id || p.supplier_id, p.plant_id);
+                    const bRate = (p.billing_rate !== undefined && p.billing_rate !== null && p.billing_rate !== '' && !isNaN(parseFloat(p.billing_rate))) ? parseFloat(p.billing_rate) : (rates.is_configured ? rates.billing_rate : 0);
+                    return sum + (bRate * 160);
+                  }, 0);
                 const usdBilled = activeProjects
-                  .filter(p => p.currency === 'USD')
-                  .reduce((sum, p) => sum + (parseFloat(p.billing_rate) || 0) * 160, 0);
+                  .filter(p => {
+                    const rates = getRepSupplierRates(p.rep_id, p.client_id || p.supplier_id, p.plant_id);
+                    const curr = p.currency || rates.currency || 'CAD';
+                    return curr === 'USD';
+                  })
+                  .reduce((sum, p) => {
+                    const rates = getRepSupplierRates(p.rep_id, p.client_id || p.supplier_id, p.plant_id);
+                    const bRate = (p.billing_rate !== undefined && p.billing_rate !== null && p.billing_rate !== '' && !isNaN(parseFloat(p.billing_rate))) ? parseFloat(p.billing_rate) : (rates.is_configured ? rates.billing_rate : 0);
+                    return sum + (bRate * 160);
+                  }, 0);
 
                 return (
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3 flex-shrink-0">
-                    <div className="bg-surface-elevated border border-border-subtle rounded-2xl p-3 flex flex-col gap-1 shadow-md shadow-black/10">
+                    <div className="bg-white border border-slate-300 rounded-2xl p-4 flex flex-col gap-1 shadow-2xs">
                       <div className="flex justify-between items-start">
-                        <span className="text-[11.5px] font-bold text-text-secondary uppercase tracking-wider">Total Active Projects</span>
-                        <FolderKanban className="w-5 h-5 text-cyan-600" />
+                        <span className="text-[11px] font-black text-slate-500 uppercase tracking-wider">Total Active Projects</span>
+                        <FolderKanban className="w-5 h-5 text-blue-600" />
                       </div>
-                      <div className="text-2xl font-black text-text-primary mt-2">{activeProjects.length} Projects</div>
-                      <div className="text-[11.5px] text-emerald-450 font-semibold flex items-center gap-1 mt-1">
+                      <div className="text-2xl font-black text-slate-900 mt-2">{activeProjects.length} Projects</div>
+                      <div className="text-[11.5px] text-emerald-800 font-bold flex items-center gap-1 mt-1">
                         <span>Monitoring live assignments</span>
                       </div>
                     </div>
 
-                    <div className="bg-surface-elevated border border-border-subtle rounded-2xl p-3 flex flex-col gap-1 shadow-md shadow-black/10">
+                    <div className="bg-white border border-slate-300 rounded-2xl p-4 flex flex-col gap-1 shadow-2xs">
                       <div className="flex justify-between items-start">
-                        <span className="text-[11.5px] font-bold text-text-secondary uppercase tracking-wider">CAD Est. Monthly Revenue</span>
-                        <DollarSign className="w-5 h-5 text-emerald-450" />
+                        <span className="text-[11px] font-black text-slate-500 uppercase tracking-wider">CAD Est. Monthly Revenue</span>
+                        <DollarSign className="w-5 h-5 text-emerald-700" />
                       </div>
-                      <div className="text-2xl font-black text-text-primary mt-2">C$ {cadBilled.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-                      <div className="text-[11.5px] text-text-secondary mt-1">Based on 160 standard hrs/rep</div>
+                      <div className="text-2xl font-black text-slate-900 mt-2">C$ {cadBilled.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                      <div className="text-[11.5px] text-slate-500 font-semibold mt-1">Based on 160 standard hrs/rep</div>
                     </div>
 
-                    <div className="bg-surface-elevated border border-border-subtle rounded-2xl p-3 flex flex-col gap-1 shadow-md shadow-black/10">
+                    <div className="bg-white border border-slate-300 rounded-2xl p-4 flex flex-col gap-1 shadow-2xs">
                       <div className="flex justify-between items-start">
-                        <span className="text-[11.5px] font-bold text-text-secondary uppercase tracking-wider">USD Est. Monthly Revenue</span>
-                        <DollarSign className="w-5 h-5 text-cyan-600" />
+                        <span className="text-[11px] font-black text-slate-500 uppercase tracking-wider">USD Est. Monthly Revenue</span>
+                        <DollarSign className="w-5 h-5 text-blue-600" />
                       </div>
-                      <div className="text-2xl font-black text-text-primary mt-2">US$ {usdBilled.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-                      <div className="text-[11.5px] text-text-secondary mt-1">Based on 160 standard hrs/rep</div>
+                      <div className="text-2xl font-black text-slate-900 mt-2">US$ {usdBilled.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                      <div className="text-[11.5px] text-slate-500 font-semibold mt-1">Based on 160 standard hrs/rep</div>
                     </div>
                   </div>
                 );
@@ -13130,36 +13146,36 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       {/* OVERLAY PANEL 1: CENTERED POP-UP QUALITY AUDIT MODAL */}
       {selectedIncident && (
         <div 
-          className="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200"
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200"
           onClick={() => setSelectedIncident(null)}
         >
           <div 
-            className="w-full max-w-4xl max-h-[90vh] bg-[#071325] border border-slate-700/90 shadow-2xl rounded-3xl p-6 sm:p-8 flex flex-col z-50 animate-in zoom-in-95 duration-200 text-left overflow-hidden modal-panel"
+            className="w-full max-w-4xl max-h-[90vh] bg-white border-2 border-slate-300 shadow-2xl rounded-3xl p-6 sm:p-8 flex flex-col z-50 animate-in zoom-in-95 duration-200 text-left overflow-hidden modal-panel"
             onClick={(e) => {
               e.stopPropagation();
               setOpenTooltip(null);
             }}
           >
             {/* Modal Header */}
-            <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-4 flex-shrink-0">
+            <div className="flex items-center justify-between border-b border-slate-200 pb-4 mb-4 flex-shrink-0">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-blue-500/15 border border-blue-500/30 flex items-center justify-center text-blue-400">
+                <div className="w-10 h-10 rounded-2xl bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-700">
                   <ShieldAlert className="w-5 h-5" />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h3 className="text-lg font-black text-slate-100 tracking-tight">Quality Audit Inspection Details</h3>
-                    <span className="text-[11px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider">
+                    <h3 className="text-xl font-black text-slate-900 tracking-tight">Quality Audit Inspection Details</h3>
+                    <span className="text-[11px] bg-emerald-50 text-emerald-950 border border-emerald-300 px-3 py-0.5 rounded-full font-black uppercase tracking-wider">
                       {selectedIncident.status || 'Resolved'}
                     </span>
                   </div>
-                  <span className="text-xs text-slate-400 font-mono font-semibold">Incident ID: {selectedIncident.id} • Part #{selectedIncident.part_number || selectedIncident.part_id || selectedIncident.parts_list?.[0]?.part_number || 'Unspecified Part'}</span>
+                  <span className="text-xs text-slate-600 font-mono font-bold">Incident ID: {selectedIncident.id} • Part #{selectedIncident.part_number || selectedIncident.part_id || selectedIncident.parts_list?.[0]?.part_number || 'Unspecified Part'}</span>
                 </div>
               </div>
               
               <button 
                 onClick={() => setSelectedIncident(null)} 
-                className="text-slate-400 hover:text-white p-2 hover:bg-slate-800 rounded-xl cursor-pointer transition-colors"
+                className="text-slate-400 hover:text-slate-900 p-2 hover:bg-slate-100 rounded-xl cursor-pointer transition-colors"
                 aria-label="Close modal"
               >
                 <X className="w-6 h-6" />
@@ -13171,43 +13187,43 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
               
               {/* 1. Audit Key Metrics Banner */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                <div className="bg-slate-900/90 border border-slate-800 p-3.5 rounded-2xl flex flex-col gap-1">
-                  <span className="text-[10.5px] text-slate-400 font-bold uppercase tracking-wider">Audited Quantity</span>
-                  <span className="text-xl font-black text-sky-400">
+                <div className="bg-blue-50 border border-blue-200 p-4 rounded-2xl flex flex-col gap-1 shadow-2xs">
+                  <span className="text-[11px] text-slate-600 font-black uppercase tracking-wider">Audited Quantity</span>
+                  <span className="text-2xl font-black text-blue-950">
                     {selectedIncident.parts_list?.[0]?.qty || selectedIncident.quantity || selectedIncident.qty || 1} Pcs
                   </span>
-                  <span className="text-[10px] text-emerald-400 font-bold">100% Quarantined / Contained</span>
+                  <span className="text-[11px] text-emerald-800 font-bold">100% Quarantined / Contained</span>
                 </div>
-                <div className="bg-slate-900/90 border border-slate-800 p-3.5 rounded-2xl flex flex-col gap-1">
-                  <span className="text-[10.5px] text-slate-400 font-bold uppercase tracking-wider">Defect Category</span>
-                  <span className="text-sm font-extrabold text-amber-400 leading-snug">
+                <div className="bg-amber-50 border border-amber-200 p-4 rounded-2xl flex flex-col gap-1 shadow-2xs">
+                  <span className="text-[11px] text-slate-600 font-black uppercase tracking-wider">Defect Category</span>
+                  <span className="text-sm font-black text-amber-950 leading-snug">
                     {selectedIncident.defect_type || selectedIncident.category || selectedIncident.concern_classification || 'Defect Hold'}
                   </span>
-                  <span className="text-[10px] text-slate-400 font-bold">Class: {selectedIncident.concern_classification || 'PRR'}</span>
+                  <span className="text-[11px] text-slate-600 font-bold">Class: {selectedIncident.concern_classification || 'PRR'}</span>
                 </div>
-                <div className="bg-slate-900/90 border border-slate-800 p-3.5 rounded-2xl flex flex-col gap-1">
-                  <span className="text-[10.5px] text-slate-400 font-bold uppercase tracking-wider">Assigned QRE</span>
-                  <span className="text-sm font-extrabold text-slate-100 leading-snug">
+                <div className="bg-slate-50 border border-slate-200 p-4 rounded-2xl flex flex-col gap-1 shadow-2xs">
+                  <span className="text-[11px] text-slate-600 font-black uppercase tracking-wider">Assigned QRE</span>
+                  <span className="text-sm font-black text-slate-900 leading-snug">
                     {users.find(u => u.id === selectedIncident.rep_id || u.username === selectedIncident.rep_id)?.name || selectedIncident.rep_name || selectedIncident.rep_id || 'Representative'}
                   </span>
-                  <span className="text-[10px] text-sky-400 font-bold">IDS Field Rep</span>
+                  <span className="text-[11px] text-blue-800 font-bold">IDS Field Rep</span>
                 </div>
-                <div className="bg-slate-900/90 border border-slate-800 p-3.5 rounded-2xl flex flex-col gap-1">
-                  <span className="text-[10.5px] text-slate-400 font-bold uppercase tracking-wider">Plant & Area</span>
-                  <span className="text-sm font-extrabold text-slate-100 leading-snug">
+                <div className="bg-slate-50 border border-slate-200 p-4 rounded-2xl flex flex-col gap-1 shadow-2xs">
+                  <span className="text-[11px] text-slate-600 font-black uppercase tracking-wider">Plant & Area</span>
+                  <span className="text-sm font-black text-slate-900 leading-snug">
                     {suppliers.find(s => s.id === selectedIncident.supplier_id || s.name?.toLowerCase() === (selectedIncident.supplier_id || '').toLowerCase())?.name || selectedIncident.supplier_name || (selectedIncident.supplier_id ? selectedIncident.supplier_id.replace(/^sup_/, '').replace(/_/g, ' ') : 'Client Company')}
                   </span>
-                  <span className="text-[10px] text-slate-400 font-semibold">{selectedIncident.area || 'Factory Floor'}</span>
+                  <span className="text-[11px] text-slate-600 font-semibold">{selectedIncident.area || 'Factory Floor'}</span>
                 </div>
               </div>
 
               {/* 2. Visual Audit Proofs & Photo Gallery */}
               <div className="flex flex-col gap-2.5">
                 <div className="flex justify-between items-center">
-                  <span className="text-xs text-slate-300 uppercase font-bold tracking-wider flex items-center gap-1.5">
-                    <Camera className="w-4 h-4 text-sky-400" /> {userRole === 'customer' ? 'Published Verified Quality Media' : 'Submitted Defect Evidence & Inspection Photos'}
+                  <span className="text-xs text-slate-800 uppercase font-black tracking-wider flex items-center gap-1.5">
+                    <Camera className="w-4 h-4 text-blue-600" /> {userRole === 'customer' ? 'Published Verified Quality Media' : 'Submitted Defect Evidence & Inspection Photos'}
                   </span>
-                  <span className="text-[11px] text-slate-400 font-mono">
+                  <span className="text-[11px] text-slate-500 font-mono font-bold">
                     {(() => {
                       let mediaCount = 0;
                       if (Array.isArray(selectedIncident.photos)) mediaCount += selectedIncident.photos.length;
@@ -13247,12 +13263,12 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
                   if (photos.length === 0) {
                     return (
-                      <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 text-slate-400 text-xs flex flex-col gap-1.5">
-                        <div className="flex items-center gap-2 text-amber-400 font-bold uppercase tracking-wider">
+                      <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-950 text-xs flex flex-col gap-1.5 shadow-2xs">
+                        <div className="flex items-center gap-2 text-amber-900 font-bold uppercase tracking-wider">
                           <AlertTriangle className="w-4 h-4" />
                           <span>No Defect Photos Attached</span>
                         </div>
-                        <p className="text-slate-300 font-medium">
+                        <p className="text-slate-700 font-medium">
                           {selectedIncident.media_unavailable_reason || selectedIncident.missing_media_reason
                             ? `Reason recorded: "${selectedIncident.media_unavailable_reason || selectedIncident.missing_media_reason}"`
                             : 'No photos were captured during this initial report. Live media capture will be attached upon mobile app deployment.'}
@@ -13264,20 +13280,20 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   return (
                     <div className="grid grid-cols-3 gap-3">
                       {photos.map((photo, idx) => (
-                        <div key={photo.id || idx} className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden flex flex-col group hover:border-blue-500/50 transition-all">
-                          <div className="aspect-video relative overflow-hidden bg-slate-950">
+                        <div key={photo.id || idx} className="bg-white border border-slate-300 rounded-2xl overflow-hidden flex flex-col shadow-2xs hover:border-blue-500 transition-all">
+                          <div className="aspect-video relative overflow-hidden bg-slate-100">
                             <img 
                               src={typeof photo === 'string' ? photo : (photo.url || photo.path || photo.media_url)} 
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
+                              className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" 
                               alt={photo.type || `Evidence ${idx + 1}`}
                             />
-                            <span className="absolute bottom-2 right-2 bg-slate-950/90 border border-slate-700/80 text-[10px] px-2 py-0.5 rounded-md text-sky-300 font-bold uppercase tracking-wider">
+                            <span className="absolute bottom-2 right-2 bg-slate-900/90 text-white text-[10px] px-2 py-0.5 rounded-md font-bold uppercase tracking-wider">
                               {photo.type || `Angle ${idx + 1}`}
                             </span>
                           </div>
-                          <div className="p-2.5 flex flex-col gap-0.5">
-                            <span className="text-xs font-bold text-slate-100">{photo.type || `Evidence Photo ${idx + 1}`}</span>
-                            <span className="text-[10.5px] text-slate-400 leading-tight">Submitted by Rep #{selectedIncident.rep_id || 'Representative'}</span>
+                          <div className="p-2.5 flex flex-col gap-0.5 bg-white">
+                            <span className="text-xs font-black text-slate-900">{photo.type || `Evidence Photo ${idx + 1}`}</span>
+                            <span className="text-[11px] text-slate-600 font-medium leading-tight">Submitted by Rep #{selectedIncident.rep_id || 'Representative'}</span>
                           </div>
                         </div>
                       ))}
@@ -13288,21 +13304,21 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
               {/* Video Walkthrough Inspection Media Section */}
               <div className="grid grid-cols-1 gap-3">
-                <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 flex flex-col gap-2">
+                <div className="bg-white border border-slate-300 rounded-2xl p-4 flex flex-col gap-2 shadow-2xs">
                   <div className="flex justify-between items-center text-xs">
-                    <span className="font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
-                      <Video className="w-4 h-4 text-emerald-400" /> Video Inspection Log
+                    <span className="font-black text-emerald-900 uppercase tracking-wider flex items-center gap-1.5">
+                      <Video className="w-4 h-4 text-emerald-700" /> Video Inspection Log
                     </span>
-                    <span className="text-slate-400 font-mono text-[10.5px]">MP4 WALKTHROUGH</span>
+                    <span className="text-slate-500 font-mono text-[10.5px] font-bold">MP4 WALKTHROUGH</span>
                   </div>
                   {selectedIncident.video_url || selectedIncident.videoWalkthrough ? (
-                    <div className="relative rounded-xl overflow-hidden border border-slate-800 aspect-video bg-slate-950 flex items-center justify-center mt-1">
+                    <div className="relative rounded-xl overflow-hidden border border-slate-300 aspect-video bg-slate-100 flex items-center justify-center mt-1">
                       <video controls className="w-full h-full object-cover">
                         <source src={selectedIncident.video_url || selectedIncident.videoWalkthrough} type="video/mp4" />
                       </video>
                     </div>
                   ) : (
-                    <span className="text-[11px] text-slate-400 font-mono italic bg-slate-950 p-2.5 rounded-xl border border-slate-800/80">
+                    <span className="text-[11px] text-slate-600 font-mono italic bg-slate-50 p-3 rounded-xl border border-slate-200">
                       No video walkthrough recorded for this incident. Live video capture will be attached upon mobile app deployment.
                     </span>
                   )}
@@ -13310,16 +13326,16 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
               </div>
 
               {/* 4. Complete Audit Trail & All Metadata Fields Grid */}
-              <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 flex flex-col gap-3">
-                <span className="text-xs text-slate-300 uppercase font-bold tracking-wider border-b border-slate-800 pb-2">
+              <div className="bg-white border border-slate-300 rounded-2xl p-4 flex flex-col gap-3 shadow-2xs">
+                <span className="text-xs text-slate-900 uppercase font-black tracking-wider border-b border-slate-200 pb-2">
                   Complete Audit Trail & Decision History
                 </span>
                 {Array.isArray(selectedIncident.decision_history) && selectedIncident.decision_history.length > 0 ? (
                   <div className="flex flex-col gap-1.5 max-h-32 overflow-y-auto">
                     {selectedIncident.decision_history.map((log, idx) => (
-                      <div key={idx} className="bg-slate-950 p-2 rounded-lg border border-slate-800 text-[11px] flex justify-between items-center">
-                        <span className="text-slate-300 font-bold">{log.actor} ({log.action}): {log.reason}</span>
-                        <span className="text-slate-500 font-mono">{new Date(log.timestamp).toLocaleString()}</span>
+                      <div key={idx} className="bg-slate-50 p-2.5 rounded-lg border border-slate-200 text-xs flex justify-between items-center">
+                        <span className="text-slate-900 font-bold">{log.actor} ({log.action}): {log.reason}</span>
+                        <span className="text-slate-500 font-mono text-[11px]">{new Date(log.timestamp).toLocaleString()}</span>
                       </div>
                     ))}
                   </div>
@@ -13327,9 +13343,9 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                   <span className="text-[11px] text-slate-500 font-mono italic">No prior rejection history recorded.</span>
                 )}
 
-                <div className="pt-3 border-t border-slate-800 flex flex-col gap-1">
-                  <span className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Action Taken & Inspection Resolution Narrative</span>
-                  <p className="text-xs text-slate-200 leading-relaxed bg-slate-950 p-3 rounded-xl border border-slate-800">
+                <div className="pt-3 border-t border-slate-200 flex flex-col gap-1">
+                  <span className="text-slate-700 font-black uppercase tracking-wider text-[11px]">Action Taken & Inspection Resolution Narrative</span>
+                  <p className="text-xs text-slate-900 leading-relaxed bg-slate-50 p-3.5 rounded-xl border border-slate-200 font-medium">
                     {selectedIncident.notes || selectedIncident.description || selectedIncident.action_taken || "No resolution narrative recorded."}
                   </p>
                 </div>
@@ -13338,30 +13354,30 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
             </div>
 
             {/* Modal Footer with Export & Action Buttons */}
-            <div className="pt-4 mt-4 border-t border-slate-800 flex justify-between items-center text-xs flex-shrink-0">
+            <div className="pt-4 mt-4 border-t border-slate-200 flex justify-between items-center text-xs flex-shrink-0">
               <div className="flex items-center gap-2">
                 <button 
                   onClick={() => handleDownloadReport(selectedIncident)}
-                  className="bg-slate-900 border border-slate-700 hover:bg-slate-800 text-slate-200 px-4 py-2 rounded-xl font-bold transition-colors cursor-pointer flex items-center gap-1.5"
+                  className="bg-slate-100 hover:bg-slate-200 text-slate-900 border border-slate-300 px-4 py-2 rounded-xl font-bold transition-colors cursor-pointer flex items-center gap-1.5 shadow-2xs"
                 >
                   Download PDF
                 </button>
                 <button 
                   onClick={() => handlePrintReport(selectedIncident)}
-                  className="bg-slate-900 border border-slate-700 hover:bg-slate-800 text-slate-200 px-4 py-2 rounded-xl font-bold transition-colors cursor-pointer flex items-center gap-1.5"
+                  className="bg-slate-100 hover:bg-slate-200 text-slate-900 border border-slate-300 px-4 py-2 rounded-xl font-bold transition-colors cursor-pointer flex items-center gap-1.5 shadow-2xs"
                 >
                   Print Report
                 </button>
                 <button 
                   onClick={() => handleResendSupplierEmail(selectedIncident)}
-                  className="bg-sky-600 hover:bg-sky-500 text-white font-bold px-4 py-2 rounded-xl transition-colors cursor-pointer shadow-md shadow-sky-900/40"
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 py-2 rounded-xl transition-colors cursor-pointer shadow-xs"
                 >
                   Resend Supplier Email
                 </button>
                 <button 
                   onClick={() => handleBroadcastUrgentAlert(selectedIncident)}
                   disabled={isBroadcastingAlert}
-                  className="bg-amber-600 hover:bg-amber-500 text-white font-bold px-4 py-2 rounded-xl transition-colors cursor-pointer shadow-md shadow-amber-900/40 flex items-center gap-1.5"
+                  className="bg-amber-600 hover:bg-amber-700 text-white font-bold px-4 py-2 rounded-xl transition-colors cursor-pointer shadow-xs flex items-center gap-1.5"
                 >
                   <Zap className="w-3.5 h-3.5" />
                   <span>{isBroadcastingAlert ? 'Dispatching...' : 'Broadcast Urgent Alert (SMS & Email)'}</span>
@@ -13369,7 +13385,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 {!showLeadRejectForm ? (
                   <button 
                     onClick={() => setShowLeadRejectForm(true)}
-                    className="bg-rose-600 hover:bg-rose-500 text-white font-bold px-4 py-2 rounded-xl transition-colors cursor-pointer shadow-md shadow-rose-900/40"
+                    className="bg-rose-600 hover:bg-rose-700 text-white font-bold px-4 py-2 rounded-xl transition-colors cursor-pointer shadow-xs"
                   >
                     Reject & Return to Rep
                   </button>
@@ -13380,17 +13396,17 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                       value={leadRejectReason}
                       onChange={(e) => setLeadRejectReason(e.target.value)}
                       placeholder="Mandatory rejection reason..."
-                      className="bg-slate-950 border border-rose-500/80 rounded-xl px-3 py-1.5 text-xs text-white outline-none w-64"
+                      className="bg-white border-2 border-rose-400 rounded-xl px-3 py-1.5 text-xs text-slate-900 font-medium outline-none w-64"
                     />
                     <button 
                       onClick={() => handleLeadRejectIncident(selectedIncident.id)}
-                      className="bg-rose-600 hover:bg-rose-500 text-white font-bold px-3 py-1.5 rounded-xl cursor-pointer"
+                      className="bg-rose-600 hover:bg-rose-700 text-white font-bold px-3 py-1.5 rounded-xl cursor-pointer"
                     >
                       Confirm Reject
                     </button>
                     <button 
                       onClick={() => setShowLeadRejectForm(false)}
-                      className="text-slate-400 hover:text-white px-2 py-1.5"
+                      className="text-slate-600 hover:text-slate-900 font-bold px-2 py-1.5 cursor-pointer"
                     >
                       Cancel
                     </button>
@@ -13400,7 +13416,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
               <button 
                 onClick={() => { setSelectedIncident(null); setShowLeadRejectForm(false); }} 
-                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl cursor-pointer transition-colors shadow-md"
+                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl cursor-pointer transition-colors shadow-xs"
               >
                 Close Audit Modal
               </button>

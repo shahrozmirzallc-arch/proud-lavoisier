@@ -212,8 +212,8 @@ export default function BusinessDropdown({
 
       {/* Confirmation Modal when switching away from Other */}
       {showConfirmModal && (
-        <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-xs z-50 flex items-center justify-center p-3">
-          <div className="bg-white border border-slate-300 rounded-2xl p-4 shadow-2xl max-w-xs w-full text-left space-y-3">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-3">
+          <div className="bg-white border-2 border-slate-300 rounded-2xl p-5 shadow-2xl max-w-xs w-full text-left space-y-3">
             <div className="flex items-center gap-2 text-amber-600">
               <HelpCircle className="w-5 h-5" />
               <h4 className="text-xs font-black uppercase tracking-wider text-slate-900">Clear Custom Value?</h4>

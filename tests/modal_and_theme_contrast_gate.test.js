@@ -60,5 +60,55 @@ describe('Mandatory Modal & Theme Contrast Gate (Rule 16)', () => {
       expect(broadcastCode).toContain('bg-white');
     }
   });
+
+  it('enforces zero dark container leaks in Quality Audit Incident Modal', () => {
+    const incidentMatch = webDashboardContent.match(/selectedIncident\s*&&\s*\([\s\S]*?Close Audit Modal/);
+    expect(incidentMatch).not.toBeNull();
+    const incidentCode = incidentMatch[0];
+    expect(incidentCode).not.toContain('bg-[#071325]');
+    expect(incidentCode).not.toContain('bg-slate-950');
+    expect(incidentCode).toContain('bg-white');
+    expect(incidentCode).toContain('border-slate-300');
+  });
+
+  it('enforces zero dark container leaks in Create & Edit User Modals', () => {
+    const addUserMatch = webDashboardContent.match(/showAddUserModal\s*&&\s*\([\s\S]*?Create Account/);
+    expect(addUserMatch).not.toBeNull();
+    const addUserCode = addUserMatch[0];
+    expect(addUserCode).not.toContain('bg-slate-950');
+    expect(addUserCode).not.toContain('text-amber-300');
+    expect(addUserCode).toContain('bg-white');
+    expect(addUserCode).toContain('text-amber-950');
+
+    const editUserMatch = webDashboardContent.match(/showEditUserModal\s*&&\s*editingUser\s*&&\s*\([\s\S]*?Save Changes/);
+    expect(editUserMatch).not.toBeNull();
+    const editUserCode = editUserMatch[0];
+    expect(editUserCode).not.toContain('bg-slate-950');
+    expect(editUserCode).toContain('bg-white');
+  });
+
+  it('enforces zero dark container leaks in Shift Walkthrough and Rework Details Modals', () => {
+    const shiftMatch = webDashboardContent.match(/selectedShiftReport\s*&&\s*\([\s\S]*?Close Walkthrough/);
+    expect(shiftMatch).not.toBeNull();
+    const shiftCode = shiftMatch[0];
+    expect(shiftCode).not.toContain('bg-surface-elevated');
+    expect(shiftCode).toContain('bg-white');
+
+    const reworkMatch = webDashboardContent.match(/selectedReworkLog\s*&&\s*\([\s\S]*?Close Inspector/);
+    expect(reworkMatch).not.toBeNull();
+    const reworkCode = reworkMatch[0];
+    expect(reworkCode).not.toContain('bg-surface-elevated');
+    expect(reworkCode).toContain('bg-white');
+  });
+
+  it('enforces High-Contrast Light Theme tokens in Floating Toast Notifications', () => {
+    const toastMatch = webDashboardContent.match(/Floating Toast Notification Overlay[\s\S]*?toast\s*&&\s*\([\s\S]*?toast\.message[\s\S]*?\)/);
+    expect(toastMatch).not.toBeNull();
+    const toastCode = toastMatch[0];
+    expect(toastCode).not.toContain('bg-rose-950');
+    expect(toastCode).not.toContain('bg-emerald-950');
+    expect(toastCode).toContain('bg-rose-50 text-rose-950');
+    expect(toastCode).toContain('bg-emerald-50 text-emerald-950');
+  });
 });
 

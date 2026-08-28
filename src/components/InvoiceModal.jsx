@@ -57,31 +57,31 @@ export const InvoiceModal = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto print:p-0 print:bg-white print:static">
-      <div className="bg-white text-slate-950 rounded-2xl shadow-2xl border border-slate-300 w-full max-w-4xl overflow-hidden my-auto print:shadow-none print:border-none print:w-full print:max-w-none">
+    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto print:p-0 print:bg-white print:static">
+      <div className="bg-white text-slate-950 rounded-3xl shadow-2xl border-2 border-slate-300 w-full max-w-4xl overflow-hidden my-auto print:shadow-none print:border-none print:w-full print:max-w-none">
         
         {/* Modal Toolbar (Hidden during browser print) */}
-        <div className="bg-slate-900 text-white px-6 py-4 flex items-center justify-between border-b border-slate-800 print:hidden">
+        <div className="bg-slate-100 text-slate-900 px-6 py-4 flex items-center justify-between border-b border-slate-300 print:hidden">
           <div className="flex items-center gap-2">
-            <span className="font-extrabold text-lg text-blue-400">IDS Pulse</span>
-            <span className="text-slate-400 text-sm font-semibold">| Standard Client Invoice Preview</span>
+            <span className="font-black text-lg text-slate-900">IDS Pulse</span>
+            <span className="text-slate-600 text-xs font-black uppercase tracking-wider">| Standard Client Invoice Preview</span>
           </div>
           <div className="flex items-center gap-3">
             <button
               onClick={handleDownloadPDF}
-              className="flex items-center gap-1.5 bg-[#3B82F6] hover:bg-[#3B82F6]/90 text-white text-xs font-bold py-2 px-4 rounded-xl transition-all cursor-pointer shadow-md"
+              className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-black py-2.5 px-4 rounded-xl transition-all cursor-pointer shadow-xs"
             >
               <Download className="w-4 h-4" /> Download PDF
             </button>
             <button
               onClick={handlePrint}
-              className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold py-2 px-4 rounded-xl transition-all cursor-pointer shadow-md"
+              className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black py-2.5 px-4 rounded-xl transition-all cursor-pointer shadow-xs"
             >
               <Printer className="w-4 h-4" /> Print Invoice
             </button>
             <button
               onClick={onClose}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+              className="p-2 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-200 transition-colors cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>

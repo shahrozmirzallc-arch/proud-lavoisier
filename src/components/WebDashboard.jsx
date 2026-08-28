@@ -8730,23 +8730,23 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
                 {/* HD LIGHTBOX PROOF INSPECTOR MODAL */}
                 {selectedZoomImage && (
-                  <div className="fixed inset-0 bg-slate-950/90 backdrop-blur-md flex items-center justify-center z-50 p-4">
-                    <div className="relative max-w-4xl w-full bg-slate-900 border border-slate-800 rounded-3xl p-6 flex flex-col items-center gap-4 text-white shadow-2xl">
-                      <div className="w-full flex justify-between items-center border-b border-slate-800 pb-3">
+                  <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <div className="relative max-w-4xl w-full bg-white border-2 border-slate-300 rounded-3xl p-6 flex flex-col items-center gap-4 text-slate-900 shadow-2xl">
+                      <div className="w-full flex justify-between items-center border-b border-slate-200 pb-3">
                         <div className="flex items-center gap-2">
-                          <Search className="w-5 h-5 text-blue-400" />
-                          <span className="font-black text-sm uppercase tracking-wider">HD Inspection Proof Lightbox</span>
+                          <Search className="w-5 h-5 text-blue-600" />
+                          <span className="font-black text-sm uppercase tracking-wider text-slate-900">HD Inspection Proof Lightbox</span>
                         </div>
                         <button 
                           type="button"
                           onClick={() => setSelectedZoomImage(null)} 
-                          className="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-xl text-xs font-black cursor-pointer"
+                          className="px-4 py-2 bg-white hover:bg-slate-100 border border-slate-300 rounded-xl text-xs font-black text-slate-800 cursor-pointer shadow-2xs transition-colors"
                         >
-                          Close 
+                          Close Viewport
                         </button>
                       </div>
                       
-                      <div className="w-full h-96 bg-black rounded-2xl overflow-hidden flex items-center justify-center border border-slate-800">
+                      <div className="w-full h-96 bg-slate-100 rounded-2xl overflow-hidden flex items-center justify-center border border-slate-300 shadow-inner">
                         <img 
                           src={selectedZoomImage} 
                           alt="HD Quality Inspection Proof" 
@@ -8754,9 +8754,9 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         />
                       </div>
 
-                      <div className="w-full flex justify-between items-center text-xs text-slate-300 pt-2 border-t border-slate-800">
+                      <div className="w-full flex justify-between items-center text-xs text-slate-700 pt-3 border-t border-slate-200">
                         <span className="font-bold">High-Resolution Photo Artifact • Stamped by Field Rep</span>
-                        <span className="text-emerald-400 font-black">100% Verified Quality Proof</span>
+                        <span className="text-emerald-700 font-black">100% Verified Quality Proof</span>
                       </div>
                     </div>
                   </div>
@@ -13427,29 +13427,29 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
       {/* OVERLAY PANEL 2: EMAIL LOG INSPECTOR */}
       {selectedEmailLog && (
-        <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-3 z-50 animate-in fade-in duration-200">
-          <div className="bg-surface-elevated border border-border-subtle rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col max-h-[600px] text-left">
-            <div className="bg-surface px-5 py-4 border-b border-border-subtle flex items-center justify-between">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-3 z-50 animate-in fade-in duration-200">
+          <div className="bg-white border-2 border-slate-300 rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col max-h-[80vh] text-left">
+            <div className="bg-slate-100 px-6 py-4 border-b border-slate-200 flex items-center justify-between">
               <div>
-                <h3 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider">Email Transaction Inspector</h3>
-                <span className="text-[11.5px] text-text-secondary font-mono">Log ID: {selectedEmailLog.id}</span>
+                <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">Email Transaction Inspector</h3>
+                <span className="text-xs text-slate-600 font-mono font-bold">Log ID: {selectedEmailLog.id}</span>
               </div>
-              <button onClick={() => setSelectedEmailLog(null)} className="text-text-secondary hover:text-text-primary"><X className="w-5 h-5" /></button>
+              <button onClick={() => setSelectedEmailLog(null)} className="text-slate-400 hover:text-slate-900 p-1 rounded-lg hover:bg-slate-200 cursor-pointer"><X className="w-5 h-5" /></button>
             </div>
-            <div className="p-3 bg-surface border-b border-border-subtle flex flex-col gap-1.5 text-[13.5px] text-text-primary font-mono">
-              <div><span className="text-[#3B82F6] font-bold">To:</span> {selectedEmailLog.to_emails}</div>
-              <div><span className="text-[#3B82F6] font-bold">CC:</span> {selectedEmailLog.cc_emails}</div>
-              <div><span className="text-[#3B82F6] font-bold">Subject:</span> {selectedEmailLog.subject}</div>
-              <div><span className="text-text-secondary font-bold">Sent Stamp:</span> {new Date(selectedEmailLog.sent_at).toLocaleString()}</div>
+            <div className="p-4 bg-slate-50 border-b border-slate-200 flex flex-col gap-1.5 text-xs text-slate-900 font-mono">
+              <div><span className="text-blue-700 font-black">To:</span> <span className="font-semibold">{selectedEmailLog.to_emails}</span></div>
+              <div><span className="text-blue-700 font-black">CC:</span> <span className="font-semibold">{selectedEmailLog.cc_emails}</span></div>
+              <div><span className="text-blue-700 font-black">Subject:</span> <span className="font-bold">{selectedEmailLog.subject}</span></div>
+              <div><span className="text-slate-600 font-black">Sent Stamp:</span> <span className="font-semibold">{new Date(selectedEmailLog.sent_at).toLocaleString()}</span></div>
             </div>
-            <div className="flex-1 overflow-y-auto p-3 bg-surface-elevated text-[13.5px]">
+            <div className="flex-1 overflow-y-auto p-6 bg-slate-100 text-xs">
               <div 
-                className="prose prose-invert max-w-none bg-surface p-6 sm:p-8 rounded-2xl border border-border-subtle text-text-primary font-sans"
+                className="prose max-w-none bg-white p-6 rounded-2xl border border-slate-300 text-slate-900 font-sans shadow-2xs"
                 dangerouslySetInnerHTML={{ __html: selectedEmailLog.body }}
               />
             </div>
-            <div className="bg-surface px-5 py-3 border-t border-border-subtle flex justify-end">
-              <button onClick={() => setSelectedEmailLog(null)} className="bg-surface-elevated border border-border-subtle text-text-primary font-bold text-[13.5px] py-2 px-4 rounded-xl">Close Inspector</button>
+            <div className="bg-slate-50 px-6 py-3.5 border-t border-slate-200 flex justify-end">
+              <button onClick={() => setSelectedEmailLog(null)} className="bg-white border border-slate-300 hover:bg-slate-100 text-slate-800 font-black text-xs py-2.5 px-5 rounded-xl cursor-pointer shadow-2xs transition-all">Close Inspector</button>
             </div>
           </div>
         </div>
@@ -13457,7 +13457,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
       {/* OVERLAY PANEL: EMERGENCY BROADCAST LOG INSPECTOR */}
       {selectedBroadcastLog && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
           <div className="bg-white border-2 border-slate-300 rounded-3xl w-full max-w-3xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh] text-left">
             {/* Modal Header */}
             <div className="bg-slate-100 px-6 py-4 border-b border-slate-300 flex items-center justify-between">
@@ -13586,39 +13586,39 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
         </div>
       )}
 
-      {/* OVERLAY PANEL 3: DAILY SHIFT WALKTHROUGH DETAILS (Donna's Review Panel) */}
+      {/* OVERLAY PANEL 3: DAILY SHIFT WALKTHROUGH DETAILS */}
       {selectedShiftReport && (
-        <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-3 z-50 animate-in fade-in duration-200">
-          <div className="bg-surface-elevated border border-border-subtle rounded-3xl w-full max-w-3xl overflow-hidden shadow-2xl flex flex-col max-h-[700px] text-left">
-            <div className="bg-surface px-5 py-4 border-b border-border-subtle flex items-center justify-between">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-3 z-50 animate-in fade-in duration-200">
+          <div className="bg-white border-2 border-slate-300 rounded-3xl w-full max-w-3xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh] text-left">
+            <div className="bg-slate-100 px-6 py-4 border-b border-slate-200 flex items-center justify-between">
               <div>
-                <h3 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider">Daily Quality Report Details</h3>
-                <span className="text-[11.5px] text-text-secondary font-mono">Report Date: {selectedShiftReport.date}</span>
+                <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">Daily Quality Report Details</h3>
+                <span className="text-xs text-slate-600 font-mono font-bold">Report Date: {selectedShiftReport.date}</span>
               </div>
-              <button onClick={() => setSelectedShiftReport(null)} className="text-text-secondary hover:text-text-primary"><X className="w-5 h-5" /></button>
+              <button onClick={() => setSelectedShiftReport(null)} className="text-slate-400 hover:text-slate-900 p-1 rounded-lg hover:bg-slate-200 cursor-pointer"><X className="w-5 h-5" /></button>
             </div>
 
-            <div className="p-3 bg-surface border-b border-border-subtle flex flex-col gap-1 text-[13.5px] text-text-primary">
-              <div>Rep: <span className="font-bold text-text-primary">{users.find(u => u.id === selectedShiftReport.rep_id || u.username === selectedShiftReport.rep_id)?.name || selectedShiftReport.rep_id || 'Representative'}</span></div>
-              <div>Plant Location: <span className="font-bold text-text-primary">{plants.find(p => p.id === selectedShiftReport.plant_id || p.name?.toLowerCase() === (selectedShiftReport.plant_id || '').toLowerCase())?.name || (selectedShiftReport.plant_id ? selectedShiftReport.plant_id.replace(/^plant_/, '').replace(/_/g, ' ') : 'Plant Floor')}</span></div>
-              <div>Time Compiled: <span className="font-mono text-[11.5px] text-text-secondary">{new Date(selectedShiftReport.sent_at || selectedShiftReport.created_at || new Date()).toLocaleString()}</span></div>
+            <div className="p-4 bg-slate-50 border-b border-slate-200 flex flex-col gap-1 text-xs text-slate-800 font-bold">
+              <div>Rep: <span className="font-black text-slate-900">{users.find(u => u.id === selectedShiftReport.rep_id || u.username === selectedShiftReport.rep_id)?.name || selectedShiftReport.rep_id || 'Representative'}</span></div>
+              <div>Plant Location: <span className="font-black text-slate-900">{plants.find(p => p.id === selectedShiftReport.plant_id || p.name?.toLowerCase() === (selectedShiftReport.plant_id || '').toLowerCase())?.name || (selectedShiftReport.plant_id ? selectedShiftReport.plant_id.replace(/^plant_/, '').replace(/_/g, ' ') : 'Plant Floor')}</span></div>
+              <div>Time Compiled: <span className="font-mono text-xs text-slate-600 font-semibold">{new Date(selectedShiftReport.sent_at || selectedShiftReport.created_at || new Date()).toLocaleString()}</span></div>
             </div>
 
             {/* Displaying checked areas in detail cards */}
-            <div className="flex-1 overflow-y-auto p-6 sm:p-8 flex flex-col gap-3 bg-surface-elevated">
-              <span className="text-[11.5px] text-text-secondary uppercase font-bold tracking-wider">Walked Area Audits</span>
-              <div className="grid grid-cols-2 gap-3">
+            <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-3 bg-slate-50">
+              <span className="text-xs text-slate-700 uppercase font-black tracking-wider">Walked Area Audits</span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {selectedShiftReport.areas_walked.map((area, idx) => (
-                  <div key={idx} className="bg-surface border border-border-subtle rounded-xl p-3 flex flex-col gap-2">
+                  <div key={idx} className="bg-white border border-slate-300 rounded-xl p-3.5 flex flex-col gap-2 shadow-2xs">
                     <div className="flex justify-between items-center">
-                      <span className="text-[13.5px] font-bold text-text-primary">{area.name}</span>
-                      <span className={`px-2 py-1 rounded text-[12.5px] font-bold tracking-wider uppercase ${
-                        area.status === 'issues' ? 'bg-rose-50 text-rose-600 border border-rose-200' : 'bg-emerald-50 text-emerald-600 border border-emerald-200'
+                      <span className="text-xs font-black text-slate-900">{area.name}</span>
+                      <span className={`px-2 py-0.5 rounded text-[11px] font-black tracking-wider uppercase ${
+                        area.status === 'issues' ? 'bg-rose-50 text-rose-700 border border-rose-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                       }`}>
                         {area.status === 'issues' ? 'Defects Found' : 'No Issues'}
                       </span>
                     </div>
-                    <p className="text-[11.5px] text-text-secondary leading-normal">
+                    <p className="text-xs text-slate-600 font-medium leading-normal">
                       {area.notes || 'Rep walked area and confirmed no active part issues.'}
                     </p>
                   </div>
@@ -13627,15 +13627,15 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
               {/* Bonus tasks details */}
               {selectedShiftReport.bonus_tasks && selectedShiftReport.bonus_tasks.length > 0 && (
-                <div className="flex flex-col gap-2 mt-4 pt-3 border-t border-border-subtle">
-                  <span className="text-[11.5px] text-[#3B82F6] font-bold uppercase tracking-wider">Requested Sorts & Audits</span>
+                <div className="flex flex-col gap-2 mt-4 pt-3 border-t border-slate-200">
+                  <span className="text-xs text-blue-700 font-black uppercase tracking-wider">Requested Sorts & Audits</span>
                   {selectedShiftReport.bonus_tasks.map((task, idx) => (
-                    <div key={idx} className="bg-surface border border-border-subtle rounded-xl p-3 flex justify-between items-center text-[13.5px]">
+                    <div key={idx} className="bg-white border border-slate-300 rounded-xl p-3.5 flex justify-between items-center text-xs shadow-2xs">
                       <div>
-                        <p className="font-bold text-text-primary">{task.task}</p>
-                        <p className="text-[11.5px] text-text-secondary mt-1 leading-normal">{task.notes || 'Audit check completed.'}</p>
+                        <p className="font-black text-slate-900">{task.task}</p>
+                        <p className="text-xs text-slate-600 mt-1 font-medium leading-normal">{task.notes || 'Audit check completed.'}</p>
                       </div>
-                      <span className="bg-emerald-50 border border-emerald-200 text-emerald-600 px-2 py-1 rounded text-[10.5px] font-bold uppercase">
+                      <span className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-2 py-0.5 rounded text-[10.5px] font-black uppercase">
                         Completed
                       </span>
                     </div>
@@ -13650,15 +13650,15 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 );
                 if (repDateInspections.length === 0) return null;
                 return (
-                  <div className="flex flex-col gap-2 mt-4 pt-3 border-t border-border-subtle">
-                    <span className="text-[11.5px] text-emerald-600 font-bold uppercase tracking-wider">Routine Inspection Logs</span>
+                  <div className="flex flex-col gap-2 mt-4 pt-3 border-t border-slate-200">
+                    <span className="text-xs text-emerald-700 font-black uppercase tracking-wider">Routine Inspection Logs</span>
                     {repDateInspections.map((te, idx) => (
-                      <div key={idx} className="bg-surface border border-border-subtle rounded-xl p-3 flex justify-between items-center text-xs">
+                      <div key={idx} className="bg-white border border-slate-300 rounded-xl p-3.5 flex justify-between items-center text-xs shadow-2xs">
                         <div>
-                          <p className="font-bold text-text-primary">Part #{te.part_number || te.part_id || 'N/A'}</p>
-                          <p className="text-[11px] text-text-secondary mt-0.5">{te.hours || te.time_spent || 0} Hours Spent • {te.notes || 'Routine check'}</p>
+                          <p className="font-black text-slate-900">Part #{te.part_number || te.part_id || 'N/A'}</p>
+                          <p className="text-xs text-slate-600 mt-0.5 font-medium">{te.hours || te.time_spent || 0} Hours Spent • {te.notes || 'Routine check'}</p>
                         </div>
-                        <span className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-2 py-0.5 rounded text-[10px] font-extrabold uppercase">
+                        <span className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase">
                           {te.status || 'Verified'}
                         </span>
                       </div>
@@ -13674,15 +13674,15 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 );
                 if (repDateRework.length === 0) return null;
                 return (
-                  <div className="flex flex-col gap-2 mt-4 pt-3 border-t border-border-subtle">
-                    <span className="text-[11.5px] text-blue-600 font-bold uppercase tracking-wider">Rework Activity Logs</span>
+                  <div className="flex flex-col gap-2 mt-4 pt-3 border-t border-slate-200">
+                    <span className="text-xs text-blue-700 font-black uppercase tracking-wider">Rework Activity Logs</span>
                     {repDateRework.map((rw, idx) => (
-                      <div key={idx} className="bg-surface border border-border-subtle rounded-xl p-3 flex justify-between items-center text-xs">
+                      <div key={idx} className="bg-white border border-slate-300 rounded-xl p-3.5 flex justify-between items-center text-xs shadow-2xs">
                         <div>
-                          <p className="font-bold text-text-primary">Part #{rw.part_number || rw.part_id || 'N/A'} • {rw.qty || rw.pieces_reworked || 0} Pcs Reworked</p>
-                          <p className="text-[11px] text-text-secondary mt-0.5">{rw.notes || 'Containment rework completed.'}</p>
+                          <p className="font-black text-slate-900">Part #{rw.part_number || rw.part_id || 'N/A'} • {rw.qty || rw.pieces_reworked || 0} Pcs Reworked</p>
+                          <p className="text-xs text-slate-600 mt-0.5 font-medium">{rw.notes || 'Containment rework completed.'}</p>
                         </div>
-                        <span className="bg-blue-50 border border-blue-200 text-blue-700 px-2 py-0.5 rounded text-[10px] font-extrabold uppercase">
+                        <span className="bg-blue-50 border border-blue-200 text-blue-700 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase">
                           {rw.time_spent_minutes ? `${rw.time_spent_minutes}m` : 'Reworked'}
                         </span>
                       </div>
@@ -13698,15 +13698,15 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 );
                 if (repDateIncidents.length === 0) return null;
                 return (
-                  <div className="flex flex-col gap-2 mt-4 pt-3 border-t border-border-subtle">
-                    <span className="text-[11.5px] text-amber-600 font-bold uppercase tracking-wider">Referenced Incident Alerts (Sent Earlier Today)</span>
+                  <div className="flex flex-col gap-2 mt-4 pt-3 border-t border-slate-200">
+                    <span className="text-xs text-amber-700 font-black uppercase tracking-wider">Referenced Incident Alerts (Sent Earlier Today)</span>
                     {repDateIncidents.map((inc, idx) => (
-                      <div key={idx} className="bg-amber-50/60 border border-amber-200 rounded-xl p-3 flex justify-between items-center text-xs">
+                      <div key={idx} className="bg-amber-50 border border-amber-200 rounded-xl p-3.5 flex justify-between items-center text-xs shadow-2xs">
                         <div>
-                          <p className="font-bold text-amber-950">Alert Reference: {inc.id || inc.local_tracking_ref}</p>
-                          <p className="text-[11px] text-amber-900 mt-0.5">Defect: {inc.defect_type || 'N/A'} in {inc.area || 'Floor Area'} • Level of Concern: {inc.level_of_concern || inc.concern_classification || 'Major'}</p>
+                          <p className="font-black text-amber-950">Alert Reference: {inc.id || inc.local_tracking_ref}</p>
+                          <p className="text-xs text-amber-900 mt-0.5 font-medium">Defect: {inc.defect_type || 'N/A'} in {inc.area || 'Floor Area'} • Level of Concern: {inc.level_of_concern || inc.concern_classification || 'Major'}</p>
                         </div>
-                        <span className="bg-amber-100 border border-amber-300 text-amber-900 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase">
+                        <span className="bg-amber-100 border border-amber-300 text-amber-900 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase">
                           Alert Issued
                         </span>
                       </div>
@@ -13717,29 +13717,29 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
             </div>
 
             {/* Export & Actions Box for Shift Walkthrough */}
-            <div className="mx-5 my-3 flex flex-col gap-2 bg-[#3B82F6]/20 p-3 rounded-xl border border-[#3B82F6]/15 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
-              <span className="text-[10.5px] text-[#3B82F6] font-bold uppercase tracking-wider pl-0.5">Export & Share Walkthrough Summary</span>
+            <div className="mx-6 my-3 flex flex-col gap-2 bg-blue-50 p-4 rounded-2xl border border-blue-200 flex-shrink-0 shadow-2xs" onClick={(e) => e.stopPropagation()}>
+              <span className="text-[11px] text-blue-900 font-black uppercase tracking-wider pl-0.5">Export & Share Walkthrough Summary</span>
               <div className="grid grid-cols-2 gap-2">
                 {/* Download PDF */}
                 <div className="relative">
                   <button 
                     onClick={() => handleDownloadShiftReport(selectedShiftReport)}
-                    className="w-full bg-surface border border-border-subtle hover:bg-surface-elevated text-text-primary hover:text-text-primary py-2 rounded-lg text-[10.5px] font-bold transition-colors cursor-pointer text-center"
+                    className="w-full bg-white border border-slate-300 hover:bg-slate-100 text-slate-900 py-2.5 rounded-xl text-xs font-black transition-colors cursor-pointer text-center shadow-2xs"
                   >
                     Download PDF
                   </button>
                   <div className="absolute -top-1.5 -right-1.5 group flex items-center justify-center">
                     <button 
-                      type="button"
+                      type="button" 
                       onClick={(e) => {
                         e.stopPropagation();
                         setOpenTooltip(openTooltip === 'shift-pdf' ? null : 'shift-pdf');
                       }}
-                      className="w-3.5 h-3.5 bg-surface-elevated hover:bg-surface-elevated text-[12.5px] text-text-secondary hover:text-text-primary rounded-full flex items-center justify-center font-bold border border-border-subtle cursor-pointer"
+                      className="w-4 h-4 bg-slate-200 hover:bg-slate-300 text-[11px] text-slate-700 rounded-full flex items-center justify-center font-black border border-slate-300 cursor-pointer"
                     >
                       ?
                     </button>
-                    <div className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-44 p-2 bg-surface border border-border-subtle text-[10.5px] text-text-primary rounded-lg shadow-xl transition-all duration-200 z-50 leading-normal pointer-events-none group-hover:opacity-100 group-hover:scale-100 group-hover:translate-y-0 ${
+                    <div className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-44 p-2 bg-slate-900 text-white border border-slate-800 text-[10.5px] rounded-lg shadow-xl transition-all duration-200 z-50 leading-normal pointer-events-none group-hover:opacity-100 group-hover:scale-100 group-hover:translate-y-0 ${
                       openTooltip === 'shift-pdf' 
                         ? 'opacity-100 scale-100 translate-y-0' 
                         : 'opacity-0 scale-95 translate-y-1'
@@ -13753,22 +13753,22 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 <div className="relative">
                   <button 
                     onClick={() => handlePrintShiftReport(selectedShiftReport)}
-                    className="w-full bg-surface border border-border-subtle hover:bg-surface-elevated text-text-primary hover:text-text-primary py-2 rounded-lg text-[10.5px] font-bold transition-colors cursor-pointer text-center"
+                    className="w-full bg-white border border-slate-300 hover:bg-slate-100 text-slate-900 py-2.5 rounded-xl text-xs font-black transition-colors cursor-pointer text-center shadow-2xs"
                   >
                     Print Report
                   </button>
                   <div className="absolute -top-1.5 -right-1.5 group flex items-center justify-center">
                     <button 
-                      type="button"
+                      type="button" 
                       onClick={(e) => {
                         e.stopPropagation();
                         setOpenTooltip(openTooltip === 'shift-print' ? null : 'shift-print');
                       }}
-                      className="w-3.5 h-3.5 bg-surface-elevated hover:bg-surface-elevated text-[12.5px] text-text-secondary hover:text-text-primary rounded-full flex items-center justify-center font-bold border border-border-subtle cursor-pointer"
+                      className="w-4 h-4 bg-slate-200 hover:bg-slate-300 text-[11px] text-slate-700 rounded-full flex items-center justify-center font-black border border-slate-300 cursor-pointer"
                     >
                       ?
                     </button>
-                    <div className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-44 p-2 bg-surface border border-border-subtle text-[10.5px] text-text-primary rounded-lg shadow-xl transition-all duration-200 z-50 leading-normal pointer-events-none group-hover:opacity-100 group-hover:scale-100 group-hover:translate-y-0 ${
+                    <div className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-44 p-2 bg-slate-900 text-white border border-slate-800 text-[10.5px] rounded-lg shadow-xl transition-all duration-200 z-50 leading-normal pointer-events-none group-hover:opacity-100 group-hover:scale-100 group-hover:translate-y-0 ${
                       openTooltip === 'shift-print' 
                         ? 'opacity-100 scale-100 translate-y-0' 
                         : 'opacity-0 scale-95 translate-y-1'
@@ -13780,8 +13780,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
               </div>
             </div>
 
-            <div className="bg-surface px-5 py-3 border-t border-border-subtle flex justify-end">
-              <button onClick={() => setSelectedShiftReport(null)} className="bg-surface-elevated border border-border-subtle text-text-primary font-bold text-[13.5px] py-2 px-4 rounded-xl">Close Walkthrough</button>
+            <div className="bg-slate-50 px-6 py-3.5 border-t border-slate-200 flex justify-end">
+              <button onClick={() => setSelectedShiftReport(null)} className="bg-white border border-slate-300 hover:bg-slate-100 text-slate-800 font-black text-xs py-2.5 px-5 rounded-xl cursor-pointer shadow-2xs transition-all">Close Walkthrough</button>
             </div>
           </div>
         </div>
@@ -13789,87 +13789,87 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
       {/* OVERLAY PANEL 3.5: DEFECT REWORK LOG DETAILS (Rework Inspector Modal) */}
       {selectedReworkLog && (
-        <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-3 z-50 animate-in fade-in duration-200">
-          <div className="bg-surface-elevated border border-border-subtle rounded-3xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col max-h-[600px] text-left">
-            <div className="bg-surface px-5 py-4 border-b border-border-subtle flex items-center justify-between">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-3 z-50 animate-in fade-in duration-200">
+          <div className="bg-white border-2 border-slate-300 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col max-h-[85vh] text-left">
+            <div className="bg-slate-100 px-6 py-4 border-b border-slate-200 flex items-center justify-between">
               <div>
-                <h3 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider">Defect Rework Log Details</h3>
-                <span className="text-[11.5px] text-text-secondary font-mono">Log ID: {selectedReworkLog.id}</span>
+                <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">Defect Rework Log Details</h3>
+                <span className="text-xs text-slate-600 font-mono font-bold">Log ID: {selectedReworkLog.id}</span>
               </div>
-              <button onClick={() => setSelectedReworkLog(null)} className="text-text-secondary hover:text-text-primary"><X className="w-5 h-5" /></button>
+              <button onClick={() => setSelectedReworkLog(null)} className="text-slate-400 hover:text-slate-900 p-1 rounded-lg hover:bg-slate-200 cursor-pointer"><X className="w-5 h-5" /></button>
             </div>
 
-            <div className="p-6 sm:p-8 flex-1 overflow-y-auto bg-surface-elevated flex flex-col gap-3">
+            <div className="p-6 flex-1 overflow-y-auto bg-slate-50 flex flex-col gap-3">
               <div className="grid grid-cols-2 gap-3">
-                <div className="bg-surface p-3 rounded-xl border border-border-subtle">
-                  <span className="text-[10.5px] text-text-secondary font-bold uppercase tracking-wider block">Field Representative</span>
-                  <span className="text-[13.5px] font-bold text-text-primary mt-1 block">
+                <div className="bg-white p-3.5 rounded-xl border border-slate-300 shadow-2xs">
+                  <span className="text-[10.5px] text-slate-600 font-black uppercase tracking-wider block">Field Representative</span>
+                  <span className="text-xs font-black text-slate-900 mt-1 block">
                     {users.find(u => u.id === selectedReworkLog.rep_id)?.name || 'Clarence Kuiken'}
                   </span>
                 </div>
-                <div className="bg-surface p-3 rounded-xl border border-border-subtle">
-                  <span className="text-[10.5px] text-text-secondary font-bold uppercase tracking-wider block">Date Logged</span>
-                  <span className="text-[13.5px] font-bold text-text-primary mt-1 block">
+                <div className="bg-white p-3.5 rounded-xl border border-slate-300 shadow-2xs">
+                  <span className="text-[10.5px] text-slate-600 font-black uppercase tracking-wider block">Date Logged</span>
+                  <span className="text-xs font-black text-slate-900 mt-1 block">
                     {new Date(selectedReworkLog.created_at).toLocaleDateString()}
                   </span>
                 </div>
-                <div className="bg-surface p-3 rounded-xl border border-border-subtle">
-                  <span className="text-[10.5px] text-text-secondary font-bold uppercase tracking-wider block">Part Affected</span>
-                  <span className="text-[13.5px] font-extrabold text-[#3B82F6] mt-1 block">
+                <div className="bg-white p-3.5 rounded-xl border border-slate-300 shadow-2xs">
+                  <span className="text-[10.5px] text-slate-600 font-black uppercase tracking-wider block">Part Affected</span>
+                  <span className="text-xs font-black text-blue-700 mt-1 block font-mono">
                     PN {selectedReworkLog.part_id}
                   </span>
                 </div>
-                <div className="bg-surface p-3 rounded-xl border border-border-subtle">
-                  <span className="text-[10.5px] text-text-secondary font-bold uppercase tracking-wider block">Supplier Partner</span>
-                  <span className="text-[13.5px] font-extrabold text-[#3B82F6] mt-1 block uppercase">
+                <div className="bg-white p-3.5 rounded-xl border border-slate-300 shadow-2xs">
+                  <span className="text-[10.5px] text-slate-600 font-black uppercase tracking-wider block">Supplier Partner</span>
+                  <span className="text-xs font-black text-blue-700 mt-1 block uppercase">
                     {suppliers.find(s => s.id === selectedReworkLog.supplier_id || s.name?.toLowerCase() === (selectedReworkLog.supplier_id || '').toLowerCase())?.name || selectedReworkLog.supplier_name || (selectedReworkLog.supplier_id ? selectedReworkLog.supplier_id.replace(/^sup_/, '').replace(/_/g, ' ') : 'AutoKabel Systems')}
                   </span>
                 </div>
-                <div className="bg-surface p-3 rounded-xl border border-border-subtle bg-emerald-500/5 border-emerald-500/10">
-                  <span className="text-[10.5px] text-emerald-600 font-bold uppercase tracking-wider block">Pieces Reworked</span>
-                  <span className="text-[14.5px] font-extrabold text-emerald-600 mt-1 block">
+                <div className="bg-emerald-50 p-3.5 rounded-xl border border-emerald-200 shadow-2xs">
+                  <span className="text-[10.5px] text-emerald-950 font-black uppercase tracking-wider block">Pieces Reworked</span>
+                  <span className="text-sm font-black text-emerald-800 mt-1 block">
                     {selectedReworkLog.qty} pcs
                   </span>
                 </div>
-                <div className="bg-surface p-3 rounded-xl border border-border-subtle bg-amber-500/5 border-amber-500/10">
-                  <span className="text-[10.5px] text-amber-600 font-bold uppercase tracking-wider block">Labor Hours Spent</span>
-                  <span className="text-[14.5px] font-extrabold text-amber-600 mt-1 block">
+                <div className="bg-amber-50 p-3.5 rounded-xl border border-amber-200 shadow-2xs">
+                  <span className="text-[10.5px] text-amber-950 font-black uppercase tracking-wider block">Labor Hours Spent</span>
+                  <span className="text-sm font-black text-amber-800 mt-1 block">
                     {Math.round(selectedReworkLog.time_spent_minutes / 60 * 10) / 10} hrs
                   </span>
                 </div>
               </div>
 
-              <div className="bg-surface p-3 rounded-xl border border-border-subtle">
-                <span className="text-[10.5px] text-text-secondary font-bold uppercase tracking-wider block mb-1">Remarks & Narrative</span>
-                <p className="text-[13.5px] text-slate-355 leading-relaxed font-sans whitespace-pre-wrap">
+              <div className="bg-white p-4 rounded-xl border border-slate-300 shadow-2xs">
+                <span className="text-[10.5px] text-slate-600 font-black uppercase tracking-wider block mb-1">Remarks & Narrative</span>
+                <p className="text-xs text-slate-900 leading-relaxed font-sans font-medium whitespace-pre-wrap">
                   {selectedReworkLog.notes || 'No comments recorded for this rework event.'}
                 </p>
               </div>
             </div>
 
             {/* Export & Actions Box for Rework Entry */}
-            <div className="mx-5 my-2 flex flex-col gap-2 bg-[#3B82F6]/20 p-3 rounded-xl border border-[#3B82F6]/15 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
-              <span className="text-[10.5px] text-[#3B82F6] font-bold uppercase tracking-wider pl-0.5">Export & Share Rework Record</span>
+            <div className="mx-6 my-2 flex flex-col gap-2 bg-blue-50 p-4 rounded-2xl border border-blue-200 flex-shrink-0 shadow-2xs" onClick={(e) => e.stopPropagation()}>
+              <span className="text-[11px] text-blue-900 font-black uppercase tracking-wider pl-0.5">Export & Share Rework Record</span>
               <div className="grid grid-cols-2 gap-2">
                 <div className="relative">
                   <button 
                     onClick={() => handleDownloadReworkReport(selectedReworkLog)}
-                    className="w-full bg-surface border border-border-subtle hover:bg-surface-elevated text-text-primary hover:text-text-primary py-2 rounded-lg text-[10.5px] font-bold transition-colors cursor-pointer text-center"
+                    className="w-full bg-white border border-slate-300 hover:bg-slate-100 text-slate-900 py-2.5 rounded-xl text-xs font-black transition-colors cursor-pointer text-center shadow-2xs"
                   >
                     Download PDF
                   </button>
                   <div className="absolute -top-1.5 -right-1.5 group flex items-center justify-center">
                     <button 
-                      type="button"
+                      type="button" 
                       onClick={(e) => {
                         e.stopPropagation();
                         setOpenTooltip(openTooltip === 'rework-pdf' ? null : 'rework-pdf');
                       }}
-                      className="w-3.5 h-3.5 bg-surface-elevated hover:bg-surface-elevated text-[12.5px] text-text-secondary hover:text-text-primary rounded-full flex items-center justify-center font-bold border border-border-subtle cursor-pointer"
+                      className="w-4 h-4 bg-slate-200 hover:bg-slate-300 text-[11px] text-slate-700 rounded-full flex items-center justify-center font-black border border-slate-300 cursor-pointer"
                     >
                       ?
                     </button>
-                    <div className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-44 p-2 bg-surface border border-border-subtle text-[10.5px] text-text-primary rounded-lg shadow-xl transition-all duration-200 z-50 leading-normal pointer-events-none group-hover:opacity-100 group-hover:scale-100 group-hover:translate-y-0 ${
+                    <div className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-44 p-2 bg-slate-900 text-white border border-slate-800 text-[10.5px] rounded-lg shadow-xl transition-all duration-200 z-50 leading-normal pointer-events-none group-hover:opacity-100 group-hover:scale-100 group-hover:translate-y-0 ${
                       openTooltip === 'rework-pdf' 
                         ? 'opacity-100 scale-100 translate-y-0' 
                         : 'opacity-0 scale-95 translate-y-1'
@@ -13882,22 +13882,22 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                 <div className="relative">
                   <button 
                     onClick={() => handlePrintReworkReport(selectedReworkLog)}
-                    className="w-full bg-surface border border-border-subtle hover:bg-surface-elevated text-text-primary hover:text-text-primary py-2 rounded-lg text-[10.5px] font-bold transition-colors cursor-pointer text-center"
+                    className="w-full bg-white border border-slate-300 hover:bg-slate-100 text-slate-900 py-2.5 rounded-xl text-xs font-black transition-colors cursor-pointer text-center shadow-2xs"
                   >
                     Print Report
                   </button>
                   <div className="absolute -top-1.5 -right-1.5 group flex items-center justify-center">
                     <button 
-                      type="button"
+                      type="button" 
                       onClick={(e) => {
                         e.stopPropagation();
                         setOpenTooltip(openTooltip === 'rework-print' ? null : 'rework-print');
                       }}
-                      className="w-3.5 h-3.5 bg-surface-elevated hover:bg-surface-elevated text-[12.5px] text-text-secondary hover:text-text-primary rounded-full flex items-center justify-center font-bold border border-border-subtle cursor-pointer"
+                      className="w-4 h-4 bg-slate-200 hover:bg-slate-300 text-[11px] text-slate-700 rounded-full flex items-center justify-center font-black border border-slate-300 cursor-pointer"
                     >
                       ?
                     </button>
-                    <div className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-44 p-2 bg-surface border border-border-subtle text-[10.5px] text-text-primary rounded-lg shadow-xl transition-all duration-200 z-50 leading-normal pointer-events-none group-hover:opacity-100 group-hover:scale-100 group-hover:translate-y-0 ${
+                    <div className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-44 p-2 bg-slate-900 text-white border border-slate-800 text-[10.5px] rounded-lg shadow-xl transition-all duration-200 z-50 leading-normal pointer-events-none group-hover:opacity-100 group-hover:scale-100 group-hover:translate-y-0 ${
                       openTooltip === 'rework-print' 
                         ? 'opacity-100 scale-100 translate-y-0' 
                         : 'opacity-0 scale-95 translate-y-1'
@@ -13909,8 +13909,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
               </div>
             </div>
 
-            <div className="bg-surface px-5 py-3 border-t border-border-subtle flex justify-end">
-              <button onClick={() => setSelectedReworkLog(null)} className="bg-surface-elevated border border-border-subtle text-text-primary font-bold text-[13.5px] py-2 px-4 rounded-xl">Close Inspector</button>
+            <div className="bg-slate-50 px-6 py-3.5 border-t border-slate-200 flex justify-end">
+              <button onClick={() => setSelectedReworkLog(null)} className="bg-white border border-slate-300 hover:bg-slate-100 text-slate-800 font-black text-xs py-2.5 px-5 rounded-xl cursor-pointer shadow-2xs transition-all">Close Inspector</button>
             </div>
           </div>
         </div>
@@ -13918,53 +13918,53 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
       {/* UNIVERSAL CREATE NEW USER MODAL (USER DIRECTORY TAB) */}
       {showAddUserModal && (
-        <div className="absolute inset-0 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-3 z-50 animate-in fade-in duration-200">
-          <form onSubmit={handleUnifiedCreateUser} className="bg-surface-elevated border border-border-subtle rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col text-left">
-            <div className="bg-surface px-6 py-4 border-b border-border-subtle flex items-center justify-between">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-3 z-50 animate-in fade-in duration-200">
+          <form onSubmit={handleUnifiedCreateUser} className="bg-white border-2 border-slate-300 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col text-left">
+            <div className="bg-slate-100 px-6 py-4 border-b border-slate-200 flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <UserPlus className="w-5 h-5 text-[#3B82F6]" />
-                <h3 className="text-[14.5px] font-black text-text-primary uppercase tracking-wider">Create New User Account</h3>
+                <UserPlus className="w-5 h-5 text-blue-600" />
+                <h3 className="text-[15px] font-black text-slate-900 uppercase tracking-wider">Create New User Account</h3>
               </div>
-              <button type="button" onClick={() => setShowAddUserModal(false)} className="text-text-secondary hover:text-text-primary cursor-pointer"><X className="w-5 h-5" /></button>
+              <button type="button" onClick={() => setShowAddUserModal(false)} className="text-slate-400 hover:text-slate-900 cursor-pointer p-1 rounded-lg hover:bg-slate-200"><X className="w-5 h-5" /></button>
             </div>
 
-            <div className="p-6 flex flex-col gap-4 max-h-[80vh] overflow-y-auto scrollbar-thin">
+            <div className="p-6 flex flex-col gap-4 max-h-[80vh] overflow-y-auto scrollbar-thin bg-white">
               {/* Role Selection Tabs */}
               <div className="flex flex-col gap-1.5">
-                <label className="text-[11px] font-black text-text-secondary uppercase tracking-wider">Select Account Role Type</label>
-                <div className="grid grid-cols-3 gap-1.5 bg-surface p-1 rounded-2xl border border-border-subtle text-xs">
+                <label className="text-[11px] font-black text-slate-800 uppercase tracking-wider">Select Account Role Type</label>
+                <div className="grid grid-cols-3 gap-1.5 bg-slate-100 p-1.5 rounded-2xl border border-slate-300 text-xs">
                   <button
                     type="button"
                     onClick={() => setNewUserForm(prev => ({ ...prev, roleType: 'rep', title: 'Quality Liaison Rep' }))}
-                    className={`py-2 px-2 rounded-xl font-bold transition-all cursor-pointer ${newUserForm.roleType === 'rep' ? 'bg-blue-600 text-white shadow-md' : 'text-text-secondary hover:text-text-primary'}`}
+                    className={`py-2 px-2 rounded-xl font-black transition-all cursor-pointer ${newUserForm.roleType === 'rep' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-700 hover:text-slate-900'}`}
                   >
                     Field Rep
                   </button>
                   <button
                     type="button"
                     onClick={() => setNewUserForm(prev => ({ ...prev, roleType: 'customer', title: 'Customer Quality Contact' }))}
-                    className={`py-2 px-2 rounded-xl font-bold transition-all cursor-pointer ${newUserForm.roleType === 'customer' ? 'bg-amber-600 text-white shadow-md' : 'text-text-secondary hover:text-text-primary'}`}
+                    className={`py-2 px-2 rounded-xl font-black transition-all cursor-pointer ${newUserForm.roleType === 'customer' ? 'bg-amber-600 text-white shadow-md' : 'text-slate-700 hover:text-slate-900'}`}
                   >
                     Client Contact
                   </button>
                   <button
                     type="button"
                     onClick={() => setNewUserForm(prev => ({ ...prev, roleType: 'lead', title: 'Quality Lead' }))}
-                    className={`py-2 px-2 rounded-xl font-bold transition-all cursor-pointer ${newUserForm.roleType === 'lead' ? 'bg-sky-600 text-white shadow-md' : 'text-text-secondary hover:text-text-primary'}`}
+                    className={`py-2 px-2 rounded-xl font-black transition-all cursor-pointer ${newUserForm.roleType === 'lead' ? 'bg-sky-600 text-white shadow-md' : 'text-slate-700 hover:text-slate-900'}`}
                   >
                     Quality Lead
                   </button>
                   <button
                     type="button"
                     onClick={() => setNewUserForm(prev => ({ ...prev, roleType: 'accountant', title: 'Senior Accountant' }))}
-                    className={`py-2 px-2 rounded-xl font-bold transition-all cursor-pointer ${newUserForm.roleType === 'accountant' ? 'bg-emerald-600 text-white shadow-md' : 'text-text-secondary hover:text-text-primary'}`}
+                    className={`py-2 px-2 rounded-xl font-black transition-all cursor-pointer ${newUserForm.roleType === 'accountant' ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-700 hover:text-slate-900'}`}
                   >
                     Accountant
                   </button>
                   <button
                     type="button"
                     onClick={() => setNewUserForm(prev => ({ ...prev, roleType: 'admin', title: 'System Administrator' }))}
-                    className={`py-2 px-2 rounded-xl font-bold transition-all cursor-pointer ${newUserForm.roleType === 'admin' ? 'bg-purple-600 text-white shadow-md' : 'text-text-secondary hover:text-text-primary'}`}
+                    className={`py-2 px-2 rounded-xl font-black transition-all cursor-pointer ${newUserForm.roleType === 'admin' ? 'bg-purple-600 text-white shadow-md' : 'text-slate-700 hover:text-slate-900'}`}
                   >
                     System Admin
                   </button>
@@ -13973,13 +13973,13 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
               {/* Conditional Client/Supplier Selection for Customer Role */}
               {newUserForm.roleType === 'customer' && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-amber-500/5 p-3 rounded-2xl border border-amber-500/20">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-amber-50 p-4 rounded-2xl border border-amber-200 shadow-2xs">
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-[10.5px] font-bold text-amber-300 uppercase">Link Client Company *</label>
+                    <label className="text-[11px] font-black text-amber-950 uppercase tracking-wider">Link Client Company *</label>
                     <select
                       value={newUserForm.supplier_id}
                       onChange={(e) => setNewUserForm(prev => ({ ...prev, supplier_id: e.target.value }))}
-                      className="h-10 w-full bg-surface border border-border-subtle rounded-xl px-3 text-[13px] text-text-primary focus:outline-none"
+                      className="h-10 w-full bg-white border border-slate-300 rounded-xl px-3 text-[13px] font-bold text-slate-900 focus:outline-none focus:border-blue-600"
                     >
                       <option value="">Select Supplier / Client Company</option>
                       {suppliers.map(s => (
@@ -13988,11 +13988,11 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     </select>
                   </div>
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-[10.5px] font-bold text-amber-300 uppercase">Link Assembly Plant</label>
+                    <label className="text-[11px] font-black text-amber-950 uppercase tracking-wider">Link Assembly Plant</label>
                     <select
                       value={newUserForm.plant_id}
                       onChange={(e) => setNewUserForm(prev => ({ ...prev, plant_id: e.target.value }))}
-                      className="h-10 w-full bg-surface border border-border-subtle rounded-xl px-3 text-[13px] text-text-primary focus:outline-none"
+                      className="h-10 w-full bg-white border border-slate-300 rounded-xl px-3 text-[13px] font-bold text-slate-900 focus:outline-none focus:border-blue-600"
                     >
                       <option value="">Select Assembly Plant (Optional)</option>
                       {plants.map(p => (
@@ -14005,10 +14005,10 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
               {/* Conditional Pay Currency for Field Rep Role */}
               {newUserForm.roleType === 'rep' && (
-                <div className="flex flex-col gap-1.5 bg-blue-500/5 p-3 rounded-2xl border border-blue-500/20">
-                  <label className="text-[10.5px] font-bold text-blue-300 uppercase">Pay Currency (Rule 11)</label>
+                <div className="flex flex-col gap-1.5 bg-blue-50 p-4 rounded-2xl border border-blue-200 shadow-2xs">
+                  <label className="text-[11px] font-black text-blue-950 uppercase tracking-wider">Pay Currency (Rule 11)</label>
                   <div className="flex gap-4">
-                    <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-text-primary">
+                    <label className="flex items-center gap-2 cursor-pointer text-xs font-black text-slate-900">
                       <input
                         type="radio"
                         name="pay_currency_modal"
@@ -14018,7 +14018,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                       />
                       <span>CAD ($) - Canadian Rep</span>
                     </label>
-                    <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-text-primary">
+                    <label className="flex items-center gap-2 cursor-pointer text-xs font-black text-slate-900">
                       <input
                         type="radio"
                         name="pay_currency_modal"
@@ -14035,85 +14035,85 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
               {/* Common Inputs */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[10.5px] font-bold text-text-secondary uppercase">Full Name *</label>
+                  <label className="text-[11px] font-black text-slate-700 uppercase tracking-wider">Full Name *</label>
                   <input
                     type="text"
                     placeholder="e.g. Sarah Jenkins"
                     value={newUserForm.name}
                     onChange={(e) => setNewUserForm(prev => ({ ...prev, name: e.target.value }))}
-                    className="h-10 w-full bg-surface border border-border-subtle rounded-xl px-3 text-[13px] text-text-primary focus:outline-none"
+                    className="h-10 w-full bg-white border border-slate-300 rounded-xl px-3 text-[13px] font-bold text-slate-900 focus:outline-none focus:border-blue-600 shadow-2xs"
                     required
                   />
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[10.5px] font-bold text-text-secondary uppercase">Email Address</label>
+                  <label className="text-[11px] font-black text-slate-700 uppercase tracking-wider">Email Address</label>
                   <input
                     type="email"
                     placeholder="e.g. sjenkins@company.com"
                     value={newUserForm.email}
                     onChange={(e) => setNewUserForm(prev => ({ ...prev, email: e.target.value }))}
-                    className="h-10 w-full bg-surface border border-border-subtle rounded-xl px-3 text-[13px] text-text-primary focus:outline-none"
+                    className="h-10 w-full bg-white border border-slate-300 rounded-xl px-3 text-[13px] font-bold text-slate-900 focus:outline-none focus:border-blue-600 shadow-2xs"
                   />
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[10.5px] font-bold text-text-secondary uppercase">Phone Number</label>
+                  <label className="text-[11px] font-black text-slate-700 uppercase tracking-wider">Phone Number</label>
                   <input
                     type="text"
                     placeholder="e.g. +1 (416) 555-0182"
                     value={newUserForm.phone}
                     onChange={(e) => setNewUserForm(prev => ({ ...prev, phone: e.target.value }))}
-                    className="h-10 w-full bg-surface border border-border-subtle rounded-xl px-3 text-[13px] text-text-primary focus:outline-none"
+                    className="h-10 w-full bg-white border border-slate-300 rounded-xl px-3 text-[13px] font-bold text-slate-900 focus:outline-none focus:border-blue-600 shadow-2xs"
                   />
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[10.5px] font-bold text-text-secondary uppercase">Job Title / Designation</label>
+                  <label className="text-[11px] font-black text-slate-700 uppercase tracking-wider">Job Title / Designation</label>
                   <input
                     type="text"
                     placeholder="e.g. Quality Manager"
                     value={newUserForm.title}
                     onChange={(e) => setNewUserForm(prev => ({ ...prev, title: e.target.value }))}
-                    className="h-10 w-full bg-surface border border-border-subtle rounded-xl px-3 text-[13px] text-text-primary focus:outline-none"
+                    className="h-10 w-full bg-white border border-slate-300 rounded-xl px-3 text-[13px] font-bold text-slate-900 focus:outline-none focus:border-blue-600 shadow-2xs"
                   />
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[10.5px] font-bold text-text-secondary uppercase">Login Username</label>
+                  <label className="text-[11px] font-black text-slate-700 uppercase tracking-wider">Login Username</label>
                   <input
                     type="text"
                     placeholder="Auto-generated if empty"
                     value={newUserForm.username}
                     onChange={(e) => setNewUserForm(prev => ({ ...prev, username: e.target.value }))}
-                    className="h-10 w-full bg-surface border border-border-subtle rounded-xl px-3 text-[13px] text-text-primary focus:outline-none font-mono"
+                    className="h-10 w-full bg-white border border-slate-300 rounded-xl px-3 text-[13px] font-bold text-slate-900 focus:outline-none focus:border-blue-600 font-mono shadow-2xs"
                   />
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[10.5px] font-bold text-text-secondary uppercase">Password</label>
+                  <label className="text-[11px] font-black text-slate-700 uppercase tracking-wider">Password</label>
                   <input
                     type="text"
                     placeholder="Leave blank to auto-generate"
                     value={newUserForm.password}
                     onChange={(e) => setNewUserForm(prev => ({ ...prev, password: e.target.value }))}
-                    className="h-10 w-full bg-surface border border-border-subtle rounded-xl px-3 text-[13px] text-text-primary focus:outline-none font-mono"
+                    className="h-10 w-full bg-white border border-slate-300 rounded-xl px-3 text-[13px] font-bold text-slate-900 focus:outline-none focus:border-blue-600 font-mono shadow-2xs"
                   />
                 </div>
               </div>
             </div>
 
-            <div className="bg-surface px-6 py-3.5 border-t border-border-subtle flex justify-end gap-2">
+            <div className="bg-slate-50 px-6 py-3.5 border-t border-slate-200 flex justify-end gap-2">
               <button
                 type="button"
                 onClick={() => setShowAddUserModal(false)}
-                className="h-10 px-4 bg-surface-elevated border border-border-subtle text-text-secondary hover:text-text-primary rounded-xl text-[13px] font-bold transition-all cursor-pointer"
+                className="h-10 px-4 bg-white border border-slate-300 text-slate-700 hover:text-slate-900 rounded-xl text-[13px] font-bold transition-all cursor-pointer shadow-2xs"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="h-10 px-5 bg-[#3B82F6] hover:bg-blue-600 text-white rounded-xl text-[13px] font-bold transition-all cursor-pointer shadow-md shadow-blue-500/20"
+                className="h-10 px-5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-[13px] font-black transition-all cursor-pointer shadow-xs"
               >
                 Create Account
               </button>
@@ -14124,61 +14124,61 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
       {/* UNIVERSAL EDIT USER MODAL (USER DIRECTORY TAB) */}
       {showEditUserModal && editingUser && (
-        <div className="absolute inset-0 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-3 z-50 animate-in fade-in duration-200">
-          <form onSubmit={handleEditUserSubmit} className="bg-surface-elevated border border-border-subtle rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col text-left">
-            <div className="bg-surface px-6 py-4 border-b border-border-subtle flex items-center justify-between">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-3 z-50 animate-in fade-in duration-200">
+          <form onSubmit={handleEditUserSubmit} className="bg-white border-2 border-slate-300 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col text-left">
+            <div className="bg-slate-100 px-6 py-4 border-b border-slate-200 flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <Users className="w-5 h-5 text-blue-400" />
-                <h3 className="text-[14.5px] font-black text-text-primary uppercase tracking-wider">
+                <Users className="w-5 h-5 text-blue-600" />
+                <h3 className="text-[15px] font-black text-slate-900 uppercase tracking-wider">
                   Edit User — {editingUser.name}
                 </h3>
               </div>
               <button 
                 type="button" 
                 onClick={() => { setShowEditUserModal(false); setEditingUser(null); }} 
-                className="text-text-secondary hover:text-text-primary cursor-pointer"
+                className="text-slate-400 hover:text-slate-900 cursor-pointer p-1 rounded-lg hover:bg-slate-200"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="p-6 flex flex-col gap-4 max-h-[80vh] overflow-y-auto scrollbar-thin">
+            <div className="p-6 flex flex-col gap-4 max-h-[80vh] overflow-y-auto scrollbar-thin bg-white">
               {/* Role Selection Tabs */}
               <div className="flex flex-col gap-1.5">
-                <label className="text-[11px] font-black text-text-secondary uppercase tracking-wider">Account Role</label>
-                <div className="grid grid-cols-3 gap-1.5 bg-surface p-1 rounded-2xl border border-border-subtle text-xs">
+                <label className="text-[11px] font-black text-slate-800 uppercase tracking-wider">Account Role</label>
+                <div className="grid grid-cols-3 gap-1.5 bg-slate-100 p-1.5 rounded-2xl border border-slate-300 text-xs">
                   <button
                     type="button"
                     onClick={() => setEditUserForm(prev => ({ ...prev, role: 'rep' }))}
-                    className={`py-2 px-2 rounded-xl font-bold transition-all cursor-pointer ${editUserForm.role === 'rep' ? 'bg-blue-600 text-white shadow-md' : 'text-text-secondary hover:text-text-primary'}`}
+                    className={`py-2 px-2 rounded-xl font-black transition-all cursor-pointer ${editUserForm.role === 'rep' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-700 hover:text-slate-900'}`}
                   >
                     Field Rep
                   </button>
                   <button
                     type="button"
                     onClick={() => setEditUserForm(prev => ({ ...prev, role: 'customer' }))}
-                    className={`py-2 px-2 rounded-xl font-bold transition-all cursor-pointer ${editUserForm.role === 'customer' ? 'bg-amber-600 text-white shadow-md' : 'text-text-secondary hover:text-text-primary'}`}
+                    className={`py-2 px-2 rounded-xl font-black transition-all cursor-pointer ${editUserForm.role === 'customer' ? 'bg-amber-600 text-white shadow-md' : 'text-slate-700 hover:text-slate-900'}`}
                   >
                     Client Contact
                   </button>
                   <button
                     type="button"
                     onClick={() => setEditUserForm(prev => ({ ...prev, role: 'lead' }))}
-                    className={`py-2 px-2 rounded-xl font-bold transition-all cursor-pointer ${editUserForm.role === 'lead' ? 'bg-sky-600 text-white shadow-md' : 'text-text-secondary hover:text-text-primary'}`}
+                    className={`py-2 px-2 rounded-xl font-black transition-all cursor-pointer ${editUserForm.role === 'lead' ? 'bg-sky-600 text-white shadow-md' : 'text-slate-700 hover:text-slate-900'}`}
                   >
                     Quality Lead
                   </button>
                   <button
                     type="button"
                     onClick={() => setEditUserForm(prev => ({ ...prev, role: 'accountant' }))}
-                    className={`py-2 px-2 rounded-xl font-bold transition-all cursor-pointer ${editUserForm.role === 'accountant' ? 'bg-emerald-600 text-white shadow-md' : 'text-text-secondary hover:text-text-primary'}`}
+                    className={`py-2 px-2 rounded-xl font-black transition-all cursor-pointer ${editUserForm.role === 'accountant' ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-700 hover:text-slate-900'}`}
                   >
                     Accountant
                   </button>
                   <button
                     type="button"
                     onClick={() => setEditUserForm(prev => ({ ...prev, role: 'admin' }))}
-                    className={`py-2 px-2 rounded-xl font-bold transition-all cursor-pointer ${editUserForm.role === 'admin' ? 'bg-purple-600 text-white shadow-md' : 'text-text-secondary hover:text-text-primary'}`}
+                    className={`py-2 px-2 rounded-xl font-black transition-all cursor-pointer ${editUserForm.role === 'admin' ? 'bg-purple-600 text-white shadow-md' : 'text-slate-700 hover:text-slate-900'}`}
                   >
                     Operations Admin
                   </button>
@@ -14188,22 +14188,22 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
               {/* Full Name & Job Title */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="flex flex-col gap-1">
-                  <label className="text-[11px] font-bold text-text-secondary uppercase">Full Name</label>
+                  <label className="text-[11px] font-black text-slate-700 uppercase tracking-wider">Full Name</label>
                   <input
                     type="text"
                     required
                     value={editUserForm.name}
                     onChange={(e) => setEditUserForm(prev => ({ ...prev, name: e.target.value }))}
-                    className="h-10 bg-surface border border-border-subtle rounded-xl px-3 text-[13px] text-text-primary focus:outline-none"
+                    className="h-10 bg-white border border-slate-300 rounded-xl px-3 text-[13px] font-bold text-slate-900 focus:outline-none focus:border-blue-600 shadow-2xs"
                   />
                 </div>
                 <div className="flex flex-col gap-1">
-                  <label className="text-[11px] font-bold text-text-secondary uppercase">Job Title</label>
+                  <label className="text-[11px] font-black text-slate-700 uppercase tracking-wider">Job Title</label>
                   <input
                     type="text"
                     value={editUserForm.title}
                     onChange={(e) => setEditUserForm(prev => ({ ...prev, title: e.target.value }))}
-                    className="h-10 bg-surface border border-border-subtle rounded-xl px-3 text-[13px] text-text-primary focus:outline-none"
+                    className="h-10 bg-white border border-slate-300 rounded-xl px-3 text-[13px] font-bold text-slate-900 focus:outline-none focus:border-blue-600 shadow-2xs"
                   />
                 </div>
               </div>
@@ -14211,34 +14211,34 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
               {/* Email & Phone */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="flex flex-col gap-1">
-                  <label className="text-[11px] font-bold text-text-secondary uppercase">Email Address</label>
+                  <label className="text-[11px] font-black text-slate-700 uppercase tracking-wider">Email Address</label>
                   <input
                     type="email"
                     required
                     value={editUserForm.email}
                     onChange={(e) => setEditUserForm(prev => ({ ...prev, email: e.target.value }))}
-                    className="h-10 bg-surface border border-border-subtle rounded-xl px-3 text-[13px] text-text-primary focus:outline-none"
+                    className="h-10 bg-white border border-slate-300 rounded-xl px-3 text-[13px] font-bold text-slate-900 focus:outline-none focus:border-blue-600 shadow-2xs"
                   />
                 </div>
                 <div className="flex flex-col gap-1">
-                  <label className="text-[11px] font-bold text-text-secondary uppercase">Phone Number</label>
+                  <label className="text-[11px] font-black text-slate-700 uppercase tracking-wider">Phone Number</label>
                   <input
                     type="tel"
                     value={editUserForm.phone}
                     onChange={(e) => setEditUserForm(prev => ({ ...prev, phone: e.target.value }))}
-                    className="h-10 bg-surface border border-border-subtle rounded-xl px-3 text-[13px] text-text-primary focus:outline-none"
+                    className="h-10 bg-white border border-slate-300 rounded-xl px-3 text-[13px] font-bold text-slate-900 focus:outline-none focus:border-blue-600 shadow-2xs"
                   />
                 </div>
               </div>
 
               {/* Client Organization (If client contact) */}
               {editUserForm.role === 'customer' && (
-                <div className="flex flex-col gap-1">
-                  <label className="text-[11px] font-bold text-text-secondary uppercase">Client Company</label>
+                <div className="flex flex-col gap-1 bg-amber-50 p-4 rounded-2xl border border-amber-200 shadow-2xs">
+                  <label className="text-[11px] font-black text-amber-950 uppercase tracking-wider">Client Company</label>
                   <select
                     value={editUserForm.supplier_id}
                     onChange={(e) => setEditUserForm(prev => ({ ...prev, supplier_id: e.target.value }))}
-                    className="h-10 bg-surface border border-border-subtle rounded-xl px-3 text-[13px] text-text-primary focus:outline-none"
+                    className="h-10 bg-white border border-slate-300 rounded-xl px-3 text-[13px] font-bold text-slate-900 focus:outline-none focus:border-blue-600"
                   >
                     <option value="">-- Select Client Organization --</option>
                     {suppliers.map(s => (
@@ -14250,13 +14250,13 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
               {/* Plant Location & Pay Rate (If Field Rep) */}
               {editUserForm.role === 'rep' && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-blue-50 p-4 rounded-2xl border border-blue-200 shadow-2xs">
                   <div className="flex flex-col gap-1">
-                    <label className="text-[11px] font-bold text-text-secondary uppercase">Host Assembly Plant</label>
+                    <label className="text-[11px] font-black text-blue-950 uppercase tracking-wider">Host Assembly Plant</label>
                     <select
                       value={editUserForm.plant_id}
                       onChange={(e) => setEditUserForm(prev => ({ ...prev, plant_id: e.target.value }))}
-                      className="h-10 bg-surface border border-border-subtle rounded-xl px-3 text-[13px] text-text-primary focus:outline-none"
+                      className="h-10 bg-white border border-slate-300 rounded-xl px-3 text-[13px] font-bold text-slate-900 focus:outline-none focus:border-blue-600"
                     >
                       <option value="">-- Select Plant Location --</option>
                       {plants.map(p => (
@@ -14265,7 +14265,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     </select>
                   </div>
                   <div className="flex flex-col gap-1">
-                    <label className="text-[11px] font-bold text-text-secondary uppercase">Hourly Pay Rate & Currency</label>
+                    <label className="text-[11px] font-black text-blue-950 uppercase tracking-wider">Hourly Pay Rate & Currency</label>
                     <div className="flex gap-1.5">
                       <input
                         type="number"
@@ -14273,12 +14273,12 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         placeholder="e.g. 28.00"
                         value={editUserForm.pay_rate}
                         onChange={(e) => setEditUserForm(prev => ({ ...prev, pay_rate: e.target.value }))}
-                        className="h-10 flex-1 bg-surface border border-border-subtle rounded-xl px-3 text-[13px] text-text-primary focus:outline-none"
+                        className="h-10 flex-1 bg-white border border-slate-300 rounded-xl px-3 text-[13px] font-bold text-slate-900 focus:outline-none focus:border-blue-600"
                       />
                       <select
                         value={editUserForm.pay_currency}
                         onChange={(e) => setEditUserForm(prev => ({ ...prev, pay_currency: e.target.value }))}
-                        className="h-10 w-24 bg-surface border border-border-subtle rounded-xl px-2 text-[12.5px] font-bold text-text-primary focus:outline-none"
+                        className="h-10 w-24 bg-white border border-slate-300 rounded-xl px-2 text-[12.5px] font-black text-slate-900 focus:outline-none"
                       >
                         <option value="CAD">CAD ($)</option>
                         <option value="USD">USD ($)</option>
@@ -14289,17 +14289,17 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
               )}
             </div>
 
-            <div className="bg-surface px-6 py-3.5 border-t border-border-subtle flex justify-end gap-2">
+            <div className="bg-slate-50 px-6 py-3.5 border-t border-slate-200 flex justify-end gap-2">
               <button
                 type="button"
                 onClick={() => { setShowEditUserModal(false); setEditingUser(null); }}
-                className="h-10 px-4 bg-surface-elevated border border-border-subtle text-text-secondary hover:text-text-primary rounded-xl text-[13px] font-bold transition-all cursor-pointer"
+                className="h-10 px-4 bg-white border border-slate-300 text-slate-700 hover:text-slate-900 rounded-xl text-[13px] font-bold transition-all cursor-pointer shadow-2xs"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="h-10 px-5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-[13px] font-bold transition-all cursor-pointer shadow-md shadow-blue-500/20"
+                className="h-10 px-5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-[13px] font-black transition-all cursor-pointer shadow-xs"
               >
                 Save Changes
               </button>
@@ -14310,25 +14310,25 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
       {/* QUICK ASSIGN REP DISPATCH MODAL WITH GUARDRAIL LOCK ALERT */}
       {showAssignRepModal && (
-        <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-3 z-50 animate-in fade-in duration-200">
-          <form onSubmit={handleAssignRepSubmit} className="bg-surface-elevated border border-border-subtle rounded-3xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col text-left">
-            <div className="bg-surface px-5 py-4 border-b border-border-subtle flex items-center justify-between">
-              <h3 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider">Assign Rep Dispatch</h3>
-              <button type="button" onClick={() => { setShowAssignRepModal(false); setAssignmentLockAlert(null); }} className="text-text-secondary hover:text-text-primary"><X className="w-5 h-5" /></button>
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-3 z-50 animate-in fade-in duration-200">
+          <form onSubmit={handleAssignRepSubmit} className="bg-white border-2 border-slate-300 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col text-left">
+            <div className="bg-slate-100 px-5 py-4 border-b border-slate-200 flex items-center justify-between">
+              <h3 className="text-[14px] font-black text-slate-900 uppercase tracking-wider">Assign Rep Dispatch</h3>
+              <button type="button" onClick={() => { setShowAssignRepModal(false); setAssignmentLockAlert(null); }} className="text-slate-400 hover:text-slate-900 p-1 rounded-lg hover:bg-slate-200 cursor-pointer"><X className="w-5 h-5" /></button>
             </div>
             
-            <div className="p-6 flex flex-col gap-4">
+            <div className="p-6 flex flex-col gap-4 bg-white">
               {/* Rule 1: Strict Active Assignment Lock Alert Banner */}
               {assignmentLockAlert && (
-                <div className="bg-red-950/80 border-2 border-red-500/80 rounded-2xl p-4 flex flex-col gap-2.5 animate-in slide-in-from-top-2 duration-200">
+                <div className="bg-rose-50 border-2 border-rose-300 rounded-2xl p-4 flex flex-col gap-2.5 animate-in slide-in-from-top-2 duration-200 shadow-2xs">
                   <div className="flex items-start gap-2.5">
-                    <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+                    <AlertTriangle className="w-5 h-5 text-rose-600 flex-shrink-0 mt-0.5" />
                     <div>
-                      <h4 className="text-xs font-black text-red-300 uppercase tracking-wider">1-Active-Job Assignment Lock Alert</h4>
-                      <p className="text-[12px] text-red-100 font-medium leading-relaxed mt-1">{assignmentLockAlert}</p>
+                      <h4 className="text-xs font-black text-rose-950 uppercase tracking-wider">1-Active-Job Assignment Lock Alert</h4>
+                      <p className="text-[12px] text-rose-900 font-semibold leading-relaxed mt-1">{assignmentLockAlert}</p>
                     </div>
                   </div>
-                  <div className="flex justify-end gap-2 pt-1 border-t border-red-800/60">
+                  <div className="flex justify-end gap-2 pt-2 border-t border-rose-200">
                     <button
                       type="button"
                       onClick={() => {
@@ -14336,7 +14336,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                         setShowAssignRepModal(false);
                         setShowHandoverModal(true);
                       }}
-                      className="bg-red-600 hover:bg-red-500 text-white text-[11.5px] font-black px-3 py-1.5 rounded-xl cursor-pointer shadow-md transition-all uppercase tracking-wider flex items-center gap-1.5"
+                      className="bg-rose-600 hover:bg-rose-700 text-white text-[11.5px] font-black px-3.5 py-1.5 rounded-xl cursor-pointer shadow-xs transition-all uppercase tracking-wider flex items-center gap-1.5"
                     >
                       <span>Open Handover Workflow</span>
                     </button>
@@ -14345,11 +14345,11 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
               )}
 
               <div className="flex flex-col gap-1.5">
-                <label className="text-[10.5px] font-bold text-text-secondary uppercase pl-0.5">Select Field Representative</label>
+                <label className="text-[11px] font-black text-slate-800 uppercase tracking-wider pl-0.5">Select Field Representative</label>
                 <select 
                   value={assignRepName}
                   onChange={(e) => { setAssignRepName(e.target.value); setAssignmentLockAlert(null); }}
-                  className="h-10 w-full bg-surface border border-border-subtle hover:border-border-subtle rounded-xl px-3.5 text-[13.5px] text-text-primary focus:outline-none focus:ring-1 focus:ring-[#3B82F6]/20 transition-all"
+                  className="h-11 w-full bg-white border-2 border-slate-300 hover:border-blue-600 rounded-xl px-3.5 text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all shadow-2xs"
                 >
                   {users.filter(u => u.role === 'rep' || u.role === 'lead' || isFieldRep(u)).map(u => (
                     <option key={u.id} value={u.name}>{u.name}</option>
@@ -14358,11 +14358,11 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label className="text-[10.5px] font-bold text-text-secondary uppercase pl-0.5">Assign Plant Location</label>
+                <label className="text-[11px] font-black text-slate-800 uppercase tracking-wider pl-0.5">Assign Plant Location</label>
                 <select 
                   value={assignPlant}
                   onChange={(e) => setAssignPlant(e.target.value)}
-                  className="h-10 w-full bg-surface border border-border-subtle hover:border-border-subtle rounded-xl px-3.5 text-[13.5px] text-text-primary focus:outline-none focus:ring-1 focus:ring-[#3B82F6]/20 transition-all"
+                  className="h-11 w-full bg-white border-2 border-slate-300 hover:border-blue-600 rounded-xl px-3.5 text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all shadow-2xs"
                 >
                   {plants && plants.length > 0 ? (
                     plants.map(p => (
@@ -14375,17 +14375,17 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
               </div>
             </div>
 
-            <div className="bg-surface px-5 py-3 border-t border-border-subtle flex justify-end gap-2">
+            <div className="bg-slate-50 px-5 py-3.5 border-t border-slate-200 flex justify-end gap-2">
               <button 
                 type="button" 
                 onClick={() => { setShowAssignRepModal(false); setAssignmentLockAlert(null); }} 
-                className="h-10 px-4 bg-surface-elevated border border-border-subtle hover:bg-surface-elevated hover:border-border-subtle text-text-secondary hover:text-text-primary rounded-xl text-[13.5px] font-bold transition-all cursor-pointer"
+                className="h-10 px-4 bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-2xs"
               >
                 Cancel
               </button>
               <button 
                 type="submit" 
-                className="h-10 px-4 bg-[#3B82F6] hover:bg-[#0284c7] text-text-primary rounded-xl text-[13.5px] font-bold transition-all cursor-pointer shadow-md shadow-[#3B82F6]/10"
+                className="h-10 px-5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer shadow-xs"
               >
                 Assign Dispatch
               </button>
@@ -14507,33 +14507,33 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       {/* RECEIPT LIGHTBOX MODAL */}
       {selectedReceiptPhoto && (
         <div 
-          className="absolute inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-3 z-50 animate-in fade-in duration-200" 
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-3 z-50 animate-in fade-in duration-200" 
           onClick={() => setSelectedReceiptPhoto(null)}
         >
           <div 
-            className="bg-surface-elevated border border-border-subtle rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col text-left relative" 
+            className="bg-white border-2 border-slate-300 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col text-left relative" 
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
-            <div className="bg-surface px-5 py-4 border-b border-border-subtle flex items-center justify-between">
+            <div className="bg-slate-100 px-6 py-4 border-b border-slate-200 flex items-center justify-between">
               <div>
-                <h3 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider flex items-center gap-1.5">
-                  <DollarSign className="w-3.5 h-3.5 text-emerald-600" />
+                <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                  <DollarSign className="w-4 h-4 text-emerald-600" />
                   <span>Receipt Verification Lightbox</span>
                 </h3>
-                <p className="text-[10.5px] text-text-secondary mt-0.5">Scanned attachment verification for reimbursement approval</p>
+                <p className="text-xs text-slate-600 font-medium mt-0.5">Scanned attachment verification for reimbursement approval</p>
               </div>
               <button 
                 onClick={() => setSelectedReceiptPhoto(null)} 
-                className="text-text-secondary hover:text-text-primary cursor-pointer"
+                className="text-slate-400 hover:text-slate-900 p-1 rounded-lg hover:bg-slate-200 cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {/* Receipt Image Body */}
-            <div className="p-3 flex items-center justify-center bg-surface border-b border-border-subtle">
-              <div className="max-h-[60vh] rounded-2xl overflow-hidden border border-border-subtle shadow-inner bg-surface-elevated flex items-center justify-center">
+            <div className="p-4 flex items-center justify-center bg-slate-50 border-b border-slate-200">
+              <div className="max-h-[60vh] rounded-2xl overflow-hidden border border-slate-300 shadow-inner bg-white flex items-center justify-center">
                 <img 
                   src={selectedReceiptPhoto} 
                   alt="Receipt Scan Preview" 
@@ -14543,12 +14543,12 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
             </div>
 
             {/* Modal Footer Actions */}
-            <div className="px-5 py-3.5 bg-surface flex justify-between items-center gap-2">
-              <span className="text-[12.5px] font-bold text-text-secondary uppercase tracking-widest">IDS Pulse AI Verified</span>
+            <div className="px-6 py-3.5 bg-slate-50 flex justify-between items-center gap-2">
+              <span className="text-xs font-black text-slate-600 uppercase tracking-widest">IDS Pulse AI Verified</span>
               <button 
                 type="button" 
                 onClick={() => setSelectedReceiptPhoto(null)}
-                className="h-9 px-4 bg-surface-elevated hover:bg-surface-elevated text-text-primary font-semibold rounded-xl text-[13.5px] transition-colors cursor-pointer"
+                className="h-10 px-5 bg-white border border-slate-300 hover:bg-slate-100 text-slate-900 font-bold rounded-xl text-xs shadow-2xs transition-colors cursor-pointer"
               >
                 Close Viewport
               </button>
@@ -14560,23 +14560,23 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
       {/* 1. VISUAL CALENDAR PICKER MODAL */}
       {showCalendarModal && (
         <div 
-          className="absolute inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-3 z-50 animate-in fade-in duration-200" 
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-3 z-50 animate-in fade-in duration-200" 
           onClick={() => setShowCalendarModal(false)}
         >
           <div 
-            className="calendar-modal-container bg-surface-elevated border border-border-subtle rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl flex flex-col text-left" 
+            className="calendar-modal-container bg-white border-2 border-slate-300 rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl flex flex-col text-left" 
             onClick={(e) => e.stopPropagation()}
           >
             
             {/* Modal Header */}
-            <div className="calendar-modal-header bg-surface px-5 py-4 border-b border-border-subtle flex items-center justify-between">
+            <div className="calendar-modal-header bg-slate-100 px-5 py-4 border-b border-slate-200 flex items-center justify-between">
               <div>
-                <h3 className="text-[13.5px] font-bold text-text-primary uppercase tracking-wider">Select Calendar Date</h3>
-                <p className="text-[10.5px] text-text-secondary mt-0.5">Filter CRM logs to a specific day</p>
+                <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">Select Calendar Date</h3>
+                <p className="text-xs text-slate-600 font-medium mt-0.5">Filter platform logs to a specific day</p>
               </div>
               <button 
                 onClick={() => setShowCalendarModal(false)} 
-                className="text-text-secondary hover:text-text-primary cursor-pointer"
+                className="text-slate-400 hover:text-slate-900 p-1 rounded-lg hover:bg-slate-200 cursor-pointer"
                 aria-label="Close calendar modal"
               >
                 <X className="w-5 h-5" />
@@ -14584,23 +14584,23 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
             </div>
 
             {/* Calendar Controls (Month Selector) */}
-            <div className="p-3 flex flex-col gap-3">
-              <div className="flex justify-between items-center bg-surface px-3 py-2 rounded-xl border border-border-subtle calendar-controls-strip">
+            <div className="p-4 flex flex-col gap-3 bg-white">
+              <div className="flex justify-between items-center bg-slate-50 px-3 py-2 rounded-xl border border-slate-300 calendar-controls-strip">
                 <button 
-                  type="button"
+                  type="button" 
                   onClick={handlePrevMonth}
-                  className="p-1 hover:bg-surface-elevated rounded text-text-secondary hover:text-text-primary cursor-pointer font-bold text-[13.5px]"
+                  className="p-1 hover:bg-slate-200 rounded text-slate-700 hover:text-slate-900 cursor-pointer font-bold text-xs"
                   aria-label="Previous month"
                 >
                   &larr;
                 </button>
-                <span className="text-[13.5px] font-extrabold text-text-primary uppercase tracking-wide calendar-month-year-label">
+                <span className="text-xs font-black text-slate-900 uppercase tracking-wide calendar-month-year-label">
                   {monthNames[calendarMonthIndex]} {calendarYear}
                 </span>
                 <button 
-                  type="button"
+                  type="button" 
                   onClick={handleNextMonth}
-                  className="p-1 hover:bg-surface-elevated rounded text-text-secondary hover:text-text-primary cursor-pointer font-bold text-[13.5px]"
+                  className="p-1 hover:bg-slate-200 rounded text-slate-700 hover:text-slate-900 cursor-pointer font-bold text-xs"
                   aria-label="Next month"
                 >
                   &rarr;
@@ -14611,7 +14611,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
               <div className="grid grid-cols-7 gap-1 text-center">
                 {/* Weekday Headers */}
                 {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(day => (
-                  <span key={day} className="text-[10.5px] font-extrabold text-text-secondary uppercase py-1">{day}</span>
+                  <span key={day} className="text-[10.5px] font-black text-slate-500 uppercase py-1">{day}</span>
                 ))}
 
                 {/* Day cells grid */}
@@ -14640,17 +14640,17 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                           setShowAllDates(false);
                           setShowCalendarModal(false);
                         }}
-                        className={`aspect-square rounded-lg flex flex-col items-center justify-center gap-0.5 border text-[11.5px] font-bold relative transition-colors cursor-pointer calendar-day-btn ${
+                        className={`aspect-square rounded-lg flex flex-col items-center justify-center gap-0.5 border text-xs font-black relative transition-colors cursor-pointer calendar-day-btn ${
                           isSelected
-                            ? 'bg-[#3B82F6] border-[#3B82F6]/30 text-text-primary font-extrabold shadow-md active-day'
-                            : 'bg-surface hover:bg-surface-elevated border-border-subtle text-text-secondary hover:text-text-primary'
+                            ? 'bg-blue-600 border-blue-600 text-white font-black shadow-sm active-day'
+                            : 'bg-white hover:bg-slate-100 border-slate-200 text-slate-800'
                         }`}
                         aria-label={`Select ${monthNames[calendarMonthIndex]} ${d}, ${calendarYear}`}
                       >
                         <span>{d}</span>
                         {/* Event Dot */}
                         {(activity.hasIncidents || activity.hasShifts || activity.hasRework) && (
-                          <span className={`w-1 h-1 rounded-full ${
+                          <span className={`w-1.5 h-1.5 rounded-full ${
                             activity.hasIncidents ? 'bg-red-500' : activity.hasShifts ? 'bg-emerald-500' : 'bg-amber-500'
                           }`}></span>
                         )}
@@ -14663,8 +14663,8 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
             </div>
 
             {/* Quick Demo Date Presets & Cancel Action */}
-            <div className="bg-surface p-3 border-t border-border-subtle flex flex-col gap-2 calendar-modal-footer">
-              <span className="text-[12.5px] text-text-secondary font-bold uppercase tracking-wider block">Quick Pick & Filter:</span>
+            <div className="bg-slate-50 p-4 border-t border-slate-200 flex flex-col gap-2 calendar-modal-footer">
+              <span className="text-[11px] text-slate-700 font-black uppercase tracking-wider block">Quick Pick & Filter:</span>
               <div className="flex gap-2">
                 <button
                   type="button"
@@ -14674,7 +14674,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     setShowAllDates(false);
                     setShowCalendarModal(false);
                   }}
-                  className="h-8 bg-surface-elevated border border-border-subtle hover:bg-surface-elevated text-[#3B82F6] hover:text-[#3B82F6] font-bold text-[10.5px] rounded-xl flex-1 cursor-pointer text-center transition-colors"
+                  className="h-9 bg-white border border-slate-300 hover:bg-slate-100 text-blue-700 font-bold text-xs rounded-xl flex-1 cursor-pointer text-center transition-colors shadow-2xs"
                 >
                   Today ({new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })})
                 </button>
@@ -14684,7 +14684,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
                     setShowAllDates(true);
                     setShowCalendarModal(false);
                   }}
-                  className="h-8 bg-[#3B82F6]/20 border border-[#3B82F6]/30 text-[#3B82F6] font-bold text-[10.5px] rounded-xl flex-1 cursor-pointer text-center transition-colors"
+                  className="h-9 bg-blue-50 border border-blue-200 hover:bg-blue-100 text-blue-800 font-bold text-xs rounded-xl flex-1 cursor-pointer text-center transition-colors shadow-2xs"
                 >
                   Show All Dates (All History)
                 </button>
@@ -14692,7 +14692,7 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
               <button
                 type="button"
                 onClick={() => setShowCalendarModal(false)}
-                className="w-full h-8 mt-1 bg-surface-elevated hover:bg-surface-elevated text-text-primary hover:text-text-primary font-bold text-[11.5px] rounded-xl cursor-pointer text-center transition-colors"
+                className="w-full h-9 mt-1 bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 font-bold text-xs rounded-xl cursor-pointer text-center transition-colors shadow-2xs"
               >
                 Cancel / Close
               </button>
@@ -14704,78 +14704,78 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
       {/* 2. INTERACTIVE USER GUIDE SLIDE-OUT DRAWER */}
       {showHelpDrawer && (
-        <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-md flex justify-end z-50 animate-in fade-in duration-200" onClick={() => setShowHelpDrawer(false)}>
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex justify-end z-50 animate-in fade-in duration-200" onClick={() => setShowHelpDrawer(false)}>
           <div 
-            className="w-full max-w-sm bg-surface-elevated border-l border-border-subtle h-full shadow-2xl p-6 sm:p-8 flex flex-col overflow-hidden text-left"
+            className="w-full max-w-md bg-white border-l-2 border-slate-300 h-full shadow-2xl p-6 sm:p-8 flex flex-col overflow-hidden text-left"
             onClick={(e) => e.stopPropagation()}
           >
             
             {/* Drawer Header */}
-            <div className="flex items-center justify-between border-b border-border-subtle pb-3 mb-4 flex-shrink-0">
+            <div className="flex items-center justify-between border-b border-slate-200 pb-4 mb-4 flex-shrink-0">
               <div>
-                <h3 className="text-[14.5px] font-bold text-text-primary uppercase tracking-wider">Web Portal Guide</h3>
-                <p className="text-[11.5px] text-text-secondary mt-0.5">Simple guidance for non-tech users</p>
+                <h3 className="text-base font-black text-slate-900 uppercase tracking-wider">Web Portal Guide</h3>
+                <p className="text-xs text-slate-600 font-medium mt-0.5">Operational manual & workflow reference</p>
               </div>
-              <button onClick={() => setShowHelpDrawer(false)} className="text-text-secondary hover:text-text-primary p-1 hover:bg-slate-855 rounded-lg cursor-pointer">
+              <button onClick={() => setShowHelpDrawer(false)} className="text-slate-400 hover:text-slate-900 p-1.5 hover:bg-slate-100 rounded-xl cursor-pointer">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {/* Scrollable middle text */}
-            <div className="flex-1 overflow-y-auto pr-1 flex flex-col gap-3 text-[13.5px] text-text-primary leading-relaxed min-h-0">
+            <div className="flex-1 overflow-y-auto pr-1 flex flex-col gap-4 text-xs text-slate-800 leading-relaxed font-medium min-h-0">
               
-              <div className="bg-[#3B82F6]/20 p-3 rounded-2xl border border-[#3B82F6]/15">
-                <h4 className="font-bold text-text-primary text-[12.5px] uppercase tracking-wide mb-1 text-[#3B82F6]">Using the Calendar</h4>
-                <p className="text-[11.5px]">
-                  Click on any day in the top date bar to filter the entire screen to that date. Days with activity show tiny colored dots:
+              <div className="bg-blue-50 p-4 rounded-2xl border border-blue-200 shadow-2xs">
+                <h4 className="font-black text-blue-900 text-xs uppercase tracking-wider mb-1">Using the Calendar</h4>
+                <p className="text-xs text-slate-700">
+                  Click on any day in the top date bar to filter the entire screen to that date. Days with activity show colored dots:
                 </p>
-                <div className="mt-2 flex flex-col gap-1.5 text-[10.5px] text-text-primary">
-                  <div className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-red-500"></span> <span>Red: Incident defects logged by reps</span></div>
-                  <div className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> <span>Green: Shift checklists walked by reps</span></div>
-                  <div className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span> <span>Blue: Supplier parts rework logged</span></div>
+                <div className="mt-2.5 flex flex-col gap-1.5 text-xs text-slate-800 font-bold">
+                  <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-red-500"></span> <span>Red: Quality incident defects logged by reps</span></div>
+                  <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-emerald-500"></span> <span>Green: Daily shift checklists & floor walkthroughs</span></div>
+                  <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-amber-500"></span> <span>Yellow: Supplier parts rework & containment logs</span></div>
                 </div>
               </div>
 
               <div className="flex flex-col gap-3">
-                <h4 className="font-bold text-text-primary text-[12.5px] uppercase tracking-wider border-b border-border-subtle pb-1">Tab-by-Tab Walkthrough</h4>
+                <h4 className="font-black text-slate-900 text-xs uppercase tracking-wider border-b border-slate-200 pb-1.5">Tab-by-Tab Overview</h4>
                 
-                <div>
-                  <h5 className="font-bold text-text-primary text-[11.5px] flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#3B82F6]"></span>
+                <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                  <h5 className="font-black text-slate-900 text-xs flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-blue-600"></span>
                     <span>1. Incident Defects Feed</span>
                   </h5>
-                  <p className="text-[11.5px] mt-0.5 text-text-secondary pl-3">
-                    Shows suspect materials logged by reps. Red Alert means outstanding. Clicking <strong>Inspect</strong> lets you download a PDF report or open a print-ready window to email Magna.
+                  <p className="text-xs mt-1 text-slate-600 pl-3.5">
+                    Shows suspect materials logged by reps. Clicking <strong>Inspect</strong> lets you review evidence photos, download PDF containment reports, or print formal supplier notifications.
                   </p>
                 </div>
 
-                <div>
-                  <h5 className="font-bold text-text-primary text-[11.5px] flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#3B82F6]"></span>
+                <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                  <h5 className="font-black text-slate-900 text-xs flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-blue-600"></span>
                     <span>2. Daily Tasks Planner</span>
                   </h5>
-                  <p className="text-[11.5px] mt-0.5 text-slate-450 pl-3">
-                    Check off daily tasks or dispatch them instantly to Clarence's phone. Tap any of the quick-action preset buttons at the bottom to dispatch a task in 1-click.
+                  <p className="text-xs mt-1 text-slate-600 pl-3.5">
+                    Organize daily tasks or dispatch them directly to field inspectors' mobile devices in real time.
                   </p>
                 </div>
 
-                <div>
-                  <h5 className="font-bold text-text-primary text-[11.5px] flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                  <h5 className="font-black text-slate-900 text-xs flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-emerald-600"></span>
                     <span>3. Daily Quality Reports Feed</span>
                   </h5>
-                  <p className="text-[11.5px] mt-0.5 text-text-secondary pl-3">
-                    Donna can review rep checklist logs card-by-card. Confirms walked assembly lines and operator touch points.
+                  <p className="text-xs mt-1 text-slate-600 pl-3.5">
+                    Review representative walkthrough logs card-by-card, confirming walked assembly lines and operator touch points.
                   </p>
                 </div>
 
-                <div>
-                  <h5 className="font-bold text-text-primary text-[11.5px] flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-400"></span>
+                <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                  <h5 className="font-black text-slate-900 text-xs flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-indigo-600"></span>
                     <span>4. Timesheets & Mileage</span>
                   </h5>
-                  <p className="text-[11.5px] mt-0.5 text-text-secondary pl-3">
-                    Colleen's accountant portal. Calculates rep hours ($28/hr billing) and mileage reimbursement ($0.73/km) automatically. Click <strong>Export QuickBooks</strong> to generate a payroll importing spreadsheet.
+                  <p className="text-xs mt-1 text-slate-600 pl-3.5">
+                    Unified timesheet & payroll hub. Calculates rep hours and mileage automatically with location-based currency rules (CAD/USD). Click <strong>Export QuickBooks</strong> to generate payroll import files.
                   </p>
                 </div>
               </div>
@@ -14783,11 +14783,11 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
             </div>
 
             {/* Footer */}
-            <div className="mt-4 pt-3 border-t border-border-subtle flex-shrink-0">
+            <div className="mt-4 pt-3 border-t border-slate-200 flex-shrink-0">
               <button 
-                type="button"
-                onClick={() => setShowHelpDrawer(false)}
-                className="w-full bg-surface border border-border-subtle text-text-primary hover:text-text-primary font-bold py-2.5 rounded-xl text-[13.5px] text-center cursor-pointer transition-colors"
+                type="button" 
+                onClick={() => setShowHelpDrawer(false)} 
+                className="w-full bg-slate-900 hover:bg-slate-800 text-white font-black py-3 rounded-xl text-xs uppercase tracking-wider text-center cursor-pointer transition-colors shadow-md"
               >
                 Close User Guide
               </button>
@@ -15648,23 +15648,23 @@ export default function WebDashboard({ dbUpdateTrigger, forceRoadmapOnly = false
 
       {/* Floating Toast Notification Overlay */}
       {toast && (
-        <div className={`fixed bottom-6 right-6 z-[100000] px-4 py-3 rounded-2xl shadow-2xl border backdrop-blur-md flex items-center gap-3 text-xs font-bold animate-in slide-in-from-bottom duration-200 ${
-          toast.type === 'error' ? 'bg-rose-950/90 text-rose-200 border-rose-500/40' :
-          toast.type === 'warning' ? 'bg-amber-950/90 text-amber-200 border-amber-500/40' :
-          toast.type === 'info' ? 'bg-sky-950/90 text-sky-200 border-sky-500/40' :
-          'bg-emerald-950/90 text-emerald-200 border-emerald-500/40'
+        <div className={`fixed bottom-6 right-6 z-[100000] px-4.5 py-3.5 rounded-2xl shadow-2xl border-2 flex items-center gap-3 text-xs font-black animate-in slide-in-from-bottom duration-200 ${
+          toast.type === 'error' ? 'bg-rose-50 text-rose-950 border-rose-300' :
+          toast.type === 'warning' ? 'bg-amber-50 text-amber-950 border-amber-300' :
+          toast.type === 'info' ? 'bg-sky-50 text-sky-950 border-sky-300' :
+          'bg-emerald-50 text-emerald-950 border-emerald-300'
         }`}>
           {toast.type === 'error' ? (
-            <AlertCircle className="w-4.5 h-4.5 text-rose-400 flex-shrink-0" />
+            <AlertCircle className="w-4.5 h-4.5 text-rose-600 flex-shrink-0" />
           ) : toast.type === 'warning' ? (
-            <AlertTriangle className="w-4.5 h-4.5 text-amber-400 flex-shrink-0" />
+            <AlertTriangle className="w-4.5 h-4.5 text-amber-600 flex-shrink-0" />
           ) : toast.type === 'info' ? (
-            <Zap className="w-4.5 h-4.5 text-sky-400 flex-shrink-0" />
+            <Zap className="w-4.5 h-4.5 text-sky-600 flex-shrink-0" />
           ) : (
-            <CheckCircle2 className="w-4.5 h-4.5 text-emerald-400 flex-shrink-0" />
+            <CheckCircle2 className="w-4.5 h-4.5 text-emerald-600 flex-shrink-0" />
           )}
-          <span>{toast.message}</span>
-          <button onClick={() => setToast(null)} className="ml-2 text-slate-400 hover:text-white cursor-pointer"><X className="w-3.5 h-3.5" /></button>
+          <span className="font-extrabold">{toast.message}</span>
+          <button onClick={() => setToast(null)} className="ml-2 text-slate-500 hover:text-slate-900 cursor-pointer p-0.5 rounded-md hover:bg-slate-200"><X className="w-3.5 h-3.5" /></button>
         </div>
       )}
     </div>

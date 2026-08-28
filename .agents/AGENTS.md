@@ -99,4 +99,13 @@ To ensure historical mistakes are never repeated, the agent MUST obey the follow
 - **Zero Dark-on-Dark or Low-Contrast Badges**: Every single badge, status pill, and currency tag across tables (e.g. `CAD`, `USD`, `PO status`, `Rep assignment`) MUST enforce high-contrast light theme tokens (`bg-blue-50 text-blue-950 border border-blue-300 font-black`, `bg-emerald-50 text-emerald-950 border border-emerald-300 font-black`). Dark background pills (`dark:bg-slate-700`, `bg-slate-800`) with dark/primary text are strictly forbidden.
 - **Automated Test Gate Enforcement**: Every change MUST pass `npx vitest run tests/modal_and_theme_contrast_gate.test.js` before deployment.
 
+## 19. HARD RULE: ZERO FALSE ASSURANCES, MANDATORY FULL-FILE STATIC AUDIT & COMPREHENSIVE UI HYGIENE GATE
+- **Zero False Assurances**: Never claim that "everything is error-free", "zero mistakes remain", or that "all tests pass" merely because isolated backend unit tests passed. Unit tests only verify what they were programmed to test; they do not verify untested UI states, conditional modals, draft string leaks, or visual contrast tokens unless explicitly covered by a dedicated static analysis test.
+- **Mandatory Static UI Hygiene Gate**: Every change MUST pass `npx vitest run tests/comprehensive_ui_contrast_and_hygiene_gate.test.js` before completing turns. This gate programmatically inspects all JSX components across `src/` to confirm:
+  1. Zero dark container leaks inside modals, drawers, and overlay cards.
+  2. Zero raw draft strings (`__new__`, `__unassigned__`, `[object Object]`, `undefined`) exposed in JSX renders.
+  3. Zero dark floating toast notifications.
+  4. Zero literal emojis across all JSX code files (Rule 14).
+- **Truthful Status Lifecycle & Full Traceability**: When explaining bugs or fixes, the agent must speak with absolute transparency, pinpoint the exact technical root cause, and verify with automated static AST/regex gates rather than superficial manual assumptions.
+
 
